@@ -79,7 +79,7 @@ export class NpcSystem {
       const d = NPCS.find((n) => n.key === h.npc)!;
       if (!g.world.ready(h.x, h.z) || Math.hypot(h.x - g.player.x, h.z - g.player.z) > 90) continue;
       if (g.mobs.list.some((m) => m.active && m.def.key === d.mob)) continue;
-      const m = g.mobs.spawn(d.mob, h.x + 0.5, h.y + 0.7, h.z + 0.5);
+      const q = g.standSpot(h.x, h.y, h.z), m = g.mobs.spawn(d.mob, q[0], q[1], q[2]);
       if (m) m.home = [h.x, h.y, h.z];
     }
   }

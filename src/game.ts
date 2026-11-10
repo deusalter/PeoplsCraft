@@ -61,6 +61,7 @@ export class Game implements InteractHost {
   private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
+  private pendingBed = false; private arriveMsg = '';
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -227,12 +228,29 @@ export class Game implements InteractHost {
     for (const m of this.mobs.list) if (m.active && m.def.ai === 'minion') m.active = false;
     this.menu.death(cause === 'fall' ? 'The ground was farther than it looked' : cause === 'lava' ? 'Lava does not negotiate' : cause === 'void' ? 'There was nothing under you' : cause === 'hunger' ? 'Starved' : `Slain by ${cause}`, lost);
   }
-  respawn(): void {
+  respawn(): void { this.stats.respawn(); this.goHome(); }
+  /** Send the player to their bed, or to the world spawn when there is none (death, Recall Stone). */
+  private goHome(): void {
     const s = this.spawn, p = this.player;
-    this.stats.respawn();
     if (this.dim !== 0) { this.travel(0, true); return; }
-    if (s && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use === 'bed') p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5);
-    else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning'); }
+    if (s && this.world.ready(s[0], s[2]) && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use !== 'bed') { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; }
+    else if (s) {
+      if (this.world.areaMeshed(s[0], s[2], 1)) { const q = this.standSpot(s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); return; }
+      // the bed is out of the loaded area and cannot be checked (or stood beside) yet: go there, load, and let checkReady() decide
+      p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); this.pendingBed = true; this.ready = false; this.showLoading('Returning');
+      return;
+    }
+    p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning');
+  }
+  /** Somewhere to stand next to a bed: on it, a 1.8-tall body can wedge under a two-high ceiling. */
+  standSpot(x: number, y: number, z: number): [number, number, number] {
+    const w = this.world;
+    for (let i = 0; i < 8; i++) {
+      const cx = x + (i < 4 ? (i === 0 ? 1 : i === 1 ? -1 : 0) : i & 1 ? 1 : -1), cz = z + (i < 4 ? (i === 2 ? 1 : i === 3 ? -1 : 0) : i & 2 ? 1 : -1);
+      const below = w.getBlock(cx, y - 1, cz), a = w.getBlock(cx, y, cz), b = w.getBlock(cx, y + 1, cz);
+      if (T_SOLID[below] && !T_DAMAGE[below] && !T_SOLID[a] && !T_LIQUID[a] && !T_DAMAGE[a] && !T_SOLID[b] && !T_LIQUID[b]) return [cx + 0.5, y + 0.05, cz + 0.5];
+    }
+    return [x + 0.5, y + 0.6, z + 0.5];
   }
   onMobKilled(m: Mob): void {
     const d = m.def, luck = 1 + this.stats.d.luck;
@@ -385,7 +403,7 @@ export class Game implements InteractHost {
     if (d.use === 'recall') {
       if (this.recallT > 0) { this.toast('The stone is still warm.', '#ff9a8a'); return true; }
       this.recallT = 30; this.audio.play('teleport');
-      if (this.dim !== 0) this.travel(0, true); else this.respawnPoint();
+      this.goHome();
       return true;
     }
     if (d.food || d.heal || d.restoreMana || d.buff) {
@@ -400,11 +418,6 @@ export class Game implements InteractHost {
       return true;
     }
     return false;
-  }
-  private respawnPoint(): void {
-    const s = this.spawn, p = this.player;
-    if (s && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use === 'bed') p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5);
-    else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning'); }
   }
 
   private useBlock(hit: RayHit, use: string): boolean {
@@ -427,6 +440,7 @@ export class Game implements InteractHost {
     }
     if (use === 'crate') { this.onBroken(x, y, z, hit.id); return true; }
     if (use === 'bed') {
+      if (this.dim !== 0) { this.toast('A bedroll only holds your spawn in the Overworld.', '#ff9a8a'); return true; }
       this.spawn = [x, y, z];
       if (this.isNight() && this.dim === 0) {
         if (this.mobs.nearestHostile(p.x, p.y, p.z, 14) || this.events.active) this.toast('You cannot rest with enemies near.', '#ff9a8a');
@@ -502,7 +516,7 @@ export class Game implements InteractHost {
   }
   travel(to: number, home = false): void {
     const p = this.player, cfg = this.cfg;
-    if (to === this.dim) { this.respawnPoint(); return; }
+    if (to === this.dim) { this.goHome(); return; }
     this.win.close(true);
     if (!home) this.portalReturn[this.dim] = [Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
     const px = Math.floor(p.x), pz = Math.floor(p.z);
@@ -511,7 +525,7 @@ export class Game implements InteractHost {
     this.world.setDim(to, DIMS[to].hasSky);
     this.dim = to; this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
     const ret = home ? null : this.portalReturn[to];
-    if (home) { const s = this.spawn; if (s) p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; } }
+    if (home) { const s = this.spawn; if (s) { p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); this.pendingBed = true; } else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; } }
     else if (ret) p.teleport(ret[0] + 0.5, ret[1] + 0.1, ret[2] + 0.5);
     else { p.teleport(px + 0.5, 120, pz + 0.5); this.arriving = to; }
     if (to !== 0) this.flags.add('dim:' + to);
@@ -745,9 +759,17 @@ export class Game implements InteractHost {
     const p = this.player, w = this.world, c = w.counts();
     if (this.loading) { (this.loading.querySelector('i') as HTMLElement).style.width = Math.min(100, (c.meshed / 49) * 100) + '%'; (this.loading.querySelector('.msg') as HTMLElement).textContent = this.loadMsg; }
     if (!this.keysReady || !w.areaMeshed(p.x, p.z, 3)) return;
+    if (this.pendingBed) {
+      // we were sent to a bed whose chunk was not loaded: now that it is, make sure the bed is still there
+      const s = this.spawn;
+      this.pendingBed = false;
+      if (s && this.dim === 0 && BLOCKS[w.getBlock(s[0], s[1], s[2])].use === 'bed') { const q = this.standSpot(s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); }
+      else { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; return; }
+    }
     if (this.arriving >= 0) this.land();
     p.frozen = false; this.ready = true; this.portalArmed = false;
     this.loading?.remove(); this.loading = null;
+    if (this.arriveMsg) { this.toast(this.arriveMsg, '#ff9a8a'); this.arriveMsg = ''; }
     if (!this.cfg.meta.data && this.dim === 0 && !this.flags.has('started')) {
       this.flags.add('started');
       this.hud.showBanner(this.cfg.meta.name, 'Click to look around · E for inventory · G for the guide', '#ffe9a8');
