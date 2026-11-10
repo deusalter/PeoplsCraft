@@ -4,11 +4,11 @@ import { SEA } from '../core/constants';
 import { T_LIQUID, T_OPAQUE, T_SOLID } from '../data/blocks';
 import { BIOMES } from '../data/biomes';
 import { DIMS } from '../data/dims';
-import { MAX_PARTS, MOB_LIST, MobDef, SpawnRule, mob as mobDef, rigOf } from '../data/mobs';
+import { MAX_PARTS, MOB_LIST, MobDef, type Part, SpawnRule, mob as mobDef, rigOf } from '../data/mobs';
 import type { Game } from '../game';
 import { Body, boxFree, moveBody, newRayHit, rayBox, raycast } from '../player/physics';
 import { type BoxBatch, ShadowBatch } from '../render/batches';
-import { BossState, bossTick, newBossState } from './boss';
+import { BossState, bossTick, newBossState, segK } from './boss';
 
 export class Mob implements Body {
   active = false; def!: MobDef; id = 0;
@@ -20,11 +20,30 @@ export class Mob implements Body {
   boss: BossState | null = null; home: [number, number, number] | null = null; minionDmg = 0; hop = 0; open = 0;
   /** Eased world light (sky, block; ls < 0 = not sampled yet) and the drawn yaw, which turns toward `yaw` at a finite rate. */
   ls = -1; lb = 0; ry = 0; pry = 0;
+  /** Landing squash of a hopper, 1 at touchdown, decaying. */
+  sq = 0;
 }
 
 const POOL = 140;
 const ray = newRayHit();
-const mBase = new THREE.Matrix4(), mPart = new THREE.Matrix4(), mRot = new THREE.Matrix4(), mTmp = new THREE.Matrix4(), mBox = new THREE.Matrix4(), eul = new THREE.Euler(), vS = new THREE.Vector3();
+const mBase = new THREE.Matrix4(), mPart = new THREE.Matrix4(), mRot = new THREE.Matrix4(), mTmp = new THREE.Matrix4(), mBox = new THREE.Matrix4(), eul = new THREE.Euler(), eulB = new THREE.Euler(0, 0, 0, 'YXZ'), vS = new THREE.Vector3();
+/** Boss body language per attack kind: [0] armA rx, [1] armB rx, [2] arm spread, [3] elbow bend, [4] arm rx added at the strike,
+ *  waist lean [5] in the wind-up, [6] at the strike and [7] while a charge is under way, [8] head and [9] neck rx while the pose is held. */
+const POSE: Record<string, readonly number[]> = {
+  slam: [-2.9, -2.9, 0.25, 0.3, 2.2, -0.3, 0.5, 0, -0.3, -0.2],
+  volley: [-1.5, -0.35, 0.1, 0.6, -0.2, -0.12, 0.16, 0, 0, 0],
+  ring: [-0.3, -0.3, 1.4, 0.2, 0, -0.1, 0.12, 0, -0.15, 0],
+  spiral: [-1.0, -1.0, 1.15, 0.35, 0, -0.08, 0, 0, -0.1, 0],
+  rain: [-3.0, -3.0, 0.4, 0.15, 1.3, -0.18, 0.2, 0, -0.35, -0.25],
+  beam: [-1.55, -1.55, -0.22, 0.1, 0, -0.1, 0.1, 0, 0.1, 0.1],
+  summon: [-0.9, -0.9, 0.8, 1.0, -0.5, -0.1, 0.1, 0, -0.2, -0.1],
+  charge: [0.75, 0.75, 0.3, 0.5, 0, -0.2, 0, 0.35, 0.35, 0.85],
+  teleport: [-0.5, -0.5, -0.3, 1.7, 0, 0, 0, 0, 0.3, 0.2],
+};
+const POSE0: readonly number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+// pose of the creature being drawn, set once by draw() and read by boxes() for every box list of that creature
+let cAmp = 0, cMv = 0, cAtk = 0, cPose = 0, cLook = 0, cWind = 0, cStrike = 0, cRage = 0, cAim = 0, cJaw = 0, cSpin = 0, cGal = 0, cFq = 16, cBob = 0, cSky = 1, cBlk = 0, cFlash = 0, cEmul = 1, cGlow = 0, cPhz = 0;
+let cP: readonly number[] = POSE0;
 /** World matrix of every box's joint in the model being drawn, so `par` children can ride on it. */
 const joints: THREE.Matrix4[] = [];
 for (let i = 0; i < MAX_PARTS + 1; i++) joints.push(new THREE.Matrix4());
@@ -84,6 +103,15 @@ export class MobSystem {
       if (!m.active || (filter && !filter(m))) continue;
       const t = rayBox(ox, oy, oz, dx, dy, dz, m.x - m.hw - pad, m.y - pad, m.z - m.hw - pad, m.x + m.hw + pad, m.y + m.h + pad, m.z + m.hw + pad, bt);
       if (t >= 0 && t < bt) { bt = t; best = m; }
+      // a serpent's body can be hit as well as its head
+      const sg = m.boss ? m.boss.segs : null;
+      if (sg) for (let i = 0, n = sg.length / 3; i < n; i++) {
+        const o = i * 3;
+        if (sg[o] === 0 && sg[o + 1] === 0 && sg[o + 2] === 0) continue;
+        const r = m.hw * 0.75 * segK(i, n) + pad, cy = sg[o + 1] + m.h * 0.5;
+        const ts = rayBox(ox, oy, oz, dx, dy, dz, sg[o] - r, cy - r, sg[o + 2] - r, sg[o] + r, cy + r, sg[o + 2] + r, bt);
+        if (ts >= 0 && ts < bt) { bt = ts; best = m; }
+      }
     }
     if (!best) return null;
     this.hitOut.m = best; this.hitOut.t = bt;
@@ -267,7 +295,7 @@ export class MobSystem {
             const crit = Math.random() < g.stats.d.crit;
             this.hurt(t, m.minionDmg * g.stats.dmgMult('summon') * (crit ? 2 : 1), ex, ez, 3, crit);
           }
-          m.anim += dt * 8;
+          m.moving = Math.hypot(m.vx, m.vz); m.anim += dt * 8;
           continue;
         }
         case 'boss': {
@@ -294,7 +322,10 @@ export class MobSystem {
           // ground creatures avoid stepping off ledges when they are just wandering
           if (m.onGround && wl > 0.01 && (d.ai === 'passive' || d.ai === 'npc') && boxFree(w, m.x + wx * 0.7 - 0.1, m.y - 2.2, m.z + wz * 0.7 - 0.1, m.x + wx * 0.7 + 0.1, m.y - 0.05, m.z + wz * 0.7 + 0.1)) { m.vx = 0; m.vz = 0; m.timer = 0; }
         }
+        const vy0 = m.vy;
         moveBody(w, m, (m.vx + m.kbx) * dt, m.vy * dt, (m.vz + m.kbz) * dt);
+        if (m.sq > 0) m.sq = Math.max(0, m.sq - dt * 6);
+        if (vy0 < -4 && m.onGround) m.sq = 1;
         const kd = Math.max(0, 1 - 6 * dt); m.kbx *= kd; m.kbz *= kd;
         m.moving = Math.hypot(m.x - m.px, m.z - m.pz) / dt;
         m.anim += m.moving * dt * 2.4 + (fly ? dt * 4 : 0);
@@ -397,7 +428,7 @@ export class MobSystem {
   private shatter = 0; private scx = 0; private scy = 0; private scz = 0;
   /** One creature (ci < 0) or corpse ci. Box matrix = Base * [parent joint] * T(p) * Ranim * T(o) * Rstatic * S (see Part). */
   private draw(batch: BoxBatch, m: Mob, alpha: number, time: number, ci: number): void {
-    const g = this.g, d = m.def, b = m.boss, parts = d.parts, rig = rigOf(parts);
+    const g = this.g, d = m.def, b = m.boss, parts = d.parts, spec = d.boss;
     const x = m.px + (m.x - m.px) * alpha, y = m.py + (m.y - m.py) * alpha, z = m.pz + (m.z - m.pz) * alpha;
     // a spawner may set yaw directly before the first tick (dev showcase, scripted spawns)
     if (m.age === 0) m.ry = m.pry = m.yaw;
@@ -420,74 +451,135 @@ export class MobSystem {
       }
     }
     if (s <= 0.001) return;
-    mBase.makeRotationY(yaw);
-    if (topple) {
-      // fall onto the left flank, pivoting on its lower edge rather than the centre of the feet
-      const a = m.hw; mRot.makeRotationZ(topple); mRot.setPosition(a * (Math.cos(topple) - 1), a * Math.sin(topple), 0); mBase.multiply(mRot);
+    const amp = Math.min(1, m.moving / 2.5) * 0.7;
+    // stretch and squash: bosses rise into a wind-up and flatten at the strike, and a gallop bounds
+    let q = 1, lift = 0;
+    cGal = 0;
+    if (b && spec) {
+      q = 1 + b.wind * 0.07 - b.strike * 0.13 + (spec.move === 'hover' ? Math.min(0.12, Math.abs(m.vy) * 0.005) : 0);
+      if (spec.gallop) { cGal = Math.max(0, Math.min(1, (m.moving - 11) / 5)); lift = cGal * Math.abs(Math.sin(m.anim * 0.6 + 1.1)) * 0.3; }
     }
-    mBase.setPosition(x + shake, y - fall, z);
-    if (s !== 1) mBase.scale(vS.set(s, s, s));
+    if (b && (b.pitch || b.roll)) {
+      // nose up or down and bank, turning about the middle of the body
+      const c = m.noclip ? m.h * 0.5 * s : 0;
+      eulB.set(-b.pitch, yaw, b.roll); mBase.makeRotationFromEuler(eulB);
+      const e = mBase.elements;
+      mBase.setPosition(x + shake - c * e[4], y - fall + c - c * e[5], z - c * e[6]);
+    } else {
+      mBase.makeRotationY(yaw);
+      if (topple) {
+        // fall onto the left flank, pivoting on its lower edge rather than the centre of the feet
+        const a = m.hw; mRot.makeRotationZ(topple); mRot.setPosition(a * (Math.cos(topple) - 1), a * Math.sin(topple), 0); mBase.multiply(mRot);
+      }
+      mBase.setPosition(x + shake, y - fall + lift * s, z);
+    }
+    if (s !== 1 || q !== 1) { const w = s / Math.sqrt(q); mBase.scale(vS.set(w, s * q, w)); }
     this.shatter = u; this.scx = x; this.scy = y + m.h * 0.5 * s; this.scz = z;
-    const amp = Math.min(1, m.moving / 2.5) * 0.7, mv = Math.min(0.35, m.moving * 0.05);
-    const atk = m.atk > 0 ? Math.sin((m.atk / 0.3) * Math.PI) : 0, pose = b ? b.pose * 2.4 : 0, phz = b ? Math.max(0, b.phase) : 0;
+    cAmp = amp; cMv = Math.min(0.35, m.moving * 0.05); cAtk = m.atk > 0 ? Math.sin((m.atk / 0.3) * Math.PI) : 0;
+    cSky = sky; cBlk = blk; cFlash = flash; cGlow = glowAdd; cFq = 16 / (1 + m.hw);
+    if (b) {
+      cPose = b.pose; cWind = b.wind; cStrike = b.strike; cRage = b.rage; cAim = b.aim; cSpin = b.spin; cPhz = Math.max(0, b.phase); cP = POSE[b.kind] ?? POSE0;
+      cJaw = Math.max(m.open, b.wind * 0.7, b.strike); cBob = 0;
+      // the whole body flares as an attack gathers, and burns hotter in later phases
+      emul *= 1 + b.wind * 1.2 + b.strike * 0.5 + b.rage * 0.4;
+    } else {
+      cPose = 0; cWind = 0; cStrike = 0; cRage = 0; cAim = 0; cSpin = time * 2.2; cPhz = 0; cP = POSE0; cJaw = m.open;
+      // walkers dip a little with every step
+      cBob = d.ai === 'minion' || d.ai === 'flyer' || d.ai === 'fish' || d.ai === 'hopper' ? 0 : -Math.abs(Math.sin(m.anim)) * amp * 0.07 * Math.min(1, m.h);
+    }
+    cEmul = emul;
     // grazing animals and townsfolk glance at a nearby player while their bodies keep wandering
-    let look = 0;
+    cLook = 0;
     if (ci < 0 && m.flee <= 0 && (d.ai === 'npc' || d.ai === 'passive')) {
       const dx = g.player.x - x, dz = g.player.z - z, dist = Math.hypot(dx, dz);
-      if (dist < 7) { let a = Math.atan2(dx, dz) - yaw; a -= Math.round(a / 6.2832) * 6.2832; look = Math.max(-0.8, Math.min(0.8, a)) * Math.min(1, (7 - dist) / 3); }
+      if (dist < 7) { let a = Math.atan2(dx, dz) - yaw; a -= Math.round(a / 6.2832) * 6.2832; cLook = Math.max(-0.8, Math.min(0.8, a)) * Math.min(1, (7 - dist) / 3); }
     }
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i], ap = part.ap ?? 0, ph = time + m.id + ap;
-      let rx = 0, ry = 0, rz = 0, ox = 0, oy = 0, oz = 0, sy = 1, ps = 1, pe = 1;
-      switch (part.a) {
-        case 'legA': rx = Math.sin(m.anim + ap) * amp; break;
-        case 'legB': rx = -Math.sin(m.anim + ap) * amp; break;
-        // floating bosses do not jog: their arms drift slowly and trail behind while they glide
-        case 'armA': rx = (m.noclip ? Math.sin(ph * 1.3) * 0.08 + mv : -Math.sin(m.anim + ap) * amp * 0.8) - atk * 1.7 - pose; break;
-        case 'armB': rx = (m.noclip ? -Math.sin(ph * 1.3) * 0.08 + mv : Math.sin(m.anim + ap) * amp * 0.8) - pose; break;
-        case 'head': rx = Math.sin(time * 1.3 + m.id + ap) * 0.06 - atk * 0.3; ry = look; break;
-        case 'tail': ry = Math.sin(time * 4 + m.id + ap) * 0.45; break;
-        case 'wingA': rz = Math.sin(time * 16 + m.id + ap) * 0.75; break;
-        case 'wingB': rz = -Math.sin(time * 16 + m.id + ap) * 0.75; break;
-        case 'bob': oy = Math.sin(time * 2.2 + m.id + ap) * 0.12; break;
-        case 'drift': oy = Math.sin(ph * 1.1) * 0.18; ox = Math.sin(ph * 0.7 + 1.3) * 0.12; oz = Math.cos(ph * 0.6) * 0.12; break;
-        case 'spin': ry = time * 2.2 + m.id + ap; oy = Math.sin(time * 3 + m.id) * 0.06; break;
-        case 'spin2': ry = -time * 1.3 + ap; break;
-        case 'spinx': rx = time * 1.6 + ap; break;
-        case 'spinz': rz = time * 1.6 + ap; break;
-        case 'sway': rx = Math.sin(ph * 1.7) * 0.18; rz = Math.sin(ph * 1.3 + 0.9) * 0.14; break;
-        case 'squash': sy = 1 + Math.max(-0.25, Math.min(0.35, m.vy * 0.03)) + Math.sin(time * 3 + m.id + ap) * 0.03; break;
-        case 'pulse': { const q = Math.sin(ph * 4) * 0.5 + 0.5; ps = 0.94 + q * 0.12; pe = 0.75 + q * 0.5; break; }
-        case 'jawA': rx = -(0.15 + m.open * 0.6 + atk * 0.5); break;
-        case 'jawB': rx = 0.15 + m.open * 0.6 + atk * 0.5; break;
-      }
-      const pp = part.p, par = rig ? rig[i] : -1, J = joints[i];
-      mPart.makeTranslation(pp[0] + ox, pp[1] * sy + oy, pp[2] + oz);
-      if (rx || ry || rz) { eul.set(rx, ry, rz); mRot.makeRotationFromEuler(eul); mPart.multiply(mRot); }
-      J.multiplyMatrices(par >= 0 ? joints[par] : mBase, mPart);
-      // a phase-gated box is skipped, but its joint above still carries any children
-      if (part.ph && b && (phz < part.ph[0] || phz > part.ph[1])) continue;
-      const r = part.r, sz = part.s;
-      if (r) { eul.set(r[0], r[1], r[2]); mTmp.makeRotationFromEuler(eul); } else mTmp.identity();
-      mTmp.scale(vS.set(sz[0] * ps, sz[1] * sy * ps, sz[2] * ps));
-      if (part.o) mTmp.setPosition(part.o[0], part.o[1], part.o[2]);
-      mBox.multiplyMatrices(J, mTmp);
-      this.put(batch, i, part.c, sky, blk, flash, (part.e ?? 0) * pe * emul + glowAdd, part.t ?? 0, sz[0], sz[1], sz[2]);
-    }
-    const sg = b ? b.segs : null;
-    if (sg) {
-      for (let i = 0, n = sg.length / 3; i < n; i++) {
-        const o = i * 3, k = 1 - i / (n + 2), w = 1.4 * k * (s < 1 ? s : 1);
+    this.boxes(batch, m, parts, time, 0, 0);
+    const sg = b ? b.segs : null, sp = spec ? spec.seg : undefined;
+    if (sg && sp) {
+      // body segments: each is the `seg` box list, tapering, turned toward the link ahead of it
+      const n = sg.length / 3, cyo = m.h * 0.5, ss = s < 1 ? s : 1;
+      let lx = m.x, ly = m.y, lz = m.z;
+      for (let i = 0; i < n; i++) {
+        const o = i * 3, k = segK(i, n) * ss;
         if (sg[o] === 0 && sg[o + 1] === 0 && sg[o + 2] === 0) continue;
-        mBox.makeScale(w, w, w); mBox.setPosition(sg[o] + shake, sg[o + 1] + 0.8 - fall, sg[o + 2]);
-        this.put(batch, parts.length + i, i % 2 ? 0xcfae62 : 0xb89650, sky, blk, flash, glowAdd, 0, 1.4 * k, 1.4 * k, 1.4 * k);
-        if (u === 0) this.contact(sg[o], sg[o + 1] + 0.1, sg[o + 2], w * 0.6, sky, true);
+        const ex = lx - sg[o], ey = ly - sg[o + 1], ez = lz - sg[o + 2];
+        eulB.set(-Math.atan2(ey, Math.hypot(ex, ez)), Math.atan2(ex, ez), 0); mBase.makeRotationFromEuler(eulB);
+        mBase.setPosition(sg[o] + shake, sg[o + 1] + cyo * ss - fall, sg[o + 2]); mBase.scale(vS.set(k, k, k));
+        this.boxes(batch, m, sp, time, i * 0.7, parts.length + i * sp.length);
+        if (u === 0) this.contact(sg[o], sg[o + 1] + 0.1, sg[o + 2], m.hw * 0.7 * k, sky, true);
+        lx = sg[o]; ly = sg[o + 1]; lz = sg[o + 2];
       }
     }
     // contact shadow: not for minions, small wisps or far-away creatures
     if (u === 0 && d.ai !== 'minion' && !(d.glow && d.hw < 0.35)) {
       const dx = g.player.x - x, dz = g.player.z - z;
       if (dx * dx + dz * dz < 28 * 28) this.contact(x, y - fall, z, Math.min(2.6, m.hw * 1.4 * s) * (1 - topple * 0.2), sky, m.noclip || !m.onGround || ci >= 0);
+    }
+  }
+  /** Draw one box list on the base matrix in mBase, in the pose draw() has set up. `apAdd` shifts every oscillator (body segments
+   *  ripple), `i0` numbers the boxes for the shatter. */
+  private boxes(batch: BoxBatch, m: Mob, parts: Part[], time: number, apAdd: number, i0: number): void {
+    const rig = rigOf(parts), b = m.boss, id = m.id, amp = cAmp, P = cP, open = m.open;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i], ap = (part.ap ?? 0) + apAdd, ph = time + id + ap, pp = part.p, par = rig ? rig[i] : -1;
+      let rx = 0, ry = 0, rz = 0, ox = 0, oy = par < 0 ? cBob : 0, oz = 0, sy = 1, ps = 1, pe = 1, os = 1;
+      switch (part.a) {
+        // legs trot in diagonal pairs; with `gallop` the fore pair and the hind pair each strike together
+        case 'legA': rx = Math.sin(m.anim + ap) * amp; if (cGal) rx += (Math.sin(m.anim * 0.6 + (pp[2] > 0 ? 0.3 : 2.5) + ap) * 0.95 - rx) * cGal; oy = 0; break;
+        case 'legB': rx = -Math.sin(m.anim + ap) * amp; if (cGal) rx += (Math.sin(m.anim * 0.6 + (pp[2] > 0 ? 0 : 2.2) + ap) * 0.95 - rx) * cGal; oy = 0; break;
+        // the knee folds while its leg swings forward
+        case 'shinA': rx = Math.max(0, -Math.cos(m.anim + ap)) * amp * 1.3; if (cGal) rx += (Math.max(0, -Math.cos(m.anim * 0.6 + (par >= 0 && parts[par].p[2] > 0 ? 0.3 : 2.5) + ap)) * 1.2 - rx) * cGal; break;
+        case 'shinB': rx = Math.max(0, Math.cos(m.anim + ap)) * amp * 1.3; if (cGal) rx += (Math.max(0, -Math.cos(m.anim * 0.6 + (par >= 0 && parts[par].p[2] > 0 ? 0 : 2.2) + ap)) * 1.2 - rx) * cGal; break;
+        // floating bosses do not jog: their arms drift slowly and trail behind while they glide
+        case 'armA': rx = (m.noclip ? Math.sin(ph * 1.3) * 0.08 + cMv : -Math.sin(m.anim + ap) * amp * 0.8) - cAtk * 1.7 + (P[0] + P[4] * cStrike) * cPose; rz = -P[2] * cPose; break;
+        case 'armB': rx = (m.noclip ? -Math.sin(ph * 1.3) * 0.08 + cMv : Math.sin(m.anim + ap) * amp * 0.8) + (P[1] + P[4] * cStrike) * cPose; rz = P[2] * cPose; break;
+        case 'foreA': case 'foreB': rx = -(0.15 + P[3] * cPose * (1 - 0.7 * cStrike) + cAtk * 0.5); break;
+        case 'body': rx = P[5] * cWind + P[6] * cStrike + P[7] * open + Math.sin(time * 1.2 + id) * 0.015; rz = Math.sin(m.anim) * amp * 0.06; break;
+        case 'head': rx = Math.sin(time * 1.3 + id + ap) * 0.06 - cAtk * 0.3 + P[8] * cPose - cStrike * 0.18; ry = cLook; break;
+        case 'neck': rx = Math.sin(time * 1.1 + id + ap) * 0.04 + P[9] * cPose; ry = cLook * 0.5; break;
+        case 'tail': ry = Math.sin(time * 4 + id + ap) * 0.45; break;
+        case 'cape': rx = 0.12 + Math.min(1, m.moving / 3) * 0.55 + Math.sin(time * 2.5 + id + ap) * 0.05; break;
+        // wings beat slower the bigger the creature, and fold up and back in a dive
+        case 'wingA': rz = Math.sin(time * cFq + id + ap) * 0.75 * (1 - 0.8 * open) - 0.5 * open; ry = -0.55 * open; break;
+        case 'wingB': rz = -Math.sin(time * cFq + id + ap) * 0.75 * (1 - 0.8 * open) + 0.5 * open; ry = 0.55 * open; break;
+        case 'wingA2': rz = Math.sin(time * cFq + id + ap - 1) * 0.6 * (1 - 0.8 * open) + 0.2 + 1.1 * open; break;
+        case 'wingB2': rz = -Math.sin(time * cFq + id + ap - 1) * 0.6 * (1 - 0.8 * open) - 0.2 - 1.1 * open; break;
+        case 'claw': rx = 1.25 - open * 1.9; break;
+        case 'bob': oy += Math.sin(time * 2.2 + id + ap) * 0.12; break;
+        case 'drift': oy += Math.sin(ph * 1.1) * 0.18; ox = Math.sin(ph * 0.7 + 1.3) * 0.12; oz = Math.cos(ph * 0.6) * 0.12; break;
+        case 'spin': ry = time * 2.2 + id + ap; oy += Math.sin(time * 3 + id) * 0.06; break;
+        case 'spin2': ry = -time * 1.3 + ap; break;
+        case 'spinx': rx = time * 1.6 + ap; break;
+        case 'spinz': rz = time * 1.6 + ap; break;
+        case 'halo': ry = cSpin + ap; rx = cAim * 1.5708; os = 1 - 0.55 * cAim; oy += Math.sin(time * 3 + id + ap) * 0.06; break;
+        case 'float': oy += Math.sin(time * 1.1 + pp[1] * 1.7 + id) * 0.07 + cRage * pp[1] * 0.12; ry = Math.sin(time * 0.5 + pp[1] * 2.3) * 0.12 * (1 + 2 * cRage); break;
+        case 'arch': oy += Math.sin(time * 1.1 + id) * 0.07; ry = Math.sin(time * 0.5 + id) * 0.2; os = 1 + 0.3 * cRage * cRage; break;
+        case 'robe': rx = -Math.min(0.3, m.moving * 0.05) + Math.sin(time * 1.4 + id) * 0.04; rz = Math.sin(time * 1.1 + id) * 0.05 + Math.sin(time * 9) * 0.14 * cStrike; break;
+        case 'clap': rx = Math.sin(time * 2.4 + id) * 0.18 + cStrike * 0.5; rz = Math.sin(time * 1.9 + id) * 0.12; break;
+        case 'seal': rz = cSpin + ap; break;
+        case 'sway': rx = Math.sin(ph * 1.7) * 0.18; rz = Math.sin(ph * 1.3 + 0.9) * 0.14; break;
+        case 'squash': sy = Math.max(0.6, 1 + Math.max(-0.25, Math.min(0.35, m.vy * 0.03)) + Math.sin(time * 3 + id + ap) * 0.03 - 0.3 * m.sq); break;
+        case 'pulse': { const q = Math.sin(ph * 4) * 0.5 + 0.5; ps = 0.94 + q * 0.12; pe = 0.75 + q * 0.5; break; }
+        case 'jawA': rx = -(0.15 + cJaw * 0.6 + cAtk * 0.5); break;
+        case 'jawB': rx = 0.15 + cJaw * 0.6 + cAtk * 0.5; break;
+        case 'mandA': ry = -(0.12 + cJaw * 0.7); break;
+        case 'mandB': ry = 0.12 + cJaw * 0.7; break;
+      }
+      const k = part.k;
+      if (k !== undefined) { rx *= k; ry *= k; rz *= k; ox *= k; oy *= k; oz *= k; }
+      const J = joints[i];
+      mPart.makeTranslation(pp[0] + ox, pp[1] * sy + oy, pp[2] + oz);
+      if (rx || ry || rz) { eul.set(rx, ry, rz); mRot.makeRotationFromEuler(eul); mPart.multiply(mRot); }
+      J.multiplyMatrices(par >= 0 ? joints[par] : mBase, mPart);
+      // a phase-gated box is skipped, but its joint above still carries any children
+      if (part.ph && b && (cPhz < part.ph[0] || cPhz > part.ph[1])) continue;
+      const r = part.r, sz = part.s, o = part.o;
+      if (r) { eul.set(r[0], r[1], r[2]); mTmp.makeRotationFromEuler(eul); } else mTmp.identity();
+      mTmp.scale(vS.set(sz[0] * ps, sz[1] * sy * ps, sz[2] * ps));
+      if (o) mTmp.setPosition(o[0] * os, o[1] * os, o[2] * os);
+      mBox.multiplyMatrices(J, mTmp);
+      this.put(batch, i0 + i, part.c, cSky, cBlk, cFlash, (part.e ?? 0) * pe * cEmul + cGlow, part.t ?? 0, sz[0], sz[1], sz[2]);
     }
   }
   /** Add the box in mBox, first throwing it outward when a boss is shattering. */
