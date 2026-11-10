@@ -563,7 +563,7 @@ export class Game implements InteractHost {
   travel(to: number, home = false): void {
     const p = this.player, cfg = this.cfg;
     if (to === this.dim) { this.goHome(); return; }
-    this.win.close(true);
+    this.win.close();
     if (!home) this.portalReturn[this.dim] = [Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
     const px = Math.floor(p.x), pz = Math.floor(p.z);
     this.ready = false; this.keysReady = false; p.frozen = true; this.showLoading(to === 0 ? 'Returning to the Overworld' : `Crossing into ${DIMS[to].name}`);
@@ -758,7 +758,7 @@ export class Game implements InteractHost {
     const p = this.player, id = this.world.getBlock(Math.floor(p.x), Math.floor(p.y + 0.5), Math.floor(p.z));
     const kind = id === B.hollow_portal ? 1 : id === B.rift_portal ? 2 : 0;
     if (!kind) { this.portalArmed = true; if (this.portalT > 0) { this.portalT = Math.max(0, this.portalT - dt * 2); this.hud.setPortal(this.portalT / 1.6, false); } return; }
-    if (!this.portalArmed) return;
+    if (!this.portalArmed || this.win.open) return;
     if (this.portalT === 0) this.audio.play('portal');
     this.portalT += dt; this.hud.setPortal(Math.min(1, this.portalT / 1.6), kind === 2);
     if (this.portalT >= 1.6) this.travel(this.dim === kind ? 0 : kind);
