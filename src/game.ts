@@ -38,6 +38,7 @@ import { BlockEnt, Chunk, World } from './world/world';
 
 const STEP = 1 / 60;
 export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings }
+const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
 const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
 
 export class Game implements InteractHost {
@@ -583,7 +584,7 @@ export class Game implements InteractHost {
   private tick(dt: number): void {
     const p = this.player, inp = this.input, inv = this.inv, st = this.stats, w = this.world;
     if (!this.ready) return;
-    for (let i = 0; i < 9; i++) if (inp.hit('Digit' + (i + 1))) inv.sel = i;
+    for (let i = 0; i < 9; i++) if (inp.hit(DIGITS[i])) inv.sel = i;
     if (inp.wheel) inv.sel = (inv.sel + Math.sign(inp.wheel) + 9) % 9;
     if (inp.hit('KeyQ')) { const h = inv.held(); if (h) { const n = inp.down('ControlLeft') ? h.n : 1; this.dropItem({ k: h.k, n, m: h.m }); inv.consumeHeld(n); } }
     st.sync(inv);

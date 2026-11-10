@@ -33,8 +33,12 @@ export class Hud {
   private quest: HTMLElement; private event: HTMLElement; private eventBar: Bar; private eventText: HTMLElement;
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
   private floats: Floater[] = []; private tags: HTMLElement[] = [];
-  private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private buffKey = ''; private coinV = -1; private lvlV = -1;
+  private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private buffKey = ''; private coinV = -1; private lvlV = -1; private ptsV = -1;
   private v = new THREE.Vector3();
+  // cached values so frames where nothing changed build no strings and touch no classes
+  private hpI = -1; private maxHpI = -1; private hpText = ''; private manaI = -1; private maxManaI = -1; private manaText = ''; private foodI = -1; private foodText = '';
+  private hpLow = false; private foodLow = false; private bossOn = false; private eventOn = false; private promptText: string | null = null; private evKind = ''; private evProg = -1;
+  private vw = window.innerWidth; private vh = window.innerHeight;
 
   constructor(ui: HTMLElement, private g: Game) {
     const r = this.root = el('div', '#hud', ui);
@@ -54,6 +58,7 @@ export class Hud {
     this.buffs = el('div', '#buffs', r); this.prompt = el('div', '#prompt', r); this.prompt.classList.add('hidden');
     for (let i = 0; i < 48; i++) { const e = el('div', 'float', r); e.style.display = 'none'; this.floats.push({ el: e, x: 0, y: 0, z: 0, life: 0, max: 1, vy: 0 }); }
     for (let i = 0; i < 10; i++) { const e = el('div', 'float tag', r); e.style.display = 'none'; this.tags.push(e); }
+    window.addEventListener('resize', () => { this.vw = window.innerWidth; this.vh = window.innerHeight; });
   }
   setVisible(v: boolean): void { this.root.classList.toggle('hidden', !v); }
 
@@ -69,15 +74,18 @@ export class Hud {
     this.banner.style.color = color; this.banner.style.opacity = '1'; this.bannerT = 4.2;
   }
   floater(x: number, y: number, z: number, text: string, color: string, big = false): void {
-    const f = this.floats.find((q) => q.life <= 0);
+    let f: Floater | null = null;
+    for (let i = 0; i < this.floats.length; i++) if (this.floats[i].life <= 0) { f = this.floats[i]; break; }
     if (!f) return;
     f.x = x + (Math.random() - 0.5) * 0.4; f.y = y; f.z = z + (Math.random() - 0.5) * 0.4; f.life = f.max = big ? 1.1 : 0.85; f.vy = 1.6;
     f.el.textContent = text; f.el.style.color = color; f.el.className = big ? 'float big' : 'float'; f.el.style.display = 'block';
   }
   setPrompt(text: string | null): void {
-    if (!text) { this.prompt.classList.add('hidden'); return; }
-    if (this.prompt.textContent !== text) this.prompt.textContent = text;
-    this.prompt.classList.remove('hidden');
+    if (!text) text = null;
+    if (text === this.promptText) return;
+    if (text !== null) this.prompt.textContent = text;
+    if ((text === null) !== (this.promptText === null)) this.prompt.classList.toggle('hidden', text === null);
+    this.promptText = text;
   }
   flashHurt(): void { this.hurt.style.transition = 'none'; this.hurt.style.opacity = '0.75'; requestAnimationFrame(() => { this.hurt.style.transition = 'opacity 0.5s'; this.hurt.style.opacity = '0'; }); }
   setPortal(a: number, gold: boolean): void {
@@ -103,21 +111,27 @@ export class Hud {
       }
     }
     if (this.nameT > 0) { this.nameT -= dt; if (this.nameT <= 0) this.itemName.style.opacity = '0'; }
-    setBar(this.hp, st.hp / st.maxHp, `${Math.ceil(st.hp)} / ${st.maxHp}`);
-    this.hp.root.classList.toggle('low', st.hp / st.maxHp < 0.25);
-    setBar(this.food, st.hunger / 20, st.hunger <= 4 ? 'HUNGRY' : '');
-    this.food.root.classList.toggle('low', st.hunger <= 4);
-    setBar(this.mana, st.mana / st.maxMana, `${Math.floor(st.mana)} / ${st.maxMana}`);
+    const hpI = Math.ceil(st.hp), manaI = Math.floor(st.mana), foodI = Math.ceil(st.hunger);
+    if (hpI !== this.hpI || st.maxHp !== this.maxHpI) { this.hpI = hpI; this.maxHpI = st.maxHp; this.hpText = `${hpI} / ${st.maxHp}`; }
+    if (manaI !== this.manaI || st.maxMana !== this.maxManaI) { this.manaI = manaI; this.maxManaI = st.maxMana; this.manaText = `${manaI} / ${st.maxMana}`; }
+    if (foodI !== this.foodI) { this.foodI = foodI; this.foodText = foodI <= 4 ? `HUNGRY ${foodI} / 20` : `${foodI} / 20`; }
+    setBar(this.hp, st.hp / st.maxHp, this.hpText);
+    const hpLow = st.hp / st.maxHp < 0.25;
+    if (hpLow !== this.hpLow) { this.hpLow = hpLow; this.hp.root.classList.toggle('low', hpLow); }
+    setBar(this.food, st.hunger / 20, this.foodText);
+    const foodLow = st.hunger <= 4;
+    if (foodLow !== this.foodLow) { this.foodLow = foodLow; this.food.root.classList.toggle('low', foodLow); }
+    setBar(this.mana, st.mana / st.maxMana, this.manaText);
     setBar(this.xp, st.xp / st.xpNeeded(), '');
     if (inv.coins !== this.coinV) { this.coinV = inv.coins; this.coins.textContent = `${inv.coins} coins`; }
-    if (st.level !== this.lvlV || this.lvl.dataset.p !== String(st.points)) {
-      this.lvlV = st.level; this.lvl.dataset.p = String(st.points);
+    if (st.level !== this.lvlV || st.points !== this.ptsV) {
+      this.lvlV = st.level; this.ptsV = st.points;
       this.lvl.textContent = `Lv ${st.level}` + (st.points > 0 ? `  (+${st.points})` : '');
     }
     if (this.bannerT > 0) { this.bannerT -= dt; if (this.bannerT <= 0) this.banner.style.opacity = '0'; }
 
     const b = g.mobs.activeBoss();
-    this.boss.classList.toggle('hidden', !b);
+    if (!!b !== this.bossOn) { this.bossOn = !!b; this.boss.classList.toggle('hidden', !b); }
     if (b) {
       if (this.bossName.textContent !== b.def.name) { this.bossName.textContent = b.def.name; this.bossTitle.textContent = b.def.boss!.title; }
       setBar(this.bossBar, b.hp / b.maxHp, '');
@@ -130,8 +144,12 @@ export class Hud {
       if (q.where) el('div', 'w', this.quest, q.where);
     }
     const ev = g.events;
-    this.event.classList.toggle('hidden', !ev.active);
-    if (ev.active) { const t = ev.label(); if (this.eventText.textContent !== t) this.eventText.textContent = t; setBar(this.eventBar, ev.progress(), ''); }
+    if ((ev.active !== null) !== this.eventOn) { this.eventOn = ev.active !== null; this.event.classList.toggle('hidden', !this.eventOn); }
+    if (ev.active) {
+      const pr = ev.progress();
+      if (ev.active !== this.evKind || (ev.active !== 'moon' && pr !== this.evProg)) { this.evKind = ev.active; this.evProg = pr; this.eventText.textContent = ev.label(); }
+      setBar(this.eventBar, pr, '');
+    }
     let bk = '';
     for (const [k, t] of st.buffs) bk += k + Math.ceil(t / 5) + ';';
     if (bk !== this.buffKey) {
@@ -140,7 +158,7 @@ export class Hud {
     }
 
     // floating text
-    const cam = g.gfx.camera, w = window.innerWidth, h = window.innerHeight, v = this.v;
+    const cam = g.gfx.camera, w = this.vw, h = this.vh, v = this.v;
     for (const f of this.floats) {
       if (f.life <= 0) continue;
       f.life -= dt; f.y += f.vy * dt; f.vy *= 1 - dt * 2.2;
