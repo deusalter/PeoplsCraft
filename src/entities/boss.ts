@@ -175,7 +175,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
         if (b.t < 0.7) telegraph(0x9aff6a);
         else {
           g.audio.play('summon', 1, 0.8, [m.x, m.y, m.z]);
-          if (g.mobs.count((q) => q.def.key === a.mob) < 7) for (let i = 0; i < a.n; i++) { const an = Math.random() * 6.283, sx = m.x + Math.cos(an) * (m.hw + 2.5), sz = m.z + Math.sin(an) * (m.hw + 2.5); const s = g.mobs.spawn(a.mob, sx, groundY(g, sx, sz, m.y + 4) + 0.1, sz); if (s) { s.event = true; s.dmgMul = dmgMul; } }
+          if (g.mobs.count((q) => q.def.key === a.mob) < 7) for (let i = 0; i < a.n; i++) { const an = Math.random() * 6.283, sx = m.x + Math.cos(an) * (m.hw + 2.5), sz = m.z + Math.sin(an) * (m.hw + 2.5); const s = g.mobs.spawn(a.mob, sx, groundY(g, sx, sz, m.y + 4) + 0.1, sz); if (s) { s.event = true; s.dmgMul = dmgMul; for (let j = 0; j < 8; j++) g.particles.spawn(sx + (Math.random() - 0.5) * 0.8, s.y + 0.1, sz + (Math.random() - 0.5) * 0.8, (Math.random() - 0.5) * 1.5, 2 + Math.random() * 2, (Math.random() - 0.5) * 1.5, 0.6, 0.14, 0x9aff6a, 1, 2); } }
           end();
         }
         break;
@@ -186,7 +186,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
           b.step = 1; g.audio.play('teleport', 0.9, 1, [m.x, m.y, m.z]);
           const an = Math.random() * 6.283, r = 7 + Math.random() * 4;
           m.x = p.x + Math.cos(an) * r; m.z = p.z + Math.sin(an) * r; m.y = groundY(g, m.x, m.z, p.y + 8) + (spec.move === 'walk' ? 0.1 : 2.5);
-          m.px = m.x; m.py = m.y; m.pz = m.z;
+          m.px = m.x; m.py = m.y; m.pz = m.z; m.yaw = Math.atan2(p.x - m.x, p.z - m.z); m.ry = m.pry = m.yaw;
           for (let i = 0; i < 24; i++) g.particles.spawn(m.x, m.y + Math.random() * m.h, m.z, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, 0.5, 0.16, 0xffffff, 1, 0);
         } else { m.scale = Math.min(1, m.scale + dt * 4); if (m.scale >= 1) end(); }
         break;
@@ -236,7 +236,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
     if (m.hitH && m.onGround) m.vy = 11;
     moveBody(w, m, (m.vx + m.kbx) * dt, m.vy * dt, (m.vz + m.kbz) * dt);
     m.stuck = m.hitH ? m.stuck + dt : 0;
-    if (m.stuck > 2.5) { m.stuck = 0; m.x = p.x + (Math.random() - 0.5) * 12; m.z = p.z + (Math.random() - 0.5) * 12; m.y = groundY(g, m.x, m.z, p.y + 10) + 0.2; g.audio.play('teleport', 0.6, 0.6, [m.x, m.y, m.z]); }
+    if (m.stuck > 2.5) { m.stuck = 0; m.x = p.x + (Math.random() - 0.5) * 12; m.z = p.z + (Math.random() - 0.5) * 12; m.y = groundY(g, m.x, m.z, p.y + 10) + 0.2; m.px = m.x; m.py = m.y; m.pz = m.z; m.ry = m.pry = m.yaw; g.audio.play('teleport', 0.6, 0.6, [m.x, m.y, m.z]); }
   } else {
     const k = Math.min(1, dt * 6);
     m.vx += (vx - m.vx) * k; m.vy += (vy - m.vy) * k; m.vz += (vz - m.vz) * k;
