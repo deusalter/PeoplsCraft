@@ -42,7 +42,7 @@ const POSE: Record<string, readonly number[]> = {
 };
 const POSE0: readonly number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 // pose of the creature being drawn, set once by draw() and read by boxes() for every box list of that creature
-let cAmp = 0, cMv = 0, cAtk = 0, cPose = 0, cLook = 0, cWind = 0, cStrike = 0, cRage = 0, cAim = 0, cJaw = 0, cSpin = 0, cGal = 0, cFq = 16, cBob = 0, cSky = 1, cBlk = 0, cFlash = 0, cEmul = 1, cGlow = 0, cPhz = 0;
+let cAmp = 0, cMv = 0, cAtk = 0, cPose = 0, cLook = 0, cWind = 0, cStrike = 0, cRage = 0, cAim = 0, cJaw = 0, cSpin = 0, cGal = 0, cFq = 16, cFa = 0.75, cBob = 0, cSky = 1, cBlk = 0, cFlash = 0, cEmul = 1, cGlow = 0, cPhz = 0;
 let cP: readonly number[] = POSE0;
 /** World matrix of every box's joint in the model being drawn, so `par` children can ride on it. */
 const joints: THREE.Matrix4[] = [];
@@ -476,7 +476,7 @@ export class MobSystem {
     if (s !== 1 || q !== 1) { const w = s / Math.sqrt(q); mBase.scale(vS.set(w, s * q, w)); }
     this.shatter = u; this.scx = x; this.scy = y + m.h * 0.5 * s; this.scz = z;
     cAmp = amp; cMv = Math.min(0.35, m.moving * 0.05); cAtk = m.atk > 0 ? Math.sin((m.atk / 0.3) * Math.PI) : 0;
-    cSky = sky; cBlk = blk; cFlash = flash; cGlow = glowAdd; cFq = 16 / (1 + m.hw);
+    cSky = sky; cBlk = blk; cFlash = flash; cGlow = glowAdd; cFq = 16 / (1 + m.hw); cFa = 0.75 / (1 + m.hw * 0.4);
     if (b) {
       cPose = b.pose; cWind = b.wind; cStrike = b.strike; cRage = b.rage; cAim = b.aim; cSpin = b.spin; cPhz = Math.max(0, b.phase); cP = POSE[b.kind] ?? POSE0;
       cJaw = Math.max(m.open, b.wind * 0.7, b.strike); cBob = 0;
@@ -540,11 +540,11 @@ export class MobSystem {
         case 'neck': rx = Math.sin(time * 1.1 + id + ap) * 0.04 + P[9] * cPose; ry = cLook * 0.5; break;
         case 'tail': ry = Math.sin(time * 4 + id + ap) * 0.45; break;
         case 'cape': rx = 0.12 + Math.min(1, m.moving / 3) * 0.55 + Math.sin(time * 2.5 + id + ap) * 0.05; break;
-        // wings beat slower the bigger the creature, and fold up and back in a dive
-        case 'wingA': rz = Math.sin(time * cFq + id + ap) * 0.75 * (1 - 0.8 * open) - 0.5 * open; ry = -0.55 * open; break;
-        case 'wingB': rz = -Math.sin(time * cFq + id + ap) * 0.75 * (1 - 0.8 * open) + 0.5 * open; ry = 0.55 * open; break;
-        case 'wingA2': rz = Math.sin(time * cFq + id + ap - 1) * 0.6 * (1 - 0.8 * open) + 0.2 + 1.1 * open; break;
-        case 'wingB2': rz = -Math.sin(time * cFq + id + ap - 1) * 0.6 * (1 - 0.8 * open) - 0.2 - 1.1 * open; break;
+        // wings beat slower and shallower the bigger the creature, and fold up and back in a dive
+        case 'wingA': rz = Math.sin(time * cFq + id + ap) * cFa * (1 - 0.8 * open) - 0.5 * open; ry = -0.55 * open; break;
+        case 'wingB': rz = -Math.sin(time * cFq + id + ap) * cFa * (1 - 0.8 * open) + 0.5 * open; ry = 0.55 * open; break;
+        case 'wingA2': rz = Math.sin(time * cFq + id + ap - 1) * cFa * 0.8 * (1 - 0.8 * open) + 0.12 + 1.1 * open; break;
+        case 'wingB2': rz = -Math.sin(time * cFq + id + ap - 1) * cFa * 0.8 * (1 - 0.8 * open) - 0.12 - 1.1 * open; break;
         case 'claw': rx = 1.25 - open * 1.9; break;
         case 'bob': oy += Math.sin(time * 2.2 + id + ap) * 0.12; break;
         case 'drift': oy += Math.sin(ph * 1.1) * 0.18; ox = Math.sin(ph * 0.7 + 1.3) * 0.12; oz = Math.cos(ph * 0.6) * 0.12; break;
