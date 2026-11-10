@@ -264,9 +264,10 @@ void main() {
     float fres = 0.03 + 0.97 * pow(1.0 - cosv, 4.0);
     vec3 r = reflect(dir, Nw); r.y = abs(r.y);
     vec3 refl = skyBase(r);
-    if (uCloud.w > 0.5 && vWorld.y < uCloud.x) {
-      // the underside of the cloud layer, mirrored
-      vec2 cp = w + r.xz * ((uCloud.x - vWorld.y) / max(r.y, 0.05));
+    if (top && uCloud.w > 0.5 && vWorld.y < uCloud.x) {
+      // the underside of the cloud layer, mirrored in the flat surface and nudged by the ripples (following the
+      // rippled reflection vector itself breaks up into speckles at grazing angles)
+      vec2 cp = w + dir.xz * ((uCloud.x - vWorld.y) / max(abs(dir.y), 0.06)) + Nw.xz * 40.0;
       float cf = 1.0 - smoothstep(uFogEnd * 0.9, uFogEnd * 2.6, length(cp - cameraPosition.xz));
       refl = mix(refl, mix(uCloudLit, uCloudDark, 0.6), 0.75 * cf * smoothstep(uCover - 0.02, uCover + 0.04, texture(uCloudMap, cloudCell(cp) / 256.0).r));
     }
