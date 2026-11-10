@@ -11,6 +11,7 @@ const ui = document.getElementById('ui') as HTMLElement;
 
 async function boot(): Promise<void> {
   if (import.meta.env.DEV) { const bad = validateData(); if (bad.length) console.error('DATA PROBLEMS\n' + bad.join('\n')); (window as any).dataProblems = bad; }
+  if (new URLSearchParams(location.search).has('gallery')) { (await import('./gallery')).showGallery(); return; }
   const db = new SaveDB();
   await db.open();
   const settings = loadSettings();
