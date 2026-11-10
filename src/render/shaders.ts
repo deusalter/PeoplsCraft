@@ -137,7 +137,9 @@ void main() {
   if (tex.a < 0.42) discard;
   vec3 base = tex.rgb * vTint.rgb;
   glow = smoothstep(0.45, 0.85, dot(tex.rgb, vec3(0.3, 0.5, 0.2)));
-  if (!gl_FrontFacing && N.y < 0.5) N = -N;
+  // cross plants are upright quads that carry an up normal: keep it on their back faces so both sides are lit like the ground
+  vec3 gN = cross(dFdx(vWorld), dFdy(vWorld));
+  if (!gl_FrontFacing && !(N.y > 0.5 && abs(gN.y) < 0.5 * length(gN))) N = -N;
 #else
   vec4 tex = texture(uAtlas, uvl);
   float mask = 1.0 - tex.a;
