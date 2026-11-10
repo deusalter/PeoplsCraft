@@ -41,6 +41,7 @@ const BOOK_CATS = ['All', 'Tools', 'Weapons', 'Armour', 'Trinkets', 'Blocks', 'O
 function bookCat(k: string): number { const d = item(k); return d.tool ? 1 : d.weapon ? 2 : d.armor ? 3 : d.acc ? 4 : d.block !== undefined ? 5 : 6; }
 const EMPTY_GRID: Slot[] = [];
 function sortRank(k: string): number { const d = item(k); return d.weapon && !d.tool ? 0 : d.tool ? 1 : d.armor ? 2 : d.acc ? 3 : d.food || d.heal || d.restoreMana || d.buff || d.use ? 4 : d.block !== undefined ? 5 : 6; }
+const sellPrice = (k: string): number => Math.max(1, Math.floor(itemValue(k) * 0.3));
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 export class Windows {
@@ -55,6 +56,7 @@ export class Windows {
   private bookEls: HTMLElement[] = []; private bookCats: number[] = []; private bookNames: string[] = []; private bookEmpty: HTMLElement | null = null;
   private bookTab = 'hand'; private bookChips: HTMLElement[] = []; private makeChip: HTMLElement | null = null; private search: HTMLInputElement | null = null;
   private coinEl: HTMLElement | null = null; private coinShown = -1;
+  private sold: { it: Item; price: number }[] = []; private sellConfirm: { v: View; t: number } | null = null; private shopHead: HTMLElement | null = null;
   private lastV: View | null = null; private lastT = 0; private dragSet: Set<View> | null = null;
   private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
 
@@ -84,6 +86,8 @@ export class Windows {
       if (this.hoverR) this.showTip(this.recipeTip(this.hoverR)); else if (!t.closest?.('[data-tip]')) this.hideTip();
       const dt = t.closest?.('[data-tip]') as HTMLElement | null;
       if (dt) this.showTip(dt.dataset.tip!);
+      const sk = t.closest?.('[data-k]') as HTMLElement | null;
+      if (sk) this.showTip(this.itemTip({ k: sk.dataset.k!, n: 1, m: sk.dataset.m }) + (sk.dataset.need ? `<div class="bd" style="margin-top:4px">${esc(sk.dataset.need)}</div>` : ''));
     });
   }
   private viewOf(t: EventTarget | null): View | null {
@@ -97,6 +101,7 @@ export class Windows {
     if (this.open) this.close(true);
     this.open = true; this.mode = mode;
     this.station = mode === 'station' ? o.station! : 'hand'; this.gridW = mode === 'station' ? 3 : 2;
+    if (o.shop && o.shop !== this.shop) this.sold = [];
     this.chest = o.chest ?? null; this.forge = o.forge ?? null; this.shop = o.shop ?? null;
     this.build();
     this.root.classList.remove('hidden');
@@ -113,7 +118,7 @@ export class Windows {
     this.returnGrid();
     this.dropCursor(true);
     this.cursor.style.display = 'none';
-    this.chest = null; this.forge = null; this.shop = null;
+    this.chest = null; this.forge = null; this.shop = null; this.sold = []; this.sellConfirm = null;
     inv.touch();
     if (!silent) { g.input.uiMode = false; g.input.lock(); }
   }
@@ -137,7 +142,7 @@ export class Windows {
   private build(): void {
     const g = this.g, inv = g.inv;
     this.hover = null; this.dragFrom = null; this.dragSet = null; this.lastV = null; this.hoverR = null;
-    this.root.innerHTML = ''; this.views = []; this.outView = null; this.book = null; this.statsEl = null; this.forgeEls = []; this.shopEl = null; this.search = null; this.coinEl = null; this.coinShown = -1;
+    this.root.innerHTML = ''; this.views = []; this.outView = null; this.book = null; this.statsEl = null; this.forgeEls = []; this.shopEl = null; this.search = null; this.shopHead = null; this.coinEl = null; this.coinShown = -1;
     const panel = el('div', 'panel wcol', this.root), top = el('div', 'wrow', panel);
 
     // equipment + stats
@@ -225,8 +230,9 @@ export class Windows {
       const n = this.shop!;
       el('div', 'ttl', mid, n.name);
       const say = el('div', '', mid, '"' + g.npcs.line(n) + '"'); say.style.cssText = 'font-size:12px;color:#c4c9d8;max-width:300px;font-style:italic';
+      this.shopHead = el('div', 'shophead', mid);
       this.shopEl = el('div', 'scroll', mid); this.shopEl.style.width = '300px';
-      const hint = el('div', '', mid, 'Shift-click an item below to sell it.'); hint.style.cssText = 'font-size:11px;color:#9aa0b2';
+      const hint = el('div', '', mid, 'Shift-click an item in your pack to sell the stack. Sold items can be bought back until you leave. Shift-click Buy for up to 10.'); hint.style.cssText = 'font-size:11px;color:#9aa0b2;max-width:300px;line-height:1.4';
     } else {
       el('div', 'ttl', mid, 'Guide');
       const sc = el('div', 'scroll', mid); sc.style.width = '360px';
@@ -420,24 +426,66 @@ export class Windows {
     e.querySelectorAll('button[data-a]').forEach((b) => ((b as HTMLElement).onmousedown = (ev) => { ev.stopPropagation(); if (st.spend((b as HTMLElement).dataset.a as Attr, g.inv)) { g.audio.play('click'); g.inv.touch(); } }));
   }
   private buildShop(): void {
-    const g = this.g, e = this.shopEl!, n = this.shop!;
+    const g = this.g, inv = g.inv, e = this.shopEl!, n = this.shop!, top = e.scrollTop, goods = g.npcs.goods(n);
+    let hd = `Your coins: <b>${inv.coins}</b>`;
+    const tok = goods.find((x) => x[2] !== 'coins')?.[2];
+    if (tok) hd += ` · ${esc(item(tok).name)}: <b>${inv.count(tok)}</b>`;
+    this.shopHead!.innerHTML = hd;
     e.innerHTML = '';
-    for (const [k, price, cur] of g.npcs.goods(n)) {
-      const row = el('div', 'shoprow', e), ic = el('div', 'slot', row), d = item(k);
+    const row = (k: string, label: string, price: string, have: number, cost: number, tip: string, buy: (ev: MouseEvent) => void, m?: string): void => {
+      const r = el('div', 'shoprow', e), ic = el('div', 'slot', r), d = item(k);
       ic.style.cssText = 'width:36px;height:36px'; const i2 = el('div', 'ic', ic); i2.style.cssText = 'left:2px;top:2px'; g.icons.apply(i2, k);
-      const nm = el('div', 'nm', row, d.name); nm.style.color = RARITY[d.rarity].color;
-      row.dataset.tip = this.itemTip({ k, n: 1 });
-      el('div', 'pr', row, `${price} ${cur === 'ash_token' ? 'tokens' : 'c'}`);
-      const afford = cur === 'coins' ? g.inv.coins >= price : g.inv.count(cur) >= price;
-      const b = el('button', 'btn sm' + (afford ? ' gold' : ''), row, 'Buy');
-      if (!afford) b.setAttribute('disabled', '');
-      b.onmousedown = (ev) => {
-        ev.stopPropagation();
-        if (cur === 'coins') { if (g.inv.coins < price) return; g.inv.coins -= price; } else if (!g.inv.remove(cur, price)) return;
-        const left = g.inv.add({ k, n: 1 }); if (left) g.dropItem({ k, n: left });
-        g.audio.play('coin'); g.inv.touch();
-      };
+      const nm = el('div', 'nm', r, label); nm.style.color = RARITY[m ? itemRarity({ k, n: 1, m }) : d.rarity].color;
+      r.dataset.k = k; if (m) r.dataset.m = m; if (have < cost) r.dataset.need = tip + `Need ${cost - have} more`;
+      el('div', 'pr' + (have < cost ? ' short' : ''), r, price);
+      const b = el('button', 'btn sm' + (have >= cost ? ' gold' : ''), r, 'Buy');
+      if (have < cost) b.setAttribute('disabled', '');
+      b.onmousedown = (ev) => { ev.stopPropagation(); if (ev.button === 0) buy(ev); };
+    };
+    if (this.sold.length) {
+      el('div', 'ttl', e, 'Buy back').style.marginTop = '2px';
+      for (let i = this.sold.length - 1; i >= 0; i--) {
+        const x = this.sold[i];
+        row(x.it.k, itemName(x.it) + (x.it.n > 1 ? ' x' + x.it.n : ''), x.price + ' c', inv.coins, x.price, '', () => this.buyBack(x));
+      }
+      el('div', 'ttl', e, 'For sale').style.marginTop = '6px';
     }
+    for (const [k, price, cur] of goods) {
+      const have = cur === 'coins' ? inv.coins : inv.count(cur);
+      row(k, item(k).name, `${price} ${cur === 'coins' ? 'c' : 'tokens'}`, have, price, '', (ev) => this.buy(k, price, cur, ev.shiftKey));
+    }
+    e.scrollTop = top;
+  }
+  private buy(k: string, price: number, cur: string, bulk: boolean): void {
+    const g = this.g, inv = g.inv, d = item(k);
+    const funds = cur === 'coins' ? inv.coins : inv.count(cur);
+    const n = Math.min(bulk ? Math.min(10, d.stack) : 1, Math.floor(funds / price), inv.room(k));
+    if (n <= 0) { g.toast(funds < price ? 'Not enough ' + (cur === 'coins' ? 'coins' : item(cur).name) : 'No room in your pack', '#ff9a8a'); g.audio.play('error', 0.5); return; }
+    if (cur === 'coins') inv.coins -= price * n; else if (!inv.remove(cur, price * n)) return;
+    const left = inv.add({ k, n }); if (left) g.dropItem({ k, n: left });
+    g.audio.play('coin'); inv.touch();
+  }
+  private buyBack(x: { it: Item; price: number }): void {
+    const g = this.g, inv = g.inv, i = this.sold.indexOf(x);
+    if (i < 0 || inv.coins < x.price) { g.audio.play('error', 0.5); return; }
+    if (x.it.m ? !inv.slots.includes(null) : inv.room(x.it.k) < x.it.n) { g.toast('No room in your pack', '#ff9a8a'); g.audio.play('error', 0.5); return; }
+    inv.coins -= x.price; this.sold.splice(i, 1);
+    const left = inv.add(x.it); if (left) g.dropItem({ ...x.it, n: left });
+    g.audio.play('coin'); inv.touch();
+  }
+  /** Sell a stack from the pack. Rare and boss-summoning items ask for a second shift-click first. */
+  private sell(v: View): boolean {
+    const g = this.g, inv = g.inv, s = v.arr[v.i]!, d = item(s.k);
+    const precious = itemRarity(s) >= 4 || !!d.use?.startsWith('summon') || d.use === 'recall';
+    if (precious && !(this.sellConfirm && this.sellConfirm.v === v && performance.now() - this.sellConfirm.t < 2500)) {
+      this.sellConfirm = { v, t: performance.now() }; g.toast('Shift-click again to sell ' + itemName(s), '#ffd9a0'); g.audio.play('click', 0.4); return false;
+    }
+    this.sellConfirm = null;
+    const val = sellPrice(s.k) * s.n;
+    inv.coins += val; v.arr[v.i] = null; g.audio.play('coin');
+    this.sold.push({ it: { ...s }, price: val }); if (this.sold.length > 8) this.sold.shift();
+    g.toast(`Sold ${itemName(s)}${s.n > 1 ? ' x' + s.n : ''} for ${val} coins`, '#f2c14e');
+    return true;
   }
 
   // ---- interaction ----
@@ -591,10 +639,8 @@ export class Windows {
     const g = this.g, inv = g.inv, s = v.arr[v.i]!, d = item(s.k);
     const into = (arr: Slot[], from: number, to: number): void => this.moveInto(v.arr, v.i, arr, from, to);
     if (v.kind === 'inv') {
-      if (this.shop) {
-        const val = Math.max(1, Math.floor(itemValue(s.k) * 0.3)) * s.n;
-        inv.coins += val; v.arr[v.i] = null; g.audio.play('coin'); g.toast(`Sold ${itemName(s)}${s.n > 1 ? ' x' + s.n : ''} for ${val} coins`, '#f2c14e');
-      } else if (this.chest) into(this.chest, 0, 27);
+      if (this.shop) { if (!this.sell(v)) return; }
+      else if (this.chest) into(this.chest, 0, 27);
       else if (this.forge) {
         const fs = this.forge.data.s as Slot[];
         if (this.smeltable(s.k)) into(fs, 0, 1);
@@ -649,7 +695,7 @@ export class Windows {
     if (d.fuel) h += `<div class="ln">Fuel: burns ${d.fuel}s</div>`;
     if (d.block !== undefined && BLOCKS[d.block].light) h += `<div class="ln">Gives off light</div>`;
     if (d.desc) h += `<div class="ds">${esc(d.desc)}</div>`;
-    if (this.shop) h += `<div class="ty" style="margin-top:4px">Sells for ${Math.max(1, Math.floor(itemValue(s.k) * 0.3))} coins</div>`;
+    if (this.shop) h += `<div class="ty" style="margin-top:4px">Sells for ${sellPrice(s.k)} coins${s.n > 1 ? ` each (${sellPrice(s.k) * s.n} for the stack)` : ''}</div>`;
     return h;
   }
   private recipeTip(r: Recipe): string {
