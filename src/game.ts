@@ -61,7 +61,7 @@ export class Game implements InteractHost {
   private atkCd = 0; private useCd = 0; private swing = 0; private equip = 0; private handKey = '?'; private hand: THREE.Mesh; private handLight = new THREE.Vector4(1, 0, 0, 0);
   private armGeo: THREE.BufferGeometry;
   private portalT = 0; private portalArmed = true; private portalReturn: Record<number, [number, number, number]> = {}; private arriving = -1;
-  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private safe: [number, number, number] = [0, 0, 0];
+  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private fullT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
 
@@ -190,8 +190,13 @@ export class Game implements InteractHost {
   }
   onPickup(key: string, n: number): void {
     const d = item(key);
-    this.hud.toast(`+${n} ${d.name}`, RARITY[d.rarity].color);
+    this.hud.pickup(key, n, d.name, RARITY[d.rarity].color, this.inv.count(key));
     if (this.popT <= 0) { this.audio.play('pop', 0.7, 0.9 + Math.random() * 0.3); this.popT = 0.06; }
+  }
+  /** A drop is under the player but the pack has no room for it. Throttled on its own timer so it never nags. */
+  warnFull(): void {
+    if (this.fullT > 0) return;
+    this.fullT = 8; this.toast('Inventory full', '#ff9a8a'); this.audio.play('error', 0.4);
   }
   onCrafted(key: string, _n: number): void { this.flags.add('craft:' + key); }
   markEntDirty(e: BlockEnt): void { const c = this.world.chunkAt(e.x >> 4, e.z >> 4); if (c) c.modified = true; }
@@ -620,7 +625,7 @@ export class Game implements InteractHost {
     p.moveMult = (1 + st.d.speed) * (p.inWater ? 1 + st.d.swim : 1); p.jumpMult = Math.sqrt(1 + st.d.jump); p.extraJumps = st.d.extraJump;
     p.frozen = st.dead || this.arriving >= 0;
     p.tick(dt, inp, w, this.time);
-    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; if (this.popT > 0) this.popT -= dt; if (this.warnT > 0) this.warnT -= dt; if (this.recallT > 0) this.recallT -= dt;
+    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; if (this.popT > 0) this.popT -= dt; if (this.warnT > 0) this.warnT -= dt; if (this.fullT > 0) this.fullT -= dt; if (this.recallT > 0) this.recallT -= dt;
 
     // landing, footsteps, hazards
     if (p.landed > 0) {

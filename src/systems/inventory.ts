@@ -35,6 +35,16 @@ export class Inventory {
     if (n !== it.n) this.rev++;
     return n;
   }
+  /** How many of `it` would fit right now. Plain loop, no allocation. */
+  room(it: Item): number {
+    const d = item(it.k);
+    let n = 0;
+    for (let i = 0; i < INV_SIZE; i++) {
+      const s = this.slots[i];
+      if (!s) n += d.stack; else if (d.stack > 1 && !it.m && s.k === it.k && !s.m) n += Math.max(0, d.stack - s.n);
+    }
+    return n;
+  }
   /** Count items matching a key or '#tag' across the main inventory. */
   count(want: string): number {
     let n = 0;

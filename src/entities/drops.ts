@@ -45,7 +45,10 @@ export class DropSystem {
       if (d.age > 300 || d.y < -20) { this.free(d); continue; }
       if (d.delay > 0) d.delay -= dt;
       const dx = p.x - d.x, dy = p.y + 0.8 - d.y, dz = p.z - d.z, dist = Math.hypot(dx, dy, dz);
-      if (d.delay <= 0 && !g.stats.dead && dist < reach) {
+      // drops that cannot fit stay on the ground instead of twitching round the player forever
+      const fits = d.delay <= 0 && !g.stats.dead && dist < reach && g.inv.room(d.it) > 0;
+      if (!fits && d.delay <= 0 && dist < 0.9 && !g.stats.dead) g.warnFull();
+      if (fits) {
         // magnet: accelerate straight at the player, ignoring terrain so it never hangs on a ledge
         const sp = 9 + (reach - dist) * 6;
         d.x += (dx / dist) * sp * dt; d.y += (dy / dist) * sp * dt; d.z += (dz / dist) * sp * dt; d.vy = 0;

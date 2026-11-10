@@ -30,7 +30,9 @@ export class Hud {
   private slots: { root: HTMLElement; ic: HTMLElement; n: HTMLElement; cdEl: HTMLElement; cd: number; cv: number; k: string; cnt: number }[] = [];
   private heldSig = ''; private ammoName = false; private primed = false;
   private hp: Bar; private food: Bar; private mana: Bar; private xp: Bar; private coins: HTMLElement; private lvl: HTMLElement;
-  private itemName: HTMLElement; private toasts: HTMLElement; private banner: HTMLElement; private bannerT = 0;
+  private itemName: HTMLElement; private toasts: HTMLElement; private banner: HTMLElement; private bannerT = 0; private bannerGap = 0;
+  private bannerQ: [string, string, string][] = [];
+  private pick: { key: string; n: number; el: HTMLElement | null; timer: ReturnType<typeof setTimeout> | undefined } = { key: '', n: 0, el: null, timer: undefined };
   private boss: HTMLElement; private bossName: HTMLElement; private bossTitle: HTMLElement; private bossBar: Bar;
   private quest: HTMLElement; private event: HTMLElement; private eventBar: Bar; private eventText: HTMLElement;
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
@@ -67,14 +69,40 @@ export class Hud {
   }
   setVisible(v: boolean): void { this.root.classList.toggle('hidden', !v); }
 
-  toast(text: string, color = '#e9e4d6'): void {
+  toast(text: string, color = '#e9e4d6'): HTMLElement {
     const t = el('div', 'toast', undefined, text);
     t.style.color = color;
     this.toasts.prepend(t);
     while (this.toasts.children.length > 7) this.toasts.lastElementChild!.remove();
-    setTimeout(() => t.remove(), 5200);
+    setTimeout(() => this.fadeToast(t), 5200);
+    return t;
+  }
+  private fadeToast(t: HTMLElement): void {
+    if (!t.isConnected || t === this.pick.el) return;
+    t.classList.add('out'); setTimeout(() => t.remove(), 300);
+  }
+  /** Pickups of the same item in a row fold into one line that keeps counting. */
+  pickup(key: string, n: number, name: string, color: string, total: number): void {
+    const pk = this.pick;
+    if (pk.el && pk.key === key && pk.el.isConnected && !pk.el.classList.contains('out')) {
+      pk.n += n; pk.el.textContent = `+${pk.n} ${name}  (${total})`;
+      if (this.toasts.firstElementChild !== pk.el) this.toasts.prepend(pk.el);
+      pk.el.classList.remove('bump'); void pk.el.offsetWidth; pk.el.classList.add('bump');
+    } else {
+      pk.el = null; pk.key = key; pk.n = n;
+      const t = this.toast(`+${n} ${name}  (${total})`, color); pk.el = t;
+    }
+    clearTimeout(pk.timer);
+    const t = pk.el!;
+    pk.timer = setTimeout(() => { if (pk.el === t) pk.el = null; this.fadeToast(t); }, 5200);
   }
   showBanner(text: string, sub = '', color = '#ffd9a0'): void {
+    // a banner already showing gets a short last beat, then the queue takes over (at most three waiting)
+    if (this.bannerT > 0 || this.bannerGap > 0) {
+      if (this.bannerQ.length < 3) this.bannerQ.push([text, sub, color]);
+      if (this.bannerT > 1.5) this.bannerT = 1.5;
+      return;
+    }
     this.banner.innerHTML = ''; this.banner.append(text); if (sub) el('small', '', this.banner, sub);
     this.banner.style.color = color; this.banner.style.opacity = '1'; this.bannerT = 4.2;
   }
@@ -152,7 +180,8 @@ export class Hud {
       this.lvlV = st.level; this.ptsV = st.points;
       this.lvl.textContent = `Lv ${st.level}` + (st.points > 0 ? `  (+${st.points})` : '');
     }
-    if (this.bannerT > 0) { this.bannerT -= dt; if (this.bannerT <= 0) this.banner.style.opacity = '0'; }
+    if (this.bannerT > 0) { this.bannerT -= dt; if (this.bannerT <= 0) { this.banner.style.opacity = '0'; if (this.bannerQ.length) this.bannerGap = 0.6; } }
+    else if (this.bannerGap > 0) { this.bannerGap -= dt; if (this.bannerGap <= 0) { const q = this.bannerQ.shift(); if (q) this.showBanner(q[0], q[1], q[2]); } }
 
     const b = g.mobs.activeBoss();
     if (!!b !== this.bossOn) { this.bossOn = !!b; this.boss.classList.toggle('hidden', !b); }
