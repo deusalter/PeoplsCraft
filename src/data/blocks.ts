@@ -122,7 +122,7 @@ const INIT: BlockInit[] = [
   rock('wardstone', 'Wardstone', 6, 2, { desc: 'Dense masonry laid by whoever built the old wards.' }),
 
   { key: 'torch', name: 'Torch', tex: 'torch', shape: 'box', box: [7, 0, 7, 9, 10, 9], solid: false, light: warm, emissive: 255, hard: 0, sound: 'wood', support: true },
-  { key: 'lantern', name: 'Lantern', tex: 'lantern', shape: 'box', box: [5, 0, 5, 11, 9, 11], solid: false, light: [15, 13, 10], emissive: 230, hard: 0.3, sound: 'metal', support: true },
+  { key: 'lantern', name: 'Lantern', tex: ['lantern_top', 'lantern_top', 'lantern'], shape: 'box', box: [5, 0, 5, 11, 9, 11], solid: false, light: [15, 13, 10], emissive: 230, hard: 0.3, sound: 'metal', support: true },
   wood('workbench', 'Workbench', { top: 'workbench_top', bottom: 'oak_planks', side: 'workbench_side', front: 'workbench_side' }, { hard: 2.5, use: 'workbench' }),
   rock('furnace', 'Stone Furnace', 3.5, 1, { tex: { top: 'furnace_top', bottom: 'furnace_top', side: 'furnace_side', front: 'furnace_front' }, use: 'forge1' }),
   rock('furnace_lit', 'Stone Furnace', 3.5, 1, { tex: { top: 'furnace_top', bottom: 'furnace_top', side: 'furnace_side', front: 'furnace_front_lit' }, use: 'forge1', light: [13, 9, 4], emissive: 180, drops: [['furnace', 1, 1, 1]] }),
