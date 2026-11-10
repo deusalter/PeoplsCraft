@@ -28,6 +28,10 @@ export function installDevTools(game: Game): void {
     },
     async loaded(): Promise<boolean> { return T.until(() => game.ready && game.world.counts().waiting === 0, 40000); },
     key(code: string, on: boolean): void { game.input.setKey(code, on); },
+    /** Pretend the pointer is locked so the game accepts simulated input. */
+    grab(on = true): void { game.input.locked = on; game.input.uiMode = false; },
+    click(button: number, on: boolean): void { game.input.buttons[button] = on; if (on) game.input.clicks[button] = true; },
+    cmd(c: string): string { return game.cheat(c); },
   };
   (window as any).T = T;
   (window as any).game = game;
