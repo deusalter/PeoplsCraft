@@ -59,6 +59,7 @@ export class World {
   private unloadTimer = 0;
   private warm: THREE.Mesh[] = [];
 
+  private spare: ArrayBuffer[] = [];   // region buffers returned by finished mesh jobs
   constructor(readonly pool: WorkerPool, readonly materials: THREE.Material[], public seed: number, public dim: number) {
     this.setRenderDist(this.renderDist);
     this.group.matrixAutoUpdate = false;
@@ -279,15 +280,17 @@ export class World {
   }
 
   private sendMesh(c: Chunk, front: boolean): void {
-    const blocks: Uint8Array[] = [], biomes: Uint8Array[] = [], emit: boolean[] = [], tr: Transferable[] = [];
-    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
-      const n = this.chunks.get(chunkKey(c.cx + dx, c.cz + dz))!;
-      const b = n.blocks!.slice(), bi = n.biomes!.slice();
-      blocks.push(b); biomes.push(bi); emit.push(n.hasEmit); tr.push(b.buffer, bi.buffer);
+    // one pooled buffer per job: nine block arrays, then nine biome arrays; the worker hands it back with the result
+    const region = this.spare.pop() ?? new ArrayBuffer(9 * CVOL + 9 * 256), view = new Uint8Array(region), emit: boolean[] = [];
+    let n = 0;
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++, n++) {
+      const nb = this.chunks.get(chunkKey(c.cx + dx, c.cz + dz))!;
+      view.set(nb.blocks!, n * CVOL); view.set(nb.biomes!, 9 * CVOL + n * 256); emit.push(nb.hasEmit);
     }
     c.pending = true; c.dirty = false;
     const dim = this.dim;
-    this.pool.run({ t: 'mesh', cx: c.cx, cz: c.cz, sky: this.hasSky, blocks, biomes, emit }, tr, (m) => {
+    this.pool.run({ t: 'mesh', cx: c.cx, cz: c.cz, sky: this.hasSky, region, emit }, [region], (m) => {
+      if (m && m.region && this.spare.length < this.pool.size + 2) this.spare.push(m.region);
       if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
       if (!m) {
         // the worker threw: retry a couple of times, then count the chunk as meshed so nothing waits on it for ever
