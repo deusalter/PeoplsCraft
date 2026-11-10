@@ -61,6 +61,7 @@ export class Game implements InteractHost {
   private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
+  private pendingBed = false; private deadOnLoad = false; private arriveMsg = '';
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -114,7 +115,11 @@ export class Game implements InteractHost {
     };
     this.world.onChunkReady = (_c, fresh, ents) => {
       if (!fresh) return;
-      for (const e of ents) this.world.setEnt(e.x, e.y, e.z, e.kind, e.kind === 'nest' ? { mob: e.data, t: 0 } : { loot: e.data, s: null });
+      for (const e of ents) {
+        // a structure stamped later can overwrite the block (overlapping dungeon rooms): do not keep its entity
+        if (BLOCKS[this.world.getBlock(e.x, e.y, e.z)].use !== e.kind) continue;
+        this.world.setEnt(e.x, e.y, e.z, e.kind, e.kind === 'nest' ? { mob: e.data, t: 0 } : { loot: e.data, s: null });
+      }
     };
     this.world.onUnload = (c) => this.saveChunk(c);
     // Saved chunks hold raw block ids. Each save records the id->key table it was written with, so a
@@ -140,6 +145,9 @@ export class Game implements InteractHost {
       this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs); this.portalReturn = d.portalReturn || {};
       this.player.teleport(d.player.x, d.player.y, d.player.z); this.player.yaw = d.player.yaw; this.player.pitch = d.player.pitch;
       this.worldSpawn = d.worldSpawn ?? this.findSpawn();
+      // a save taken mid-arrival (death screen quit, tab closed during a crossing) must finish landing after the reload
+      this.arriving = d.arriving ?? -1; this.pendingBed = !!d.pendingBed; this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
+      this.safe = Array.isArray(d.safe) ? [d.safe[0], d.safe[1], d.safe[2]] : [d.player.x, d.player.y, d.player.z];
     } else {
       this.worldSpawn = this.findSpawn();
       this.player.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5);
@@ -227,21 +235,44 @@ export class Game implements InteractHost {
     for (const m of this.mobs.list) if (m.active && m.def.ai === 'minion') m.active = false;
     this.menu.death(cause === 'fall' ? 'The ground was farther than it looked' : cause === 'lava' ? 'Lava does not negotiate' : cause === 'void' ? 'There was nothing under you' : cause === 'hunger' ? 'Starved' : `Slain by ${cause}`, lost);
   }
-  respawn(): void {
+  respawn(): void { this.stats.respawn(); this.goHome(); }
+  /** Send the player to their bed, or to the world spawn when there is none (death, Recall Stone). */
+  private goHome(): void {
     const s = this.spawn, p = this.player;
-    this.stats.respawn();
     if (this.dim !== 0) { this.travel(0, true); return; }
-    if (s && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use === 'bed') p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5);
-    else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning'); }
+    if (s && this.world.ready(s[0], s[2]) && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use !== 'bed') { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; }
+    else if (s) {
+      if (this.world.areaMeshed(s[0], s[2], 1)) { const q = this.standSpot(s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); return; }
+      // the bed is out of the loaded area and cannot be checked (or stood beside) yet: go there, load, and let checkReady() decide
+      p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); this.pendingBed = true; this.ready = false; this.showLoading('Returning');
+      return;
+    }
+    p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning');
+  }
+  /** Somewhere to stand next to a bed: on it, a 1.8-tall body can wedge under a two-high ceiling. */
+  standSpot(x: number, y: number, z: number): [number, number, number] {
+    const w = this.world;
+    for (let i = 0; i < 8; i++) {
+      const cx = x + (i < 4 ? (i === 0 ? 1 : i === 1 ? -1 : 0) : i & 1 ? 1 : -1), cz = z + (i < 4 ? (i === 2 ? 1 : i === 3 ? -1 : 0) : i & 2 ? 1 : -1);
+      const below = w.getBlock(cx, y - 1, cz), a = w.getBlock(cx, y, cz), b = w.getBlock(cx, y + 1, cz);
+      if (T_SOLID[below] && !T_DAMAGE[below] && !T_SOLID[a] && !T_LIQUID[a] && !T_DAMAGE[a] && !T_SOLID[b] && !T_LIQUID[b]) return [cx + 0.5, y + 0.05, cz + 0.5];
+    }
+    return [x + 0.5, y + 0.6, z + 0.5];
   }
   onMobKilled(m: Mob): void {
     const d = m.def, luck = 1 + this.stats.d.luck;
     this.gainXp(d.xp);
     const coins = Math.round((d.coins[0] + Math.random() * (d.coins[1] - d.coins[0])) * luck);
     if (coins > 0) { this.inv.coins += coins; this.inv.touch(); this.floater(m.x, m.y + m.h + 0.6, m.z, `+${coins}c`, '#f2c14e'); if (coins > 20) this.audio.play('coin'); }
+    // Boss loot pops up at the player: the body may be over the void, inside rock or under the sand.
+    // In mid-air (or dead) it goes to the last place the player stood, so it cannot fall out of the world.
+    const p = this.player, sf = this.safe, air = this.stats.dead || (!p.onGround && !p.inWater && !p.flying && Math.hypot(sf[0] - p.x, sf[1] - p.y, sf[2] - p.z) < 32);
+    const lx = air ? sf[0] : p.x, ly = (air ? sf[1] : p.y) + 1.2, lz = air ? sf[2] : p.z;
     for (const [k, chance, a, b] of d.drops) {
       if (Math.random() > chance * (d.boss ? 1 : luck)) continue;
-      this.drops.spawn(m.x, m.y + m.h * 0.5, m.z, { k, n: a + Math.floor(Math.random() * (b - a + 1)), m: rollModifier(k, Math.random, d.boss ? 0.7 : 0.4) });
+      const it = { k, n: a + Math.floor(Math.random() * (b - a + 1)), m: rollModifier(k, Math.random, d.boss ? 0.7 : 0.4) };
+      if (d.boss) this.drops.spawn(lx, ly, lz, it, (Math.random() - 0.5) * 1.5, 3.5, (Math.random() - 0.5) * 1.5, 0.3);
+      else this.drops.spawn(m.x, m.y + m.h * 0.5, m.z, it);
     }
     this.events.onKill(m);
     if (d.boss) {
@@ -299,9 +330,10 @@ export class Game implements InteractHost {
       for (const it of s) if (it) this.drops.spawn(x + 0.5, y + 0.5, z + 0.5, it);
       w.removeEnt(x, y, z);
     }
-    if (b.use === 'guestbed') this.npcs.removeBed(x, y, z);
+    if (b.use === 'guestbed' && this.dim === 0) this.npcs.removeBed(x, y, z);
     if (b.door) { for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === id) w.setBlock(x, y + dy, z, 0); }
     w.setBlock(x, y, z, 0);
+    if ((id === B.hollow_frame && this.dim !== 1) || (id === B.rift_frame && this.dim !== 2)) this.collapseGate(x, y, z, id === B.hollow_frame ? 1 : 2);
     this.burst(x, y, z, id);
     this.audio.play('break_' + b.sound, 0.9);
     this.stats.exhaustion += 0.02;
@@ -376,7 +408,9 @@ export class Game implements InteractHost {
       if (d.use === 'gate1' || d.use === 'gate2') {
         const x = hit.x + hit.nx, y = hit.y + hit.ny, z = hit.z + hit.nz;
         if (hit.ny !== 1) { this.toast('Place the gate on the ground.', '#ff9a8a'); return true; }
-        this.buildGate(d.use === 'gate1' ? 1 : 2, x, y, z, Math.abs(dir.z) > Math.abs(dir.x));
+        const alongX = Math.abs(dir.z) > Math.abs(dir.x);
+        if (!this.gateFits(x, y, z, alongX)) { this.toast('The gate needs a clear space 4 wide and 5 tall.', '#ff9a8a'); this.audio.play('error', 0.5); return true; }
+        this.buildGate(d.use === 'gate1' ? 1 : 2, x, y, z, alongX);
         inv.consumeHeld(); this.audio.play('portal'); return true;
       }
       if (d.use.startsWith('summon')) { this.toast('Use this at its altar. The guide points the way.', '#ffd9a0'); return true; }
@@ -385,7 +419,7 @@ export class Game implements InteractHost {
     if (d.use === 'recall') {
       if (this.recallT > 0) { this.toast('The stone is still warm.', '#ff9a8a'); return true; }
       this.recallT = 30; this.audio.play('teleport');
-      if (this.dim !== 0) this.travel(0, true); else this.respawnPoint();
+      this.goHome();
       return true;
     }
     if (d.food || d.heal || d.restoreMana || d.buff) {
@@ -400,11 +434,6 @@ export class Game implements InteractHost {
       return true;
     }
     return false;
-  }
-  private respawnPoint(): void {
-    const s = this.spawn, p = this.player;
-    if (s && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use === 'bed') p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5);
-    else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning'); }
   }
 
   private useBlock(hit: RayHit, use: string): boolean {
@@ -427,6 +456,7 @@ export class Game implements InteractHost {
     }
     if (use === 'crate') { this.onBroken(x, y, z, hit.id); return true; }
     if (use === 'bed') {
+      if (this.dim !== 0) { this.toast('A bedroll only holds your spawn in the Overworld.', '#ff9a8a'); return true; }
       this.spawn = [x, y, z];
       if (this.isNight() && this.dim === 0) {
         if (this.mobs.nearestHostile(p.x, p.y, p.z, 14) || this.events.active) this.toast('You cannot rest with enemies near.', '#ff9a8a');
@@ -473,7 +503,7 @@ export class Game implements InteractHost {
     if (b.solid && this.mobs.list.some((m) => m.active && m.def.ai !== 'minion' && x + 1 > m.x - m.hw && x < m.x + m.hw && y + 1 > m.y && y < m.y + m.h && z + 1 > m.z - m.hw && z < m.z + m.hw)) return false;
     if (!w.setBlock(x, y, z, id)) return false;
     if (!this.creative) this.inv.consumeHeld();
-    if (b.use === 'guestbed') this.npcs.addBed(x, y, z);
+    if (b.use === 'guestbed') { if (this.dim === 0) this.npcs.addBed(x, y, z); else this.toast('Townsfolk only settle in the Overworld.', '#ff9a8a'); }
     this.flags.add('place:' + b.key);
     this.audio.play(b.sound === 'stone' || b.sound === 'metal' ? 'place' : 'dig_' + b.sound, 0.8, 0.9); this.swing = 1;
     return true;
@@ -485,6 +515,38 @@ export class Game implements InteractHost {
     w.setBlock(x, y, z, id); w.setBlock(x, y + 1, z, id);
     this.inv.consumeHeld(); this.audio.play('door'); this.flags.add('place:door');
     return true;
+  }
+  /** True when all 20 cells of a gate are free: buildGate() would otherwise erase chests, forges or an altar. */
+  private gateFits(x: number, y: number, z: number, alongX: boolean): boolean {
+    const w = this.world, p = this.player;
+    if (y < 1 || y + 4 > BUILD_MAX) return false;
+    for (let a = -1; a <= 2; a++) for (let h = 0; h <= 4; h++) {
+      const bx = x + (alongX ? a : 0), by = y + h, bz = z + (alongX ? 0 : a);
+      if (!T_REPLACE[w.getBlock(bx, by, bz)] || !w.ready(bx, bz)) return false;
+      if (bx + 1 > p.x - p.hw && bx < p.x + p.hw && by + 1 > p.y && by < p.y + p.h && bz + 1 > p.z - p.hw && bz < p.z + p.hw) return false;
+    }
+    return true;
+  }
+  /** A gate placed outside its own dimension goes dark when its frame is broken, and gives the kit back.
+   *  Arrival gates (a Hollow Gate in the Hollows, a Rift Gate in the Skyrift) keep their sheet: they are the way home. */
+  private collapseGate(x: number, y: number, z: number, kind: number): void {
+    const w = this.world, portal = kind === 1 ? B.hollow_portal : B.rift_portal, st = [x, y, z], ret = this.portalReturn[this.dim];
+    let n = 0, first = true;
+    while (st.length && n < 16) {
+      const cz = st.pop()!, cy = st.pop()!, cx = st.pop()!;
+      // the broken block may be a corner of the frame, which touches the sheet only diagonally: seed from all 26 neighbours
+      for (let i = 0, cnt = first ? 27 : 6; i < cnt; i++) {
+        const ax = cx + (first ? (i % 3) - 1 : i === 0 ? 1 : i === 1 ? -1 : 0), ay = cy + (first ? ((i / 3) | 0) % 3 - 1 : i === 2 ? 1 : i === 3 ? -1 : 0), az = cz + (first ? ((i / 9) | 0) - 1 : i === 4 ? 1 : i === 5 ? -1 : 0);
+        if (w.getBlock(ax, ay, az) !== portal) continue;
+        w.setBlock(ax, ay, az, 0); st.push(ax, ay, az); n++;
+        // crossing back into this dimension must not aim at a gate that is no longer there
+        if (ret && ax === ret[0] && az === ret[2] && Math.abs(ay - ret[1]) <= 2) delete this.portalReturn[this.dim];
+      }
+      first = false;
+    }
+    if (!n) return;
+    this.drops.spawn(x + 0.5, y + 0.5, z + 0.5, { k: kind === 1 ? 'hollow_gate_kit' : 'rift_gate_kit', n: 1 });
+    this.audio.play('portal', 0.6, 0.7); this.toast('The gate goes dark.', '#c8d0ff');
   }
   /** Raise a 4x5 gate: frame around a 2x3 sheet of portal. */
   private buildGate(kind: number, x: number, y: number, z: number, alongX: boolean): void {
@@ -502,8 +564,8 @@ export class Game implements InteractHost {
   }
   travel(to: number, home = false): void {
     const p = this.player, cfg = this.cfg;
-    if (to === this.dim) { this.respawnPoint(); return; }
-    this.win.close(true);
+    if (to === this.dim) { this.goHome(); return; }
+    this.win.close();
     if (!home) this.portalReturn[this.dim] = [Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
     const px = Math.floor(p.x), pz = Math.floor(p.z);
     this.ready = false; this.keysReady = false; p.frozen = true; this.showLoading(to === 0 ? 'Returning to the Overworld' : `Crossing into ${DIMS[to].name}`);
@@ -511,7 +573,7 @@ export class Game implements InteractHost {
     this.world.setDim(to, DIMS[to].hasSky);
     this.dim = to; this.world.setView(cfg.settings.gfx.renderDist, DIMS[to].fogScale); this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
     const ret = home ? null : this.portalReturn[to];
-    if (home) { const s = this.spawn; if (s) p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; } }
+    if (home) { const s = this.spawn; if (s) { p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); this.pendingBed = true; } else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; } }
     else if (ret) p.teleport(ret[0] + 0.5, ret[1] + 0.1, ret[2] + 0.5);
     else { p.teleport(px + 0.5, 120, pz + 0.5); this.arriving = to; }
     if (to !== 0) this.flags.add('dim:' + to);
@@ -523,13 +585,14 @@ export class Game implements InteractHost {
     this.arriving = -1;
     const free = (x: number, y: number, z: number): boolean => T_SOLID[w.getBlock(x, y - 1, z)] === 1 && T_OPAQUE[w.getBlock(x, y - 1, z)] === 1 && !w.getBlock(x, y, z) && !w.getBlock(x, y + 1, z) && !w.getBlock(x, y + 2, z) && !w.getBlock(x, y + 3, z);
     let best: [number, number, number] | null = null;
-    search: for (let r = 0; r <= 28; r += 2) for (let dz = -r; dz <= r; dz += 2) for (let dx = -r; dx <= r; dx += 2) {
+    // areaMeshed(…, 3) in checkReady() guarantees 48 loaded blocks each way; the gate and its apron need 2 of them
+    search: for (let r = 0; r <= 44; r += 2) for (let dz = -r; dz <= r; dz += 2) for (let dx = -r; dx <= r; dx += 2) {
       if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
       const x = x0 + dx, z = z0 + dz;
       if (kind === 1) { for (let y = 60; y < 150; y++) if (free(x, y, z)) { best = [x, y, z]; break search; } }
-      else { let y = w.topY(x, z); while (y > 2 && !T_SOLID[w.getBlock(x, y, z)]) y--; if (y > 4 && free(x, y + 1, z) && !T_LIQUID[w.getBlock(x, y, z)]) { best = [x, y + 1, z]; break search; } }
+      else { let y = w.topY(x, z); while (y > 2 && !T_SOLID[w.getBlock(x, y, z)]) y--; if (y > 4 && free(x, y + 1, z) && !T_LIQUID[w.getBlock(x, y, z)] && w.getBlock(x, y, z) !== B.cloud) { best = [x, y + 1, z]; break search; } }
     }
-    if (!best) { best = [x0, kind === 2 ? 130 : 100, z0]; for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 3; dx++) { w.setBlock(x0 + dx, best[1] - 1, z0 + dz, kind === 2 ? B.riftstone : B.gloomstone); for (let k = 0; k < 5; k++) w.setBlock(x0 + dx, best[1] + k, z0 + dz, 0); } }
+    if (!best) { if (kind === 2) this.arriveMsg = 'No land within reach. Build outward from the gate.'; best = [x0, kind === 2 ? 130 : 100, z0]; for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 3; dx++) { w.setBlock(x0 + dx, best[1] - 1, z0 + dz, kind === 2 ? B.riftstone : B.gloomstone); for (let k = 0; k < 5; k++) w.setBlock(x0 + dx, best[1] + k, z0 + dz, 0); } }
     if (kind > 0) {
       for (let a = -1; a <= 2; a++) for (let k = 0; k < 5; k++) for (let dz = -1; dz <= 1; dz++) if (dz !== 0 || k > 0) { const id = w.getBlock(best[0] + a, best[1] + k, best[2] + dz); if (id && dz !== 0) w.setBlock(best[0] + a, best[1] + k, best[2] + dz, 0); }
       this.buildGate(kind, best[0], best[1] - 1, best[2], true);
@@ -538,6 +601,7 @@ export class Game implements InteractHost {
       this.portalReturn[kind] = [best[0], best[1], best[2]];
       this.hud.showBanner(DIMS[kind].name, kind === 1 ? 'No sky here. Bring light.' : 'Mind the edges', kind === 1 ? '#8af0d8' : '#c8d0ff');
     } else p.teleport(best[0] + 0.5, best[1] + 0.05, best[2] + 0.5);
+    this.safe[0] = p.x; this.safe[1] = p.y; this.safe[2] = p.z;
   }
 
   // ---- input ----------------------------------------------------------------------------------
@@ -642,8 +706,15 @@ export class Game implements InteractHost {
       const c = w.chunkAt(cx + dx, cz + dz);
       if (!c || !c.ents.size) continue;
       for (const e of c.ents.values()) {
-        if (e.kind === 'forge') this.tickForge(e, c, dt);
-        else if (e.kind === 'nest') {
+        if (e.kind === 'forge') {
+          // replay the time since this forge was last ticked, so it keeps working while its chunk is far away or unloaded
+          const d = e.data, now = this.clock * DAY_LENGTH;
+          let left = d.at === undefined ? dt : Math.min(900, Math.max(dt, now - d.at));
+          const quiet = left > 1;
+          d.at = now;
+          while (left > 0) { const st = Math.min(left, 0.5); this.tickForge(e, c, st, quiet); left -= st; if (d.burn <= 0 && d.prog <= 0) break; }
+        } else if (e.kind === 'nest') {
+          if (w.getBlock(e.x, e.y, e.z) !== B.brood_nest) { w.removeEnt(e.x, e.y, e.z); continue; }   // orphan from an older save
           const d = e.data; d.t = (d.t ?? 0) - dt;
           const dist = Math.hypot(e.x - p.x, e.y - p.y, e.z - p.z);
           if (d.t <= 0 && dist < 18 && dist > 3) {
@@ -662,7 +733,7 @@ export class Game implements InteractHost {
       if (w.getBlock(x, y, z) === B.berry_bush_empty && Math.random() < 0.02) w.setBlock(x, y, z, B.berry_bush);
     }
   }
-  private tickForge(e: BlockEnt, c: Chunk, dt: number): void {
+  private tickForge(e: BlockEnt, c: Chunk, dt: number, quiet = false): void {
     const d = e.data, s = d.s as Slot[], w = this.world;
     const inp = s[0], r = inp ? SMELTS.find((q) => matches(q.in, inp.k) && q.forge <= d.level) : undefined;
     const out = s[2], room = !!r && (!out || (out.k === r.out && out.n + r.n <= item(r.out).stack));
@@ -677,19 +748,19 @@ export class Game implements InteractHost {
           if (--inp!.n <= 0) s[0] = null;
           if (out) out.n += r.n; else s[2] = { k: r.out, n: r.n };
           d.rev++; c.modified = true; this.flags.add('smelt:' + r.out);
-          if (Math.hypot(e.x - this.player.x, e.z - this.player.z) < 12) this.audio.play('fizz', 0.4, 1, [e.x, e.y, e.z]);
+          if (!quiet && Math.hypot(e.x - this.player.x, e.z - this.player.z) < 12) this.audio.play('fizz', 0.4, 1, [e.x, e.y, e.z]);
         }
       } else d.prog = Math.max(0, d.prog - dt * 2);
     } else { d.prog = 0; d.need = 0; }
     const now = d.burn > 0, id = w.getBlock(e.x, e.y, e.z);
     if (was !== now && (id === B.furnace || id === B.furnace_lit)) w.setBlock(e.x, e.y, e.z, now ? B.furnace_lit : B.furnace, true);
-    if (now && Math.random() < 0.3) this.particles.spawn(e.x + 0.5 + (Math.random() - 0.5) * 0.4, e.y + 1.05, e.z + 0.5 + (Math.random() - 0.5) * 0.4, 0, 0.8, 0, 1.2, 0.1, 0x8a8a92, 0, -0.4);
+    if (now && !quiet && Math.random() < 0.3) this.particles.spawn(e.x + 0.5 + (Math.random() - 0.5) * 0.4, e.y + 1.05, e.z + 0.5 + (Math.random() - 0.5) * 0.4, 0, 0.8, 0, 1.2, 0.1, 0x8a8a92, 0, -0.4);
   }
   private tickPortal(dt: number): void {
     const p = this.player, id = this.world.getBlock(Math.floor(p.x), Math.floor(p.y + 0.5), Math.floor(p.z));
     const kind = id === B.hollow_portal ? 1 : id === B.rift_portal ? 2 : 0;
     if (!kind) { this.portalArmed = true; if (this.portalT > 0) { this.portalT = Math.max(0, this.portalT - dt * 2); this.hud.setPortal(this.portalT / 1.6, false); } return; }
-    if (!this.portalArmed) return;
+    if (!this.portalArmed || this.win.open) return;
     if (this.portalT === 0) this.audio.play('portal');
     this.portalT += dt; this.hud.setPortal(Math.min(1, this.portalT / 1.6), kind === 2);
     if (this.portalT >= 1.6) this.travel(this.dim === kind ? 0 : kind);
@@ -747,9 +818,18 @@ export class Game implements InteractHost {
     const p = this.player, w = this.world, c = w.counts();
     if (this.loading) { (this.loading.querySelector('i') as HTMLElement).style.width = Math.min(100, (c.meshed / 49) * 100) + '%'; (this.loading.querySelector('.msg') as HTMLElement).textContent = this.loadMsg; }
     if (!this.keysReady || !w.areaMeshed(p.x, p.z, 3)) return;
+    if (this.pendingBed) {
+      // we were sent to a bed whose chunk was not loaded: now that it is, make sure the bed is still there
+      const s = this.spawn;
+      this.pendingBed = false;
+      if (s && this.dim === 0 && BLOCKS[w.getBlock(s[0], s[1], s[2])].use === 'bed') { const q = this.standSpot(s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); }
+      else { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; return; }
+    }
     if (this.arriving >= 0) this.land();
     p.frozen = false; this.ready = true; this.portalArmed = false;
     this.loading?.remove(); this.loading = null;
+    if (this.arriveMsg) { this.toast(this.arriveMsg, '#ff9a8a'); this.arriveMsg = ''; }
+    if (this.deadOnLoad) { this.deadOnLoad = false; this.stats.hp = 0; this.stats.dead = true; this.menu.death('You did not get back up', 0); }
     if (!this.cfg.meta.data && this.dim === 0 && !this.flags.has('started')) {
       this.flags.add('started');
       this.hud.showBanner(this.cfg.meta.name, 'Click to look around · E for inventory · G for the guide', '#ffe9a8');
@@ -796,7 +876,8 @@ export class Game implements InteractHost {
     const p = this.player, m = this.cfg.meta;
     m.played = Date.now();
     m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
-      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes };
+      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes,
+      arriving: this.arriving, pendingBed: this.pendingBed, safe: this.safe };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
     try { await this.cfg.db.putWorld(m); } catch (e) { console.warn('save failed', e); }
   }

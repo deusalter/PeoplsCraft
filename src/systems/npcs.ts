@@ -79,12 +79,16 @@ export class NpcSystem {
       const d = NPCS.find((n) => n.key === h.npc)!;
       if (!g.world.ready(h.x, h.z) || Math.hypot(h.x - g.player.x, h.z - g.player.z) > 90) continue;
       if (g.mobs.list.some((m) => m.active && m.def.key === d.mob)) continue;
-      const m = g.mobs.spawn(d.mob, h.x + 0.5, h.y + 0.7, h.z + 0.5);
+      const q = g.standSpot(h.x, h.y, h.z), m = g.mobs.spawn(d.mob, q[0], q[1], q[2]);
       if (m) m.home = [h.x, h.y, h.z];
     }
   }
   line(n: NpcDef): string {
-    if (n.key === 'wayfinder' && Math.random() < 0.6) return 'Next: ' + QUESTS[this.g.quests.index].hint;
+    if (n.key === 'wayfinder') {
+      const moon = this.g.events.moonIn(), r = Math.random();
+      if (moon >= 0 && r > 0.85) return moon === 0 ? 'The Hollow Moon turns tonight. Moonspawn carry the slivers.' : `The Hollow Moon turns in ${moon} night${moon > 1 ? 's' : ''}.`;
+      if (r < 0.6) return 'Next: ' + QUESTS[this.g.quests.index].hint;
+    }
     return n.lines[(Math.random() * n.lines.length) | 0];
   }
   goods(n: NpcDef): [string, number, string][] {
@@ -93,6 +97,7 @@ export class NpcSystem {
   /** One-line status for a bed, shown when the player right-clicks it. */
   status(x: number, y: number, z: number): string {
     const h = this.homes.find((q) => q.x === x && q.y === y && q.z === z);
+    if (this.g.dim !== 0) return 'Townsfolk only settle in the Overworld.';
     if (h?.npc) return `${NPCS.find((n) => n.key === h.npc)!.name} lives here.`;
     const bad = this.check(x, y, z);
     if (bad) return bad;
