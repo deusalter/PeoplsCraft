@@ -61,7 +61,7 @@ export class Game implements InteractHost {
   private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
-  private pendingBed = false; private arriveMsg = '';
+  private pendingBed = false; private deadOnLoad = false; private arriveMsg = '';
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -141,6 +141,9 @@ export class Game implements InteractHost {
       this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs); this.portalReturn = d.portalReturn || {};
       this.player.teleport(d.player.x, d.player.y, d.player.z); this.player.yaw = d.player.yaw; this.player.pitch = d.player.pitch;
       this.worldSpawn = d.worldSpawn ?? this.findSpawn();
+      // a save taken mid-arrival (death screen quit, tab closed during a crossing) must finish landing after the reload
+      this.arriving = d.arriving ?? -1; this.pendingBed = !!d.pendingBed; this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
+      this.safe = Array.isArray(d.safe) ? [d.safe[0], d.safe[1], d.safe[2]] : [d.player.x, d.player.y, d.player.z];
     } else {
       this.worldSpawn = this.findSpawn();
       this.player.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5);
@@ -552,6 +555,7 @@ export class Game implements InteractHost {
       this.portalReturn[kind] = [best[0], best[1], best[2]];
       this.hud.showBanner(DIMS[kind].name, kind === 1 ? 'No sky here. Bring light.' : 'Mind the edges', kind === 1 ? '#8af0d8' : '#c8d0ff');
     } else p.teleport(best[0] + 0.5, best[1] + 0.05, best[2] + 0.5);
+    this.safe[0] = p.x; this.safe[1] = p.y; this.safe[2] = p.z;
   }
 
   // ---- input ----------------------------------------------------------------------------------
@@ -770,6 +774,7 @@ export class Game implements InteractHost {
     p.frozen = false; this.ready = true; this.portalArmed = false;
     this.loading?.remove(); this.loading = null;
     if (this.arriveMsg) { this.toast(this.arriveMsg, '#ff9a8a'); this.arriveMsg = ''; }
+    if (this.deadOnLoad) { this.deadOnLoad = false; this.stats.hp = 0; this.stats.dead = true; this.menu.death('You did not get back up', 0); }
     if (!this.cfg.meta.data && this.dim === 0 && !this.flags.has('started')) {
       this.flags.add('started');
       this.hud.showBanner(this.cfg.meta.name, 'Click to look around · E for inventory · G for the guide', '#ffe9a8');
@@ -816,7 +821,8 @@ export class Game implements InteractHost {
     const p = this.player, m = this.cfg.meta;
     m.played = Date.now();
     m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
-      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes };
+      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes,
+      arriving: this.arriving, pendingBed: this.pendingBed, safe: this.safe };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
     try { await this.cfg.db.putWorld(m); } catch (e) { console.warn('save failed', e); }
   }
