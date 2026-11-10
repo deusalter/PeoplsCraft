@@ -2,7 +2,7 @@
 // uploads meshes inside a per-frame budget and unloads by distance.
 import * as THREE from 'three';
 import { BUILD_MAX, CH, CVOL, chunkKey } from '../core/constants';
-import { T_EMITS } from '../data/blocks';
+import { T_ATTEN, T_EMITS, T_OPAQUE } from '../data/blocks';
 import { U } from '../render/gfx';
 import type { EntInit } from './gen/types';
 import type { MeshPart } from './mesher';
@@ -143,11 +143,13 @@ export class World {
     if (T_EMITS[id]) c.hasEmit = true;
     if (c.ents.size && c.ents.has(i) && !silent) c.ents.delete(i);
     this.markDirty(c);
-    // light can travel 15 blocks, so neighbours inside that reach need a new mesh too
+    // light can travel 15 blocks, so neighbours inside that reach need a new mesh too. A swap that cannot change
+    // light (same opacity and attenuation, no emitter) only shows to a neighbour through its one-column rim.
+    const reach = T_OPAQUE[old] === T_OPAQUE[id] && T_ATTEN[old] === T_ATTEN[id] && !T_EMITS[old] && !T_EMITS[id] ? 2 : 15;
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
       if (!dx && !dz) continue;
       const ddx = dx < 0 ? lx + 1 : dx > 0 ? 16 - lx : 0, ddz = dz < 0 ? lz + 1 : dz > 0 ? 16 - lz : 0;
-      if (ddx + ddz > 15) continue;
+      if (ddx + ddz > reach) continue;
       const n = this.chunkAt(cx + dx, cz + dz);
       if (n && n.state === 2) this.markDirty(n);
     }
