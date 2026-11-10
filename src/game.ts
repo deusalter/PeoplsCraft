@@ -330,7 +330,7 @@ export class Game implements InteractHost {
       for (const it of s) if (it) this.drops.spawn(x + 0.5, y + 0.5, z + 0.5, it);
       w.removeEnt(x, y, z);
     }
-    if (b.use === 'guestbed') this.npcs.removeBed(x, y, z);
+    if (b.use === 'guestbed' && this.dim === 0) this.npcs.removeBed(x, y, z);
     if (b.door) { for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === id) w.setBlock(x, y + dy, z, 0); }
     w.setBlock(x, y, z, 0);
     if ((id === B.hollow_frame && this.dim !== 1) || (id === B.rift_frame && this.dim !== 2)) this.collapseGate(x, y, z, id === B.hollow_frame ? 1 : 2);
@@ -503,7 +503,7 @@ export class Game implements InteractHost {
     if (b.solid && this.mobs.list.some((m) => m.active && m.def.ai !== 'minion' && x + 1 > m.x - m.hw && x < m.x + m.hw && y + 1 > m.y && y < m.y + m.h && z + 1 > m.z - m.hw && z < m.z + m.hw)) return false;
     if (!w.setBlock(x, y, z, id)) return false;
     if (!this.creative) this.inv.consumeHeld();
-    if (b.use === 'guestbed') this.npcs.addBed(x, y, z);
+    if (b.use === 'guestbed') { if (this.dim === 0) this.npcs.addBed(x, y, z); else this.toast('Townsfolk only settle in the Overworld.', '#ff9a8a'); }
     this.flags.add('place:' + b.key);
     this.audio.play(b.sound === 'stone' || b.sound === 'metal' ? 'place' : 'dig_' + b.sound, 0.8, 0.9); this.swing = 1;
     return true;

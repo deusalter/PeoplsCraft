@@ -310,12 +310,12 @@ export class MobSystem {
     }
     if (!rules.length) return;
     // towns are quiet: nothing hostile appears near an occupied home unless an event is on
-    if (!g.events.active) for (const h of this.safeZones) if (Math.hypot(h[0] - x, h[2] - z) < 28 && rules.every((q) => q[0].hostile)) return;
+    if (!g.events.active && g.dim === 0) for (const h of this.safeZones) if (Math.hypot(h[0] - x, h[2] - z) < 28 && rules.every((q) => q[0].hostile)) return;
     let pick = Math.random() * total;
     for (const [d, s] of rules) {
       pick -= s.weight * (s.event ? 3 : 1);
       if (pick > 0) continue;
-      if (d.hostile && !g.events.active && this.safeZones.some((h) => Math.hypot(h[0] - x, h[2] - z) < 28)) return;
+      if (d.hostile && !g.events.active && g.dim === 0 && this.safeZones.some((h) => Math.hypot(h[0] - x, h[2] - z) < 28)) return;
       const n = s.group[0] + Math.floor(Math.random() * (s.group[1] - s.group[0] + 1));
       for (let i = 0; i < n; i++) {
         const m = this.spawn(d.key, x + 0.5 + (Math.random() - 0.5) * 3, y + 0.05, z + 0.5 + (Math.random() - 0.5) * 3);
