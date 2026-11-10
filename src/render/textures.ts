@@ -27,12 +27,16 @@ function hueTo(h: number, target: number, amt: number): number {
   if (d > 0.5) d -= 1; else if (d < -0.5) d += 1;
   return (h + d * amt + 1) % 1;
 }
-/** Shade a colour by f in [-1, 1] with hue shifting: shadows cool, highlights warm. */
+/** Shade a colour by f in [-1, 1]: shadows go cool, highlights warm. The warm/cool split is done
+ *  in RGB after the HSL step so that greys (stone, the grey tint-mask tiles) shift as well. */
 export function sh(c: number, f: number): number {
   let [h, s, l] = toHsl(c);
   if (f < 0) { h = hueTo(h, 0.7, -f * 0.14); s = Math.min(1, s * (1 - f * 0.2)); l *= 1 + f * 0.6; }
-  else { h = hueTo(h, 0.13, f * 0.14); s *= 1 - f * 0.2; l += (1 - l) * f * 0.55; }
-  return fromHsl(h, s, Math.max(0, Math.min(1, l)));
+  else { h = hueTo(h, 0.13, f * 0.14); s *= 1 - f * 0.2; l += (1 - l) * f * 0.7; }
+  const o = fromHsl(h, s, Math.max(0, Math.min(1, l))), k = Math.abs(f) * 0.18;
+  let r = o >> 16, g = (o >> 8) & 255, b = o & 255;
+  if (f < 0) { r *= 1 - k; g *= 1 - 0.55 * k; } else { b *= 1 - k; g *= 1 - 0.3 * k; }
+  return (Math.round(r) << 16) | (Math.round(g) << 8) | Math.round(b);
 }
 export function mix(a: number, b: number, t: number): number {
   const r = (a >> 16) + ((b >> 16) - (a >> 16)) * t, g = ((a >> 8) & 255) + (((b >> 8) & 255) - ((a >> 8) & 255)) * t, bl = (a & 255) + ((b & 255) - (a & 255)) * t;
