@@ -550,13 +550,14 @@ export class Game implements InteractHost {
     this.arriving = -1;
     const free = (x: number, y: number, z: number): boolean => T_SOLID[w.getBlock(x, y - 1, z)] === 1 && T_OPAQUE[w.getBlock(x, y - 1, z)] === 1 && !w.getBlock(x, y, z) && !w.getBlock(x, y + 1, z) && !w.getBlock(x, y + 2, z) && !w.getBlock(x, y + 3, z);
     let best: [number, number, number] | null = null;
-    search: for (let r = 0; r <= 28; r += 2) for (let dz = -r; dz <= r; dz += 2) for (let dx = -r; dx <= r; dx += 2) {
+    // areaMeshed(…, 3) in checkReady() guarantees 48 loaded blocks each way; the gate and its apron need 2 of them
+    search: for (let r = 0; r <= 44; r += 2) for (let dz = -r; dz <= r; dz += 2) for (let dx = -r; dx <= r; dx += 2) {
       if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
       const x = x0 + dx, z = z0 + dz;
       if (kind === 1) { for (let y = 60; y < 150; y++) if (free(x, y, z)) { best = [x, y, z]; break search; } }
-      else { let y = w.topY(x, z); while (y > 2 && !T_SOLID[w.getBlock(x, y, z)]) y--; if (y > 4 && free(x, y + 1, z) && !T_LIQUID[w.getBlock(x, y, z)]) { best = [x, y + 1, z]; break search; } }
+      else { let y = w.topY(x, z); while (y > 2 && !T_SOLID[w.getBlock(x, y, z)]) y--; if (y > 4 && free(x, y + 1, z) && !T_LIQUID[w.getBlock(x, y, z)] && w.getBlock(x, y, z) !== B.cloud) { best = [x, y + 1, z]; break search; } }
     }
-    if (!best) { best = [x0, kind === 2 ? 130 : 100, z0]; for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 3; dx++) { w.setBlock(x0 + dx, best[1] - 1, z0 + dz, kind === 2 ? B.riftstone : B.gloomstone); for (let k = 0; k < 5; k++) w.setBlock(x0 + dx, best[1] + k, z0 + dz, 0); } }
+    if (!best) { if (kind === 2) this.arriveMsg = 'No land within reach. Build outward from the gate.'; best = [x0, kind === 2 ? 130 : 100, z0]; for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 3; dx++) { w.setBlock(x0 + dx, best[1] - 1, z0 + dz, kind === 2 ? B.riftstone : B.gloomstone); for (let k = 0; k < 5; k++) w.setBlock(x0 + dx, best[1] + k, z0 + dz, 0); } }
     if (kind > 0) {
       for (let a = -1; a <= 2; a++) for (let k = 0; k < 5; k++) for (let dz = -1; dz <= 1; dz++) if (dz !== 0 || k > 0) { const id = w.getBlock(best[0] + a, best[1] + k, best[2] + dz); if (id && dz !== 0) w.setBlock(best[0] + a, best[1] + k, best[2] + dz, 0); }
       this.buildGate(kind, best[0], best[1] - 1, best[2], true);
