@@ -73,8 +73,18 @@ export class Input {
       if (this.onLockChange) this.onLockChange(this.locked);
     });
   }
-  lock(): void {
-    try { const p = this.el.requestPointerLock() as unknown as Promise<void> | undefined; if (p && p.catch) p.catch(() => {}); } catch { /* unavailable */ }
+  /** Request pointer lock; resolves false when the browser refuses (e.g. no user gesture, or too soon after Esc). */
+  lock(): Promise<boolean> {
+    try {
+      const p = this.el.requestPointerLock() as unknown as Promise<void> | undefined;
+      if (p && p.then) return p.then(() => true, () => false);
+      // older browsers return nothing: wait for whichever event answers first
+      return new Promise((res) => {
+        const end = (ok: boolean) => (): void => { document.removeEventListener('pointerlockchange', yes); document.removeEventListener('pointerlockerror', no); res(ok); };
+        const yes = end(true), no = end(false);
+        document.addEventListener('pointerlockchange', yes); document.addEventListener('pointerlockerror', no);
+      });
+    } catch { return Promise.resolve(false); }
   }
   unlock(): void { if (document.pointerLockElement) document.exitPointerLock(); }
   down(code: string): boolean { return !this.uiMode && this.keys.has(code); }

@@ -39,9 +39,16 @@ import { WorkerPool } from './world/pool';
 import { BlockEnt, Chunk, World } from './world/world';
 
 const STEP = 1 / 60;
-export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings }
+export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings; /** false when the browser blocks IndexedDB */ canSave?: boolean }
 const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
 const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
+// Interaction prompts, built once so the per-tick prompt check allocates nothing.
+const IS_NPC = (m: Mob): boolean => m.def.ai === 'npc';
+const SUMMON_USE: string[] = [], ALTAR_OFFER: string[] = [], ALTAR_NEED: string[] = [], TRADE_PROMPT = new Map<string, string>();
+for (const it of ITEMS.values()) if (it.use?.startsWith('summon')) {
+  const n = +it.use.slice(6);
+  SUMMON_USE[n] = it.use; ALTAR_OFFER[n] = `Right-click: offer the ${it.name}`; ALTAR_NEED[n] = `Needs ${/^[AEIOU]/.test(it.name) ? 'an' : 'a'} ${it.name}`;
+}
 
 export class Game implements InteractHost {
   readonly gfx: Gfx; readonly pool: WorkerPool; readonly world: World; readonly input: Input;
@@ -73,6 +80,9 @@ export class Game implements InteractHost {
   private console: HTMLInputElement; private v = new THREE.Vector3();
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
   private pendingBed = false; private deadOnLoad = false; private arriveMsg = '';
+  private npcPromptT = 0; private npcPrompt: string | null = null; private conClosed = 0;
+  /** Date.now() of the last successful save (0 = not yet). */
+  lastSave = 0; private saveFailT = -1e9; private noSaveWarned = false;
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -111,15 +121,29 @@ export class Game implements InteractHost {
       if (e.key === 'Enter') { const c = this.console.value.trim(); this.closeConsole(); if (c) this.toast(this.cheat(c.replace(/^\//, '')), '#8fd0ff'); }
       else if (e.key === 'Escape') this.closeConsole();
     };
+    // clicking or tabbing away must not leave the console open with the game ignoring input
+    this.console.onblur = () => { if (this.console.style.display !== 'none') { this.closeConsole(); this.conClosed = performance.now(); } };
 
     this.input.onKey = (code, e) => this.onKey(code, e);
-    this.input.onLockChange = (locked) => { if (locked) this.audio.unlock(); else if (!this.input.uiMode && this.ready && !this.stats.dead) this.menu.pause(); };
-    canvas.addEventListener('mousedown', () => this.audio.unlock());
+    this.input.onLockChange = (locked) => {
+      if (locked) { this.audio.unlock(); if (this.paused && !this.menu.open) { this.paused = false; this.hud.setPrompt(null); } }
+      else if (!this.input.uiMode && this.ready && !this.stats.dead) this.menu.pause();
+    };
+    // alt-tabbing away with a window or the console open would otherwise leave the world running
+    window.addEventListener('blur', () => {
+      if (!this.ready || this.stats.dead || this.menu.open) return;
+      const con = this.console.style.display !== 'none' || performance.now() - this.conClosed < 250;
+      if (!this.win.open && !con) return;
+      if (con) this.closeConsole();
+      this.win.close(true); this.menu.pause();
+    });
+    // a click on the world resumes after a refused re-lock (Input requests the lock on the same click)
+    canvas.addEventListener('mousedown', () => { this.audio.unlock(); if (this.paused && this.ready && !this.menu.open && !this.stats.dead) { this.paused = false; this.hud.setPrompt(null); } });
     window.addEventListener('resize', () => this.gfx.resize());
     window.addEventListener('beforeunload', (e) => {
       void this.save();
-      // Ctrl is the sprint key and Ctrl+W closes the tab: ask first, but only when Ctrl is held in play
-      if (this.ready && this.input.locked && (this.input.down('ControlLeft') || this.input.down('ControlRight'))) { e.preventDefault(); e.returnValue = ''; }
+      // Ctrl is a sprint key and Ctrl+W closes the tab: ask before closing mid-play (not with a menu open, not in automated ?quick runs)
+      if (this.ready && this.input.locked && !this.stats.dead && !location.search.includes('quick')) { e.preventDefault(); e.returnValue = ''; }
     });
     document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); });
 
@@ -688,7 +712,7 @@ export class Game implements InteractHost {
   // ---- input ----------------------------------------------------------------------------------
   private onKey(code: string, e: KeyboardEvent): boolean {
     if (!this.ready || this.menu.dead) return false;
-    if (code === 'Escape') { if (this.win.open) this.win.close(); else if (this.menu.open) this.menu.close(); else this.menu.pause(); return true; }
+    if (code === 'Escape') { if (this.win.open) this.win.close(); else if (this.menu.open) this.menu.escape(); else this.menu.pause(); return true; }
     if (this.menu.open || document.activeElement === this.console) return false;
     if (this.win.open && this.win.key(code, e)) return true;
     if (code === 'KeyE') { if (this.win.open) this.win.close(); else this.win.show('inv'); return true; }
@@ -698,7 +722,7 @@ export class Game implements InteractHost {
     if ((code === 'KeyT' || code === 'Slash') && !this.win.open) { this.console.style.display = 'block'; this.console.value = ''; this.input.uiMode = true; this.input.unlock(); setTimeout(() => this.console.focus(), 0); return true; }
     return false;
   }
-  private closeConsole(): void { this.console.style.display = 'none'; this.console.blur(); this.input.uiMode = false; this.input.lock(); }
+  private closeConsole(): void { if (this.console.style.display === 'none') return; this.console.style.display = 'none'; this.console.blur(); this.input.uiMode = false; this.input.lock(); }
 
   /** Developer commands (also reachable from the T command line). */
   cheat(cmd: string): string {
@@ -794,9 +818,22 @@ export class Game implements InteractHost {
     // prompts
     const h = this.interact.hit;
     let prompt: string | null = null;
-    if (h.hit && h.dist < this.reach()) {
+    // townsfolk first, as secondary() tries them before blocks; the ray is cheap but only needs checking a few times a second
+    if (--this.npcPromptT <= 0) {
+      this.npcPromptT = 6;
+      const d = p.dir(this.v), r = this.mobs.rayHit(p.x, p.y + p.eye, p.z, d.x, d.y, d.z, h.hit ? Math.min(4, h.dist) : 4, 0.15, IS_NPC);
+      this.npcPrompt = null;
+      if (r && this.npcs.def(r.m.def.key)) {
+        let t = TRADE_PROMPT.get(r.m.def.key);
+        if (!t) { t = `Right-click: trade with ${r.m.def.name}`; TRADE_PROMPT.set(r.m.def.key, t); }
+        this.npcPrompt = t;
+      }
+    }
+    if (this.npcPrompt) prompt = this.npcPrompt;
+    else if (h.hit && h.dist < this.reach()) {
       const u = BLOCKS[h.id].use;
-      if (u) prompt = u.startsWith('altar') ? 'Right-click: make an offering' : u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
+      if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.mobs.activeBoss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !this.isNight() ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
+      else if (u) prompt = u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
       else if (!this.canHarvest(h.id) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
     }
     this.hud.setPrompt(this.win.open || this.menu.open ? null : !inp.locked && !inp.uiMode ? 'Click to take control' : prompt);
@@ -933,7 +970,9 @@ export class Game implements InteractHost {
     }
     if (this.arriving >= 0) this.land();
     p.frozen = false; this.ready = true; this.portalArmed = false;
-    this.loading?.remove(); this.loading = null;
+    if (this.cfg.canSave === false && !this.noSaveWarned) { this.noSaveWarned = true; this.hud.showBanner('Saving is unavailable', 'This browser is blocking storage. Progress is lost when the tab closes.', '#ff9a8a'); }
+    const l = this.loading; this.loading = null;
+    if (l) { const rm = (): void => l.remove(); l.classList.add('out'); l.addEventListener('transitionend', rm, { once: true }); setTimeout(rm, 700); }
     if (this.arriveMsg) { this.toast(this.arriveMsg, '#ff9a8a'); this.arriveMsg = ''; }
     if (this.deadOnLoad) { this.deadOnLoad = false; this.stats.hp = 0; this.stats.dead = true; this.menu.death('You did not get back up', 0); }
     if (!this.cfg.meta.data && this.dim === 0 && !this.flags.has('started')) {
@@ -997,7 +1036,13 @@ export class Game implements InteractHost {
       spawn: this.spawn, deathAt: this.deathAt, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes,
       arriving: this.arriving, pendingBed: this.pendingBed, safe: this.safe };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
-    try { await this.cfg.db.putWorld(m); } catch (e) { console.warn('save failed', e); }
+    try {
+      await this.cfg.db.putWorld(m);
+      if (this.cfg.canSave !== false) { this.lastSave = Date.now(); this.hud.saved(); }
+    } catch (e) {
+      console.warn('save failed', e);
+      if (performance.now() - this.saveFailT > 60000) { this.saveFailT = performance.now(); this.toast('Save failed. Your progress may not be kept.', '#ff9a8a'); }
+    }
   }
 
   private debugLines(): string[] {

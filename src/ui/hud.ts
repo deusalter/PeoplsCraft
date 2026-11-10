@@ -53,7 +53,7 @@ export class Hud {
   private quest: HTMLElement; private event: HTMLElement; private eventBar: Bar; private eventText: HTMLElement;
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
   private hurtDir: HTMLElement; private cross: HTMLElement; private hitT = 0; private hitOn = false; private critOn = false;
-  private floats: Floater[] = []; private tags: HTMLElement[] = [];
+  private floats: Floater[] = []; private tags: HTMLElement[] = []; private savedEl: HTMLElement;
   private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private questIdx = -1; private questT = 0; private regenOn = false; private buffGen = 0; private coinV = -1; private lvlV = -1; private ptsV = -1;
   private v = new THREE.Vector3();
   private marks: { el: HTMLElement; b: number; px: number }[] = [];
@@ -113,6 +113,7 @@ export class Hud {
     this.quest = el('div', '#quest', side);
     this.event = el('div', '#event', side); this.eventText = el('div', '', this.event); this.eventBar = bar('', this.event); this.event.classList.add('hidden');
     this.buffs = el('div', '#buffs', r); this.prompt = el('div', '#prompt', r); this.prompt.classList.add('hidden');
+    this.savedEl = el('div', '#saved', r, 'Saved');
     for (let i = 0; i < 48; i++) { const e = el('div', 'float', r); e.style.display = 'none'; this.floats.push({ el: e, x: 0, y: 0, z: 0, life: 0, max: 1, vy: 0 }); }
     for (let i = 0; i < 10; i++) { const e = el('div', 'float tag', r); e.style.display = 'none'; this.tags.push(e); }
     window.addEventListener('resize', () => { this.vw = window.innerWidth; this.vh = window.innerHeight; });
@@ -168,10 +169,16 @@ export class Hud {
   setPrompt(text: string | null): void {
     if (!text) text = null;
     if (text === this.promptText) return;
-    if (text !== null) this.prompt.textContent = text;
+    if (text !== null) {
+      // "Right-click: open" shows the key part as a key cap
+      const i = text.indexOf(': ');
+      if (i > 0) { this.prompt.innerHTML = ''; el('kbd', '', this.prompt, text.slice(0, i)); this.prompt.append(text.slice(i + 2)); } else this.prompt.textContent = text;
+    }
     if ((text === null) !== (this.promptText === null)) this.prompt.classList.toggle('hidden', text === null);
     this.promptText = text;
   }
+  /** Brief "Saved" mark in the corner (fades by CSS transition, no per-frame work). */
+  saved(): void { const s = this.savedEl; s.style.transition = 'none'; s.style.opacity = '1'; requestAnimationFrame(() => { s.style.transition = 'opacity 1.5s 0.6s'; s.style.opacity = '0'; }); }
   /** `angle` is where the hit came from relative to the view, in radians clockwise from straight ahead. */
   flashHurt(angle?: number): void {
     this.hurt.animate(HURT_FX, HURT_T);

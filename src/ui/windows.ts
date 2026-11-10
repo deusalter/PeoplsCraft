@@ -9,6 +9,7 @@ import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } 
 import { ATTR_DESC, Attr, STAT_NAMES } from '../systems/stats';
 import type { BlockEnt } from '../world/world';
 import { el } from './hud';
+import { uiScale } from './menus';
 
 type Kind = 'inv' | 'armor' | 'acc' | 'craft' | 'out' | 'chest' | 'fin' | 'ffuel' | 'fout';
 interface View { arr: Slot[]; i: number; kind: Kind; root: HTMLElement; ic: HTMLElement; n: HTMLElement; sig: string }
@@ -310,7 +311,7 @@ export class Windows {
     const c = inv.cursor;
     // equipment and forge slots that would take the carried item light up
     for (const v of this.views) if (v.kind === 'armor' || v.kind === 'acc' || v.kind === 'fin' || v.kind === 'ffuel') v.root.classList.toggle('ok', !!c && this.accepts(v, c));
-    if (c) { this.cursor.style.display = 'block'; g.icons.apply(this.cursor, c.k); this.cursorN.textContent = c.n > 1 ? String(c.n) : ''; }
+    if (c) { this.cursor.style.display = 'block'; g.icons.apply(this.cursor, c.k, Math.round(32 * uiScale())); this.cursorN.textContent = c.n > 1 ? String(c.n) : ''; }
     else this.cursor.style.display = 'none';
     if (this.book) this.updateBook();
     if (this.statsEl) this.buildStats();

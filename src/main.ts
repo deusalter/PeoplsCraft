@@ -4,7 +4,7 @@ import { installDevTools } from './dev';
 import { Game } from './game';
 import { SaveDB, WorldMeta } from './systems/save';
 import './style.css';
-import { TitleMenu, loadSettings } from './ui/menus';
+import { TitleMenu, applyUiScale, loadSettings } from './ui/menus';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
@@ -13,10 +13,11 @@ async function boot(): Promise<void> {
   if (import.meta.env.DEV) { const bad = validateData(); if (bad.length) console.error('DATA PROBLEMS\n' + bad.join('\n')); (window as any).dataProblems = bad; }
   if (new URLSearchParams(location.search).has('gallery')) { (await import('./gallery')).showGallery(); return; }
   const db = new SaveDB();
-  await db.open();
+  const canSave = await db.open();
   const settings = loadSettings();
+  applyUiScale(settings.uiScale);
   const play = (meta: WorldMeta): void => {
-    const game = new Game(canvas, ui, { meta, db, settings });
+    const game = new Game(canvas, ui, { meta, db, settings, canSave });
     installDevTools(game);
     game.start();
   };
@@ -29,6 +30,6 @@ async function boot(): Promise<void> {
     play(saved ?? { id, name: 'Quick world', seed: /^-?\d+$/.test(seedText) ? Number(seedText) | 0 : strSeed(seedText), seedText, created: Date.now(), played: Date.now(), data: null });
     return;
   }
-  new TitleMenu(ui, db, settings, play);
+  new TitleMenu(ui, db, settings, play, canSave);
 }
 void boot();
