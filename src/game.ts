@@ -73,6 +73,7 @@ export class Game implements InteractHost {
     this.climate = new Climate(meta.seed);
     this.gfx.scene.add(this.world.group, this.boxes.mesh, this.particles.mesh);
     this.gfx.shadowCasters = this.world.group;
+    this.gfx.boxCaster = this.boxes;
     this.input = new Input(canvas);
     this.interact = new Interact(this.gfx.scene, this.world, this.player);
     this.mobs = new MobSystem(this); this.proj = new ProjectileSystem(this); this.drops = new DropSystem(this);
