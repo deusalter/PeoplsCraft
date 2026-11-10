@@ -167,6 +167,13 @@ function drawIcon(spec: IconSpec, key: string): Uint8ClampedArray {
 }
 
 const CELL = 32, COLS = 20;
+/** Height (0..1] of a block drawn as an isometric solid: 1 for cubes, the box height for full-footprint
+ *  slabs (bedroll, guest bed), 0 for everything else (plants, torches, doors, liquids are drawn flat). */
+export function slabHeight(id: number): number {
+  const b = BLOCKS[id];
+  if (b.shape === 'cube') return 1;
+  return b.shape === 'box' && b.box[0] === 0 && b.box[2] === 0 && b.box[3] === 16 && b.box[5] === 16 ? b.box[4] / 16 : 0;
+}
 const TINT = [0xffffff, 0x86c653, 0x6fb445, 0x3a84dc];
 
 export class Icons {
@@ -210,8 +217,9 @@ export class Icons {
       if (b.tint && (!opaque || a < 128)) c = (((c >> 16) * (tint >> 16)) / 255) << 16 | ((((c >> 8) & 255) * ((tint >> 8) & 255)) / 255) << 8 | (((c & 255) * (tint & 255)) / 255);
       out[d] = (c >> 16) * shade; out[d + 1] = ((c >> 8) & 255) * shade; out[d + 2] = (c & 255) * shade; out[d + 3] = 255;
     };
-    if (b.shape !== 'cube') {
-      const t = tile(b.shape === 'box' ? 0 : 0);
+    const h = slabHeight(id);
+    if (!h) {
+      const t = tile(0);
       for (let y = 0; y < CELL; y++) for (let x = 0; x < CELL; x++) {
         const s = (((y >> 1) << 4) | (x >> 1)) << 2;
         if (b.shape !== 'liquid' && t[s + 3] < 110) continue;
@@ -219,13 +227,15 @@ export class Icons {
       }
       return;
     }
-    const top = tile(2), left = tile(4), right = tile(0);
+    // isometric cube, or a slab of height h whose top face is lowered and whose sides are cut short
+    const top = tile(2), left = tile(4), right = tile(0), drop = 15 * (1 - h);
     for (let py = 0; py < CELL; py++) for (let px = 0; px < CELL; px++) {
-      const x = px + 0.5, y = py + 0.5, dx = (x - 16) / 16, dy = (y - 1) / 7.5;
-      const u = (dx + dy) / 2, v = (dy - dx) / 2;
-      if (u >= 0 && u < 1 && v >= 0 && v < 1) { put(px, py, top, u * 16, v * 16, 1); continue; }
-      if (x < 16) { const vv = (y - (8.5 + x * 0.469)) / 15; if (vv >= 0 && vv < 1) put(px, py, left, x, vv * 16, 0.78); }
-      else { const vv = (y - (16 - (x - 16) * 0.469)) / 15; if (vv >= 0 && vv < 1) put(px, py, right, x - 16, vv * 16, 0.58); }
+      const x = px + 0.5, y = py + 0.5, dx = (x - 16) / 16, dy = (y - 1 - drop) / 7.5;
+      const u = (dx + dy) / 2, v = (dy - dx) / 2, mid = px === 15 || px === 16 ? 0.9 : 1;
+      // the two front edges of the top face catch the light, the vertical edge between the sides is in shade
+      if (u >= 0 && u < 1 && v >= 0 && v < 1) { put(px, py, top, u * 16, v * 16, u * 16 >= 15 || v * 16 >= 15 ? 1.15 : 1); continue; }
+      if (x < 16) { const vv = (y - (8.5 + x * 0.469)) / 15; if (vv >= 1 - h && vv < 1) put(px, py, left, x, vv * 16, 0.78 * mid); }
+      else { const vv = (y - (16 - (x - 16) * 0.469)) / 15; if (vv >= 1 - h && vv < 1) put(px, py, right, x - 16, vv * 16, 0.58 * mid); }
     }
   }
 
