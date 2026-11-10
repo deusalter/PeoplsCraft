@@ -115,7 +115,11 @@ export class Game implements InteractHost {
     };
     this.world.onChunkReady = (_c, fresh, ents) => {
       if (!fresh) return;
-      for (const e of ents) this.world.setEnt(e.x, e.y, e.z, e.kind, e.kind === 'nest' ? { mob: e.data, t: 0 } : { loot: e.data, s: null });
+      for (const e of ents) {
+        // a structure stamped later can overwrite the block (overlapping dungeon rooms): do not keep its entity
+        if (BLOCKS[this.world.getBlock(e.x, e.y, e.z)].use !== e.kind) continue;
+        this.world.setEnt(e.x, e.y, e.z, e.kind, e.kind === 'nest' ? { mob: e.data, t: 0 } : { loot: e.data, s: null });
+      }
     };
     this.world.onUnload = (c) => this.saveChunk(c);
     // Saved chunks hold raw block ids. Each save records the id->key table it was written with, so a
@@ -668,6 +672,7 @@ export class Game implements InteractHost {
       for (const e of c.ents.values()) {
         if (e.kind === 'forge') this.tickForge(e, c, dt);
         else if (e.kind === 'nest') {
+          if (w.getBlock(e.x, e.y, e.z) !== B.brood_nest) { w.removeEnt(e.x, e.y, e.z); continue; }   // orphan from an older save
           const d = e.data; d.t = (d.t ?? 0) - dt;
           const dist = Math.hypot(e.x - p.x, e.y - p.y, e.z - p.z);
           if (d.t <= 0 && dist < 18 && dist > 3) {
