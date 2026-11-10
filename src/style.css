@@ -77,9 +77,16 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 .grid { display: grid; gap: 3px; }
 .ttl { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
 .arrow { align-self: center; font-size: 22px; color: var(--dim); padding: 0 4px; }
-#book { display: grid; grid-template-columns: repeat(6, 38px); gap: 3px; max-height: 208px; overflow-y: auto; padding-right: 4px; align-content: start; }
-#book .slot { width: 38px; height: 38px; cursor: pointer; } #book .slot .ic { left: 3px; top: 3px; }
+#book { display: grid; grid-template-columns: repeat(7, 38px); gap: 3px; max-height: 208px; overflow-y: auto; padding-right: 4px; align-content: start; }
+#book .slot { width: 38px; height: 38px; cursor: pointer; } #book .slot .ic { left: 3px; top: 3px; } #book .slot .n { font-size: 10px; right: 2px; }
 #book .slot.no .ic { opacity: 0.25; filter: grayscale(1); } #book .slot:hover { background: rgba(80, 90, 120, 0.9); }
+#book .slot.can { box-shadow: inset 0 0 0 1px rgba(242, 193, 78, 0.6), inset 2px 2px 0 rgba(255, 255, 255, 0.05); }
+#book.ro .slot { cursor: default; } #book.ro .slot.can { box-shadow: inset 0 0 0 1px #4a5268; }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; max-width: 290px; margin-top: -3px; }
+.btn.chip { padding: 0 5px; font-size: 10px; line-height: 16px; letter-spacing: 0.04em; color: var(--dim); }
+.btn.chip.on { box-shadow: inset 0 0 0 1px var(--gold); color: var(--gold); background: linear-gradient(#433d2c, #2c291f); }
+#win input.search { width: 112px; padding: 2px 6px; background: #0c0e13; border: 1px solid #000; box-shadow: inset 0 0 0 1px #3b4254; color: var(--text); font: inherit; font-size: 11px; outline: none; user-select: text; -webkit-user-select: text; }
+#win input.search:focus { box-shadow: inset 0 0 0 1px var(--gold); } #win input.search::placeholder { color: #5d667c; }
 #book::-webkit-scrollbar, .scroll::-webkit-scrollbar { width: 6px; } #book::-webkit-scrollbar-thumb, .scroll::-webkit-scrollbar-thumb { background: #4a5268; }
 .stat { display: flex; justify-content: space-between; gap: 14px; font-size: 12px; line-height: 1.55; } .stat b { color: var(--text); font-weight: 600; } .stat span { color: var(--dim); }
 .btn { display: inline-block; padding: 6px 14px; background: linear-gradient(#3a4257, #2a3042); border: 1px solid #0a0b10; box-shadow: inset 0 0 0 1px #5a6480; color: var(--text); font: inherit; font-size: 12px; letter-spacing: 0.08em; cursor: pointer; text-transform: uppercase; }
@@ -92,7 +99,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #tip .nm { font-size: 14px; font-weight: 700; } #tip .ty { color: var(--dim); font-size: 11px; margin-bottom: 4px; } #tip .ln { color: #c4c9d8; }
 #tip .gd { color: var(--good); } #tip .bd { color: var(--bad); } #tip .ds { color: #a8a0c8; font-style: italic; margin-top: 4px; } #tip .st { color: #8fd0ff; margin-top: 4px; } #tip .off { color: #6a7088; }
 .prog { position: relative; width: 44px; height: 8px; background: #0c0e13; box-shadow: inset 0 0 0 1px #2c3242; align-self: center; } .prog > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ember); transition: width 0.25s linear; }
-.cap { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #6a7088; text-align: center; }
+.cap { font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: #6a7088; text-align: center; max-width: 290px; }
 .shoprow { display: flex; align-items: center; gap: 8px; padding: 2px 4px; font-size: 12px; } .shoprow:hover { background: rgba(255, 255, 255, 0.05); }
 .shoprow .nm { flex: 1; } .shoprow .pr { color: var(--gold); width: 54px; text-align: right; }
 .scroll { max-height: 300px; overflow-y: auto; padding-right: 6px; }

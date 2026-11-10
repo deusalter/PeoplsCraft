@@ -1,7 +1,7 @@
 // Inventory, crafting, chest, forge, shop and guide windows, plus the cursor stack and tooltips.
 import { BLOCKS } from '../data/blocks';
 import { Item, MOD_BY_KEY, RARITY, STYLE_INFO, Stats, item, itemName, itemRarity, matches, setBonus } from '../data/items';
-import { Recipe, SMELTS, STATION_NAMES } from '../data/recipes';
+import { RECIPES, Recipe, SMELTS, STATION_NAMES } from '../data/recipes';
 import type { NpcDef } from '../data/npcs';
 import type { Game } from '../game';
 import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } from '../systems/inventory';
@@ -37,6 +37,9 @@ export function itemValue(k: string): number {
   const base = [2, 8, 25, 70, 160, 380, 900][d.rarity];
   return Math.round(base * (d.weapon || d.armor || d.acc ? 3 : 1));
 }
+const BOOK_CATS = ['All', 'Tools', 'Weapons', 'Armour', 'Trinkets', 'Blocks', 'Other'];
+function bookCat(k: string): number { const d = item(k); return d.tool ? 1 : d.weapon ? 2 : d.armor ? 3 : d.acc ? 4 : d.block !== undefined ? 5 : 6; }
+const EMPTY_GRID: Slot[] = [];
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 export class Windows {
@@ -47,13 +50,17 @@ export class Windows {
   private book: HTMLElement | null = null; private bookRecipes: Recipe[] = []; private statsEl: HTMLElement | null = null; private forgeEls: HTMLElement[] = [];
   private rev = -1; private dragFrom: View | null = null; private mx = 0; private my = 0; private hover: View | null = null; private outArr: Slot[] = [null];
   private shopEl: HTMLElement | null = null;
+  // recipe book: built once per tab in a fixed order; refresh() only toggles classes
+  private bookEls: HTMLElement[] = []; private bookCats: number[] = []; private bookNames: string[] = []; private bookEmpty: HTMLElement | null = null;
+  private bookTab = 'hand'; private bookChips: HTMLElement[] = []; private makeChip: HTMLElement | null = null; private search: HTMLInputElement | null = null;
+  private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
 
   constructor(ui: HTMLElement, private g: Game) {
     this.root = el('div', '#win', ui); this.root.classList.add('hidden');
     this.cursor = el('div', '#cursor', ui); this.cursorN = el('div', 'n', this.cursor); this.cursor.style.display = 'none';
     this.tip = el('div', '#tip', ui); this.tip.style.display = 'none';
     const r = this.root;
-    r.addEventListener('mousedown', (e) => { const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) this.dropCursor(); });
+    r.addEventListener('mousedown', (e) => { if (this.search && e.target !== this.search) this.search.blur(); const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) this.dropCursor(); });
     r.addEventListener('mouseup', (e) => { const v = this.viewOf(e.target); if (v && this.dragFrom && v !== this.dragFrom && g.inv.cursor) this.place(v, false); this.dragFrom = null; });
     r.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('mousemove', (e) => {
@@ -67,7 +74,8 @@ export class Windows {
       this.hover = v;
       if (v) { const s = v.arr[v.i]; if (s) this.showTip(this.itemTip(s)); else this.hideTip(); return; }
       const ri = t.closest?.('[data-r]') as HTMLElement | null;
-      if (ri) this.showTip(this.recipeTip(this.bookRecipes[+ri.dataset.r!])); else if (!t.closest?.('[data-tip]')) this.hideTip();
+      this.hoverR = ri ? this.bookRecipes[+ri.dataset.r!] : null;
+      if (this.hoverR) this.showTip(this.recipeTip(this.hoverR)); else if (!t.closest?.('[data-tip]')) this.hideTip();
       const dt = t.closest?.('[data-tip]') as HTMLElement | null;
       if (dt) this.showTip(dt.dataset.tip!);
     });
@@ -95,7 +103,7 @@ export class Windows {
     const g = this.g, inv = g.inv;
     this.open = false; this.root.classList.add('hidden'); this.hideTip();
     this.markContainer();
-    for (let i = 0; i < inv.craft.length; i++) { const s = inv.craft[i]; if (s) { const left = inv.add(s); if (left) g.dropItem({ ...s, n: left }); inv.craft[i] = null; } }
+    this.returnGrid();
     this.dropCursor(true);
     this.cursor.style.display = 'none';
     this.chest = null; this.forge = null; this.shop = null;
@@ -142,10 +150,47 @@ export class Windows {
       for (let i = 0; i < this.gridW * this.gridW; i++) this.slot(grid, inv.craft, i, 'craft');
       el('div', 'arrow', row, '→');
       this.outView = this.slot(row, this.outArr, 0, 'out'); this.outView.root.style.alignSelf = 'center';
-      const hd = el('div', 'wrow', mid); hd.style.justifyContent = 'space-between'; hd.style.alignItems = 'center';
+      const hd = el('div', 'wrow', mid); hd.style.cssText = 'justify-content:space-between;align-items:center;gap:6px';
       el('div', 'ttl', hd, 'Recipe book');
+      const sr = el('input', 'search', hd); sr.type = 'text'; sr.placeholder = 'Search'; sr.spellcheck = false; sr.value = this.bookQuery;
+      // the game's key handler listens on window: keep typed letters (E, G, digits) from reaching it
+      sr.onkeydown = (e) => { if (e.key !== 'Escape') e.stopPropagation(); if (e.key === 'Enter') sr.blur(); };
+      sr.oninput = () => { this.bookQuery = sr.value.trim().toLowerCase(); this.updateBook(); };
+      this.search = sr;
       const gb = el('button', 'btn sm', hd, 'Guide'); gb.onclick = () => this.show('guide');
+      const tabs = this.bookTabs();
+      if (!tabs.includes(this.bookTab)) this.bookTab = this.station;
+      if (tabs.length > 1) {
+        const tr = el('div', 'chips', mid);
+        for (const t of tabs) { const b = el('button', 'btn chip' + (t === this.bookTab ? ' on' : ''), tr, t === 'hand' ? 'Hand' : STATION_NAMES[t]); b.dataset.tab = t; b.dataset.tip = t === this.station ? 'What you can make here' : 'Browse what the ' + STATION_NAMES[t] + ' makes'; }
+        tr.onmousedown = (e) => {
+          e.stopPropagation();
+          const b = (e.target as HTMLElement).closest('[data-tab]') as HTMLElement | null;
+          if (!b || b.dataset.tab === this.bookTab) return;
+          this.bookTab = b.dataset.tab!; for (const c of tr.children) c.classList.toggle('on', c === b);
+          this.g.audio.play('click', 0.4); this.makeBook(); this.updateBook();
+        };
+      }
+      const cr = el('div', 'chips', mid);
+      this.makeChip = el('button', 'btn chip', cr, 'Can make'); this.makeChip.dataset.c = '-1';
+      this.bookChips = BOOK_CATS.map((c, i) => { const b = el('button', 'btn chip', cr, c); b.dataset.c = String(i); return b; });
+      cr.onmousedown = (e) => {
+        e.stopPropagation();
+        const b = (e.target as HTMLElement).closest('[data-c]') as HTMLElement | null;
+        if (!b) return;
+        const c = +b.dataset.c!;
+        if (c < 0) this.bookCan[this.bookTab] = !this.bookCan[this.bookTab]; else this.bookCat[this.bookTab] = c;
+        this.g.audio.play('click', 0.4); this.updateBook();
+      };
       this.book = el('div', '#book', mid);
+      this.book.onmousedown = (e) => {
+        e.stopPropagation(); e.preventDefault(); this.search?.blur();
+        const b = (e.target as HTMLElement).closest('[data-r]') as HTMLElement | null;
+        if (b) this.bookClick(this.bookRecipes[+b.dataset.r!], e);
+      };
+      this.bookEmpty = el('div', 'cap', mid, 'Nothing here matches');
+      el('div', 'cap', mid, 'Click: lay out · Right-click: craft one · Shift-click: craft all').style.textAlign = 'left';
+      this.makeBook();
     } else if (this.mode === 'chest') {
       el('div', 'ttl', mid, 'Chest');
       const grid = el('div', 'grid', mid); grid.style.gridTemplateColumns = 'repeat(9, 44px)';
@@ -219,29 +264,81 @@ export class Windows {
     const c = inv.cursor;
     if (c) { this.cursor.style.display = 'block'; g.icons.apply(this.cursor, c.k); this.cursorN.textContent = c.n > 1 ? String(c.n) : ''; }
     else this.cursor.style.display = 'none';
-    if (this.book) this.buildBook();
+    if (this.book) this.updateBook();
     if (this.statsEl) this.buildStats();
     if (this.shopEl) this.buildShop();
     if (this.hover) { const s = this.hover.arr[this.hover.i]; if (s) this.showTip(this.itemTip(s)); else this.hideTip(); }
   }
-  private buildBook(): void {
-    const g = this.g, inv = g.inv, book = this.book!, top = book.scrollTop;
-    const grid = this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft;
-    const list = recipesFor(this.station, this.gridW).map((r) => ({ r, ok: canAfford(inv, r, grid) }));
-    // show what can be made now first, then everything this station offers
-    list.sort((a, b) => (a.ok === b.ok ? (a.r.station === 'hand' ? 1 : 0) - (b.r.station === 'hand' ? 1 : 0) : a.ok ? -1 : 1));
-    this.bookRecipes = list.map((x) => x.r);
-    book.innerHTML = '';
-    list.forEach((x, i) => {
-      const s = el('div', 'slot' + (x.ok ? '' : ' no'), book);
-      s.dataset.r = String(i);
-      g.icons.apply(el('div', 'ic', s), x.r.out);
-      s.onmousedown = (e) => {
-        e.stopPropagation();
-        if (fillGrid(inv, x.r, inv.craft, this.gridW)) g.audio.play('click'); else g.audio.play('error', 0.6);
-      };
+  /** Stations whose book can be browsed from here: the one in use, plus any the player has built. */
+  private bookTabs(): string[] {
+    const out = [this.station];
+    for (const st in STATION_NAMES) if (st !== 'hand' && st !== this.station && this.g.flags.has('craft:' + (BLOCKS.find((b) => b.use === st)?.key ?? st))) out.push(st);
+    return out;
+  }
+  /** Build the book's slots for the current tab: station recipes in table order, hand recipes last. */
+  private makeBook(): void {
+    const g = this.g, book = this.book!, here = this.bookTab === this.station;
+    const list = here ? recipesFor(this.station, this.gridW) : RECIPES.filter((r) => r.station === this.bookTab);
+    if (here && this.station !== 'hand') list.sort((a, b) => (a.station === 'hand' ? 1 : 0) - (b.station === 'hand' ? 1 : 0));
+    this.bookRecipes = list; this.bookEls = []; this.bookCats = []; this.bookNames = [];
+    book.innerHTML = ''; book.scrollTop = 0; book.classList.toggle('ro', !here);
+    const used = new Array(BOOK_CATS.length).fill(false); used[0] = true;
+    list.forEach((r, i) => {
+      const s = el('div', 'slot', book); s.dataset.r = String(i);
+      g.icons.apply(el('div', 'ic', s), r.out);
+      if (r.n > 1) el('div', 'n', s, String(r.n));
+      const c = bookCat(r.out); used[c] = true;
+      this.bookEls.push(s); this.bookCats.push(c); this.bookNames.push(item(r.out).name.toLowerCase());
     });
-    book.scrollTop = top;
+    this.bookChips.forEach((b, i) => b.classList.toggle('hidden', !used[i]));
+    if (!used[this.bookCat[this.bookTab] ?? 0]) this.bookCat[this.bookTab] = 0;
+  }
+  /** Affordability rings and filters, without touching the order. */
+  private updateBook(): void {
+    if (!this.book) return;
+    const inv = this.g.inv, grid = this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft, here = this.bookTab === this.station;
+    const cat = this.bookCat[this.bookTab] ?? 0, can = !!this.bookCan[this.bookTab], q = this.bookQuery;
+    let shown = 0;
+    for (let i = 0; i < this.bookEls.length; i++) {
+      const e = this.bookEls[i], ok = canAfford(inv, this.bookRecipes[i], here ? grid : EMPTY_GRID);
+      e.classList.toggle('no', !ok); e.classList.toggle('can', ok);
+      const vis = (cat === 0 || this.bookCats[i] === cat) && (!can || ok) && (!q || this.bookNames[i].includes(q));
+      e.classList.toggle('hidden', !vis); if (vis) shown++;
+    }
+    this.bookChips.forEach((b, i) => b.classList.toggle('on', i === cat));
+    this.makeChip!.classList.toggle('on', can);
+    this.bookEmpty!.classList.toggle('hidden', shown > 0);
+  }
+  private bookClick(r: Recipe, e: MouseEvent): void {
+    const g = this.g, inv = g.inv;
+    if (this.bookTab !== this.station) { g.toast('Made at the ' + STATION_NAMES[r.station], '#ff9a8a'); g.audio.play('error', 0.5); return; }
+    const grid = this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft;
+    if (!canAfford(inv, r, grid)) { g.audio.play('error', 0.5); return; }
+    if (e.button === 2 || e.shiftKey) { this.craftFromBook(r, e.shiftKey ? 64 : 1); return; }
+    if (fillGrid(inv, r, inv.craft, this.gridW)) g.audio.play('click'); else g.audio.play('error', 0.6);
+  }
+  /** Lay the recipe out and craft it straight into the pack, up to `max` times. */
+  private craftFromBook(r: Recipe, max: number): void {
+    const g = this.g, inv = g.inv, cells = this.gridW * this.gridW;
+    let made = 0, full = false;
+    for (let t = 0; t < max; t++) {
+      if (!canAfford(inv, r, inv.craft)) break;
+      if (!fillGrid(inv, r, inv.craft, this.gridW)) break;
+      // the laid-out grid must spell exactly this recipe (tag overlaps can leave a cell short)
+      if (matchRecipe(this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft, this.gridW, this.station) !== r) break;
+      if (inv.room(r.out) < r.n) { full = true; this.returnGrid(); break; }
+      const out = takeCraft(r, inv.craft, Math.random, cells), left = inv.add(out);
+      if (left) g.dropItem({ ...out, n: left });
+      made += out.n; g.onCrafted(r.out, out.n);
+    }
+    if (made) { g.audio.play('craft'); if (max > 1) g.toast(`Made ${made} ${item(r.out).name}`, RARITY[item(r.out).rarity].color); }
+    else g.audio.play('error', 0.5);
+    if (full) g.toast('No room in your pack', '#ff9a8a');
+    inv.touch();
+  }
+  private returnGrid(): void {
+    const g = this.g, inv = g.inv;
+    for (let i = 0; i < inv.craft.length; i++) { const s = inv.craft[i]; if (s) { const left = inv.add(s); if (left) g.dropItem({ ...s, n: left }); inv.craft[i] = null; } }
   }
   private buildStats(): void {
     const g = this.g, st = g.stats, d = st.d, e = this.statsEl!;
@@ -366,6 +463,7 @@ export class Windows {
         made += out.n; g.onCrafted(r.out, out.n);
         break;
       }
+      if (inv.room(r.out) < r.n) { if (!made) g.toast('No room in your pack', '#ff9a8a'); break; }
       const out = takeCraft(r, inv.craft, Math.random, this.gridW * this.gridW), left = inv.add(out);
       if (left) g.dropItem({ ...out, n: left });
       made += out.n; g.onCrafted(r.out, out.n);

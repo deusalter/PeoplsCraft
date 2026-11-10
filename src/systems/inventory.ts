@@ -35,6 +35,13 @@ export class Inventory {
     if (n !== it.n) this.rev++;
     return n;
   }
+  /** How many of an unmodified item the pack could still take. */
+  room(k: string): number {
+    const d = item(k);
+    let n = 0;
+    for (let i = 0; i < INV_SIZE; i++) { const s = this.slots[i]; if (!s) n += d.stack; else if (s.k === k && !s.m && d.stack > 1) n += Math.max(0, d.stack - s.n); }
+    return n;
+  }
   /** Count items matching a key or '#tag' across the main inventory. */
   count(want: string): number {
     let n = 0;
@@ -129,11 +136,15 @@ export function matchRecipe(grid: Slot[], w: number, station: string): Recipe | 
 }
 
 /** Ingredient totals for a recipe as [want, count] pairs. */
+const NEEDS = new Map<Recipe, [string, number][]>();
 export function needs(r: Recipe): [string, number][] {
   if (r.in) return r.in;
+  let out = NEEDS.get(r);
+  if (out) return out;
   const m = new Map<string, number>();
   for (const row of r.shape!) for (const ch of row) if (ch !== ' ') m.set(r.key![ch], (m.get(r.key![ch]) ?? 0) + 1);
-  return [...m.entries()];
+  NEEDS.set(r, (out = [...m.entries()]));
+  return out;
 }
 export function canAfford(inv: Inventory, r: Recipe, grid: Slot[]): boolean {
   for (const [want, n] of needs(r)) {
