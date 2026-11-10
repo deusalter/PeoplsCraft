@@ -467,12 +467,13 @@ void main() {
   float hf = clamp((ro.y + rd.y * hit - y0) / uCloud.y, 0.0, 1.0);
   vec3 col;
   if (nrm.y > 0.5) col = mix(uCloudDark, uCloudLit, 0.82 + 0.18 * step(0.9, hf));
-  else if (nrm.y < -0.5) col = mix(uCloudLit, uCloudDark, 0.5 + 0.5 * smoothstep(uCover, uCover + 0.2, dens));
+  // undersides shade smoothly from pale rims to a heavier middle (filtered cover, so no per-cell checkering)
+  else if (nrm.y < -0.5) col = mix(uCloudLit, uCloudDark, 0.3 + 0.6 * smoothstep(uCover - 0.03, uCover + 0.2, texture(uCloudMap, (o + dc * hit) / 256.0).r));
   else col = mix(uCloudDark, uCloudLit, clamp(0.5 + 0.42 * dot(nrm, uLightDir), 0.0, 1.0)) * (0.86 + 0.14 * hf);
   col += uGlowColor * (pow(max(dot(rd, uSunDir), 0.0), 8.0) * 0.3);
   float fog = smoothstep(uFogEnd * 0.9, uFogEnd * 2.6, hit * hl);
   col = mix(col, skyBase(normalize(vec3(rd.x, abs(rd.y) * 0.5 + 0.02, rd.z))), fog);
-  gl_FragColor = vec4(col, 0.9 * (1.0 - fog));
+  gl_FragColor = vec4(col, 1.0 - fog);   // opaque up close, or stars and the sun disc would show through
 }
 `;
 
