@@ -24,6 +24,10 @@ function setBar(b: Bar, frac: number, text: string): void {
   if (Math.abs(frac - b.v) > 0.002) { b.v = frac; b.fill.style.transform = `scaleX(${frac})`; if (b.ghost) b.ghost.style.transform = b.fill.style.transform; }
   if (text !== b.t) { b.t = text; b.label.textContent = text; }
 }
+const COMPASS_NAMES = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'], PIP_CLS = ['home', 'death', 'goal'];
+/** Half the strip in pixels, and the bearing (radians either side of straight ahead) it spans. */
+const CW = 150, CSPAN = 1.2;
+const wrapPi = (a: number): number => { a %= Math.PI * 2; return a > Math.PI ? a - Math.PI * 2 : a < -Math.PI ? a + Math.PI * 2 : a; };
 const STAT_WORDS: Record<string, string> = { def: 'defense', speed: 'speed', regen: 'regen', hp: 'health', mana: 'mana', crit: 'crit', melee: 'melee', ranged: 'ranged', magic: 'magic', mining: 'mining' };
 /** "+6 defense, +20% speed": fractional stats read as percentages. */
 function buffLine(stats: Record<string, number | undefined>): string {
@@ -52,6 +56,9 @@ export class Hud {
   private floats: Floater[] = []; private tags: HTMLElement[] = [];
   private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private questIdx = -1; private questT = 0; private regenOn = false; private buffGen = 0; private coinV = -1; private lvlV = -1; private ptsV = -1;
   private v = new THREE.Vector3();
+  private marks: { el: HTMLElement; b: number; px: number }[] = [];
+  private pips: { el: HTMLElement; d: HTMLElement; px: number; on: boolean; edge: boolean; m: number }[] = [];
+  private coord: HTMLElement; private cX = NaN; private cY = NaN; private cZ = NaN; private cMin = -1;
   private buffRows = new Map<string, { el: HTMLElement; time: HTMLElement; sec: number; gen: number; exp: boolean }>();
   /** Bound once so the per-frame buff pass allocates nothing; text is written only when a second ticks over. */
   private buffCb = (t: number, k: string): void => {
@@ -89,6 +96,15 @@ export class Hud {
       const s = el('div', 'slot', hb), ic = el('div', 'ic', s), cdEl = el('div', 'cd', s); el('div', 'k', s, String(i + 1));
       this.slots.push({ root: s, ic, n: el('div', 'n', s), cdEl, cd: 0, cv: 0, k: '', cnt: 0 });
     }
+    // compass: cardinal marks on a masked strip, pips (home, last death, guide target) on an unmasked layer above it
+    const cw = el('div', '#compass', r), strip = el('div', 'strip', cw), pipL = el('div', 'pips', cw);
+    el('div', 'mid', cw);
+    for (let i = 0; i < 8; i++) this.marks.push({ el: el('div', i % 2 ? 'm sm' : 'm', strip, COMPASS_NAMES[i]), b: (i * Math.PI) / 4, px: 1e9 });
+    for (let i = 0; i < 3; i++) {
+      const e = el('div', 'pip ' + PIP_CLS[i], pipL); el('i', '', e);
+      this.pips.push({ el: e, d: el('b', '', e), px: 1e9, on: true, edge: false, m: -1 });
+    }
+    this.coord = el('div', 'xyz', cw);
     this.lvl = el('div', '#lvl', r); this.itemName = el('div', '#itemname', r);
     this.toasts = el('div', '#toasts', r); this.banner = el('div', '#banner', r);
     this.boss = el('div', '#boss', r); this.bossTitle = el('div', 'tt', this.boss); this.bossName = el('div', 'nm', this.boss); this.bossBar = bar('', this.boss, true);
@@ -172,6 +188,36 @@ export class Hud {
   setPortal(a: number, gold: boolean): void {
     this.portal.style.opacity = String(a);
     this.portal.style.background = gold ? 'radial-gradient(circle, rgba(255,210,90,0) 20%, rgba(240,180,60,0.85) 100%)' : 'radial-gradient(circle, rgba(160,90,255,0) 20%, rgba(120,60,220,0.85) 100%)';
+  }
+
+  private updateCompass(): void {
+    const g = this.g, p = g.player, yaw = p.yaw;
+    // bearings are clockwise from north (-z); the view heading is -yaw, so relative bearing = bearing + yaw
+    for (let i = 0; i < 8; i++) {
+      const m = this.marks[i], rel = wrapPi(m.b + yaw), px = Math.abs(rel) > CSPAN ? 1e9 : Math.round((rel / CSPAN) * CW);
+      if (px === m.px) continue;
+      if ((px === 1e9) !== (m.px === 1e9)) m.el.style.visibility = px === 1e9 ? 'hidden' : '';
+      m.px = px; if (px !== 1e9) m.el.style.transform = `translateX(${px}px)`;
+    }
+    const sp = g.spawn, da = g.deathAt, tg = g.quests.target, home = g.dim === 0;
+    this.pip(0, home, sp ? sp[0] + 0.5 : g.worldSpawn[0] + 0.5, sp ? sp[2] + 0.5 : g.worldSpawn[1] + 0.5, p.x, p.z, yaw);
+    this.pip(1, !!da && da[0] === g.dim, da ? da[1] + 0.5 : 0, da ? da[3] + 0.5 : 0, p.x, p.z, yaw);
+    this.pip(2, !!tg, tg ? tg[0] + 0.5 : 0, tg ? tg[1] + 0.5 : 0, p.x, p.z, yaw);
+    const x = Math.floor(p.x), y = Math.floor(p.y), z = Math.floor(p.z), tod = ((g.clock % 1) * 24 + 6) % 24, min = Math.floor(tod * 60);
+    if (x !== this.cX || y !== this.cY || z !== this.cZ || min !== this.cMin) {
+      this.cX = x; this.cY = y; this.cZ = z; this.cMin = min;
+      this.coord.textContent = `X ${x}  Y ${y}  Z ${z}  ·  ${Math.floor(min / 60)}:${String(min % 60).padStart(2, '0')}`;
+    }
+  }
+  private pip(i: number, on: boolean, tx: number, tz: number, x: number, z: number, yaw: number): void {
+    const q = this.pips[i];
+    if (on !== q.on) { q.on = on; q.el.style.display = on ? '' : 'none'; }
+    if (!on) return;
+    const dx = tx - x, dz = tz - z, rel = wrapPi(Math.atan2(dx, -dz) + yaw), edge = Math.abs(rel) > CSPAN;
+    const px = Math.round((Math.max(-CSPAN, Math.min(CSPAN, rel)) / CSPAN) * CW), m = Math.round(Math.hypot(dx, dz));
+    if (px !== q.px) { q.px = px; q.el.style.transform = `translateX(${px}px)`; }
+    if (edge !== q.edge) { q.edge = edge; q.el.classList.toggle('edge', edge); }
+    if (m !== q.m) { q.m = m; q.d.textContent = m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km'; }
   }
 
   update(dt: number): void {
@@ -276,6 +322,8 @@ export class Hud {
     this.buffGen++;
     st.buffs.forEach(this.buffCb);
     if (this.buffRows.size !== st.buffs.size) for (const [k, row] of this.buffRows) if (row.gen !== this.buffGen) { row.el.remove(); this.buffRows.delete(k); }
+
+    this.updateCompass();
 
     // floating text
     const cam = g.gfx.camera, w = this.vw, h = this.vh, v = this.v;

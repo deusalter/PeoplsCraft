@@ -54,6 +54,10 @@ export class Game implements InteractHost {
   spawn: [number, number, number] | null = null;
   /** Recall stone cooldown in seconds; the HUD shades the stone's slot with it. */
   recallT = 0;
+  /** Where the player starts without a bed, as x and z. */
+  worldSpawn: [number, number] = [0, 0];
+  /** Last death as [dimension, x, y, z], shown on the compass until the player walks back to it. */
+  deathAt: [number, number, number, number] | null = null;
   prof = { world: 0, tick: 0, render: 0 };
   private last = performance.now(); private acc = 0; private raf = 0; private keysReady = false;
   private env: Env = { time: 0, dim: 0, fogTint: [1, 1, 1], haze: 0, cave: 0, underwater: false, moonTint: null, moonPhase: 0, darkness: 0 };
@@ -62,7 +66,7 @@ export class Game implements InteractHost {
   private armGeo: THREE.BufferGeometry;
   private portalT = 0; private portalArmed = true; private portalReturn: Record<number, [number, number, number]> = {}; private arriving = -1;
   private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private fullT = 0; private safe: [number, number, number] = [0, 0, 0];
-  private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
+  private console: HTMLInputElement; private v = new THREE.Vector3();
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
@@ -138,7 +142,7 @@ export class Game implements InteractHost {
 
     // restore
     if (d) {
-      this.inv.load(d.inv); this.stats.load(d.stats); this.clock = d.clock ?? 0.06; this.spawn = d.spawn ?? null;
+      this.inv.load(d.inv); this.stats.load(d.stats); this.clock = d.clock ?? 0.06; this.spawn = d.spawn ?? null; this.deathAt = d.deathAt ?? null;
       for (const f of d.flags || []) this.flags.add(f);
       this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs); this.portalReturn = d.portalReturn || {};
       this.player.teleport(d.player.x, d.player.y, d.player.z); this.player.yaw = d.player.yaw; this.player.pitch = d.player.pitch;
@@ -232,11 +236,12 @@ export class Game implements InteractHost {
     if (st.dead) this.onDeath(cause);
   }
   private onDeath(cause: string): void {
-    const lost = Math.floor(this.inv.coins * 0.15);
+    const lost = Math.floor(this.inv.coins * 0.15), p = this.player;
+    this.deathAt = [this.dim, Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
     this.inv.coins -= lost; this.inv.touch();
     this.audio.play('death'); this.win.close(true);
     for (const m of this.mobs.list) if (m.active && m.def.ai === 'minion') m.active = false;
-    this.menu.death(cause === 'fall' ? 'The ground was farther than it looked' : cause === 'lava' ? 'Lava does not negotiate' : cause === 'void' ? 'There was nothing under you' : cause === 'hunger' ? 'Starved' : `Slain by ${cause}`, lost);
+    this.menu.death((cause === 'fall' ? 'The ground was farther than it looked' : cause === 'lava' ? 'Lava does not negotiate' : cause === 'void' ? 'There was nothing under you' : cause === 'hunger' ? 'Starved' : `Slain by ${cause}`) + `  ·  at ${this.deathAt[1]}, ${this.deathAt[2]}, ${this.deathAt[3]}`, lost);
   }
   respawn(): void {
     const s = this.spawn, p = this.player;
@@ -647,6 +652,8 @@ export class Game implements InteractHost {
         if (T_DAMAGE[id] && !T_LIQUID[id]) { this.hurtPlayer(T_DAMAGE[id] * 3, Math.floor(p.x + dx) + 0.5, Math.floor(p.z + dz) + 0.5, BLOCKS[id].name, null, 3); dy = 2; break; }
       }
       if (p.headInWater !== this.env.underwater && this.ready) this.audio.play('splash', 0.5);
+      const da = this.deathAt;
+      if (da && da[0] === this.dim && !st.dead && Math.abs(p.x - da[1]) < 6 && Math.abs(p.z - da[3]) < 6 && Math.abs(p.y - da[2]) < 8) this.deathAt = null;
       if (st.hunger <= 0 && st.hp <= 5 && !st.dead && Math.random() < 0.1) { st.hurtT = 0; st.damage(6, true); if (st.dead) this.onDeath('hunger'); }
     }
     if (p.y < (this.dim === 2 ? 20 : -16) && !st.dead) {
@@ -832,7 +839,7 @@ export class Game implements InteractHost {
     const p = this.player, m = this.cfg.meta;
     m.played = Date.now();
     m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
-      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes };
+      spawn: this.spawn, deathAt: this.deathAt, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
     try { await this.cfg.db.putWorld(m); } catch (e) { console.warn('save failed', e); }
   }
@@ -840,7 +847,7 @@ export class Game implements InteractHost {
   private debugLines(): string[] {
     const p = this.player, w = this.world, c = w.counts(), info = this.gfx.renderer.info;
     const x = Math.floor(p.x), y = Math.floor(p.y), z = Math.floor(p.z), l = w.getLight(x, y + 1, z);
-    const facing = ['south (-z)', 'west (-x)', 'north (+z)', 'east (+x)'][((Math.round(p.yaw / (Math.PI / 2)) % 4) + 4) % 4];
+    const facing = ['north (-z)', 'west (-x)', 'south (+z)', 'east (+x)'][((Math.round(p.yaw / (Math.PI / 2)) % 4) + 4) % 4];
     const tod = ((this.clock % 1) * 24 + 6) % 24;
     return [
       `chunks  ${c.meshed} meshed / ${c.loaded} loaded / ${c.waiting} waiting   workers ${this.pool.busy}/${this.pool.size}   mesh ${w.meshMs.toFixed(1)} ms`,

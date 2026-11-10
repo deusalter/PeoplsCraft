@@ -78,6 +78,23 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #quest.new { animation: qnew 1.2s ease-out; } @keyframes qnew { 0%, 30% { border-right-color: #fff; box-shadow: 0 0 16px rgba(242, 193, 78, 0.55), inset 0 0 0 1px rgba(242, 193, 78, 0.6); } }
 .bar.food > .notch { position: absolute; left: 70%; top: 0; bottom: 0; width: 1px; background: rgba(0, 0, 0, 0.6); }
 .bar.hp.regen:not(.low) > i { animation: regen 1.6s ease-in-out infinite alternate; } @keyframes regen { to { filter: brightness(1.22) saturate(1.1); } }
+#compass { position: absolute; left: 50%; top: 10px; width: 320px; margin-left: -160px; height: 48px; transition: top 0.3s; }
+#hud.bossing #compass { top: 76px; }
+#compass .strip { position: absolute; left: 0; right: 0; top: 0; height: 20px; overflow: hidden; background: linear-gradient(rgba(13, 15, 20, 0.55), rgba(13, 15, 20, 0.35));
+  -webkit-mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); mask: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  border-bottom: 1px solid rgba(242, 193, 78, 0.25); }
+#compass .m { position: absolute; left: 50%; top: 0; width: 24px; margin-left: -12px; text-align: center; font-size: 12px; line-height: 20px; font-weight: 700; color: #e9e4d6; text-shadow: 1px 1px 0 #000; will-change: transform; }
+#compass .m.sm { font-size: 9px; font-weight: 400; color: #8b93a8; }
+#compass .mid { position: absolute; left: 50%; top: 17px; margin-left: -4px; border: 4px solid transparent; border-bottom-color: var(--gold); border-top: 0; }
+#compass .pips { position: absolute; left: 0; right: 0; top: 0; height: 20px; }
+#compass .pip { position: absolute; left: 50%; top: 4px; width: 40px; margin-left: -20px; text-align: center; will-change: transform; }
+#compass .pip i { display: block; margin: 0 auto; width: 8px; height: 8px; transform: rotate(45deg); box-shadow: 0 0 0 1px #000, 0 0 6px rgba(0, 0, 0, 0.6); }
+#compass .pip b { display: block; margin-top: 10px; font-size: 9px; font-weight: 600; line-height: 10px; text-shadow: 1px 1px 0 #000, 0 0 4px #000; white-space: nowrap; }
+#compass .home i { background: #7fd66b; border-radius: 50%; transform: none; } #compass .home b { color: #a8e690; }
+#compass .death i { background: #e5544b; } #compass .death b { color: #ff9a8a; }
+#compass .goal i { background: var(--gold); } #compass .goal b { color: #ffe08a; }
+#compass .pip.edge { opacity: 0.6; } #compass .pip.edge i { transform: rotate(45deg) scale(0.75); } #compass .home.edge i { transform: scale(0.75); }
+#compass .xyz { position: absolute; left: 0; right: 0; top: 35px; text-align: center; font-size: 10px; color: #b4bacb; text-shadow: 1px 1px 0 #000, 0 0 4px #000; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
 #quest .t { font-size: 10px; letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase; }
 #quest .h { font-size: 13px; font-weight: 600; margin: 2px 0; } #quest .d { font-size: 11px; color: #c4c9d8; line-height: 1.35; } #quest .w { font-size: 11px; color: #8fd0ff; margin-top: 3px; }
 #event { padding: 6px 10px; background: rgba(40, 12, 12, 0.7); border-right: 2px solid var(--bad); text-align: right; font-size: 12px; }
