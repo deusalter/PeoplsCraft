@@ -333,6 +333,7 @@ export class Game implements InteractHost {
     if (b.use === 'guestbed') this.npcs.removeBed(x, y, z);
     if (b.door) { for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === id) w.setBlock(x, y + dy, z, 0); }
     w.setBlock(x, y, z, 0);
+    if ((id === B.hollow_frame && this.dim !== 1) || (id === B.rift_frame && this.dim !== 2)) this.collapseGate(x, y, z, id === B.hollow_frame ? 1 : 2);
     this.burst(x, y, z, id);
     this.audio.play('break_' + b.sound, 0.9);
     this.stats.exhaustion += 0.02;
@@ -407,7 +408,9 @@ export class Game implements InteractHost {
       if (d.use === 'gate1' || d.use === 'gate2') {
         const x = hit.x + hit.nx, y = hit.y + hit.ny, z = hit.z + hit.nz;
         if (hit.ny !== 1) { this.toast('Place the gate on the ground.', '#ff9a8a'); return true; }
-        this.buildGate(d.use === 'gate1' ? 1 : 2, x, y, z, Math.abs(dir.z) > Math.abs(dir.x));
+        const alongX = Math.abs(dir.z) > Math.abs(dir.x);
+        if (!this.gateFits(x, y, z, alongX)) { this.toast('The gate needs a clear space 4 wide and 5 tall.', '#ff9a8a'); this.audio.play('error', 0.5); return true; }
+        this.buildGate(d.use === 'gate1' ? 1 : 2, x, y, z, alongX);
         inv.consumeHeld(); this.audio.play('portal'); return true;
       }
       if (d.use.startsWith('summon')) { this.toast('Use this at its altar. The guide points the way.', '#ffd9a0'); return true; }
@@ -512,6 +515,36 @@ export class Game implements InteractHost {
     w.setBlock(x, y, z, id); w.setBlock(x, y + 1, z, id);
     this.inv.consumeHeld(); this.audio.play('door'); this.flags.add('place:door');
     return true;
+  }
+  /** True when all 20 cells of a gate are free: buildGate() would otherwise erase chests, forges or an altar. */
+  private gateFits(x: number, y: number, z: number, alongX: boolean): boolean {
+    const w = this.world, p = this.player;
+    if (y < 1 || y + 4 > BUILD_MAX) return false;
+    for (let a = -1; a <= 2; a++) for (let h = 0; h <= 4; h++) {
+      const bx = x + (alongX ? a : 0), by = y + h, bz = z + (alongX ? 0 : a);
+      if (!T_REPLACE[w.getBlock(bx, by, bz)] || !w.ready(bx, bz)) return false;
+      if (bx + 1 > p.x - p.hw && bx < p.x + p.hw && by + 1 > p.y && by < p.y + p.h && bz + 1 > p.z - p.hw && bz < p.z + p.hw) return false;
+    }
+    return true;
+  }
+  /** A gate placed outside its own dimension goes dark when its frame is broken, and gives the kit back.
+   *  Arrival gates (a Hollow Gate in the Hollows, a Rift Gate in the Skyrift) keep their sheet: they are the way home. */
+  private collapseGate(x: number, y: number, z: number, kind: number): void {
+    const w = this.world, portal = kind === 1 ? B.hollow_portal : B.rift_portal, st = [x, y, z], ret = this.portalReturn[this.dim];
+    let n = 0;
+    while (st.length && n < 16) {
+      const cz = st.pop()!, cy = st.pop()!, cx = st.pop()!;
+      for (let i = 0; i < 6; i++) {
+        const ax = cx + (i === 0 ? 1 : i === 1 ? -1 : 0), ay = cy + (i === 2 ? 1 : i === 3 ? -1 : 0), az = cz + (i === 4 ? 1 : i === 5 ? -1 : 0);
+        if (w.getBlock(ax, ay, az) !== portal) continue;
+        w.setBlock(ax, ay, az, 0); st.push(ax, ay, az); n++;
+        // crossing back into this dimension must not aim at a gate that is no longer there
+        if (ret && ax === ret[0] && az === ret[2] && Math.abs(ay - ret[1]) <= 2) delete this.portalReturn[this.dim];
+      }
+    }
+    if (!n) return;
+    this.drops.spawn(x + 0.5, y + 0.5, z + 0.5, { k: kind === 1 ? 'hollow_gate_kit' : 'rift_gate_kit', n: 1 });
+    this.audio.play('portal', 0.6, 0.7); this.toast('The gate goes dark.', '#c8d0ff');
   }
   /** Raise a 4x5 gate: frame around a 2x3 sheet of portal. */
   private buildGate(kind: number, x: number, y: number, z: number, alongX: boolean): void {
