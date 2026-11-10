@@ -41,6 +41,13 @@ const BOOK_CATS = ['All', 'Tools', 'Weapons', 'Armour', 'Trinkets', 'Blocks', 'O
 function bookCat(k: string): number { const d = item(k); return d.tool ? 1 : d.weapon ? 2 : d.armor ? 3 : d.acc ? 4 : d.block !== undefined ? 5 : 6; }
 const EMPTY_GRID: Slot[] = [];
 function sortRank(k: string): number { const d = item(k); return d.weapon && !d.tool ? 0 : d.tool ? 1 : d.armor ? 2 : d.acc ? 3 : d.food || d.heal || d.restoreMana || d.buff || d.use ? 4 : d.block !== undefined ? 5 : 6; }
+const SA: Record<string, number> = {}, SB: Record<string, number> = {};
+/** Sum an item's own stats and its modifier's into `out` (cleared first). */
+function gearStats(it: Item, out: Record<string, number>): void {
+  for (const k in out) out[k] = 0;
+  const add = (st?: Stats): void => { if (st) for (const k in st) out[k] = (out[k] ?? 0) + (st as Record<string, number>)[k]; };
+  add(item(it.k).stats); if (it.m) add(MOD_BY_KEY.get(it.m)?.stats);
+}
 const sellPrice = (k: string): number => Math.max(1, Math.floor(itemValue(k) * 0.3));
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
@@ -80,14 +87,15 @@ export class Windows {
       this.hover = v;
       // right-button drag deals one item into each slot passed over
       if (v && this.dragSet && (e.buttons & 2) && g.inv.cursor && !this.dragSet.has(v)) { this.dragSet.add(v); if (this.place(v, true)) g.audio.play('click', 0.3); }
-      if (v) { const s = v.arr[v.i]; if (s) this.showTip(this.itemTip(s)); else this.hideTip(); return; }
+      // while carrying a stack the tip would cover the slots being aimed at
+      if (v) { const s = v.arr[v.i]; if (s && !g.inv.cursor) this.showTip(this.itemTip(s, 'slot', v)); else this.hideTip(); return; }
       const ri = t.closest?.('[data-r]') as HTMLElement | null;
       this.hoverR = ri ? this.bookRecipes[+ri.dataset.r!] : null;
       if (this.hoverR) this.showTip(this.recipeTip(this.hoverR)); else if (!t.closest?.('[data-tip]')) this.hideTip();
       const dt = t.closest?.('[data-tip]') as HTMLElement | null;
       if (dt) this.showTip(dt.dataset.tip!);
       const sk = t.closest?.('[data-k]') as HTMLElement | null;
-      if (sk) this.showTip(this.itemTip({ k: sk.dataset.k!, n: 1, m: sk.dataset.m }) + (sk.dataset.need ? `<div class="bd" style="margin-top:4px">${esc(sk.dataset.need)}</div>` : ''));
+      if (sk) this.showTip(this.itemTip({ k: sk.dataset.k!, n: 1, m: sk.dataset.m }, 'buy') + (sk.dataset.need ? `<div class="bd" style="margin-top:4px">${esc(sk.dataset.need)}</div>` : ''));
     });
   }
   private viewOf(t: EventTarget | null): View | null {
@@ -293,7 +301,8 @@ export class Windows {
     if (this.book) this.updateBook();
     if (this.statsEl) this.buildStats();
     if (this.shopEl) this.buildShop();
-    if (this.hover) { const s = this.hover.arr[this.hover.i]; if (s) this.showTip(this.itemTip(s)); else this.hideTip(); }
+    if (this.hover) { const s = this.hover.arr[this.hover.i]; if (s && !c) this.showTip(this.itemTip(s, 'slot', this.hover)); else this.hideTip(); }
+    else if (this.hoverR) this.showTip(this.recipeTip(this.hoverR));
   }
   /** Stations whose book can be browsed from here: the one in use, plus any the player has built. */
   private bookTabs(): string[] {
@@ -670,14 +679,77 @@ export class Windows {
     if (y + h > window.innerHeight - 6) y = window.innerHeight - h - 6;
     this.tip.style.transform = `translate(${Math.max(4, x)}px, ${Math.max(4, y)}px)`;
   }
-  itemTip(s: Item): string {
+  /** The held weapon's modifier is already folded into the player's totals; take it out to judge another weapon. */
+  private heldMod(key: string): number {
+    const h = this.g.inv.held();
+    if (!h || !h.m || !item(h.k).weapon) return 0;
+    return (MOD_BY_KEY.get(h.m)?.stats as Record<string, number> | undefined)?.[key] ?? 0;
+  }
+  /** [damage per hit, damage per second] for a weapon stack as if it were held. */
+  private weaponNums(s: Item): [number, number] {
+    const wpn = item(s.k).weapon!, d = this.g.stats.d as Record<string, number>, ms = (s.m ? MOD_BY_KEY.get(s.m)?.stats : undefined) as Record<string, number> | undefined;
+    const mult = 1 + d[wpn.style] + d.dmg - this.heldMod(wpn.style) - this.heldMod('dmg') + (ms?.[wpn.style] ?? 0) + (ms?.dmg ?? 0);
+    const rate = wpn.rate * (1 + d.atkSpeed - this.heldMod('atkSpeed') + (ms?.atkSpeed ?? 0));
+    return [Math.round(wpn.dmg * mult), Math.round(wpn.dmg * mult * rate)];
+  }
+  /** Stat differences between a candidate and what is worn or held, as tooltip lines. */
+  private compare(s: Item, v: View | undefined): string {
+    const inv = this.g.inv, d = item(s.k);
+    let other: Slot = null, h = '';
+    if (d.armor && v?.kind !== 'armor') {
+      other = inv.armor[d.armor.slot];
+      if (!other) return `<div class="ty" style="margin-top:4px">${['Head', 'Body', 'Legs'][d.armor.slot]} slot is empty</div>`;
+      const set = d.armor.set, os = item(other.k).armor?.set;
+      let worn = 0; for (const a of inv.armor) if (a && item(a.k).armor?.set === set) worn++;
+      const after = worn - (os === set ? 1 : 0) + 1;
+      if (worn < 3 && after >= 3) h += `<div class="st">Completes set: ${esc(setBonus(set)?.text ?? '')}</div>`;
+      if (os && os !== set && this.g.stats.sets.includes(os)) h += `<div class="bd">Breaks set: ${esc(setBonus(os)?.text ?? '')}</div>`;
+    } else if (d.weapon && !d.weapon.minion && !d.tool) {
+      const held = inv.held();
+      if (held && held !== s && v?.arr[v.i] !== held && item(held.k).weapon?.style === d.weapon.style) {
+        other = held;
+        const a = this.weaponNums(s), b = this.weaponNums(held), dd = a[0] - b[0], dp = a[1] - b[1];
+        if (dd) h += `<div class="${dd > 0 ? 'gd' : 'bd'}">${dd > 0 ? '+' : ''}${dd} damage</div>`;
+        if (dp) h += `<div class="${dp > 0 ? 'gd' : 'bd'}">${dp > 0 ? '+' : ''}${dp} damage per second</div>`;
+      }
+    } else if (d.acc && v?.kind !== 'acc') {
+      for (const a of inv.acc) if (a && a.k === s.k) return `<div class="bd" style="margin-top:4px">Already worn: a second one adds nothing</div>`;
+      return '';
+    }
+    if (!other) return h;
+    gearStats(s, SA); gearStats(other, SB);
+    for (const k in STAT_TEXT) {
+      const x = (SA[k] ?? 0) - (SB[k] ?? 0);
+      if (Math.abs(x) < 1e-6) continue;
+      const t = STAT_TEXT[k], txt = t[1] ? `${x > 0 ? '+' : ''}${Math.round(x * 100)}%` : `${x > 0 ? '+' : ''}${Math.round(x * 10) / 10}`;
+      h += `<div class="${x > 0 ? 'gd' : 'bd'}">${txt} ${t[0]}</div>`;
+    }
+    return `<div class="ty" style="margin:4px 0 0">Compared with ${esc(itemName(other))}</div>` + (h || '<div class="ln">No difference</div>');
+  }
+  /** What shift-click and right-click do on this slot right now. */
+  private clickHint(s: Item, v: View): string {
+    const d = item(s.k);
+    let sh = '';
+    if (v.kind === 'inv') {
+      if (this.shop) sh = `sell stack for ${sellPrice(s.k) * s.n} coins`;
+      else if (this.chest) sh = 'move to chest';
+      else if (this.forge) sh = this.smeltable(s.k) || d.fuel ? 'load into forge' : '';
+      else if (d.armor || d.acc) sh = 'equip';
+      else sh = v.i < 9 ? 'move to backpack' : 'move to hotbar';
+    } else if (v.kind !== 'out') sh = 'take';
+    const parts: string[] = [];
+    if (sh) parts.push('Shift-click: ' + sh);
+    if (s.n > 1 && v.kind !== 'fout' && v.kind !== 'out') parts.push('Right-click: take half');
+    return parts.length ? `<div class="hint">${parts.join(' · ')}</div>` : '';
+  }
+  itemTip(s: Item, ctx: 'slot' | 'buy' | 'recipe' = 'slot', v?: View): string {
     const g = this.g, d = item(s.k), r = itemRarity(s);
     const kind = d.weapon && !d.tool ? STYLE_INFO[d.weapon.style].label + ' weapon' : d.tool ? 'Tool' : d.armor ? 'Armour' : d.acc ? 'Trinket' : d.food ? 'Food' : d.block !== undefined ? 'Block' : d.use ? 'Usable' : 'Material';
     let h = `<div class="nm" style="color:${RARITY[r].color}">${esc(itemName(s))}</div><div class="ty">${RARITY[r].name} · ${kind}</div>`;
     if (d.weapon) {
-      const wpn = d.weapon, mult = g.stats.dmgMult(wpn.style);
-      h += `<div class="ln">${Math.round(wpn.dmg * mult)} ${wpn.style} damage${wpn.minion ? ' per hit' : ''}</div>`;
-      if (!wpn.minion) h += `<div class="ln">${wpn.rate.toFixed(1)} attacks per second</div>`;
+      const wpn = d.weapon, [dmg, dps] = this.weaponNums(s);
+      h += `<div class="ln">${dmg} ${wpn.style} damage${wpn.minion ? ' per hit' : ''}</div>`;
+      if (!wpn.minion) h += `<div class="ln">${wpn.rate.toFixed(1)} attacks per second · ${dps} damage per second</div>`;
       if (wpn.mana) h += `<div class="ln">Uses ${wpn.mana} mana</div>`;
       if (wpn.ammo) h += `<div class="ln">Uses arrows</div>`;
     }
@@ -695,7 +767,9 @@ export class Windows {
     if (d.fuel) h += `<div class="ln">Fuel: burns ${d.fuel}s</div>`;
     if (d.block !== undefined && BLOCKS[d.block].light) h += `<div class="ln">Gives off light</div>`;
     if (d.desc) h += `<div class="ds">${esc(d.desc)}</div>`;
-    if (this.shop) h += `<div class="ty" style="margin-top:4px">Sells for ${sellPrice(s.k)} coins${s.n > 1 ? ` each (${sellPrice(s.k) * s.n} for the stack)` : ''}</div>`;
+    h += this.compare(s, v);
+    if (this.shop && ctx === 'slot' && v?.kind === 'inv') h += `<div class="ty" style="margin-top:4px">Sells for ${sellPrice(s.k)} coins${s.n > 1 ? ` each (${sellPrice(s.k) * s.n} for the stack)` : ''}</div>`;
+    if (ctx === 'slot' && v) h += this.clickHint(s, v);
     return h;
   }
   private recipeTip(r: Recipe): string {
@@ -707,6 +781,9 @@ export class Windows {
       const name = want[0] === '#' ? 'Any ' + want.slice(1) : item(want).name;
       h += `<div class="${have >= n ? 'gd' : 'bd'}">${n} × ${esc(name)} <span style="color:#6a7088">(${have})</span></div>`;
     }
-    return h + this.itemTip({ k: r.out, n: 1 }).replace(/^<div class="nm".*?<\/div><div class="ty">.*?<\/div>/, '<div style="height:4px"></div>');
+    let most = Infinity;
+    for (const [want, n] of needs(r)) { let have = g.inv.count(want); for (const c of g.inv.craft) if (c && matches(want, c.k)) have += c.n; most = Math.min(most, Math.floor(have / n)); }
+    if (most > 0 && most < Infinity) h += `<div class="ln" style="margin-top:2px">Makes up to ${most * r.n}</div>`;
+    return h + this.itemTip({ k: r.out, n: 1 }, 'recipe').replace(/^<div class="nm".*?<\/div><div class="ty">.*?<\/div>/, '<div style="height:4px"></div>');
   }
 }
