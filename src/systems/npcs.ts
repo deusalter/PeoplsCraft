@@ -84,7 +84,11 @@ export class NpcSystem {
     }
   }
   line(n: NpcDef): string {
-    if (n.key === 'wayfinder' && Math.random() < 0.6) return 'Next: ' + QUESTS[this.g.quests.index].hint;
+    if (n.key === 'wayfinder') {
+      const moon = this.g.events.moonIn(), r = Math.random();
+      if (moon >= 0 && r > 0.85) return moon === 0 ? 'The Hollow Moon turns tonight. Moonspawn carry the slivers.' : `The Hollow Moon turns in ${moon} night${moon > 1 ? 's' : ''}.`;
+      if (r < 0.6) return 'Next: ' + QUESTS[this.g.quests.index].hint;
+    }
     return n.lines[(Math.random() * n.lines.length) | 0];
   }
   goods(n: NpcDef): [string, number, string][] {

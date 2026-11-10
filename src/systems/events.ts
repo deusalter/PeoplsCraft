@@ -59,8 +59,8 @@ export class EventSystem {
       if (phase === 1) {
         // dusk
         if (this.active === 'ashen') this.end(false);
-        if (day % 8 === 7 && g.flags.has('boss:3')) this.start('moon');
-        else if ((g.flags.has('boss:1') || g.npcs.count() >= 2) && Math.random() < 0.22) this.start('raid');
+        // no raid is rolled on a moon night (the moon itself rises from state, below)
+        if (!(day % 8 === 7 && g.flags.has('boss:3')) && (g.flags.has('boss:1') || g.npcs.count() >= 2) && Math.random() < 0.22) this.start('raid');
       } else {
         // dawn
         if (this.active === 'raid' || this.active === 'moon') this.end(false);
@@ -68,6 +68,9 @@ export class EventSystem {
       }
     }
     this.lastPhase = phase;
+    // The moon starts from state, not from the dusk edge: a dusk spent in another dimension or in a boss
+    // fight would otherwise skip it for another eight days.
+    if (!this.active && phase === 1 && day % 8 === 7 && g.flags.has('boss:3') && !g.mobs.activeBoss()) this.start('moon');
     if (this.active !== 'raid' && this.active !== 'ashen') return;
     this.spawnT -= dt;
     if (this.spawnT > 0 || g.mobs.count((m) => m.event) >= 8 + g.difficulty()) return;
@@ -86,6 +89,8 @@ export class EventSystem {
       if (m) { m.event = true; m.dmgMul = 1 + diff * 0.45; m.hp = m.maxHp = Math.round(m.def.hp * (1 + diff * 0.7)); }
     }
   }
+  /** Nights until the Hollow Moon (0 = tonight), or -1 before the Pale Warden has fallen. */
+  moonIn(): number { return this.g.flags.has('boss:3') ? 7 - (Math.floor(this.g.clock) % 8) : -1; }
   serialize(): unknown { return { a: this.active, k: this.kills, g: this.goal, l: this.lastAshen }; }
-  load(d: any): void { if (!d) return; this.active = d.a ?? null; this.kills = d.k ?? 0; this.goal = d.g ?? 0; this.lastAshen = d.l ?? -10; if (this.active) this.g.mobs.pressure = 1; }
+  load(d: any): void { if (!d) return; this.active = d.a ?? null; this.kills = d.k ?? 0; this.goal = d.g ?? 0; this.lastAshen = d.l ?? -10; if (this.active) this.g.mobs.pressure = this.active === 'moon' ? 0.8 : 1; }
 }
