@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { RARITY, item, itemName, itemRarity } from '../data/items';
 import type { Game } from '../game';
+import { BOSS_BARS } from '../data/hudstyle';
 import { BUFFS } from '../systems/stats';
 import { HOTBAR } from '../systems/inventory';
 
@@ -12,14 +13,15 @@ export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', pare
   if (parent) parent.appendChild(e);
   return e;
 }
-interface Bar { root: HTMLElement; fill: HTMLElement; label: HTMLElement; v: number; t: string }
-function bar(cls: string, parent: HTMLElement): Bar {
-  const root = el('div', 'bar ' + cls, parent), fill = el('i', '', root), label = el('b', '', root);
-  return { root, fill, label, v: -1, t: '' };
+interface Bar { root: HTMLElement; fill: HTMLElement; ghost: HTMLElement | null; label: HTMLElement; v: number; t: string }
+/** `ghost` adds a pale trail under the fill that drains a beat after a hit. */
+function bar(cls: string, parent: HTMLElement, ghost = false): Bar {
+  const root = el('div', 'bar ' + cls, parent), g = ghost ? el('u', '', root) : null, fill = el('i', '', root), label = el('b', '', root);
+  return { root, fill, ghost: g, label, v: -1, t: '' };
 }
 function setBar(b: Bar, frac: number, text: string): void {
   frac = Math.max(0, Math.min(1, frac));
-  if (Math.abs(frac - b.v) > 0.002) { b.v = frac; b.fill.style.transform = `scaleX(${frac})`; }
+  if (Math.abs(frac - b.v) > 0.002) { b.v = frac; b.fill.style.transform = `scaleX(${frac})`; if (b.ghost) b.ghost.style.transform = b.fill.style.transform; }
   if (text !== b.t) { b.t = text; b.label.textContent = text; }
 }
 interface Floater { el: HTMLElement; x: number; y: number; z: number; life: number; max: number; vy: number }
@@ -34,6 +36,7 @@ export class Hud {
   private bannerQ: [string, string, string][] = [];
   private pick: { key: string; n: number; el: HTMLElement | null; timer: ReturnType<typeof setTimeout> | undefined } = { key: '', n: 0, el: null, timer: undefined };
   private boss: HTMLElement; private bossName: HTMLElement; private bossTitle: HTMLElement; private bossBar: Bar;
+  private bossKey = ''; private bossNotches: HTMLElement[] = []; private bossHpI = -1; private bossText = ''; private bossPhase = 0;
   private quest: HTMLElement; private event: HTMLElement; private eventBar: Bar; private eventText: HTMLElement;
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
   private floats: Floater[] = []; private tags: HTMLElement[] = [];
@@ -49,7 +52,7 @@ export class Hud {
     this.hurt = el('div', '#hurt', r); this.portal = el('div', '#portalfx', r);
     el('div', '#crosshair', r);
     const wrap = el('div', '#hotwrap', r), bars = el('div', 'bars', wrap);
-    this.hp = bar('hp', bars); this.food = bar('food', bars); this.mana = bar('mana', bars); this.coins = el('div', '#coins', bars);
+    this.hp = bar('hp', bars, true); this.food = bar('food', bars); this.mana = bar('mana', bars); this.coins = el('div', '#coins', bars);
     this.xp = bar('xp', bars);
     const hb = el('div', '#hotbar', wrap);
     for (let i = 0; i < HOTBAR; i++) {
@@ -58,8 +61,7 @@ export class Hud {
     }
     this.lvl = el('div', '#lvl', r); this.itemName = el('div', '#itemname', r);
     this.toasts = el('div', '#toasts', r); this.banner = el('div', '#banner', r);
-    this.boss = el('div', '#boss', r); this.bossTitle = el('div', 'tt', this.boss); this.bossName = el('div', 'nm', this.boss); this.bossBar = bar('', this.boss);
-    this.boss.classList.add('hidden');
+    this.boss = el('div', '#boss', r); this.bossTitle = el('div', 'tt', this.boss); this.bossName = el('div', 'nm', this.boss); this.bossBar = bar('', this.boss, true);
     this.quest = el('div', '#quest', r);
     this.event = el('div', '#event', r); this.eventText = el('div', '', this.event); this.eventBar = bar('', this.event); this.event.classList.add('hidden');
     this.buffs = el('div', '#buffs', r); this.prompt = el('div', '#prompt', r); this.prompt.classList.add('hidden');
@@ -67,6 +69,8 @@ export class Hud {
     for (let i = 0; i < 10; i++) { const e = el('div', 'float tag', r); e.style.display = 'none'; this.tags.push(e); }
     window.addEventListener('resize', () => { this.vw = window.innerWidth; this.vh = window.innerHeight; });
   }
+  /** Number of phase thresholds the boss has dropped below. */
+  private phaseOf(phases: { below: number }[], f: number): number { let n = 0; for (let i = 0; i < phases.length; i++) if (phases[i].below < 1 && f <= phases[i].below) n++; return n; }
   setVisible(v: boolean): void { this.root.classList.toggle('hidden', !v); }
 
   toast(text: string, color = '#e9e4d6'): HTMLElement {
@@ -184,10 +188,23 @@ export class Hud {
     else if (this.bannerGap > 0) { this.bannerGap -= dt; if (this.bannerGap <= 0) { const q = this.bannerQ.shift(); if (q) this.showBanner(q[0], q[1], q[2]); } }
 
     const b = g.mobs.activeBoss();
-    if (!!b !== this.bossOn) { this.bossOn = !!b; this.boss.classList.toggle('hidden', !b); }
+    if (!!b !== this.bossOn) { this.bossOn = !!b; this.boss.classList.toggle('show', !!b); this.root.classList.toggle('bossing', !!b); }
     if (b) {
-      if (this.bossName.textContent !== b.def.name) { this.bossName.textContent = b.def.name; this.bossTitle.textContent = b.def.boss!.title; }
-      setBar(this.bossBar, b.hp / b.maxHp, '');
+      const spec = b.def.boss!;
+      if (this.bossKey !== b.def.key) {
+        this.bossKey = b.def.key; this.bossName.textContent = b.def.name; this.bossTitle.textContent = spec.title; this.bossHpI = -1;
+        for (const n of this.bossNotches) n.remove();
+        this.bossNotches.length = 0;
+        for (const ph of spec.phases) if (ph.below < 1 && ph.below > 0) { const n = el('s', '', this.bossBar.root); n.style.left = ph.below * 100 + '%'; this.bossNotches.push(n); }
+        const c = BOSS_BARS[b.def.key];
+        this.bossBar.fill.style.background = c ? `linear-gradient(${c[0]}, ${c[1]})` : '';
+        this.bossPhase = this.phaseOf(spec.phases, b.hp / b.maxHp);
+      }
+      const hpI = Math.ceil(b.hp);
+      if (hpI !== this.bossHpI) { this.bossHpI = hpI; this.bossText = `${hpI} / ${Math.round(b.maxHp)}`; }
+      setBar(this.bossBar, b.hp / b.maxHp, this.bossText);
+      const ph = this.phaseOf(spec.phases, b.hp / b.maxHp);
+      if (ph !== this.bossPhase) { this.bossPhase = ph; this.boss.classList.remove('shift'); void this.boss.offsetWidth; this.boss.classList.add('shift'); }
     }
     const q = g.quests.tracker();
     if (q.key !== this.questKey) {
