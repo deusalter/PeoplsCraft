@@ -1,8 +1,9 @@
 // Main-thread chunk manager. Owns block data, schedules worker jobs nearest-first,
 // uploads meshes inside a per-frame budget and unloads by distance.
 import * as THREE from 'three';
-import { BUILD_MAX, CH, chunkKey } from '../core/constants';
-import { T_EMITS } from '../data/blocks';
+import { BUILD_MAX, CH, CVOL, chunkKey } from '../core/constants';
+import { T_ATTEN, T_EMITS, T_OPAQUE } from '../data/blocks';
+import { U } from '../render/gfx';
 import type { EntInit } from './gen/types';
 import type { MeshPart } from './mesher';
 import { WorkerPool } from './pool';
@@ -18,9 +19,23 @@ export class Chunk {
   state = 0;            // 0 new, 1 loading, 2 ready
   dirty = true; pending = false; meshed = false; urgent = false;
   rev = 0; modified = false; hasEmit = false;
+  fails = 0;            // worker or load failures in a row (retries are capped)
   meshes: (THREE.Mesh | null)[] = [null, null, null];
   ents = new Map<number, BlockEnt>();
   constructor(readonly cx: number, readonly cz: number, readonly key: number) {}
+}
+
+// Chunk meshes are culled through Mesh.intersectsFrustum, which three calls for the main and the shadow camera:
+// first by distance (a column wholly past the fog end is drawn in plain fog colour), then with a box around the
+// column, because three's own test uses the bounding sphere and that is about 60 blocks wide for a tall column.
+let cullX = 0, cullZ = 0, cullR2 = Infinity;
+const _box = new THREE.Box3();
+function chunkInFrustum(this: THREE.Mesh, f: THREE.Frustum | THREE.FrustumArray): boolean {
+  const p = this.position, b = this.geometry.boundingBox!;
+  const dx = Math.max(p.x - cullX, 0, cullX - p.x - 16), dz = Math.max(p.z - cullZ, 0, cullZ - p.z - 16);
+  if (dx * dx + dz * dz > cullR2) return false;
+  _box.min.set(p.x - 0.25, b.min.y - 0.25, p.z - 0.25); _box.max.set(p.x + 16.25, b.max.y + 0.25, p.z + 16.25);   // the pad covers leaf sway and the water wave
+  return (f as THREE.Frustum).intersectsBox(_box);
 }
 
 export class World {
@@ -42,7 +57,9 @@ export class World {
   private pcx = 1e9; private pcz = 1e9; private scan = 0;
   private last: Chunk | null = null;
   private unloadTimer = 0;
+  private warm: THREE.Mesh[] = [];
 
+  private spare: ArrayBuffer[] = [];   // region buffers returned by finished mesh jobs
   constructor(readonly pool: WorkerPool, readonly materials: THREE.Material[], public seed: number, public dim: number) {
     this.setRenderDist(this.renderDist);
     this.group.matrixAutoUpdate = false;
@@ -63,6 +80,17 @@ export class World {
     this.offsets = new Int16Array(list.length * 2);
     list.forEach((o, i) => { this.offsets[i * 2] = o[1]; this.offsets[i * 2 + 1] = o[2]; });
     this.scan = 0; this.pcx = 1e9;
+  }
+  /** View distance in chunks: the setting, cut down to what the dimension's fog lets through. */
+  setView(chunks: number, fogScale: number): void {
+    const r = Math.min(chunks, Math.max(4, Math.ceil(chunks * fogScale) + 1));
+    if (r !== this.renderDist) this.setRenderDist(r);
+  }
+  /** Camera position for the distance cull. Call once the fog uniforms are set for the frame. */
+  setCull(x: number, z: number): void {
+    // sun shadows reach past a short fog: keep every caster inside the 144-block shadow box (half diagonal 102)
+    const r = U.uShadowOn.value > 0 ? Math.max(U.uFogEnd.value, 104) : U.uFogEnd.value;
+    cullX = x; cullZ = z; cullR2 = r * r;
   }
 
   // ---- block access ----------------------------------------------------------
@@ -116,11 +144,13 @@ export class World {
     if (T_EMITS[id]) c.hasEmit = true;
     if (c.ents.size && c.ents.has(i) && !silent) c.ents.delete(i);
     this.markDirty(c);
-    // light can travel 15 blocks, so neighbours inside that reach need a new mesh too
+    // light can travel 15 blocks, so neighbours inside that reach need a new mesh too. A swap that cannot change
+    // light (same opacity and attenuation, no emitter) only shows to a neighbour through its one-column rim.
+    const reach = T_OPAQUE[old] === T_OPAQUE[id] && T_ATTEN[old] === T_ATTEN[id] && !T_EMITS[old] && !T_EMITS[id] ? 2 : 15;
     for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
       if (!dx && !dz) continue;
       const ddx = dx < 0 ? lx + 1 : dx > 0 ? 16 - lx : 0, ddz = dz < 0 ? lz + 1 : dz > 0 ? 16 - lz : 0;
-      if (ddx + ddz > 15) continue;
+      if (ddx + ddz > reach) continue;
       const n = this.chunkAt(cx + dx, cz + dz);
       if (n && n.state === 2) this.markDirty(n);
     }
@@ -152,15 +182,25 @@ export class World {
   }
 
   // ---- scheduling ------------------------------------------------------------------
-  update(px: number, pz: number, budgetMs: number): void {
+  /** `budgetBytes` caps the mesh data handed to the GPU this frame; the first result and block edits always go through. */
+  update(px: number, pz: number, budgetBytes: number): void {
     const cx = Math.floor(px / 16), cz = Math.floor(pz / 16);
     if (cx !== this.pcx || cz !== this.pcz) { this.pcx = cx; this.pcz = cz; this.scan = 0; this.unloadTimer = 0; }
     if (--this.unloadTimer < 0) { this.unloadTimer = 120; this.unloadFar(); }
 
-    const t0 = performance.now();
-    let n = 0;
-    while (this.results.length && (n < 2 || performance.now() - t0 < budgetMs)) { this.applyMesh(this.results.shift()); n++; }
+    // three uploads a geometry when its mesh first passes culling. Last frame's new meshes were drawn unculled once,
+    // so they were uploaded inside that frame's budget instead of in a burst when the camera turns towards them.
+    const warm = this.warm, res = this.results;
+    for (let i = 0; i < warm.length; i++) warm[i].frustumCulled = true;
+    warm.length = 0;
+    let n = 0, bytes = 0;
+    while (res.length && (n < 1 || bytes < budgetBytes || res[0].front)) { bytes += this.applyMesh(res.shift()); n++; }
     this.uploadsThisFrame = n;
+    this.pump();
+  }
+  /** Hand work to every idle worker. Runs each frame and again whenever a job finishes, so a worker never waits for the next frame. */
+  pump(): void {
+    if (this.pcx === 1e9) return;   // no position yet (start, dimension change): the saved-chunk list may not be in
     while (this.pool.idleCount > 0 && this.dispatchOne()) { /* keep the pool fed */ }
   }
 
@@ -182,6 +222,8 @@ export class World {
       this.sendMesh(c, true);
       return true;
     }
+    // finished meshes wait in `results` for the upload budget: do not let them pile up (a hidden tab renders no frames)
+    if (this.results.length >= 48) return false;
     const offs = this.offsets, R = this.renderDist, meshR = R * R + R;
     let adv = true;
     for (let i = this.scan; i < offs.length; i += 2) {
@@ -203,43 +245,72 @@ export class World {
       const dim = this.dim;
       this.loader(c.cx, c.cz).then((s) => {
         if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
-        if (!s) { c.state = 0; this.savedKeys.delete(c.key); this.scan = 0; return; }
+        if (!s) { c.state = 0; this.savedKeys.delete(c.key); this.scan = 0; this.pump(); return; }
         c.blocks = s.blocks; c.biomes = s.biomes; c.hasEmit = s.hasEmit; c.modified = false;
         for (const e of s.ents) c.ents.set(((((e.z & 15) << 4) | (e.x & 15)) << 8) | e.y, e);
-        c.state = 2; c.dirty = true; this.scan = 0;
+        c.state = 2; c.dirty = true; c.fails = 0; this.scan = 0;
         if (this.onChunkReady) this.onChunkReady(c, false, []);
+        this.pump();
+      }, (e) => {
+        if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+        // retry a failed read, but never fall back to generating over a saved build
+        if (++c.fails < 3) { c.state = 0; this.scan = 0; } else console.warn(`chunk ${c.cx},${c.cz} could not be read`, e);
       });
       return false;
     }
     const dim = this.dim;
     this.pool.run({ t: 'gen', cx: c.cx, cz: c.cz, dim, seed: this.seed }, [], (m) => {
       if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+      if (!m) {
+        // the worker threw: try once more, then leave the chunk empty so its eight neighbours can still mesh
+        if (++c.fails < 2) c.state = 0;
+        else { c.blocks = new Uint8Array(CVOL); c.biomes = new Uint8Array(256); c.state = 2; c.dirty = true; console.warn(`chunk ${c.cx},${c.cz} failed to generate and was left empty`); }
+        this.scan = 0; this.pump();
+        return;
+      }
       c.blocks = m.blocks; c.biomes = m.biomes; c.hasEmit = m.hasEmit;
-      c.state = 2; c.dirty = true; this.scan = 0;
+      c.state = 2; c.dirty = true; c.fails = 0; this.scan = 0;
+      // block entities the generator placed come back identical on regeneration: they do not make the chunk worth saving
+      const was = c.modified;
       if (this.onChunkReady) this.onChunkReady(c, true, m.ents);
+      c.modified = was;
+      this.pump();
     });
     return true;
   }
 
   private sendMesh(c: Chunk, front: boolean): void {
-    const blocks: Uint8Array[] = [], biomes: Uint8Array[] = [], emit: boolean[] = [], tr: Transferable[] = [];
-    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
-      const n = this.chunks.get(chunkKey(c.cx + dx, c.cz + dz))!;
-      const b = n.blocks!.slice(), bi = n.biomes!.slice();
-      blocks.push(b); biomes.push(bi); emit.push(n.hasEmit); tr.push(b.buffer, bi.buffer);
+    // one pooled buffer per job: nine block arrays, then nine biome arrays; the worker hands it back with the result
+    const region = this.spare.pop() ?? new ArrayBuffer(9 * CVOL + 9 * 256), view = new Uint8Array(region), emit: boolean[] = [];
+    let n = 0;
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++, n++) {
+      const nb = this.chunks.get(chunkKey(c.cx + dx, c.cz + dz))!;
+      view.set(nb.blocks!, n * CVOL); view.set(nb.biomes!, 9 * CVOL + n * 256); emit.push(nb.hasEmit);
     }
     c.pending = true; c.dirty = false;
     const dim = this.dim;
-    this.pool.run({ t: 'mesh', cx: c.cx, cz: c.cz, rev: c.rev, sky: this.hasSky, blocks, biomes, emit }, tr, (m) => {
-      if (this.dim !== dim) return;
+    this.pool.run({ t: 'mesh', cx: c.cx, cz: c.cz, sky: this.hasSky, region, emit }, [region], (m) => {
+      if (m && m.region && this.spare.length < this.pool.size + 2) this.spare.push(m.region);
+      if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+      if (!m) {
+        // the worker threw: retry a couple of times, then count the chunk as meshed so nothing waits on it for ever
+        c.pending = false;
+        if (++c.fails < 3) { c.dirty = true; this.scan = 0; } else { c.meshed = true; console.warn(`chunk ${c.cx},${c.cz} could not be meshed`); }
+        this.pump();
+        return;
+      }
+      m.c = c; m.front = front;
       if (front) this.results.unshift(m); else this.results.push(m);
+      this.pump();
     });
   }
 
-  private applyMesh(m: { cx: number; cz: number; rev: number; parts: (MeshPart | null)[]; light: Uint8Array; ms: number }): void {
-    const c = this.chunks.get(chunkKey(m.cx, m.cz));
-    if (!c) return;
-    c.pending = false; c.light = m.light; c.meshed = true;
+  /** Installs a finished mesh and returns how many bytes it will upload. */
+  private applyMesh(m: { c: Chunk; parts: (MeshPart | null)[]; light: Uint8Array; ms: number }): number {
+    const c = m.c;
+    if (this.chunks.get(c.key) !== c) return 0;   // unloaded, or unloaded and created again, while the job ran
+    let bytes = 0;
+    c.pending = false; c.light = m.light; c.meshed = true; c.fails = 0;
     this.meshMs = this.meshMs * 0.95 + m.ms * 0.05;
     for (let i = 0; i < 3; i++) {
       const p = m.parts[i];
@@ -254,6 +325,7 @@ export class World {
       g.setIndex(new THREE.BufferAttribute(p.idx, 1).onUpload(free));
       g.boundingBox = new THREE.Box3(new THREE.Vector3(0, p.minY, 0), new THREE.Vector3(16, p.maxY, 16));
       g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
+      bytes += p.pos.byteLength + p.uv.byteLength + p.light.byteLength + p.tint.byteLength + p.idx.byteLength;
       if (mesh) { mesh.geometry.dispose(); mesh.geometry = g; }
       else {
         mesh = new THREE.Mesh(g, this.materials[i]);
@@ -261,9 +333,12 @@ export class World {
         mesh.matrixAutoUpdate = false; mesh.updateMatrix(); mesh.matrixWorld.copy(mesh.matrix);
         mesh.matrixWorldAutoUpdate = false;
         mesh.renderOrder = i;
+        mesh.intersectsFrustum = chunkInFrustum;
         c.meshes[i] = mesh; this.group.add(mesh);
       }
+      mesh.frustumCulled = false; this.warm.push(mesh);
     }
+    return bytes;
   }
 
   private unloadFar(): void {
@@ -283,7 +358,7 @@ export class World {
   /** Drop everything (dimension change or leaving the world). Modified chunks are saved first. */
   clear(save: boolean): void {
     for (const c of [...this.chunks.values()]) this.dropChunk(c, save);
-    this.results.length = 0; this.urgent.length = 0; this.scan = 0; this.pcx = 1e9; this.last = null;
+    this.results.length = 0; this.urgent.length = 0; this.warm.length = 0; this.scan = 0; this.pcx = 1e9; this.last = null;
   }
   setDim(dim: number, hasSky: boolean): void { this.clear(true); this.dim = dim; this.hasSky = hasSky; }
 

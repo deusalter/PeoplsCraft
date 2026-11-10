@@ -4,10 +4,13 @@ import type { SavedChunk } from '../world/world';
 export interface WorldMeta { id: string; name: string; seed: number; seedText: string; created: number; played: number; data: any }
 const DB = 'cairnlight', VER = 1;
 
+let scratch = new Uint8Array(0);   // worst case is two bytes per cell
 function rle(a: Uint8Array): Uint8Array {
-  const out: number[] = [];
-  for (let i = 0; i < a.length;) { const v = a[i]; let n = 1; while (n < 255 && i + n < a.length && a[i + n] === v) n++; out.push(v, n); i += n; }
-  return new Uint8Array(out);
+  if (scratch.length < a.length * 2) scratch = new Uint8Array(a.length * 2);
+  const out = scratch;
+  let o = 0;
+  for (let i = 0; i < a.length;) { const v = a[i]; let n = 1; while (n < 255 && i + n < a.length && a[i + n] === v) n++; out[o++] = v; out[o++] = n; i += n; }
+  return out.slice(0, o);
 }
 function unrle(a: Uint8Array, size: number): Uint8Array {
   const out = new Uint8Array(size);

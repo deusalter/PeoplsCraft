@@ -163,7 +163,7 @@ export class Game implements InteractHost {
   applySettings(): void {
     const s = this.cfg.settings;
     this.gfx.applySettings(s.gfx);
-    if (this.world.renderDist !== s.gfx.renderDist) this.world.setRenderDist(s.gfx.renderDist);
+    this.world.setView(s.gfx.renderDist, DIMS[this.dim].fogScale);
     this.audio.setVolumes(s.sfx, s.music);
   }
   start(): void { this.last = performance.now(); this.raf = requestAnimationFrame(this.frame); }
@@ -509,7 +509,7 @@ export class Game implements InteractHost {
     this.ready = false; this.keysReady = false; p.frozen = true; this.showLoading(to === 0 ? 'Returning to the Overworld' : `Crossing into ${DIMS[to].name}`);
     this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); if (this.events.active) this.events.end(false);
     this.world.setDim(to, DIMS[to].hasSky);
-    this.dim = to; this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
+    this.dim = to; this.world.setView(cfg.settings.gfx.renderDist, DIMS[to].fogScale); this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
     const ret = home ? null : this.portalReturn[to];
     if (home) { const s = this.spawn; if (s) p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; } }
     else if (ret) p.teleport(ret[0] + 0.5, ret[1] + 0.1, ret[2] + 0.5);
@@ -713,7 +713,7 @@ export class Game implements InteractHost {
     const p = this.player, inp = this.input, sens = 0.0023 * this.cfg.settings.sens;
     if (inp.locked && !this.stats.dead) p.look(inp.dx, inp.dy, sens);
     const t0 = performance.now();
-    if (this.keysReady) this.world.update(p.x, p.z, 3);
+    if (this.keysReady) this.world.update(p.x, p.z, this.ready ? 1.5e6 : 8e6);
     if (!this.ready) this.checkReady();
     const t1 = performance.now();
     if (!this.paused) {
@@ -721,12 +721,14 @@ export class Game implements InteractHost {
       let n = 0;
       while (this.acc >= STEP && n < 5) { this.tick(STEP); this.acc -= STEP; n++; if (n === 1) inp.endTick(); }
       if (n === 5) this.acc = 0;
+      this.world.pump();   // send remesh jobs for this frame's block edits now, not next frame
     }
     const t2 = performance.now(), a = this.paused ? 1 : this.acc / STEP;
     p.applyCamera(this.gfx.camera, a, dt, this.cfg.settings.gfx.fov, this.time, this.cfg.settings.bob);
     this.audio.lx = p.x; this.audio.ly = p.y + p.eye; this.audio.lz = p.z;
     this.updateEnv(dt);
     this.gfx.update(this.time, this.env, this.gfx.camera.position);
+    this.world.setCull(this.gfx.camera.position.x, this.gfx.camera.position.z);
     if (!this.paused) this.particles.update(dt, this.world);
     this.boxes.begin(); this.mobs.render(this.boxes, a, this.time); this.proj.render(this.boxes, a); this.boxes.end();
     this.updateHand(dt);
