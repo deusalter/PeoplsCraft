@@ -96,8 +96,8 @@ const ramp5 = (c: number, k = 1): number[] => [sh(c, -0.5 * k), sh(c, -0.25 * k)
 const rockBase = (g: number[]): P => (t, _r, s) => t.each((x, y) => { const v = vn(x, y, 3, s) * 0.7 + vn(x, y, 6, s + 5) * 0.3; return g[v < 0.38 ? 1 : v < 0.68 ? 2 : 3]; });
 const rock = (g: number[]): P => (t, r, s) => {
   rockBase(g)(t, r, s);
-  for (let i = 0; i < 4; i++) {   // one chiselled shelf per quadrant: lit lip, shadow under it
-    const x = (i & 1) * 8 + ((r() * 5) | 0), y = (i >> 1) * 8 + 1 + ((r() * 5) | 0), n = 3 + ((r() * 3) | 0);
+  for (let i = 0; i < 4; i++) {   // chiselled shelves (lit lip, shadow under it) on four separate bands, anywhere across, long and short
+    const x = (r() * 16) | 0, y = i * 4 + ((r() * 3) | 0), n = i & 1 ? 2 + ((r() * 2) | 0) : 4 + ((r() * 3) | 0);
     for (let k = 0; k < n; k++) { t.set(x + k, y, g[4]); t.set(x + k + 1, y + 1, g[0]); }
     t.set(x + n, y, g[0]);
   }
@@ -293,8 +293,8 @@ const overlayMoss = (base: P, moss: number, amt = 0.3): P => (t, r, s) => {
 const clear: P = (t) => t.d.fill(0);
 const plantP = (draw: (t: Px, r: Rnd) => void): P => (t, r) => { clear(t, r, 0); draw(t, r); };
 
-/** A clump of separate blades that fans outward from the middle, shaded dark at the root to a bright
- *  tip. A short back row is drawn first, one step darker, so the taller front blades stand off it. */
+/** A clump of separate blades that fans outward from the middle and brightens towards the tips. A
+ *  short back row is drawn first, one step darker, so the taller front blades stand off it. */
 const tuft = (g: number[], n = 9): P => plantP((t, r) => {
   const nb = n >> 1;
   for (let i = 0; i < n; i++) {
@@ -302,8 +302,11 @@ const tuft = (g: number[], n = 9): P => plantP((t, r) => {
     const x0 = Math.round(1.5 + slot * 13 + (r() - 0.5) * 1.6), off = (x0 - 7.5) / 7.5;
     const h = Math.round((back ? 7 : 12) - Math.abs(off) * (back ? 1.5 : 5) + r() * 2.5), bend = off * (2 + r() * 2.5) + (r() - 0.5) * 3.4;
     for (let k = 0; k < h; k++) {
-      const f = k / (h - 1), lv = k === h - 1 ? 3 : f < 0.3 ? 0 : f < 0.65 ? 1 : 2;
-      t.put(Math.round(x0 + bend * f * f), 15 - k, g[back ? Math.max(0, lv - 1) : lv]);
+      // roots start at the turf's own tone: plant quads are lit less than the ground, so a darker root reads as a black scribble
+      const f = k / (h - 1), lv = k === h - 1 ? 3 : f < 0.35 ? 1 : 2;
+      const x = Math.round(x0 + bend * f * f);
+      if (!back && f < 0.4 && !t.getA(x + 1, 15 - k)) t.put(x + 1, 15 - k, g[lv - 1]);   // front blades are two wide near the root, shaded on the right
+      t.put(x, 15 - k, g[back ? Math.max(0, lv - 1) : lv]);
     }
   }
 });
