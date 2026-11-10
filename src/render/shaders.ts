@@ -216,6 +216,7 @@ void main() {
   if (tex.a < mix(0.42, 0.18, min(vFol, 1.0) * smoothstep(48.0, 128.0, dist))) discard;
   vec3 base = tex.rgb * vTint.rgb;
   glow = smoothstep(0.45, 0.85, dot(tex.rgb, vec3(0.3, 0.5, 0.2)));
+  // cross plants (normal index 6) carry an up normal: keep it on their back faces so both sides are lit like the ground
   if (!gl_FrontFacing && vFol < 1.5) N = -N;
 #else
   vec4 tex;

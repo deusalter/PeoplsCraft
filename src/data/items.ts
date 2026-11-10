@@ -7,7 +7,7 @@ export type StatKey = 'melee' | 'ranged' | 'magic' | 'summon' | 'dmg' | 'crit' |
   | 'minions' | 'mining' | 'atkSpeed' | 'knockRes' | 'pickup' | 'extraJump' | 'noFall' | 'thorns' | 'dodge' | 'luck' | 'swim' | 'reach';
 export type Stats = Partial<Record<StatKey, number>>;
 
-export interface IconSpec { t: string; a: number; b?: number }
+export interface IconSpec { t: string; a: number; b?: number; c?: number }
 export interface ItemDef {
   key: string; name: string; stack: number; rarity: number; icon: IconSpec | null;
   block?: number;
@@ -23,26 +23,27 @@ export interface ItemDef {
 }
 
 export interface Tier { key: string; name: string; mat: string; color: number; speed: number; power: number; dmg: number; def: number; rar: number; station: string;
-  names: [sword: string, bow: string, staff: string, totem: string]; minion: string }
+  names: [sword: string, bow: string, staff: string, totem: string]; minion: string;
+  trim?: number }   // second colour for edges, guards and bands, so close-hued tiers stay distinguishable
 export const TIERS: Tier[] = [
   { key: 'wood', name: 'Wooden', mat: '#planks', color: 0xb88a4e, speed: 2, power: 1, dmg: 4, def: 0, rar: 0, station: 'workbench', names: ['Wooden Sword', 'Shortbow', '', ''], minion: '' },
   { key: 'stone', name: 'Stone', mat: 'cobble', color: 0x8b8f96, speed: 4, power: 2, dmg: 6, def: 0, rar: 0, station: 'workbench', names: ['Stone Sword', 'Flintstring Bow', '', ''], minion: '' },
   { key: 'iron', name: 'Iron', mat: 'iron_bar', color: 0xd4d6dc, speed: 6, power: 3, dmg: 9, def: 2, rar: 1, station: 'anvil', names: ['Iron Sword', 'Iron Recurve', 'Spark Wand', 'Thornling Totem'], minion: 'm_thornling' },
   { key: 'lumenite', name: 'Lumenite', mat: 'lumenite', color: 0x4fe6e0, speed: 8, power: 4, dmg: 13, def: 3, rar: 2, station: 'anvil', names: ['Lumenite Saber', 'Glimmerbow', 'Lumen Staff', 'Wisp Lantern'], minion: 'm_wisp' },
   { key: 'cinder', name: 'Cindersteel', mat: 'cinder_bar', color: 0xff7a2a, speed: 10, power: 5, dmg: 18, def: 4, rar: 2, station: 'anvil', names: ['Cindersteel Cleaver', 'Emberstring', 'Cinder Rod', 'Brazier Totem'], minion: 'm_brazier' },
-  { key: 'umbrite', name: 'Umbrite', mat: 'umbrite_bar', color: 0x9a5af0, speed: 12, power: 6, dmg: 24, def: 5, rar: 3, station: 'anvil', names: ['Umbrite Glaive', 'Duskbow', 'Umbral Scepter', 'Shade Effigy'], minion: 'm_shade' },
-  { key: 'noctrium', name: 'Noctrium', mat: 'noctrium_bar', color: 0x2ad6b0, speed: 14, power: 7, dmg: 31, def: 6, rar: 3, station: 'anvil', names: ['Noctrium Edge', 'Nightreach', 'Spore Staff', 'Mycelid Idol'], minion: 'm_mycelid' },
-  { key: 'aether', name: 'Aetherium', mat: 'aether_bar', color: 0x4fb6f6, speed: 16, power: 8, dmg: 40, def: 8, rar: 4, station: 'anvil', names: ['Aether Blade', 'Galebow', 'Stormcaller', 'Zephyr Chime'], minion: 'm_zephyr' },
+  { key: 'umbrite', name: 'Umbrite', mat: 'umbrite_bar', color: 0x9a5af0, speed: 12, power: 6, dmg: 24, def: 5, rar: 3, station: 'anvil', names: ['Umbrite Glaive', 'Duskbow', 'Umbral Scepter', 'Shade Effigy'], minion: 'm_shade', trim: 0xd8a0ff },
+  { key: 'noctrium', name: 'Noctrium', mat: 'noctrium_bar', color: 0x1f9e8a, speed: 14, power: 7, dmg: 31, def: 6, rar: 3, station: 'anvil', names: ['Noctrium Edge', 'Nightreach', 'Spore Staff', 'Mycelid Idol'], minion: 'm_mycelid', trim: 0xb6ff8a },
+  { key: 'aether', name: 'Aetherium', mat: 'aether_bar', color: 0x4fb6f6, speed: 16, power: 8, dmg: 40, def: 8, rar: 4, station: 'anvil', names: ['Aether Blade', 'Galebow', 'Stormcaller', 'Zephyr Chime'], minion: 'm_zephyr', trim: 0xffffff },
   { key: 'prism', name: 'Prismite', mat: 'prism_bar', color: 0xf6a0f0, speed: 19, power: 9, dmg: 51, def: 10, rar: 4, station: 'anvil', names: ['Prismite Brand', 'Spectrum Bow', 'Prism Wand', 'Shardling Core'], minion: 'm_shardling' },
-  { key: 'eclipse', name: 'Eclipsium', mat: 'eclipse_bar', color: 0xc06af6, speed: 23, power: 10, dmg: 66, def: 12, rar: 5, station: 'anvil', names: ['Eclipse Reaver', 'Umbra Longbow', 'Eclipse Staff', 'Moonbound Icon'], minion: 'm_moon' },
+  { key: 'eclipse', name: 'Eclipsium', mat: 'eclipse_bar', color: 0x7a3ad0, speed: 23, power: 10, dmg: 66, def: 12, rar: 5, station: 'anvil', names: ['Eclipse Reaver', 'Umbra Longbow', 'Eclipse Staff', 'Moonbound Icon'], minion: 'm_moon', trim: 0xffb45a },
 ];
 
 export const STYLES: Style[] = ['melee', 'ranged', 'magic', 'summon'];
-export const STYLE_INFO: Record<Style, { set: string; pieces: [string, string, string]; accent: number; defMul: number; label: string }> = {
-  melee: { set: 'Plate', pieces: ['Helm', 'Cuirass', 'Greaves'], accent: 0x8a8e96, defMul: 1, label: 'Melee' },
-  ranged: { set: 'Scout', pieces: ['Hood', 'Jerkin', 'Leggings'], accent: 0x8a5f34, defMul: 0.8, label: 'Ranged' },
-  magic: { set: 'Mage', pieces: ['Circlet', 'Robe', 'Skirt'], accent: 0x6a4ab8, defMul: 0.6, label: 'Magic' },
-  summon: { set: 'Binder', pieces: ['Mask', 'Mantle', 'Wraps'], accent: 0x2f8a7a, defMul: 0.6, label: 'Summoner' },
+export const STYLE_INFO: Record<Style, { set: string; pieces: [string, string, string]; icons: [string, string, string]; accent: number; defMul: number; label: string }> = {
+  melee: { set: 'Plate', pieces: ['Helm', 'Cuirass', 'Greaves'], icons: ['helm', 'chest', 'legs'], accent: 0x8a8e96, defMul: 1, label: 'Melee' },
+  ranged: { set: 'Scout', pieces: ['Hood', 'Jerkin', 'Leggings'], icons: ['hood', 'jerkin', 'legs'], accent: 0x8a5f34, defMul: 0.8, label: 'Ranged' },
+  magic: { set: 'Mage', pieces: ['Circlet', 'Robe', 'Skirt'], icons: ['circlet', 'robe', 'skirt'], accent: 0x6a4ab8, defMul: 0.6, label: 'Magic' },
+  summon: { set: 'Binder', pieces: ['Mask', 'Mantle', 'Wraps'], icons: ['mask', 'mantle', 'wraps'], accent: 0x2f8a7a, defMul: 0.6, label: 'Summoner' },
 };
 export const RARITY = [
   { name: 'Common', color: '#e9e4d6' }, { name: 'Uncommon', color: '#7fd66b' }, { name: 'Rare', color: '#5aa9ff' }, { name: 'Epic', color: '#c07bff' },
@@ -51,7 +52,7 @@ export const RARITY = [
 
 const L: ItemDef[] = [];
 const add = (key: string, name: string, icon: IconSpec, o: Partial<ItemDef> = {}): void => { L.push({ key, name, stack: 99, rarity: 0, icon, ...o }); };
-const mat = (key: string, name: string, t: string, a: number, b: number | undefined, rarity = 0, desc = ''): void => add(key, name, { t, a, b }, { rarity, desc });
+const mat = (key: string, name: string, t: string, a: number, b: number | undefined, rarity = 0, desc = '', c?: number): void => add(key, name, { t, a, b, c }, { rarity, desc });
 
 // ---- materials ----
 mat('stick', 'Stick', 'stick', 0x9a6a3a, undefined);
@@ -67,11 +68,11 @@ mat('gold_bar', 'Gold Bar', 'ingot', 0xf4cb3a, undefined, 1);
 mat('lumenite', 'Lumenite', 'gem', 0x4fe6e0, undefined, 2, 'A cold-burning gem from the deep stone.');
 mat('mana_crystal', 'Mana Crystal', 'gem', 0x4f86f6, undefined, 1, 'Hums faintly. The core of every spell focus.');
 mat('cinder_bar', 'Cindersteel Bar', 'ingot', 0xff7a2a, undefined, 2);
-mat('umbrite_bar', 'Umbrite Bar', 'ingot', 0x9a5af0, undefined, 3);
-mat('noctrium_bar', 'Noctrium Bar', 'ingot', 0x2ad6b0, undefined, 3);
-mat('aether_bar', 'Aetherium Bar', 'ingot', 0x4fb6f6, undefined, 4);
+mat('umbrite_bar', 'Umbrite Bar', 'ingot', 0x9a5af0, undefined, 3, '', 0xd8a0ff);
+mat('noctrium_bar', 'Noctrium Bar', 'ingot', 0x1f9e8a, undefined, 3, '', 0xb6ff8a);
+mat('aether_bar', 'Aetherium Bar', 'ingot', 0x4fb6f6, undefined, 4, '', 0xffffff);
 mat('prism_bar', 'Prismite Bar', 'ingot', 0xf6a0f0, undefined, 4);
-mat('eclipse_bar', 'Eclipsium Bar', 'ingot', 0xc06af6, undefined, 5);
+mat('eclipse_bar', 'Eclipsium Bar', 'ingot', 0x7a3ad0, undefined, 5, '', 0xffb45a);
 mat('weave', 'Spellweave', 'cloth', 0x6a4ab8, 0xc8a0ff, 1, 'Fiber spun around a mana crystal.');
 mat('effigy', 'Bone Effigy', 'idol', 0xece6d2, 0x2f8a7a, 1, 'A little carved thing that something answers to.');
 // creature drops
@@ -126,16 +127,16 @@ add('prism_arrow', 'Prism Arrow', { t: 'arrow', a: 0xf6a0f0, b: 0xd0d0f0 }, { am
 add('door', 'Door', { t: 'door', a: 0xa77a44 }, { stack: 16, use: 'door' });
 add('hollow_gate_kit', 'Hollow Gate', { t: 'gate', a: 0x8a4af0, b: 0x1e1830 }, { stack: 1, rarity: 3, use: 'gate1', desc: 'Raises a gate to the Gloomroot Hollows where you place it.' });
 add('rift_gate_kit', 'Rift Gate', { t: 'gate', a: 0xf6c64a, b: 0x6a6078 }, { stack: 1, rarity: 4, use: 'gate2', desc: 'Raises a gate to the Skyrift where you place it.' });
-const summon = (n: number, key: string, name: string, a: number, b: number, rarity: number, desc: string): void =>
-  add(key, name, { t: 'idol', a, b }, { stack: 20, rarity, use: 'summon' + n, desc });
-summon(1, 'verdant_idol', 'Verdant Idol', 0x6ae05a, 0x8a5f3c, 1, 'Offer at a Rootbound Altar to wake the Mossback Colossus.');
-summon(2, 'sunken_lure', 'Sunken Lure', 0xf6b83a, 0xdcc88c, 2, 'Offer at a Sunken Altar to call up the Dune Maw.');
-summon(3, 'warden_bell', 'Warden Bell', 0x6ab8f6, 0x5a6274, 2, 'Ring at a Warden Altar. Something will answer.');
-summon(4, 'spore_censer', 'Spore Censer', 0x4ae6b8, 0x3f4f5c, 3, 'Burn at a Mycelial Altar to draw out the Sporemother.');
-summon(5, 'storm_kite', 'Storm Kite', 0x9ab6ff, 0x4a5a8a, 3, 'Fly from a Tempest Altar to challenge the Tempest Regent.');
-summon(6, 'prism_lens', 'Prism Lens', 0xf4f0ff, 0xb9b0d6, 4, 'Set on a Prism Altar to focus the Luminarch.');
-summon(7, 'eclipse_mask', 'Eclipse Mask', 0xd86af6, 0x1e1830, 4, 'Wear before an Eclipse Altar at night. The Moonbound Hart will see you.');
-summon(8, 'cairn_key', 'Cairn Key', 0xffd27a, 0x5a6274, 5, 'Opens the First Cairn. There is no closing it again.');
+const summon = (n: number, key: string, name: string, t: string, a: number, b: number, rarity: number, desc: string): void =>
+  add(key, name, { t, a, b }, { stack: 20, rarity, use: 'summon' + n, desc });
+summon(1, 'verdant_idol', 'Verdant Idol', 'idol', 0x6ae05a, 0x8a5f3c, 1, 'Offer at a Rootbound Altar to wake the Mossback Colossus.');
+summon(2, 'sunken_lure', 'Sunken Lure', 'lure', 0xf6b83a, 0xdcc88c, 2, 'Offer at a Sunken Altar to call up the Dune Maw.');
+summon(3, 'warden_bell', 'Warden Bell', 'bell', 0x6ab8f6, 0x5a6274, 2, 'Ring at a Warden Altar. Something will answer.');
+summon(4, 'spore_censer', 'Spore Censer', 'censer', 0x4ae6b8, 0x3f4f5c, 3, 'Burn at a Mycelial Altar to draw out the Sporemother.');
+summon(5, 'storm_kite', 'Storm Kite', 'kite', 0x9ab6ff, 0x4a5a8a, 3, 'Fly from a Tempest Altar to challenge the Tempest Regent.');
+summon(6, 'prism_lens', 'Prism Lens', 'lens', 0xf4f0ff, 0xb9b0d6, 4, 'Set on a Prism Altar to focus the Luminarch.');
+summon(7, 'eclipse_mask', 'Eclipse Mask', 'mask', 0xd86af6, 0x1e1830, 4, 'Wear before an Eclipse Altar at night. The Moonbound Hart will see you.');
+summon(8, 'cairn_key', 'Cairn Key', 'key', 0xffd27a, 0x5a6274, 5, 'Opens the First Cairn. There is no closing it again.');
 
 // ---- accessories ----
 const acc = (key: string, name: string, t: string, a: number, b: number, rarity: number, stats: Stats, desc: string): void =>
@@ -178,21 +179,21 @@ const TOOL: [string, ToolKind, string, number][] = [['pickaxe', 'pick', 'Pickaxe
 TIERS.forEach((t, ti) => {
   const handle = ti < 5 ? 0x8a5f34 : ti < 8 ? 0x4a4e5a : 0xdfe6f2;
   for (const [suffix, kind, label, dm] of TOOL) {
-    add(`${t.key}_${suffix}`, `${t.name} ${label}`, { t: suffix, a: t.color, b: handle }, {
+    add(`${t.key}_${suffix}`, `${t.name} ${label}`, { t: suffix, a: t.color, b: handle, c: t.trim }, {
       stack: 1, rarity: t.rar, tier: ti, tool: { kind, speed: t.speed, power: t.power },
       weapon: { style: 'melee', dmg: Math.round(t.dmg * dm) + 1, rate: 1.8, knock: 3 },
     });
   }
-  add(`${t.key}_sword`, t.names[0], { t: 'sword', a: t.color, b: handle }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'melee', dmg: t.dmg, rate: 2.3, knock: 5 } });
-  add(`${t.key}_bow`, t.names[1], { t: 'bow', a: t.color, b: handle }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'ranged', dmg: Math.round(t.dmg * 0.85), rate: 1.5, knock: 3, proj: 'arrow', ammo: true, projSpeed: 34 + ti * 2 } });
+  add(`${t.key}_sword`, t.names[0], { t: 'sword', a: t.color, b: handle, c: t.trim }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'melee', dmg: t.dmg, rate: 2.3, knock: 5 } });
+  add(`${t.key}_bow`, t.names[1], { t: 'bow', a: t.color, b: handle, c: t.trim }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'ranged', dmg: Math.round(t.dmg * 0.85), rate: 1.5, knock: 3, proj: 'arrow', ammo: true, projSpeed: 34 + ti * 2 } });
   if (ti >= 2) {
-    add(`${t.key}_staff`, t.names[2], { t: 'staff', a: t.color, b: handle }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'magic', dmg: Math.round(t.dmg * 1.05), rate: 2.2, knock: 2, proj: 'bolt' + ti, mana: 5 + ti, projSpeed: 26 } });
-    add(`${t.key}_totem`, t.names[3], { t: 'totem', a: t.color, b: handle }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'summon', dmg: Math.round(t.dmg * 0.55), rate: 1, knock: 2, minion: t.minion, mana: 20 }, desc: 'Summons a minion that fights for you.' });
+    add(`${t.key}_staff`, t.names[2], { t: 'staff', a: t.color, b: handle, c: t.trim }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'magic', dmg: Math.round(t.dmg * 1.05), rate: 2.2, knock: 2, proj: 'bolt' + ti, mana: 5 + ti, projSpeed: 26 } });
+    add(`${t.key}_totem`, t.names[3], { t: 'totem', a: t.color, b: handle, c: t.trim }, { stack: 1, rarity: t.rar, tier: ti, weapon: { style: 'summon', dmg: Math.round(t.dmg * 0.55), rate: 1, knock: 2, minion: t.minion, mana: 20 }, desc: 'Summons a minion that fights for you.' });
     for (const st of STYLES) {
       const info = STYLE_INFO[st];
       info.pieces.forEach((piece, slot) => {
         const def = Math.max(1, Math.round(t.def * [0.8, 1.3, 1][slot] * info.defMul));
-        add(`${t.key}_${st}_${slot}`, `${t.name} ${piece}`, { t: ['helm', 'chest', 'legs'][slot], a: t.color, b: info.accent }, {
+        add(`${t.key}_${st}_${slot}`, `${t.name} ${piece}`, { t: info.icons[slot], a: t.color, b: info.accent, c: t.trim }, {
           stack: 1, rarity: t.rar, tier: ti, armor: { slot: slot as 0 | 1 | 2, set: `${t.key}_${st}` }, stats: { def, [st]: 0.02 + ti * 0.004 },
         });
       });

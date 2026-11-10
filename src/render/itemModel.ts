@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { BLOCKS, TEXTURE_NAMES } from '../data/blocks';
 import { item } from '../data/items';
 import type { Atlas } from './atlas';
-import type { Icons } from './icons';
+import { slabHeight, type Icons } from './icons';
 
 const TINT = [0xffffff, 0x86c653, 0x6fb445, 0x3a84dc];
 
@@ -56,7 +56,7 @@ export class ItemModels {
   constructor(private atlas: Atlas, private icons: Icons) {}
 
   /** True if the item renders as a full cube (affects how it is held and scaled). */
-  isCube(key: string): boolean { const d = item(key); return d.block !== undefined && BLOCKS[d.block].shape === 'cube'; }
+  isCube(key: string): boolean { const d = item(key); return d.block !== undefined && slabHeight(d.block) > 0; }
 
   get(key: string): THREE.BufferGeometry {
     let g = this.cache.get(key);
@@ -74,8 +74,18 @@ export class ItemModels {
           return ((r & 255) << 16) | ((gg & 255) << 8) | (bl & 255);
         };
       };
-      if (blk.shape === 'cube') { for (let f = 0; f < 6; f++) paintFace(b, CUBE[f], sample(f), 1); }
-      else this.sprite(b, sample(0));
+      const h = slabHeight(d.block);
+      if (h === 1) { for (let f = 0; f < 6; f++) paintFace(b, CUBE[f], sample(f), 1); }
+      else if (h > 0) {
+        // a slab (bedroll, bed): top face lowered to the slab height, sides keep only their bottom rows; centred on y
+        const cut = 16 - 16 * h, lift = (1 - h) / 2;
+        for (let f = 0; f < 6; f++) {
+          const [o, u, v, n] = CUBE[f], px = sample(f);
+          if (f === 2) paintFace(b, [[o[0], o[1] - (1 - h) + lift, o[2]], u, v, n], px, 1);
+          else if (f === 3) paintFace(b, [[o[0], o[1] + lift, o[2]], u, v, n], px, 1);
+          else paintFace(b, [[o[0], o[1] + lift, o[2]], u, v, n], (x, y) => (y < cut ? -1 : px(x, y)), 1);
+        }
+      } else this.sprite(b, sample(0));
     } else {
       const p = this.icons.pixels.get(key)!;
       this.sprite(b, (x, y) => { const s = ((y << 4) | x) << 2; return p[s + 3] < 110 ? -1 : (p[s] << 16) | (p[s + 1] << 8) | p[s + 2]; });
