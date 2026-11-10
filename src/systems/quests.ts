@@ -1,5 +1,6 @@
 // Tracks progress through the guide and tells the HUD what to show next.
 import { DIM_NAMES } from '../core/constants';
+import { item } from '../data/items';
 import { QUESTS } from '../data/quests';
 import type { Game } from '../game';
 import { locate, structDim } from '../world/gen/structures';
@@ -12,7 +13,15 @@ export class QuestSystem {
   private done(i: number): boolean {
     const q = QUESTS[i], g = this.g;
     if (q.have) return g.inv.count(q.have[0]) >= q.have[1] || g.flags.has('had:' + q.key);
-    if (q.flag) return g.flags.has(q.flag);
+    if (q.flag) {
+      if (g.flags.has(q.flag)) return true;
+      if (!q.flag.startsWith('craft:')) return false;
+      // a crafting step also counts when the thing was looted, bought, placed, or a better tool of its kind is owned
+      const key = q.flag.slice(6), t = item(key).tool;
+      if (g.flags.has('place:' + key) || g.inv.count(key) > 0) return true;
+      if (t) for (const s of g.inv.slots) { const o = s ? item(s.k).tool : undefined; if (o && o.kind === t.kind && o.power >= t.power) return true; }
+      return false;
+    }
     if (q.level) return g.stats.level >= q.level;
     return false;
   }
