@@ -88,7 +88,7 @@ const wrapD = (d: number): number => (d > 8 ? d - 16 : d < -8 ? d + 16 : d);
 const mineral = (c: number, amt = 0.32, cells = 4): P => (t, r, s) => {
   t.each((x, y) => sh(c, q((vn(x, y, cells, s) * 0.85 + r() * 0.15 - 0.5) * 2, 3) * amt));
 };
-const ST = [0x5f6272, 0x767a86, 0x8b8f96, 0x9c9f9f, 0xb0b1a8], DS = [0x2c2f40, 0x3b3f50, 0x4b4f5e, 0x5c6070, 0x70748a];
+const ST = [0x5f6272, 0x767a86, 0x8b8f96, 0x9c9f9f, 0xb0b1a8], DS = [0x2e3142, 0x414556, 0x525666, 0x64687a, 0x787c92];
 const DT = [0x5a3826, 0x744a30, 0x8a5f3c, 0xa07448, 0xb98f5e], SD = [0xc9ad7c, 0xd8c389, 0xe4d39a, 0xf1e4b2];
 const GR = [0x9eb8b0, 0xbfceba, 0xdde4d2, 0xfffad2];
 const ramp5 = (c: number, k = 1): number[] => [sh(c, -0.5 * k), sh(c, -0.25 * k), c, sh(c, 0.2 * k), sh(c, 0.42 * k)];
@@ -117,7 +117,7 @@ const slateBase = (g: number[]): P => (t, _r, s) => t.each((x, y) => {
 });
 const slate = (g: number[]): P => (t, r, s) => { slateBase(g)(t, r, s); for (let i = 0; i < 5; i++) t.set((r() * 16) | 0, (r() * 16) | 0, g[4]); };
 const soil = (g: number[], pebbles = 7, pits = 5): P => (t, r, s) => {
-  t.each((x, y) => { const v = vn(x, y, 4, s) * 0.75 + vn(x, y, 8, s + 1) * 0.25; return g[v < 0.38 ? 1 : v < 0.7 ? 2 : 3]; });
+  t.each((x, y) => { const v = vn(x, y, 4, s) * 0.75 + vn(x, y, 8, s + 1) * 0.25; return g[v < 0.33 ? 1 : v < 0.6 ? 2 : 3]; });
   for (let i = 0; i < pebbles; i++) { const x = (r() * 16) | 0, y = (r() * 16) | 0; t.set(x, y, g[4]); t.set(x + 1, y + 1, g[0]); if (r() < 0.5) t.set(x + 1, y, g[3]); }
   for (let i = 0; i < pits; i++) t.set((r() * 16) | 0, (r() * 16) | 0, g[0]);
 };
@@ -243,7 +243,7 @@ const ore = (base: P, c: number, shape: number[][], glow = false, dark = sh(c, -
     const x = ax + ((r() * 3) | 0) - 1, y = ay + ((r() * 3) | 0) - 1;
     // shadows first, then the ore, so a shadow can never darken its own cluster
     for (const [dx, dy] of shape) t.shade((x + dx + 1) & 15, (y + dy + 1) & 15, -0.4);
-    for (const [dx, dy, k] of shape) t.set(x + dx, y + dy, tones[k], a);
+    for (const [dx, dy, k] of shape) t.set(x + dx, y + dy, tones[k], k ? a : 255);   // the shaded side of a glowing ore does not glow
   }
   for (let i = 0; i < 2; i++) t.set((r() * 16) | 0, (r() * 16) | 0, c, a);
 };
@@ -434,8 +434,8 @@ const GLOOM_G = ramp5(C.gloom), RIFT_G = ramp5(C.rift, 0.7), gloomBed = rockBase
 const gloomP = pitted(GLOOM_G, 5, 3), riftP = pitted(RIFT_G, 0, 7), wardP = bricks(C.ward, 0x343a48, 8, 8, 0.2);
 const scoriaP = pitted(ramp5(0x4a3438, 1.1), 11), nightP = mineral(0x1e1830, 0.35, 3);
 const brickDark = bricks(0x4a4450, 0x24202a, 8, 4, 0.14);
-const SNOW_G = [0xc4d2e8, 0xdde7f4, 0xf2f6fb, 0xffffff], MYCEL_G = [0x2e2748, 0x3c3358, 0x4a3f6a, 0x6c5c98], SKY_G = [0x4fb8a8, 0x6fd8c0, 0x8fe6cc, 0xd8f8dc];
-const LEAF_G = [0x8fa6a6, 0xb4c4b8, 0xd6dccc, 0xf4f0cc];   // grey ramp for foliage-tinted leaves, hue shift baked in
+const SNOW_G = [0xc4d2e8, 0xdde7f4, 0xf2f6fb, 0xffffff], MYCEL_G = [0x2e2748, 0x3c3358, 0x4a3f6a, 0x6c5c98], SKY_G = [0x48ac9c, 0x60c8b2, 0x78dcc4, 0xc8f6dc];
+const LEAF_G = [0xa0b6b2, 0xcad8c8, 0xe6ecda, 0xfffbd8];   // grey ramp for foliage-tinted leaves, hue shift baked in
 const skysoilP = soil(ramp5(0x8f9ab8, 0.7), 5, 4);
 
 const altarSide = (k: number, c: number): P => station(wardP, (t) => { rune(t, c, k, 0x2a2f3c); t.rect(0, 0, 15, 1, 0x343a48); for (let x = 1; x < 16; x += 3) t.put(x, 1, c, 0); });
@@ -466,11 +466,11 @@ export const PAINTERS: Record<string, P> = {
   lava: (t, r, s) => t.each((x, y) => mix(0xc8340c, 0xffd84a, q(Math.min(1, vn(x, y, 4, s) * 0.8 + vn(x, y, 8, s + 1) * 0.35), 4)), 0),
 
   oak_log: logSide(C.oakBark), oak_log_top: logTop(C.oakBark, 0xc19a5b, [2, 4]), oak_leaves: leaves(LEAF_G, 0.12), oak_planks: planks(0xb88a4e, [5, 5, 6], 2),
-  pine_log: logSide(C.pineBark), pine_log_top: logTop(C.pineBark, 0xa87a48, [1, 3, 5]), pine_leaves: leaves([0x1d4a3c, 0x2a6248, 0x3c7d52, 0x5a9a5c], 0.08), pine_planks: planks(0x8a6238, [8, 8], 2, true),
+  pine_log: logSide(C.pineBark), pine_log_top: logTop(C.pineBark, 0xa87a48, [1, 3, 5]), pine_leaves: leaves([0x1f4e3e, 0x2f6a4c, 0x418456, 0x60a062], 0.08), pine_planks: planks(0x8a6238, [8, 8], 2, true),
   pale_log: station(logSide(C.paleBark), (t, r) => { for (let i = 0; i < 6; i++) { const x = (r() * 14) | 0, y = (r() * 16) | 0; t.rect(x, y, x + 2, y, 0x3a3630); } }),
-  pale_log_top: logTop(C.paleBark, 0xe6d6a8, [3]), pale_leaves: leaves([0x5f9a48, 0x7fba54, 0x9fd45e, 0xd4ec8a], 0.14), pale_planks: planks(0xdcc890, [4, 4, 4, 4], 2),
+  pale_log_top: logTop(C.paleBark, 0xe6d6a8, [3]), pale_leaves: leaves([0x6ea850, 0x90ca5c, 0xacde68, 0xdef292], 0.14), pale_planks: planks(0xdcc890, [4, 4, 4, 4], 2),
   kapok_log: logSide(C.kapokBark), kapok_log_top: logTop(C.kapokBark, 0xc48a52, [2, 4]), kapok_leaves: leaves(LEAF_G, 0.07), kapok_planks: planks(0xa8663a),
-  rose_log: logSide(C.roseBark), rose_log_top: logTop(C.roseBark, 0xd89aa0, [2, 5]), rose_leaves: leaves([0xb8608e, 0xdc82ac, 0xf2a0c4, 0xfbc2d8], 0.12, 0xfff0f6), rose_planks: planks(0xc97a86),
+  rose_log: logSide(C.roseBark), rose_log_top: logTop(C.roseBark, 0xd89aa0, [2, 5]), rose_leaves: leaves([0xc46e9a, 0xe890b8, 0xf8accc, 0xfdcade], 0.12, 0xfff0f6), rose_planks: planks(0xc97a86),
 
   tall_grass: tuft(GR), fern: plantP((t, r) => {
     for (const [bx, lean] of [[7, -1], [8, 1], [7, 0]] as const) for (let k = 0; k < 11; k++) {
@@ -500,7 +500,7 @@ export const PAINTERS: Record<string, P> = {
   torch: plantP((t) => { for (let y = 9; y < 16; y++) { t.put(7, y, 0x8a5f34); t.put(8, y, 0x5f3f22); } t.rect(7, 6, 8, 8, 0xffb52a); t.put(7, 6, 0xfff0a0); t.put(8, 6, 0xffd64a); t.put(7, 7, 0xffe06a); }),
   lantern: plantP((t) => { t.rect(5, 7, 10, 15, 0x2e2a30); t.rect(6, 9, 9, 13, 0xffd66a); t.rect(7, 10, 8, 12, 0xfff4c0); t.rect(6, 7, 9, 7, 0x4a4650); t.rect(5, 15, 10, 15, 0x1e1a20); }),
   // the lantern box top samples texels 5..10, which the side tile leaves empty above its lid
-  lantern_top: plantP((t) => { t.rect(5, 5, 10, 10, 0x2e2a30); t.rect(6, 6, 9, 9, 0x4a4650); t.rect(7, 7, 8, 8, 0x8a8690); }),
+  lantern_top: plantP((t) => { t.rect(5, 5, 10, 10, 0x2e2a30); t.rect(6, 6, 9, 9, 0x4a4650); t.rect(7, 7, 8, 8, 0x6a6670); }),
   workbench_top: station(planks(C.wood), (t) => { frame(t, 0x5a3f22); t.line(1, 5, 14, 5, 0x7a5a30); t.line(1, 10, 14, 10, 0x7a5a30); t.line(5, 1, 5, 14, 0x7a5a30); t.line(10, 1, 10, 14, 0x7a5a30); }),
   workbench_side: station(planks(C.wood), (t) => { t.rect(0, 0, 15, 2, 0x6a4a28); t.rect(0, 3, 15, 3, 0x4a321a); t.line(3, 6, 3, 12, 0x8a8a92); t.rect(2, 5, 5, 6, 0x6a6a72); t.line(9, 6, 12, 12, 0xb0b0b8); t.line(10, 6, 13, 12, 0x6a6a72); t.rect(0, 13, 1, 15, 0x4a321a); t.rect(14, 13, 15, 15, 0x4a321a); }),
   furnace_top: station(cobble(0x7a7c84), (t) => frame(t, 0x4a4c54)), furnace_side: station(cobble(0x7a7c84), (t) => { t.rect(0, 0, 15, 1, 0x5a5c64); t.rect(0, 14, 15, 15, 0x4a4c54); }),
@@ -537,7 +537,7 @@ export const PAINTERS: Record<string, P> = {
   lumen_frond: tuft([0x1f9a6a, 0x3fd088, 0x6af6a8, 0xd0ffe0], 8), sporelamp: (t, r, s) => t.each((x, y) => mix(0xb8641c, 0xffe07a, q(vn(x, y, 3, s) * 0.8 + r() * 0.2, 3)), 0),
 
   riftstone: riftP, skyturf_top: turfTop(SKY_G, 255), skyturf_side: turfSide(skysoilP, SKY_G, false), skysoil: skysoilP,
-  star_log: logSide(0xe0e6f6), star_log_top: logTop(0xe0e6f6, 0xb8c6ee, [3]), star_leaves: leaves([0x4a5cc0, 0x6078dc, 0x7f9af0, 0xb8c8ff], 0.12, 0xf4f8ff), star_planks: planks(0xc6d0f2, [4, 4, 4, 4], 2),
+  star_log: logSide(0xe0e6f6), star_log_top: logTop(0xe0e6f6, 0xb8c6ee, [3]), star_leaves: leaves([0x566acc, 0x6e88e8, 0x8ca6f6, 0xc4d4ff], 0.12, 0xf4f8ff), star_planks: planks(0xc6d0f2, [4, 4, 4, 4], 2),
   aetherium_ore: ore(riftBed, 0x4fb6f6, VEIN, true), prismite_ore: ore(riftBed, 0xf6a0f0, SHARD, true),
   cloud: (t, _r, s) => t.each((x, y) => { const v = vn(x, y, 2, s) * 0.75 + vn(x, y, 4, s + 1) * 0.25; return v < 0.4 ? 0xe4eaf5 : v < 0.47 ? 0xecf0f8 : v > 0.72 ? 0xffffff : 0xf4f6fc; }),
   prism_crystal: crystal(0xe8e8ff, true),
