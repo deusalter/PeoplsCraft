@@ -81,6 +81,7 @@ export class Interact {
     const consumed = host.primary(input.clicks[0], held);
     if (h.hit && held && !consumed) {
       if (h.x !== this.tx || h.y !== this.ty || h.z !== this.tz) { this.tx = h.x; this.ty = h.y; this.tz = h.z; this.progress = 0; host.onDigStart(h.id); }
+      else if (this.progress === 0) host.onDigStart(h.id);   // a fresh press on the block mined last
       const bt = host.breakTime(h.id);
       if (this.breakCd <= 0 && bt !== Infinity) {
         this.progress += bt <= 0 ? 1 : dt / bt;
