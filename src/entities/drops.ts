@@ -7,7 +7,7 @@ import { makeItemMaterial } from '../render/batches';
 
 class Drop implements Body {
   active = false; it: Item = { k: 'stick', n: 1 }; x = 0; y = 0; z = 0; vx = 0; vy = 0; vz = 0; hw = 0.12; h = 0.24;
-  onGround = false; hitH = false; hitUp = false; age = 0; delay = 0; mesh: THREE.Mesh | null = null; light = new THREE.Vector4(1, 0, 0, 0);
+  onGround = false; hitH = false; hitUp = false; age = 0; delay = 0; px = 0; py = 0; pz = 0; mesh: THREE.Mesh | null = null; light = new THREE.Vector4(1, 0, 0, 0);
 }
 
 export class DropSystem {
@@ -30,7 +30,7 @@ export class DropSystem {
     }
     let d = this.list.find((o) => !o.active);
     if (!d) { d = this.list.reduce((a, b) => (a.age > b.age ? a : b)); this.free(d); }
-    d.active = true; d.it = { ...it }; d.x = x; d.y = y; d.z = z; d.vx = vx; d.vy = vy; d.vz = vz; d.age = 0; d.delay = delay;
+    d.active = true; d.it = { ...it }; d.x = d.px = x; d.y = d.py = y; d.z = d.pz = z; d.vx = vx; d.vy = vy; d.vz = vz; d.age = 0; d.delay = delay;
     const cube = this.g.models.isCube(it.k), mesh = new THREE.Mesh(this.g.models.get(it.k), this.mat), light = d.light;
     mesh.scale.setScalar(cube ? 0.26 : 0.42);
     mesh.onBeforeRender = (_r, _s, _c, _g, material) => { (material as THREE.ShaderMaterial).uniforms.uObj.value.copy(light); (material as THREE.ShaderMaterial).uniformsNeedUpdate = true; };
@@ -41,6 +41,7 @@ export class DropSystem {
     const g = this.g, p = g.player, w = g.world, reach = 1.7 + g.stats.d.pickup;
     for (const d of this.list) {
       if (!d.active) continue;
+      d.px = d.x; d.py = d.y; d.pz = d.z;
       d.age += dt;
       if (d.age > 300 || d.y < -20) { this.free(d); continue; }
       if (d.delay > 0) d.delay -= dt;
@@ -60,11 +61,18 @@ export class DropSystem {
         moveBody(w, d, d.vx * dt, d.vy * dt, d.vz * dt);
         if (d.onGround) { d.vx *= Math.max(0, 1 - 10 * dt); d.vz *= Math.max(0, 1 - 10 * dt); }
       }
-      const m = d.mesh!;
-      m.position.set(d.x, d.y + 0.22 + Math.sin(d.age * 2.6) * 0.07, d.z);
-      m.rotation.y = d.age * 1.6;
       const l = w.getLight(Math.floor(d.x), Math.floor(d.y + 0.3), Math.floor(d.z));
       d.light.set((l >> 4) / 15, (l & 15) / 15, 0, 0);
+    }
+  }
+
+  /** Place the meshes between the last two ticks so drops move as smoothly as the camera. */
+  render(alpha: number): void {
+    for (const d of this.list) {
+      if (!d.active) continue;
+      const m = d.mesh!, age = d.age + alpha / 60;
+      m.position.set(d.px + (d.x - d.px) * alpha, d.py + (d.y - d.py) * alpha + 0.22 + Math.sin(age * 2.6) * 0.07, d.pz + (d.z - d.pz) * alpha);
+      m.rotation.y = age * 1.6;
     }
   }
 }

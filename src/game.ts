@@ -729,6 +729,7 @@ export class Game implements InteractHost {
     this.gfx.update(this.time, this.env, this.gfx.camera.position);
     if (!this.paused) this.particles.update(dt, this.world);
     this.boxes.begin(); this.mobs.render(this.boxes, a, this.time); this.proj.render(this.boxes, a); this.boxes.end();
+    this.drops.render(a);
     this.updateHand(dt);
     this.gfx.flash = 0;
     this.gfx.render(this.ready && !this.stats.dead && this.hudOn);
