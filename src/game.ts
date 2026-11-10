@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GameAudio } from './audio/audio';
 import { BUILD_MAX, CVOL, DAY_LENGTH, SEA, chunkKey } from './core/constants';
+import { clamp } from './core/noise';
 import { B, BLOCKS, T_DAMAGE, T_LAYER, T_LIQUID, T_OPAQUE, T_REPLACE, T_SOLID, T_SUPPORT } from './data/blocks';
 import { BIOME, BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
@@ -15,14 +16,15 @@ import { ProjectileSystem } from './entities/projectiles';
 import { Input } from './player/input';
 import { Interact, InteractHost } from './player/interact';
 import { RayHit } from './player/physics';
-import { Player } from './player/player';
+import { Player, STRIDE } from './player/player';
+import { buildArm } from './player/viewmodel';
 import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
 import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
 import { ItemModels } from './render/itemModel';
 import { EventSystem } from './systems/events';
 import { Fluids } from './systems/fluids';
-import { Inventory, Slot } from './systems/inventory';
+import { INV_SIZE, Inventory, Slot } from './systems/inventory';
 import { NpcSystem } from './systems/npcs';
 import { QuestSystem } from './systems/quests';
 import type { SaveDB, WorldMeta } from './systems/save';
@@ -57,6 +59,8 @@ export class Game implements InteractHost {
   private loading: HTMLElement | null = null; private loadMsg = 'Raising the land';
   private atkCd = 0; private useCd = 0; private swing = 0; private equip = 0; private handKey = '?'; private hand: THREE.Mesh; private handLight = new THREE.Vector4(1, 0, 0, 0);
   private armGeo: THREE.BufferGeometry;
+  private swayX = 0; private swayY = 0; private fallY = 0; private lastYaw = 0; private lastPitch = 0;   // held-item inertia
+  private stepN = 0; private wasWet = false; private wasUnder = false; private splashCd = 0;
   private portalT = 0; private portalArmed = true; private portalReturn: Record<number, [number, number, number]> = {}; private arriving = -1;
   private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
@@ -86,10 +90,7 @@ export class Game implements InteractHost {
     // held-item view model
     const mat = makeItemMaterial(true); mat.side = THREE.DoubleSide;
     mat.uniforms.uLightDir = { value: this.gfx.handLightDir };   // the hand is drawn in view space
-    this.armGeo = new THREE.BoxGeometry(0.22, 0.22, 0.7);
-    const n = this.armGeo.getAttribute('position').count, col = new Uint8Array(n * 3);
-    for (let i = 0; i < n; i++) { col[i * 3] = 224; col[i * 3 + 1] = 176; col[i * 3 + 2] = 136; }
-    this.armGeo.setAttribute('color', new THREE.BufferAttribute(col, 3, true));
+    this.armGeo = buildArm();
     this.hand = new THREE.Mesh(this.armGeo, mat);
     this.hand.onBeforeRender = (_r, _s, _c, _g, m) => { (m as THREE.ShaderMaterial).uniforms.uObj.value.copy(this.handLight); (m as THREE.ShaderMaterial).uniformsNeedUpdate = true; };
     this.gfx.handScene.add(this.hand);
@@ -108,7 +109,11 @@ export class Game implements InteractHost {
     this.input.onLockChange = (locked) => { if (locked) this.audio.unlock(); else if (!this.input.uiMode && this.ready && !this.stats.dead) this.menu.pause(); };
     canvas.addEventListener('mousedown', () => this.audio.unlock());
     window.addEventListener('resize', () => this.gfx.resize());
-    window.addEventListener('beforeunload', () => { void this.save(); });
+    window.addEventListener('beforeunload', (e) => {
+      void this.save();
+      // Ctrl is the sprint key and Ctrl+W closes the tab: ask first, but only when Ctrl is held in play
+      if (this.ready && this.input.locked && (this.input.down('ControlLeft') || this.input.down('ControlRight'))) { e.preventDefault(); e.returnValue = ''; }
+    });
     document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); });
 
     this.world.onBlockChange = (x, y, z, _old, now) => {
@@ -175,6 +180,7 @@ export class Game implements InteractHost {
     this.gfx.applySettings(s.gfx);
     this.world.setView(s.gfx.renderDist, DIMS[this.dim].fogScale);
     this.audio.setVolumes(s.sfx, s.music);
+    this.input.raw = s.rawMouse;
   }
   start(): void { this.last = performance.now(); this.raf = requestAnimationFrame(this.frame); }
   stop(): void { cancelAnimationFrame(this.raf); this.pool.dispose(); }
@@ -310,6 +316,37 @@ export class Game implements InteractHost {
     this.audio.play('dig_' + b.sound, 0.7);
     for (let i = 0; i < 3; i++) this.particles.spawn(x + 0.5 + nx * 0.55 + (Math.random() - 0.5) * 0.5, y + 0.5 + ny * 0.55 + (Math.random() - 0.5) * 0.5, z + 0.5 + nz * 0.55 + (Math.random() - 0.5) * 0.5,
       nx * 1.5 + (Math.random() - 0.5) * 2, ny * 1.5 + Math.random() * 2, nz * 1.5 + (Math.random() - 0.5) * 2, 0.5, 0.12, this.tintOf(id), 0, 14, T_LAYER[id * 6], true, (l >> 4) / 15, (l & 15) / 15);
+  }
+  /** Auto-tool: when mining starts with a tool (or nothing) in hand, switch to the best hotbar tool for the block. */
+  onDigStart(id: number): void {
+    const b = BLOCKS[id], inv = this.inv, h = inv.held(), cur = h ? item(h.k).tool : undefined;
+    if (!this.cfg.settings.autoTool || this.creative || b.tool === 'none' || b.hard < 0 || (h && !cur)) return;
+    let best = -1, bestV = cur && cur.kind === b.tool ? (cur.power >= b.power ? 1000 : 0) + cur.speed : -1;
+    for (let i = 0; i < 9; i++) {
+      const s = inv.slots[i], t = s ? item(s.k).tool : undefined;
+      if (!t || t.kind !== b.tool) continue;
+      const v = (t.power >= b.power ? 1000 : 0) + t.speed;   // able to harvest first, then fastest
+      if (v > bestV) { bestV = v; best = i; }
+    }
+    if (best >= 0) inv.sel = best;
+  }
+  /** Middle click: bring the targeted block's item to hand. */
+  private pickBlock(id: number): void {
+    const b = BLOCKS[id], inv = this.inv, key = ITEMS.has(b.key) ? b.key : b.drops[0]?.[0];
+    if (!key || !ITEMS.has(key)) return;
+    let at = -1, free = -1;
+    for (let i = 0; i < INV_SIZE && at < 0; i++) if (inv.slots[i]?.k === key) at = i;
+    for (let i = 8; i >= 0; i--) if (!inv.slots[i]) free = i;
+    if (at >= 0 && at < 9) inv.sel = at;
+    else if (at < 0 && !this.creative) return;
+    else {
+      // from the pack (or from nowhere, in creative) into an empty hotbar slot if there is one, else trade places with the held stack
+      const to = free >= 0 ? free : inv.sel, was = inv.slots[to];
+      inv.slots[to] = at >= 0 ? inv.slots[at] : { k: key, n: item(key).stack };
+      if (at >= 0) inv.slots[at] = was;
+      inv.sel = to;
+    }
+    inv.touch(); this.audio.play('click', 0.4);
   }
   private tintOf(id: number): number { const t = BLOCKS[id].tint; return t === 1 ? 0x86c653 : t === 2 ? 0x6fb445 : t === 3 ? 0x3a84dc : 0xffffff; }
   private burst(x: number, y: number, z: number, id: number): void {
@@ -650,12 +687,27 @@ export class Game implements InteractHost {
     const p = this.player, inp = this.input, inv = this.inv, st = this.stats, w = this.world;
     if (!this.ready) return;
     for (let i = 0; i < 9; i++) if (inp.hit('Digit' + (i + 1))) inv.sel = i;
-    if (inp.wheel) inv.sel = (inv.sel + Math.sign(inp.wheel) + 9) % 9;
-    if (inp.hit('KeyQ')) { const h = inv.held(); if (h) { const n = inp.down('ControlLeft') ? h.n : 1; this.dropItem({ k: h.k, n, m: h.m }); inv.consumeHeld(n); } }
+    if (inp.wheel) inv.sel = (((inv.sel + inp.wheel) % 9) + 9) % 9;
+    if (inp.hit('KeyQ')) { const h = inv.held(); if (h) { const n = inp.down('ControlLeft') || inp.down('ControlRight') ? h.n : 1; this.dropItem({ k: h.k, n, m: h.m }); inv.consumeHeld(n); } }
     st.sync(inv);
     p.moveMult = (1 + st.d.speed) * (p.inWater ? 1 + st.d.swim : 1); p.jumpMult = Math.sqrt(1 + st.d.jump); p.extraJumps = st.d.extraJump;
+    p.autoJump = this.cfg.settings.autoJump; p.canFly = this.creative && this.cfg.settings.flyToggle;
     p.frozen = st.dead || this.arriving >= 0;
     p.tick(dt, inp, w, this.time);
+    // water entry: a splash scaled by how hard we hit it, and a softer one as the head crosses the surface
+    if (this.splashCd > 0) this.splashCd -= dt;
+    if (p.inWater !== this.wasWet) {
+      this.wasWet = p.inWater;
+      const fall = (p.py - p.y) * 60;
+      if (p.inWater && fall > 3 && this.splashCd <= 0) {
+        this.splashCd = 0.6;
+        const hard = Math.min(1, 0.25 + fall * 0.05), sy = Math.floor(p.y + 0.4) + 0.9, l = w.getLight(Math.floor(p.x), Math.floor(sy) + 1, Math.floor(p.z)), n = 6 + Math.round(hard * 10);
+        this.audio.play('splash', hard);
+        for (let i = 0; i < n; i++) this.particles.spawn(p.x + (Math.random() - 0.5) * 0.6, sy, p.z + (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 2.5, 1.5 + Math.random() * 2.5, (Math.random() - 0.5) * 2.5, 0.5, 0.09, 0xbfe4ff, 0, 14, -1, false, (l >> 4) / 15, (l & 15) / 15);
+        if (fall > 12) p.shake(0.12);
+      }
+    }
+    if (p.headInWater !== this.wasUnder) { this.wasUnder = p.headInWater; if (this.splashCd <= 0) { this.splashCd = 0.4; this.audio.play('splash', 0.3, p.headInWater ? 0.6 : 1.2); } }
     if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; if (this.popT > 0) this.popT -= dt; if (this.warnT > 0) this.warnT -= dt; if (this.recallT > 0) this.recallT -= dt;
 
     // landing, footsteps, hazards
@@ -665,7 +717,9 @@ export class Game implements InteractHost {
       if (p.landed > 3.6 && !st.d.noFall && !this.creative) { st.hurtT = 0; const took = st.damage((p.landed - 3) * 5.5, true); if (took > 0) { this.hud.flashHurt(); this.audio.play('hurt'); p.shake(0.4); if (st.dead) this.onDeath('fall'); } }
     }
     if (p.onGround) { this.safe[0] = p.x; this.safe[1] = p.y; this.safe[2] = p.z; }
-    if (p.stepAccum > (p.sprinting ? 2.5 : 2.1)) { p.stepAccum = 0; const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z)); if (below) this.audio.play('step_' + BLOCKS[below].sound, p.sneaking ? 0.25 : 0.6); }
+    // a footfall each time the stride phase passes the bottom of the view bob
+    const sn = Math.floor(p.walkDist / STRIDE + 0.5);
+    if (sn !== this.stepN) { this.stepN = sn; if (p.onGround) { const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z)); if (below) this.audio.play('step_' + BLOCKS[below].sound, p.sneaking ? 0.25 : 0.6); } }
     this.hazardT -= dt;
     if (this.hazardT <= 0) {
       this.hazardT = 0.5;
@@ -674,7 +728,6 @@ export class Game implements InteractHost {
         const id = w.getBlock(Math.floor(p.x + dx), Math.floor(p.y + dy * 0.9 - (dx || dz ? 0 : 0.1)), Math.floor(p.z + dz));
         if (T_DAMAGE[id] && !T_LIQUID[id]) { this.hurtPlayer(T_DAMAGE[id] * 3, Math.floor(p.x + dx) + 0.5, Math.floor(p.z + dz) + 0.5, BLOCKS[id].name, null, 3); dy = 2; break; }
       }
-      if (p.headInWater !== this.env.underwater && this.ready) this.audio.play('splash', 0.5);
       if (st.hunger <= 0 && st.hp <= 5 && !st.dead && Math.random() < 0.1) { st.hurtT = 0; st.damage(6, true); if (st.dead) this.onDeath('hunger'); }
     }
     if (p.y < (this.dim === 2 ? 20 : -16) && !st.dead) {
@@ -683,6 +736,7 @@ export class Game implements InteractHost {
     }
 
     this.interact.tick(dt, inp, this, inp.locked && !st.dead);
+    if (inp.clicks[1] && this.interact.hit.hit) this.pickBlock(this.interact.hit.id);
     st.tick(dt, inv, p.sprinting);
     this.mobs.tick(dt); this.proj.tick(dt); this.drops.tick(dt);
     this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; this.tickBlocks(0.25); }
@@ -795,9 +849,10 @@ export class Game implements InteractHost {
       while (this.acc >= STEP && n < 5) { this.tick(STEP); this.acc -= STEP; n++; if (n === 1) inp.endTick(); }
       if (n === 5) this.acc = 0;
       this.world.pump();   // send remesh jobs for this frame's block edits now, not next frame
-    }
+    } else inp.endTick();   // no tick runs while paused, so presses made in the menu must not fire on resume
     const t2 = performance.now(), a = this.paused ? 1 : this.acc / STEP;
-    p.applyCamera(this.gfx.camera, a, dt, this.cfg.settings.gfx.fov, this.time, this.cfg.settings.bob);
+    p.applyCamera(this.gfx.camera, a, dt, this.cfg.settings.gfx.fov, this.time, this.cfg.settings.bob, this.cfg.settings.shake);
+    this.interact.aim(this.reach(), inp.locked && !this.stats.dead);
     this.audio.lx = p.x; this.audio.ly = p.y + p.eye; this.audio.lz = p.z;
     this.updateEnv(dt);
     if (this.world.uploadsThisFrame > 0) this.gfx.shadowDirty = true;
@@ -861,12 +916,23 @@ export class Game implements InteractHost {
     const inv = this.inv, h = inv.held(), key = h ? h.k : '', p = this.player, hand = this.hand;
     if (key !== this.handKey) { this.handKey = key; this.equip = 1; hand.geometry = key ? this.models.get(key) : this.armGeo; this.stats.recompute(inv); }
     this.equip = Math.max(0, this.equip - dt * 5); this.swing = Math.max(0, this.swing - dt * 4.2);
-    const s = Math.sin((1 - this.swing) * Math.PI) * (this.swing > 0 ? 1 : 0), hs = Math.hypot(p.vx, p.vz), bob = p.onGround ? Math.min(1, hs / 4.3) : 0;
-    const bx = Math.cos(p.walkDist * 1.9) * 0.02 * bob, by = -Math.abs(Math.sin(p.walkDist * 1.9)) * 0.025 * bob;
+    // bob on the camera's own stride phase (advanced per frame), so hand and view stay in step at any refresh rate
+    const s = Math.sin((1 - this.swing) * Math.PI) * (this.swing > 0 ? 1 : 0), bob = p.stride, sb = Math.sin(p.bobPhase);
+    const bx = Math.cos(p.bobPhase) * 0.02 * bob, by = -sb * sb * 0.025 * bob;
     const cube = key ? this.models.isCube(key) : false, d = key ? item(key) : null, tool = !!d && (!!d.tool || !!d.weapon);
     if (!key) { hand.scale.set(0.5, 0.5, 0.5); hand.position.set(0.42 + bx, -0.36 + by - this.equip * 0.4 - s * 0.08, -0.62 - s * 0.2); hand.rotation.set(0.42 - s * 0.9, -0.25 + s * 0.4, 0.1); }
     else if (cube) { hand.scale.setScalar(0.15); hand.position.set(0.36 + bx - s * 0.1, -0.24 + by - this.equip * 0.4 - s * 0.1, -0.6 - s * 0.14); hand.rotation.set(0.14 - s * 0.7, 0.72, 0.04); }
     else { hand.scale.setScalar(tool ? 0.27 : 0.2); hand.position.set(0.36 + bx - s * 0.16, -0.2 + by - this.equip * 0.4 - s * 0.14, -0.6 - s * 0.12); hand.rotation.set(-s * 1.25 + (tool ? 0 : 0.1), -1.25 + s * 0.3, tool ? 0.28 - s * 0.5 : 0); }
+    // inertia: the hand trails quick turns, sinks as you rise, floats as you fall and takes part of the landing dip
+    if (dt > 0) {
+      const k = Math.min(1, dt * 10);
+      this.swayX += (clamp((p.yaw - this.lastYaw) / dt * 0.012, -0.06, 0.06) - this.swayX) * k;
+      this.swayY += (clamp((p.pitch - this.lastPitch) / dt * 0.012, -0.06, 0.06) - this.swayY) * k;
+      this.fallY += ((p.onGround || p.flying || p.inWater ? 0 : clamp(-p.vy * 0.006, -0.05, 0.06)) - this.fallY) * Math.min(1, dt * 8);
+    }
+    this.lastYaw = p.yaw; this.lastPitch = p.pitch;
+    hand.position.x += this.swayX; hand.position.y += this.fallY - this.swayY - p.dip * 0.6;
+    hand.rotation.y -= this.swayX * 1.2; hand.rotation.x -= this.swayY * 0.8;
     const l = this.world.getLight(Math.floor(p.x), Math.floor(p.y + p.eye), Math.floor(p.z));
     this.handLight.set((l >> 4) / 15, Math.max((l & 15) / 15, d?.block !== undefined && BLOCKS[d.block].light ? 0.9 : 0), 0, d?.block !== undefined && BLOCKS[d.block].emissive > 100 ? 0.5 : 0);
   }

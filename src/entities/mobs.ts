@@ -350,8 +350,8 @@ export class MobSystem {
   }
   canSee(m: Mob): boolean {
     const p = this.g.player, ox = m.x, oy = m.y + m.h * 0.8, oz = m.z, dx = p.x - ox, dy = p.y + p.eye - oy, dz = p.z - oz, l = Math.hypot(dx, dy, dz) || 1;
-    raycast(this.g.world, ox, oy, oz, dx / l, dy / l, dz / l, l, ray);
-    return !ray.hit || !T_SOLID[ray.id];
+    raycast(this.g.world, ox, oy, oz, dx / l, dy / l, dz / l, l, ray, false, true);
+    return !ray.hit;
   }
 
   // ---- spawning ----

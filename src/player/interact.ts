@@ -12,6 +12,8 @@ export interface InteractHost {
   /** Seconds to break the block with the held item; Infinity if it cannot be broken. */
   breakTime(id: number): number;
   onBroken(x: number, y: number, z: number, id: number): void;
+  /** Called once when mining turns to a new block, before its break time is read. */
+  onDigStart(id: number): void;
   onDigTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void;
   /** Left click. Return true if something other than mining consumed it (an attack). */
   primary(pressed: boolean, held: boolean): boolean;
@@ -47,17 +49,39 @@ export class Interact {
     scene.add(this.crack);
   }
 
-  /** Fixed-step update. */
+  /** Per-frame targeting from the rendered eye, so the outline always sits under the crosshair. */
+  aim(reach: number, active: boolean): void {
+    const p = this.player, h = this.hit;
+    if (!active) { h.hit = false; this.outline.visible = false; this.crack.visible = false; return; }
+    const d = p.dir(this.dir);
+    raycast(this.world, p.ex, p.ey, p.ez, d.x, d.y, d.z, reach, h);
+    if (h.hit) {
+      const o = h.id * 6, x0 = T_BOX[o] / 16, y0 = T_BOX[o + 1] / 16, z0 = T_BOX[o + 2] / 16, x1 = T_BOX[o + 3] / 16, y1 = T_BOX[o + 4] / 16, z1 = T_BOX[o + 5] / 16;
+      const sx = x1 - x0 + 0.004, sy = y1 - y0 + 0.004, sz = z1 - z0 + 0.004;
+      this.outline.position.set(h.x + (x0 + x1) / 2, h.y + (y0 + y1) / 2, h.z + (z0 + z1) / 2);
+      this.outline.scale.set(sx, sy, sz); this.outline.visible = true;
+      if (this.progress > 0 && h.x === this.tx && h.y === this.ty && h.z === this.tz) {
+        this.crack.position.copy(this.outline.position); this.crack.scale.set(sx, sy, sz);
+        this.crackMat.uniforms.uLayer.value = this.crack0 + Math.min(7, Math.floor(this.progress * 8));
+        this.crack.visible = true;
+      } else this.crack.visible = false;
+    } else { this.outline.visible = false; this.crack.visible = false; }
+  }
+
+  /** Fixed-step update. Targets from the same eye position the last frame was drawn from. */
   tick(dt: number, input: Input, host: InteractHost, active: boolean): void {
     const p = this.player, h = this.hit, d = p.dir(this.dir);
-    if (!active) { h.hit = false; this.progress = 0; this.outline.visible = false; this.crack.visible = false; return; }
-    raycast(this.world, p.x, p.y + p.eye, p.z, d.x, d.y, d.z, host.reach(), h);
+    if (!active) { h.hit = false; this.progress = 0; return; }
+    raycast(this.world, p.ex, p.ey, p.ez, d.x, d.y, d.z, host.reach(), h);
     if (this.breakCd > 0) this.breakCd -= dt;
     if (this.useCd > 0) this.useCd -= dt;
 
-    const consumed = host.primary(input.clicks[0], input.buttons[0]);
-    if (h.hit && input.buttons[0] && !consumed) {
-      if (h.x !== this.tx || h.y !== this.ty || h.z !== this.tz) { this.tx = h.x; this.ty = h.y; this.tz = h.z; this.progress = 0; }
+    // a click released before this tick still counts as held for one tick, so quick taps are never lost
+    const held = input.buttons[0] || input.clicks[0];
+    const consumed = host.primary(input.clicks[0], held);
+    if (h.hit && held && !consumed) {
+      if (h.x !== this.tx || h.y !== this.ty || h.z !== this.tz) { this.tx = h.x; this.ty = h.y; this.tz = h.z; this.progress = 0; host.onDigStart(h.id); }
+      else if (this.progress === 0) host.onDigStart(h.id);   // a fresh press on the block mined last
       const bt = host.breakTime(h.id);
       if (this.breakCd <= 0 && bt !== Infinity) {
         this.progress += bt <= 0 ? 1 : dt / bt;
@@ -74,18 +98,5 @@ export class Interact {
       if (host.secondary(h.hit ? h : null, input.clicks[2])) this.useCd = 0.22;
       else if (input.clicks[2]) this.useCd = 0.22;
     }
-
-    // visuals
-    if (h.hit) {
-      const o = h.id * 6, x0 = T_BOX[o] / 16, y0 = T_BOX[o + 1] / 16, z0 = T_BOX[o + 2] / 16, x1 = T_BOX[o + 3] / 16, y1 = T_BOX[o + 4] / 16, z1 = T_BOX[o + 5] / 16;
-      const sx = x1 - x0 + 0.004, sy = y1 - y0 + 0.004, sz = z1 - z0 + 0.004;
-      this.outline.position.set(h.x + (x0 + x1) / 2, h.y + (y0 + y1) / 2, h.z + (z0 + z1) / 2);
-      this.outline.scale.set(sx, sy, sz); this.outline.visible = true;
-      if (this.progress > 0) {
-        this.crack.position.copy(this.outline.position); this.crack.scale.set(sx, sy, sz);
-        this.crackMat.uniforms.uLayer.value = this.crack0 + Math.min(7, Math.floor(this.progress * 8));
-        this.crack.visible = true;
-      } else this.crack.visible = false;
-    } else { this.outline.visible = false; this.crack.visible = false; }
   }
 }

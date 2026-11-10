@@ -41,6 +41,8 @@ function clip(w: World, b: Body, axis: number, d: number): number {
 export function moveBody(w: World, b: Body, dx: number, dy: number, dz: number): void {
   const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz)) / 0.45));
   dx /= n; dy /= n; dz /= n;
+  // a velocity decaying towards rest must not register as a collision when clip() rounds it to zero
+  if (Math.abs(dx) < 1e-9) dx = 0; if (Math.abs(dy) < 1e-9) dy = 0; if (Math.abs(dz) < 1e-9) dz = 0;
   b.onGround = false; b.hitH = false; b.hitUp = false;
   for (let i = 0; i < n; i++) {
     const ay = clip(w, b, 1, dy); b.y += ay;
@@ -71,8 +73,9 @@ export const liquidAt = (w: World, x: number, y: number, z: number): number => T
 export interface RayHit { hit: boolean; x: number; y: number; z: number; nx: number; ny: number; nz: number; id: number; dist: number }
 export const newRayHit = (): RayHit => ({ hit: false, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, id: 0, dist: 0 });
 
-/** Voxel DDA. Non-cube shapes are tested against their own box so tall grass edges do not block clicks. */
-export function raycast(w: World, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max: number, out: RayHit, hitLiquid = false): RayHit {
+/** Voxel DDA. Non-cube shapes are tested against their own box so tall grass edges do not block clicks.
+ *  With `solidOnly`, plants and other walk-through blocks are skipped (line of sight, projectiles). */
+export function raycast(w: World, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max: number, out: RayHit, hitLiquid = false, solidOnly = false): RayHit {
   let x = Math.floor(ox), y = Math.floor(oy), z = Math.floor(oz);
   const sx = dx > 0 ? 1 : -1, sy = dy > 0 ? 1 : -1, sz = dz > 0 ? 1 : -1;
   const tdx = dx !== 0 ? Math.abs(1 / dx) : 1e30, tdy = dy !== 0 ? Math.abs(1 / dy) : 1e30, tdz = dz !== 0 ? Math.abs(1 / dz) : 1e30;
@@ -81,26 +84,19 @@ export function raycast(w: World, ox: number, oy: number, oz: number, dx: number
   out.hit = false;
   for (let i = 0; i < 200 && t <= max; i++) {
     const id = w.getBlock(x, y, z);
-    if (id !== 0 && (hitLiquid || !T_LIQUID[id])) {
+    if (id !== 0 && (hitLiquid || !T_LIQUID[id]) && (!solidOnly || T_SOLID[id])) {
       const o = id * 6;
       if (T_BOX[o] === 0 && T_BOX[o + 1] === 0 && T_BOX[o + 2] === 0 && T_BOX[o + 3] === 16 && T_BOX[o + 4] === 16 && T_BOX[o + 5] === 16) {
         out.hit = true; out.x = x; out.y = y; out.z = z; out.nx = nx; out.ny = ny; out.nz = nz; out.id = id; out.dist = t; return out;
       }
-      // slab test against the sub-box
+      // slab test against the sub-box; the face is read back from where the ray enters it
       const b0x = x + T_BOX[o] / 16, b0y = y + T_BOX[o + 1] / 16, b0z = z + T_BOX[o + 2] / 16, b1x = x + T_BOX[o + 3] / 16, b1y = y + T_BOX[o + 4] / 16, b1z = z + T_BOX[o + 5] / 16;
-      let tn = -1e30, tf = 1e30, hx = 0, hy = 0, hz = 0;
-      const ax = [ox, oy, oz], ad = [dx, dy, dz], lo = [b0x, b0y, b0z], hi = [b1x, b1y, b1z];
-      let miss = false;
-      for (let a = 0; a < 3 && !miss; a++) {
-        if (ad[a] === 0) { if (ax[a] < lo[a] || ax[a] > hi[a]) miss = true; continue; }
-        let t0 = (lo[a] - ax[a]) / ad[a], t1 = (hi[a] - ax[a]) / ad[a], s = -1;
-        if (t0 > t1) { const q = t0; t0 = t1; t1 = q; s = 1; }
-        if (t0 > tn) { tn = t0; hx = a === 0 ? s : 0; hy = a === 1 ? s : 0; hz = a === 2 ? s : 0; }
-        if (t1 < tf) tf = t1;
-        if (tn > tf) miss = true;
-      }
-      if (!miss && tf >= 0 && tn <= max) {
-        out.hit = true; out.x = x; out.y = y; out.z = z; out.nx = hx; out.ny = hy; out.nz = hz; out.id = id; out.dist = Math.max(0, tn); return out;
+      const tn = rayBox(ox, oy, oz, dx, dy, dz, b0x, b0y, b0z, b1x, b1y, b1z, max);
+      if (tn >= 0) {
+        const hx = ox + dx * tn, hy = oy + dy * tn, hz = oz + dz * tn, e = 1e-4;
+        let fx = 0, fy = 0, fz = 0;
+        if (tn > 0) { if (hx <= b0x + e) fx = -1; else if (hx >= b1x - e) fx = 1; else if (hy <= b0y + e) fy = -1; else if (hy >= b1y - e) fy = 1; else if (hz <= b0z + e) fz = -1; else if (hz >= b1z - e) fz = 1; }
+        out.hit = true; out.x = x; out.y = y; out.z = z; out.nx = fx; out.ny = fy; out.nz = fz; out.id = id; out.dist = tn; return out;
       }
     }
     if (tx < ty && tx < tz) { x += sx; t = tx; tx += tdx; nx = -sx; ny = 0; nz = 0; }

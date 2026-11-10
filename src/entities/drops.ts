@@ -7,7 +7,8 @@ import { makeItemMaterial } from '../render/batches';
 
 class Drop implements Body {
   active = false; it: Item = { k: 'stick', n: 1 }; x = 0; y = 0; z = 0; vx = 0; vy = 0; vz = 0; hw = 0.12; h = 0.24;
-  onGround = false; hitH = false; hitUp = false; age = 0; delay = 0; px = 0; py = 0; pz = 0; mesh: THREE.Mesh | null = null; light = new THREE.Vector4(1, 0, 0, 0);
+  px = 0; py = 0; pz = 0;   // previous tick position, for interpolation
+  onGround = false; hitH = false; hitUp = false; age = 0; delay = 0; mesh: THREE.Mesh | null = null; light = new THREE.Vector4(1, 0, 0, 0);
 }
 
 export class DropSystem {
@@ -66,11 +67,11 @@ export class DropSystem {
     }
   }
 
-  /** Place the meshes between the last two ticks so drops move as smoothly as the camera. */
+  /** Place the meshes for this frame: position interpolated between ticks, bob and spin advanced with it. */
   render(alpha: number): void {
     for (const d of this.list) {
       if (!d.active) continue;
-      const m = d.mesh!, age = d.age + alpha / 60;
+      const m = d.mesh!, age = d.age + (alpha - 1) / 60;
       m.position.set(d.px + (d.x - d.px) * alpha, d.py + (d.y - d.py) * alpha + 0.22 + Math.sin(age * 2.6) * 0.07, d.pz + (d.z - d.pz) * alpha);
       m.rotation.y = age * 1.6;
     }
