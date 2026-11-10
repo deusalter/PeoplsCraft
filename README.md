@@ -25,6 +25,7 @@ Needs a WebGL2 browser. Worlds are saved to IndexedDB in that browser.
 | Left mouse | Mine, attack, fire |
 | Right mouse | Use, place, eat, talk |
 | E / G | Inventory and crafting / Guide |
+| R | Use the best salve in your pack |
 | 1-9, wheel, Q | Hotbar, drop item |
 | F3 / F1 | Debug overlay / hide HUD |
 | T | Command line (`give`, `time`, `tp`, `gear`, `boss`, `locate`, `dim`, `creative`, `god` ...) |

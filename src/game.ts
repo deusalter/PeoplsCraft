@@ -52,6 +52,8 @@ export class Game implements InteractHost {
   time = 0; clock = 0.06; dim = 0; ready = false; paused = false;
   creative = false; creativeHidden = false; god = false;
   spawn: [number, number, number] | null = null;
+  /** Recall stone cooldown in seconds; the HUD shades the stone's slot with it. */
+  recallT = 0;
   prof = { world: 0, tick: 0, render: 0 };
   private last = performance.now(); private acc = 0; private raf = 0; private keysReady = false;
   private env: Env = { time: 0, dim: 0, fogTint: [1, 1, 1], haze: 0, cave: 0, underwater: false, moonTint: null, moonPhase: 0, darkness: 0 };
@@ -59,7 +61,7 @@ export class Game implements InteractHost {
   private atkCd = 0; private useCd = 0; private swing = 0; private equip = 0; private handKey = '?'; private hand: THREE.Mesh; private handLight = new THREE.Vector4(1, 0, 0, 0);
   private armGeo: THREE.BufferGeometry;
   private portalT = 0; private portalArmed = true; private portalReturn: Record<number, [number, number, number]> = {}; private arriving = -1;
-  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
+  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
 
@@ -390,17 +392,43 @@ export class Game implements InteractHost {
       return true;
     }
     if (d.food || d.heal || d.restoreMana || d.buff) {
-      if (d.heal && !d.food) { if (st.salveCd > 0) { if (this.warnT <= 0) { this.toast(`Salves need ${Math.ceil(st.salveCd)}s more`, '#ff9a8a'); this.warnT = 1; } return true; } st.salveCd = 9; }
-      else if (d.food && st.hunger >= 20 && !d.heal && !d.restoreMana) return false;
-      if (d.food) { st.hunger = Math.min(20, st.hunger + d.food); if (d.food >= 8) st.buffs.set('fed', 120); }
-      if (d.heal) { st.heal(d.heal); this.floater(p.x + dir.x, p.y + 1.6, p.z + dir.z, '+' + d.heal, '#7fd66b'); }
-      if (d.restoreMana) st.mana = Math.min(st.maxMana, st.mana + d.restoreMana);
-      if (d.buff) st.buffs.set(d.buff[0], d.buff[1]);
-      st.recompute(inv); inv.consumeHeld(); this.useCd = 0.35; this.swing = 1;
-      this.audio.play(d.food ? 'eat' : 'drink');
-      return true;
+      const r = this.consume(inv.sel);
+      if (r === 2) this.swing = 1;
+      return r !== 0;
     }
     return false;
+  }
+  /** Eat, drink or apply the consumable in `slot`. Returns 0 when nothing happened, 1 when refused with feedback, 2 when used. */
+  private consume(slot: number): number {
+    const inv = this.inv, st = this.stats, p = this.player, it = inv.slots[slot], d = it ? item(it.k) : null;
+    if (!it || !d) return 0;
+    const dir = p.dir(this.v);
+    if (d.heal && !d.food) { if (st.salveCd > 0) { if (this.warnT <= 0) { this.toast(`Salves need ${Math.ceil(st.salveCd)}s more`, '#ff9a8a'); this.warnT = 1; } return 1; } st.salveCd = 9; }
+    else if (d.food && st.hunger >= 20 && !d.heal && !d.restoreMana) return 0;
+    if (d.food) { st.hunger = Math.min(20, st.hunger + d.food); if (d.food >= 8) st.buffs.set('fed', 120); }
+    if (d.heal) { st.heal(d.heal); this.floater(p.x + dir.x, p.y + 1.6, p.z + dir.z, '+' + d.heal, '#7fd66b'); }
+    if (d.restoreMana) st.mana = Math.min(st.maxMana, st.mana + d.restoreMana);
+    if (d.buff) st.buffs.set(d.buff[0], d.buff[1]);
+    if (--it.n <= 0) inv.slots[slot] = null;
+    inv.touch(); st.recompute(inv); this.useCd = 0.35;
+    this.audio.play(d.food ? 'eat' : 'drink');
+    return 2;
+  }
+  /** R: apply the salve that best covers missing health without scrolling to it. */
+  private quickHeal(): void {
+    const inv = this.inv, st = this.stats, miss = st.maxHp - st.hp;
+    if (st.dead || this.useCd > 0) return;
+    if (st.salveCd > 0) { this.audio.play('error', 0.4); return; }
+    let best = -1, bestHeal = 0, big = -1, bigHeal = 0;
+    for (let i = 0; i < inv.slots.length; i++) {
+      const s = inv.slots[i], d = s ? item(s.k) : null;
+      if (!d || !d.heal || d.food) continue;
+      if (d.heal >= miss && (best < 0 || d.heal < bestHeal)) { best = i; bestHeal = d.heal; }
+      if (d.heal > bigHeal) { big = i; bigHeal = d.heal; }
+    }
+    if (big < 0) { if (this.warnT <= 0) { this.toast('No salves', '#ff9a8a'); this.audio.play('error', 0.5); this.warnT = 1.5; } return; }
+    if (miss < 1) { if (this.warnT <= 0) { this.toast('Already at full health', '#9aa0b2'); this.warnT = 1.5; } return; }
+    this.consume(best >= 0 ? best : big);
   }
   private respawnPoint(): void {
     const s = this.spawn, p = this.player;
@@ -586,6 +614,7 @@ export class Game implements InteractHost {
     if (!this.ready) return;
     for (let i = 0; i < 9; i++) if (inp.hit(DIGITS[i])) inv.sel = i;
     if (inp.wheel) inv.sel = (inv.sel + Math.sign(inp.wheel) + 9) % 9;
+    if (inp.hit('KeyR') && inp.locked) this.quickHeal();
     if (inp.hit('KeyQ')) { const h = inv.held(); if (h) { const n = inp.down('ControlLeft') ? h.n : 1; this.dropItem({ k: h.k, n, m: h.m }); inv.consumeHeld(n); } }
     st.sync(inv);
     p.moveMult = (1 + st.d.speed) * (p.inWater ? 1 + st.d.swim : 1); p.jumpMult = Math.sqrt(1 + st.d.jump); p.extraJumps = st.d.extraJump;

@@ -1,6 +1,6 @@
 // Heads-up display: hotbar, vitals, boss bar, quest tracker, toasts and floating combat text.
 import * as THREE from 'three';
-import { RARITY, itemName, itemRarity } from '../data/items';
+import { RARITY, item, itemName, itemRarity } from '../data/items';
 import type { Game } from '../game';
 import { BUFFS } from '../systems/stats';
 import { HOTBAR } from '../systems/inventory';
@@ -26,7 +26,9 @@ interface Floater { el: HTMLElement; x: number; y: number; z: number; life: numb
 
 export class Hud {
   readonly root: HTMLElement;
-  private slots: { root: HTMLElement; ic: HTMLElement; n: HTMLElement }[] = [];
+  /** cd: which cooldown shades the slot (0 none, 1 salve, 2 recall stone); cv: last written overlay fraction. */
+  private slots: { root: HTMLElement; ic: HTMLElement; n: HTMLElement; cdEl: HTMLElement; cd: number; cv: number; k: string; cnt: number }[] = [];
+  private heldSig = ''; private ammoName = false; private primed = false;
   private hp: Bar; private food: Bar; private mana: Bar; private xp: Bar; private coins: HTMLElement; private lvl: HTMLElement;
   private itemName: HTMLElement; private toasts: HTMLElement; private banner: HTMLElement; private bannerT = 0;
   private boss: HTMLElement; private bossName: HTMLElement; private bossTitle: HTMLElement; private bossBar: Bar;
@@ -48,7 +50,10 @@ export class Hud {
     this.hp = bar('hp', bars); this.food = bar('food', bars); this.mana = bar('mana', bars); this.coins = el('div', '#coins', bars);
     this.xp = bar('xp', bars);
     const hb = el('div', '#hotbar', wrap);
-    for (let i = 0; i < HOTBAR; i++) { const s = el('div', 'slot', hb); this.slots.push({ root: s, ic: el('div', 'ic', s), n: el('div', 'n', s) }); }
+    for (let i = 0; i < HOTBAR; i++) {
+      const s = el('div', 'slot', hb), ic = el('div', 'ic', s), cdEl = el('div', 'cd', s); el('div', 'k', s, String(i + 1));
+      this.slots.push({ root: s, ic, n: el('div', 'n', s), cdEl, cd: 0, cv: 0, k: '', cnt: 0 });
+    }
     this.lvl = el('div', '#lvl', r); this.itemName = el('div', '#itemname', r);
     this.toasts = el('div', '#toasts', r); this.banner = el('div', '#banner', r);
     this.boss = el('div', '#boss', r); this.bossTitle = el('div', 'tt', this.boss); this.bossName = el('div', 'nm', this.boss); this.bossBar = bar('', this.boss);
@@ -99,18 +104,37 @@ export class Hud {
       const selChanged = inv.sel !== this.sel;
       this.rev = inv.rev; this.sel = inv.sel;
       for (let i = 0; i < HOTBAR; i++) {
-        const s = inv.slots[i], v = this.slots[i];
+        const s = inv.slots[i], v = this.slots[i], k = s ? s.k : '', n = s ? s.n : 0;
         g.icons.apply(v.ic, s ? s.k : null);
         v.n.textContent = s && s.n > 1 ? String(s.n) : '';
-        v.root.className = 'slot' + (i === inv.sel ? ' sel' : '') + (s && itemRarity(s) > 0 && i !== inv.sel ? ' r' + itemRarity(s) : '');
+        v.root.className = 'slot' + (i === inv.sel ? ' sel' : '') + (s && itemRarity(s) > 0 ? ' r' + itemRarity(s) : '');
+        // a pickup or swap landing in the hotbar gives the icon a small bump
+        if (k && (k !== v.k || n > v.cnt) && this.primed) { v.ic.classList.remove('bump'); void v.ic.offsetWidth; v.ic.classList.add('bump'); }
+        v.k = k; v.cnt = n;
+        const d = s ? item(s.k) : null, cd = d ? (d.heal && !d.food ? 1 : d.use === 'recall' ? 2 : 0) : 0;
+        if (cd !== v.cd) { v.cd = cd; if (!cd && v.cv) { v.cv = 0; v.cdEl.style.transform = 'scaleY(0)'; } }
       }
-      const h = inv.held();
-      if (selChanged || this.nameT <= 0) {
+      const h = inv.held(), sig = h ? h.k + ':' + (h.m ?? '') : '';
+      const wpn = h ? item(h.k).weapon : undefined;
+      if (wpn?.ammo) {
+        // bows keep their name up with the arrows they will fire next
+        const a = inv.findTagged('arrow');
+        this.itemName.textContent = itemName(h!) + (a < 0 ? '  ·  no arrows' : `  ·  ${item(inv.slots[a]!.k).name} x${inv.count(inv.slots[a]!.k)}`);
+        this.itemName.style.color = RARITY[itemRarity(h!)].color; this.itemName.style.opacity = '1'; this.nameT = 0; this.ammoName = true;
+      } else if (selChanged || sig !== this.heldSig || this.ammoName) {
+        this.ammoName = false;
         if (h) { this.itemName.textContent = itemName(h); this.itemName.style.color = RARITY[itemRarity(h)].color; this.itemName.style.opacity = '1'; this.nameT = 1.6; }
-        else this.itemName.style.opacity = '0';
+        else { this.itemName.style.opacity = '0'; this.nameT = 0; }
       }
+      this.heldSig = sig; this.primed = true;
     }
     if (this.nameT > 0) { this.nameT -= dt; if (this.nameT <= 0) this.itemName.style.opacity = '0'; }
+    for (let i = 0; i < HOTBAR; i++) {
+      const v = this.slots[i];
+      if (!v.cd) continue;
+      const f = Math.round(Math.max(0, Math.min(1, v.cd === 1 ? st.salveCd / 9 : g.recallT / 30)) * 100) / 100;
+      if (f !== v.cv) { v.cv = f; v.cdEl.style.transform = `scaleY(${f})`; }
+    }
     const hpI = Math.ceil(st.hp), manaI = Math.floor(st.mana), foodI = Math.ceil(st.hunger);
     if (hpI !== this.hpI || st.maxHp !== this.maxHpI) { this.hpI = hpI; this.maxHpI = st.maxHp; this.hpText = `${hpI} / ${st.maxHp}`; }
     if (manaI !== this.manaI || st.maxMana !== this.maxManaI) { this.manaI = manaI; this.maxManaI = st.maxMana; this.manaText = `${manaI} / ${st.maxMana}`; }
