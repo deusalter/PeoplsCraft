@@ -143,6 +143,9 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
   const end = (): void => { b.atk = null; b.cd = P.cd[0] + Math.random() * (P.cd[1] - P.cd[0]); };
   const aim = (): void => { b.ax = dx / d3; b.ay = dy / d3; b.az = dz / d3; };
   const cx = m.x, cy = m.y + (spec.cast ?? m.h * 0.6), cz = m.z;
+  // aimed shots are sighted from the point they leave (which may be a head or an eye well above the body's middle); flat
+  // patterns keep one height above the feet whatever the model's size
+  const cdy = p.y + 0.9 - cy, cd3 = Math.hypot(dist, cdy) || 1, flatY = Math.max(m.y + 1, p.y + 0.9);
   const telegraph = (c: number): void => { if (Math.random() < dt * 40) { const an = Math.random() * 6.283, r = m.hw + 1.5; g.particles.spawn(cx + Math.cos(an) * r, m.y + Math.random() * m.h, cz + Math.sin(an) * r, -Math.cos(an) * 3, 0.5, -Math.sin(an) * 3, 0.4, 0.14, c, 1, 0); } };
 
   if (a) {
@@ -178,7 +181,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
         const bursts = a.bursts ?? 1, gap = a.gap ?? 0.3;
         if (b.t < 0.5) { wn = b.t / 0.5; telegraph(0x9ad0ff); }
         else if (b.step < bursts && b.t >= 0.5 + b.step * gap) {
-          b.step++; b.strike = 1; aim(); g.audio.play('shoot', 0.9, 0.7, [m.x, m.y, m.z]);
+          b.step++; b.strike = 1; b.ax = dx / cd3; b.ay = cdy / cd3; b.az = dz / cd3; g.audio.play('shoot', 0.9, 0.7, [m.x, m.y, m.z]);
           const base = Math.atan2(b.ax, b.az);
           for (let i = 0; i < a.n; i++) { const an = base + (a.n === 1 ? 0 : (i / (a.n - 1) - 0.5) * a.spread * 2), ch = Math.cos(Math.asin(Math.max(-0.9, Math.min(0.9, b.ay)))); g.proj.fire(a.proj, cx, cy, cz, Math.sin(an) * ch, b.ay, Math.cos(an) * ch, a.dmg * dmgMul, false); }
         } else if (b.step >= bursts && b.t > 0.5 + bursts * gap + 0.3) end();
@@ -191,7 +194,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
           const n = Math.floor((b.t - 0.6) / 0.13);
           while (b.step <= n) {
             const base = b.step * 0.13 * a.spin;
-            for (let i = 0; i < a.arms; i++) { const an = base + (i / a.arms) * 6.283; g.proj.fire(a.proj, cx, Math.max(cy - 1.2, p.y + 0.9), cz, Math.sin(an), 0, Math.cos(an), a.dmg * dmgMul, false, 9); }
+            for (let i = 0; i < a.arms; i++) { const an = base + (i / a.arms) * 6.283; g.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), 0, Math.cos(an), a.dmg * dmgMul, false, 9); }
             if (b.step % 3 === 0) g.audio.play('shoot', 0.4, 1.4, [m.x, m.y, m.z]);
             b.step++;
           }
@@ -212,7 +215,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
       }
       case 'ring': {
         if (b.t < 0.55) { wn = b.t / 0.55; telegraph(0xffe06a); }
-        else { b.strike = 1; g.audio.play('shoot', 1, 0.5, [m.x, m.y, m.z]); for (let i = 0; i < a.n; i++) { const an = (i / a.n) * 6.283 + b.orbit; g.proj.fire(a.proj, cx, Math.max(cy - 1.2, p.y + 0.9), cz, Math.sin(an), 0, Math.cos(an), a.dmg * dmgMul, false, 11); } end(); }
+        else { b.strike = 1; g.audio.play('shoot', 1, 0.5, [m.x, m.y, m.z]); for (let i = 0; i < a.n; i++) { const an = (i / a.n) * 6.283 + b.orbit; g.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), 0, Math.cos(an), a.dmg * dmgMul, false, 11); } end(); }
         break;
       }
       case 'summon': {
@@ -242,12 +245,12 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
       }
       case 'beam': {
         if (b.t < a.windup) {
-          wn = b.t / a.windup; aim();
+          wn = b.t / a.windup; b.ax = dx / cd3; b.ay = cdy / cd3; b.az = dz / cd3;
           for (let i = 1; i < 12; i++) if (Math.random() < dt * 20) g.particles.spawn(cx + b.ax * i * 1.6, cy + b.ay * i * 1.6, cz + b.az * i * 1.6, 0, 0, 0, 0.25, 0.1, 0xff5a3a, 1, 0);
         } else if (b.t < a.windup + a.dur) {
           wn = 1; if (b.step === 0) b.strike = 1;
           // the beam swings toward the player at a limited rate, so strafing beats it
-          const k = Math.min(1, dt * 1.1), tx = dx / d3, ty = dy / d3, tz = dz / d3;
+          const k = Math.min(1, dt * 1.1), tx = dx / cd3, ty = cdy / cd3, tz = dz / cd3;
           b.ax += (tx - b.ax) * k; b.ay += (ty - b.ay) * k; b.az += (tz - b.az) * k;
           const l = Math.hypot(b.ax, b.ay, b.az) || 1; b.ax /= l; b.ay /= l; b.az /= l;
           const n = Math.floor((b.t - a.windup) / 0.045);
