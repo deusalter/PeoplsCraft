@@ -5,6 +5,7 @@ import { BLOCKS, TEXTURE_NAMES } from './blocks';
 import { ITEMS, TAGGED } from './items';
 import { LOOT } from './loot';
 import { MAX_PARTS, MOB_LIST, MOBS, PROJECTILES } from './mobs';
+import { BOSS_BARS } from './hudstyle';
 import { NPCS } from './npcs';
 import { QUESTS } from './quests';
 import { RECIPES, SMELTS } from './recipes';
@@ -55,5 +56,6 @@ export function validateData(): string[] {
   for (const n of NPCS) { if (!MOBS.has(n.mob)) bad.push(`npc ${n.key}: unknown mob`); for (const g of n.goods) { has(g[0], 'npc ' + n.key); if (g[2] && g[2] !== 'coins') has(g[2], 'npc ' + n.key); } }
   for (const q of QUESTS) if (q.have) has(q.have[0], 'quest ' + q.key);
   for (const r of RECIPES) for (const k of r.in ? r.in.map((i) => i[0]) : Object.values(r.key ?? {})) if (k[0] !== '#' && ITEMS.has(k) && !sourceOf(k)) bad.push(`recipe ${r.out}: no way to get "${k}"`);
+  for (const k in BOSS_BARS) if (!MOBS.get(k)?.boss) bad.push(`boss bar colours for unknown boss ${k}`);
   return bad;
 }

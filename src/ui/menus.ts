@@ -18,7 +18,7 @@ export function loadSettings(): Settings {
 export const saveSettings = (s: Settings): void => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* storage unavailable */ } };
 
 const KEYS: [string, string][] = [['W A S D', 'Move'], ['Space', 'Jump / swim up'], ['Shift', 'Sneak'], ['R, Ctrl or double-tap W', 'Sprint'], ['Left mouse', 'Mine / attack'], ['Right mouse', 'Use / place'], ['Middle mouse', 'Pick block'],
-  ['E', 'Inventory and crafting'], ['G', 'Guide'], ['Q', 'Drop item'], ['1-9, wheel', 'Hotbar'], ['F3', 'Debug overlay'], ['T', 'Command line'], ['Esc', 'Pause']];
+  ['E', 'Inventory and crafting'], ['G', 'Guide'], ['Q', 'Drop item'], ['H', 'Use best salve'], ['1-9, wheel', 'Hotbar'], ['F3', 'Debug overlay'], ['T', 'Command line'], ['Esc', 'Pause']];
 
 function drawCairn(c: HTMLCanvasElement): void {
   c.width = 43; c.height = 48;

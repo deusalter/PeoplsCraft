@@ -35,11 +35,14 @@ export class Inventory {
     if (n !== it.n) this.rev++;
     return n;
   }
-  /** How many of an unmodified item the pack could still take. */
-  room(k: string): number {
-    const d = item(k);
+  /** How many of an item (or of an unmodified item given by key) the pack could still take. Plain loop, no allocation. */
+  room(it: Item | string): number {
+    const k = typeof it === 'string' ? it : it.k, mod = typeof it !== 'string' && !!it.m, d = item(k);
     let n = 0;
-    for (let i = 0; i < INV_SIZE; i++) { const s = this.slots[i]; if (!s) n += d.stack; else if (s.k === k && !s.m && d.stack > 1) n += Math.max(0, d.stack - s.n); }
+    for (let i = 0; i < INV_SIZE; i++) {
+      const s = this.slots[i];
+      if (!s) n += d.stack; else if (d.stack > 1 && !mod && s.k === k && !s.m) n += Math.max(0, d.stack - s.n);
+    }
     return n;
   }
   /** Count items matching a key or '#tag' across the main inventory. */

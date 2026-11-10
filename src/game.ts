@@ -40,6 +40,7 @@ import { BlockEnt, Chunk, World } from './world/world';
 
 const STEP = 1 / 60;
 export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings }
+const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
 const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
 
 export class Game implements InteractHost {
@@ -53,6 +54,12 @@ export class Game implements InteractHost {
   time = 0; clock = 0.06; dim = 0; ready = false; paused = false;
   creative = false; creativeHidden = false; god = false;
   spawn: [number, number, number] | null = null;
+  /** Recall stone cooldown in seconds; the HUD shades the stone's slot with it. */
+  recallT = 0;
+  /** Where the player starts without a bed, as x and z. */
+  worldSpawn: [number, number] = [0, 0];
+  /** Last death as [dimension, x, y, z], shown on the compass until the player walks back to it. */
+  deathAt: [number, number, number, number] | null = null;
   prof = { world: 0, tick: 0, render: 0 };
   private last = performance.now(); private acc = 0; private raf = 0; private keysReady = false;
   private env: Env = { time: 0, dim: 0, fogTint: [1, 1, 1], haze: 0, cave: 0, underwater: false, moonTint: null, moonPhase: 0, darkness: 0 };
@@ -62,8 +69,8 @@ export class Game implements InteractHost {
   private swayX = 0; private swayY = 0; private fallY = 0; private lastYaw = 0; private lastPitch = 0;   // held-item inertia
   private stepN = 0; private wasWet = false; private wasUnder = false; private splashCd = 0;
   private portalT = 0; private portalArmed = true; private portalReturn: Record<number, [number, number, number]> = {}; private arriving = -1;
-  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
-  private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
+  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private fullT = 0; private safe: [number, number, number] = [0, 0, 0];
+  private console: HTMLInputElement; private v = new THREE.Vector3();
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
   private pendingBed = false; private deadOnLoad = false; private arriveMsg = '';
 
@@ -147,7 +154,7 @@ export class Game implements InteractHost {
 
     // restore
     if (d) {
-      this.inv.load(d.inv); this.stats.load(d.stats); this.clock = d.clock ?? 0.06; this.spawn = d.spawn ?? null;
+      this.inv.load(d.inv); this.stats.load(d.stats); this.clock = d.clock ?? 0.06; this.spawn = d.spawn ?? null; this.deathAt = d.deathAt ?? null;
       for (const f of d.flags || []) this.flags.add(f);
       this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs); this.portalReturn = d.portalReturn || {};
       this.player.teleport(d.player.x, d.player.y, d.player.z); this.player.yaw = d.player.yaw; this.player.pitch = d.player.pitch;
@@ -203,8 +210,13 @@ export class Game implements InteractHost {
   }
   onPickup(key: string, n: number): void {
     const d = item(key);
-    this.hud.toast(`+${n} ${d.name}`, RARITY[d.rarity].color);
+    this.hud.pickup(key, n, d.name, RARITY[d.rarity].color, this.inv.count(key));
     if (this.popT <= 0) { this.audio.play('pop', 0.7, 0.9 + Math.random() * 0.3); this.popT = 0.06; }
+  }
+  /** A drop is under the player but the pack has no room for it. Throttled on its own timer so it never nags. */
+  warnFull(): void {
+    if (this.fullT > 0) return;
+    this.fullT = 8; this.toast('Inventory full', '#ff9a8a'); this.audio.play('error', 0.4);
   }
   onCrafted(key: string, _n: number): void { this.flags.add('craft:' + key); }
   markEntDirty(e: BlockEnt): void { const c = this.world.chunkAt(e.x >> 4, e.z >> 4); if (c) c.modified = true; }
@@ -229,7 +241,10 @@ export class Game implements InteractHost {
     const took = st.damage(dmg);
     if (took === 0) return;
     if (took < 0) { this.floater(p.x, p.y + 2, p.z, 'Dodged', '#9ad0ff'); return; }
-    this.hud.flashHurt(); p.shake(Math.min(0.7, 0.25 + took / st.maxHp)); this.audio.play('hurt');
+    // where the blow came from, in view space: forward is (-sin yaw, -cos yaw), right is (cos yaw, -sin yaw)
+    const sx = fx - p.x, sz = fz - p.z, sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
+    this.hud.flashHurt(Math.hypot(sx, sz) < 0.05 ? undefined : Math.atan2(cy * sx - sy * sz, -sy * sx - cy * sz));
+    p.shake(Math.min(0.7, 0.25 + took / st.maxHp)); this.audio.play('hurt');
     const dx = p.x - fx, dz = p.z - fz, l = Math.hypot(dx, dz) || 1, kr = 1 - Math.min(0.9, st.d.knockRes);
     p.kbx += (dx / l) * knock * kr; p.kbz += (dz / l) * knock * kr;
     if (p.onGround && kr > 0.3) p.vy = 5;
@@ -237,11 +252,12 @@ export class Game implements InteractHost {
     if (st.dead) this.onDeath(cause);
   }
   private onDeath(cause: string): void {
-    const lost = Math.floor(this.inv.coins * 0.15);
+    const lost = Math.floor(this.inv.coins * 0.15), p = this.player;
+    this.deathAt = [this.dim, Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
     this.inv.coins -= lost; this.inv.touch();
     this.audio.play('death'); this.win.close(true);
     for (const m of this.mobs.list) if (m.active && m.def.ai === 'minion') m.active = false;
-    this.menu.death(cause === 'fall' ? 'The ground was farther than it looked' : cause === 'lava' ? 'Lava does not negotiate' : cause === 'void' ? 'There was nothing under you' : cause === 'hunger' ? 'Starved' : `Slain by ${cause}`, lost);
+    this.menu.death((cause === 'fall' ? 'The ground was farther than it looked' : cause === 'lava' ? 'Lava does not negotiate' : cause === 'void' ? 'There was nothing under you' : cause === 'hunger' ? 'Starved' : `Slain by ${cause}`) + `  ·  at ${this.deathAt[1]}, ${this.deathAt[2]}, ${this.deathAt[3]}`, lost);
   }
   respawn(): void { this.stats.respawn(); this.goHome(); }
   /** Send the player to their bed, or to the world spawn when there is none (death, Recall Stone). */
@@ -417,7 +433,7 @@ export class Game implements InteractHost {
       if (this.atkCd <= 0) {
         this.atkCd = 1 / rate; this.swing = 1; this.audio.play('swing', 0.6);
         const dmg = (wpn?.dmg ?? 2) * st.dmgMult('melee') * (crit ? 2 : 1) * (0.92 + Math.random() * 0.16);
-        this.mobs.hurt(r.m, dmg, dir.x, dir.z, wpn?.knock ?? 3, crit);
+        this.mobs.hurt(r.m, dmg, dir.x, dir.z, wpn?.knock ?? 3, crit); this.hud.hitMark(crit);
         p.shake(crit ? 0.22 : 0.12); st.exhaustion += 0.03;
       }
       return true;
@@ -462,17 +478,43 @@ export class Game implements InteractHost {
       return true;
     }
     if (d.food || d.heal || d.restoreMana || d.buff) {
-      if (d.heal && !d.food) { if (st.salveCd > 0) { if (this.warnT <= 0) { this.toast(`Salves need ${Math.ceil(st.salveCd)}s more`, '#ff9a8a'); this.warnT = 1; } return true; } st.salveCd = 9; }
-      else if (d.food && st.hunger >= 20 && !d.heal && !d.restoreMana) return false;
-      if (d.food) { st.hunger = Math.min(20, st.hunger + d.food); if (d.food >= 8) st.buffs.set('fed', 120); }
-      if (d.heal) { st.heal(d.heal); this.floater(p.x + dir.x, p.y + 1.6, p.z + dir.z, '+' + d.heal, '#7fd66b'); }
-      if (d.restoreMana) st.mana = Math.min(st.maxMana, st.mana + d.restoreMana);
-      if (d.buff) st.buffs.set(d.buff[0], d.buff[1]);
-      st.recompute(inv); inv.consumeHeld(); this.useCd = 0.35; this.swing = 1;
-      this.audio.play(d.food ? 'eat' : 'drink');
-      return true;
+      const r = this.consume(inv.sel);
+      if (r === 2) this.swing = 1;
+      return r !== 0;
     }
     return false;
+  }
+  /** Eat, drink or apply the consumable in `slot`. Returns 0 when nothing happened, 1 when refused with feedback, 2 when used. */
+  private consume(slot: number): number {
+    const inv = this.inv, st = this.stats, p = this.player, it = inv.slots[slot], d = it ? item(it.k) : null;
+    if (!it || !d) return 0;
+    const dir = p.dir(this.v);
+    if (d.heal && !d.food) { if (st.salveCd > 0) { if (this.warnT <= 0) { this.toast(`Salves need ${Math.ceil(st.salveCd)}s more`, '#ff9a8a'); this.warnT = 1; } return 1; } st.salveCd = 9; }
+    else if (d.food && st.hunger >= 20 && !d.heal && !d.restoreMana) return 0;
+    if (d.food) { st.hunger = Math.min(20, st.hunger + d.food); if (d.food >= 8) st.buffs.set('fed', 120); }
+    if (d.heal) { st.heal(d.heal); this.floater(p.x + dir.x, p.y + 1.6, p.z + dir.z, '+' + d.heal, '#7fd66b'); }
+    if (d.restoreMana) st.mana = Math.min(st.maxMana, st.mana + d.restoreMana);
+    if (d.buff) st.buffs.set(d.buff[0], d.buff[1]);
+    if (--it.n <= 0) inv.slots[slot] = null;
+    inv.touch(); st.recompute(inv); this.useCd = 0.35;
+    this.audio.play(d.food ? 'eat' : 'drink');
+    return 2;
+  }
+  /** H: apply the salve that best covers missing health without scrolling to it. */
+  private quickHeal(): void {
+    const inv = this.inv, st = this.stats, miss = st.maxHp - st.hp;
+    if (st.dead || this.useCd > 0) return;
+    if (st.salveCd > 0) { this.audio.play('error', 0.4); return; }
+    let best = -1, bestHeal = 0, big = -1, bigHeal = 0;
+    for (let i = 0; i < inv.slots.length; i++) {
+      const s = inv.slots[i], d = s ? item(s.k) : null;
+      if (!d || !d.heal || d.food) continue;
+      if (d.heal >= miss && (best < 0 || d.heal < bestHeal)) { best = i; bestHeal = d.heal; }
+      if (d.heal > bigHeal) { big = i; bigHeal = d.heal; }
+    }
+    if (big < 0) { if (this.warnT <= 0) { this.toast('No salves', '#ff9a8a'); this.audio.play('error', 0.5); this.warnT = 1.5; } return; }
+    if (miss < 1) { if (this.warnT <= 0) { this.toast('Already at full health', '#9aa0b2'); this.warnT = 1.5; } return; }
+    this.consume(best >= 0 ? best : big);
   }
 
   private useBlock(hit: RayHit, use: string): boolean {
@@ -687,8 +729,9 @@ export class Game implements InteractHost {
   private tick(dt: number): void {
     const p = this.player, inp = this.input, inv = this.inv, st = this.stats, w = this.world;
     if (!this.ready) return;
-    for (let i = 0; i < 9; i++) if (inp.hit('Digit' + (i + 1))) inv.sel = i;
+    for (let i = 0; i < 9; i++) if (inp.hit(DIGITS[i])) inv.sel = i;
     if (inp.wheel) inv.sel = (((inv.sel + inp.wheel) % 9) + 9) % 9;
+    if (inp.hit('KeyH') && inp.locked) this.quickHeal();
     if (inp.hit('KeyQ')) { const h = inv.held(); if (h) { const n = inp.down('ControlLeft') || inp.down('ControlRight') ? h.n : 1; this.dropItem({ k: h.k, n, m: h.m }); inv.consumeHeld(n); } }
     st.sync(inv);
     p.moveMult = (1 + st.d.speed) * (p.inWater ? 1 + st.d.swim : 1); p.jumpMult = Math.sqrt(1 + st.d.jump); p.extraJumps = st.d.extraJump;
@@ -709,7 +752,7 @@ export class Game implements InteractHost {
       }
     }
     if (p.headInWater !== this.wasUnder) { this.wasUnder = p.headInWater; if (this.splashCd <= 0) { this.splashCd = 0.4; this.audio.play('splash', 0.3, p.headInWater ? 0.6 : 1.2); } }
-    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; if (this.popT > 0) this.popT -= dt; if (this.warnT > 0) this.warnT -= dt; if (this.recallT > 0) this.recallT -= dt;
+    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; if (this.popT > 0) this.popT -= dt; if (this.warnT > 0) this.warnT -= dt; if (this.fullT > 0) this.fullT -= dt; if (this.recallT > 0) this.recallT -= dt;
 
     // landing, footsteps, hazards
     if (p.landed > 0) {
@@ -729,6 +772,8 @@ export class Game implements InteractHost {
         const id = w.getBlock(Math.floor(p.x + dx), Math.floor(p.y + dy * 0.9 - (dx || dz ? 0 : 0.1)), Math.floor(p.z + dz));
         if (T_DAMAGE[id] && !T_LIQUID[id]) { this.hurtPlayer(T_DAMAGE[id] * 3, Math.floor(p.x + dx) + 0.5, Math.floor(p.z + dz) + 0.5, BLOCKS[id].name, null, 3); dy = 2; break; }
       }
+      const da = this.deathAt;
+      if (da && da[0] === this.dim && !st.dead && Math.abs(p.x - da[1]) < 6 && Math.abs(p.z - da[3]) < 6 && Math.abs(p.y - da[2]) < 8) this.deathAt = null;
       if (st.hunger <= 0 && st.hp <= 5 && !st.dead && Math.random() < 0.1) { st.hurtT = 0; st.damage(6, true); if (st.dead) this.onDeath('hunger'); }
     }
     if (p.y < (this.dim === 2 ? 20 : -16) && !st.dead) {
@@ -949,7 +994,7 @@ export class Game implements InteractHost {
     const p = this.player, m = this.cfg.meta;
     m.played = Date.now();
     m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
-      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes,
+      spawn: this.spawn, deathAt: this.deathAt, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes,
       arriving: this.arriving, pendingBed: this.pendingBed, safe: this.safe };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
     try { await this.cfg.db.putWorld(m); } catch (e) { console.warn('save failed', e); }
@@ -958,7 +1003,7 @@ export class Game implements InteractHost {
   private debugLines(): string[] {
     const p = this.player, w = this.world, c = w.counts(), info = this.gfx.renderer.info;
     const x = Math.floor(p.x), y = Math.floor(p.y), z = Math.floor(p.z), l = w.getLight(x, y + 1, z);
-    const facing = ['south (-z)', 'west (-x)', 'north (+z)', 'east (+x)'][((Math.round(p.yaw / (Math.PI / 2)) % 4) + 4) % 4];
+    const facing = ['north (-z)', 'west (-x)', 'south (+z)', 'east (+x)'][((Math.round(p.yaw / (Math.PI / 2)) % 4) + 4) % 4];
     const tod = ((this.clock % 1) * 24 + 6) % 24;
     return [
       `chunks  ${c.meshed} meshed / ${c.loaded} loaded / ${c.waiting} waiting   workers ${this.pool.busy}/${this.pool.size}   mesh ${w.meshMs.toFixed(1)} ms`,

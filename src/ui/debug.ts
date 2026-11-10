@@ -9,7 +9,7 @@ export class DebugOverlay {
     this.el.id = 'debug'; this.el.style.display = 'none';
     parent.appendChild(this.el);
   }
-  toggle(): void { this.visible = !this.visible; this.el.style.display = this.visible ? 'block' : 'none'; }
+  toggle(): void { this.visible = !this.visible; this.el.style.display = this.visible ? 'block' : 'none'; this.el.parentElement?.classList.toggle('dbg', this.visible); }
   /** Call once per frame with the frame's delta in seconds. Returns true when the text should refresh. */
   frame(dt: number): boolean {
     this.frames++; this.acc += dt; this.t += dt;

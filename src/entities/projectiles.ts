@@ -44,7 +44,7 @@ export class ProjectileSystem {
         this.cur = p;
         const r = g.mobs.rayHit(p.x, p.y, p.z, dx, dy, dz, stop, p.def.size * 0.5 + 0.1, this.canHit);
         if (r) {
-          g.mobs.hurt(r.m, p.dmg, p.vx, p.vz, p.knock, p.crit);
+          g.mobs.hurt(r.m, p.dmg, p.vx, p.vz, p.knock, p.crit); g.hud.hitMark(p.crit);
           if (p.def.pierce && p.hit.size < 3) p.hit.add(r.m.id); else { stop = r.t; dead = true; }
         }
       } else {
