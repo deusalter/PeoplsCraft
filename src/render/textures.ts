@@ -232,13 +232,14 @@ const turfSide = (base: P, g: number[], tinted: boolean): P => (t, r, s) => {
     t.shade(x, d, -0.3);   // the fringe casts a shadow on the soil
   }
 };
+// Ore colours follow the tier body / trim colours in data/items.ts.
 // [dx, dy, tone] with tone 2 = highlight, 1 = body, 0 = shade: each family of ores has its own silhouette
 const BLOB = [[1, 0, 2], [2, 0, 1], [0, 1, 2], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 2, 0], [2, 2, 0]];
 const VEIN = [[0, 2, 1], [1, 1, 2], [2, 1, 1], [3, 0, 2], [4, 0, 1], [2, 2, 0], [3, 1, 0]];
 const SHARD = [[1, 0, 2], [0, 1, 2], [1, 1, 1], [0, 2, 1], [1, 2, 0], [0, 3, 0]];
-const ore = (base: P, c: number, shape: number[][], glow = false, dark = sh(c, -0.35)): P => (t, r, s) => {
+const ore = (base: P, c: number, shape: number[][], glow = false, dark = sh(c, -0.35), hi = sh(c, 0.55)): P => (t, r, s) => {
   base(t, r, s);
-  const a = glow ? 0 : 255, tones = [dark, c, sh(c, 0.55)];
+  const a = glow ? 0 : 255, tones = [dark, c, hi];
   for (const [ax, ay] of [[2, 2], [10, 4], [4, 10], [11, 11]]) {
     const x = ax + ((r() * 3) | 0) - 1, y = ay + ((r() * 3) | 0) - 1;
     // shadows first, then the ore, so a shadow can never darken its own cluster
@@ -490,7 +491,7 @@ export const PAINTERS: Record<string, P> = {
   glowshroom: shroom(0x3fe6c8, 0xbff7ea, 0xeafff8, true),
 
   coal_ore: ore(stoneBed, 0x25252c, BLOB), iron_ore: ore(stoneBed, 0xc98a5e, VEIN, false, 0x7a4630), gold_ore: ore(stoneBed, 0xf6cf3c, BLOB),
-  mana_ore: ore(stoneBed, 0x4f86f6, SHARD, true), lumenite_ore: ore(deepBed, 0x4fe6e0, SHARD, true), cindrite_ore: ore(deepBed, 0xff7a2a, VEIN, true), eclipsium_ore: ore(deepBed, 0xc06af6, SHARD, true),
+  mana_ore: ore(stoneBed, 0x4f86f6, SHARD, true), lumenite_ore: ore(deepBed, 0x4fe6e0, SHARD, true), cindrite_ore: ore(deepBed, 0xff7a2a, VEIN, true), eclipsium_ore: ore(deepBed, 0x8a4ae0, SHARD, true, 0x5a2aa8, 0xffb45a),
 
   stone_bricks: bricks(0x8a8e96, 0x55585f, 8, 8, 0.18), mossy_bricks: overlayMoss(bricks(0x8a8e96, 0x55585f, 8, 8, 0.18), 0x5a8a42, 0.3),
   sandstone_bricks: bricks(0xdcc88c, 0xb09a62, 8, 8, 0.16), bricks: bricks(0xa8523c, 0xcfc6b4, 8, 4, 0.1),
@@ -533,7 +534,7 @@ export const PAINTERS: Record<string, P> = {
   gloom_stem: logSide(0xa8b4c8), gloom_stem_top: logTop(0xa8b4c8, 0xd0d8e6, [2, 5]),
   gloomcap_teal: (t, r, s) => { mineral(0x2f8a86, 0.3, 4)(t, r, s); for (let i = 0; i < 6; i++) { const x = (r() * 15) | 0, y = (r() * 15) | 0; t.rect(x, y, x + 1, y + 1, 0x8af6e0, 0); } },
   gloomcap_violet: (t, r, s) => { mineral(0x6a3f9a, 0.3, 4)(t, r, s); for (let i = 0; i < 6; i++) { const x = (r() * 15) | 0, y = (r() * 15) | 0; t.rect(x, y, x + 1, y + 1, 0xd8a0ff, 0); } },
-  gloom_planks: planks(0x4f7a82), umbrite_ore: ore(gloomBed, 0x9a5af0, BLOB, true), noctrium_ore: ore(gloomBed, 0x2ad6b0, SHARD, true),
+  gloom_planks: planks(0x4f7a82), umbrite_ore: ore(gloomBed, 0x9a5af0, BLOB, true, sh(0x9a5af0, -0.35), 0xd8a0ff), noctrium_ore: ore(gloomBed, 0x1f9e8a, SHARD, true, 0x14705f, 0xb6ff8a),
   lumen_frond: tuft([0x1f9a6a, 0x3fd088, 0x6af6a8, 0xd0ffe0], 8), sporelamp: (t, r, s) => t.each((x, y) => mix(0xb8641c, 0xffe07a, q(vn(x, y, 3, s) * 0.8 + r() * 0.2, 3)), 0),
 
   riftstone: riftP, skyturf_top: turfTop(SKY_G, 255), skyturf_side: turfSide(skysoilP, SKY_G, false), skysoil: skysoilP,
