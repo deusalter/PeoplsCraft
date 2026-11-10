@@ -40,6 +40,7 @@ export function itemValue(k: string): number {
 const BOOK_CATS = ['All', 'Tools', 'Weapons', 'Armour', 'Trinkets', 'Blocks', 'Other'];
 function bookCat(k: string): number { const d = item(k); return d.tool ? 1 : d.weapon ? 2 : d.armor ? 3 : d.acc ? 4 : d.block !== undefined ? 5 : 6; }
 const EMPTY_GRID: Slot[] = [];
+function sortRank(k: string): number { const d = item(k); return d.weapon && !d.tool ? 0 : d.tool ? 1 : d.armor ? 2 : d.acc ? 3 : d.food || d.heal || d.restoreMana || d.buff || d.use ? 4 : d.block !== undefined ? 5 : 6; }
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 export class Windows {
@@ -53,6 +54,7 @@ export class Windows {
   // recipe book: built once per tab in a fixed order; refresh() only toggles classes
   private bookEls: HTMLElement[] = []; private bookCats: number[] = []; private bookNames: string[] = []; private bookEmpty: HTMLElement | null = null;
   private bookTab = 'hand'; private bookChips: HTMLElement[] = []; private makeChip: HTMLElement | null = null; private search: HTMLInputElement | null = null;
+  private coinEl: HTMLElement | null = null; private coinShown = -1;
   private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
 
   constructor(ui: HTMLElement, private g: Game) {
@@ -129,7 +131,7 @@ export class Windows {
   }
   private build(): void {
     const g = this.g, inv = g.inv;
-    this.root.innerHTML = ''; this.views = []; this.outView = null; this.book = null; this.statsEl = null; this.forgeEls = []; this.shopEl = null;
+    this.root.innerHTML = ''; this.views = []; this.outView = null; this.book = null; this.statsEl = null; this.forgeEls = []; this.shopEl = null; this.search = null; this.coinEl = null; this.coinShown = -1;
     const panel = el('div', 'panel wcol', this.root), top = el('div', 'wrow', panel);
 
     // equipment + stats
@@ -192,7 +194,12 @@ export class Windows {
       el('div', 'cap', mid, 'Click: lay out · Right-click: craft one · Shift-click: craft all').style.textAlign = 'left';
       this.makeBook();
     } else if (this.mode === 'chest') {
-      el('div', 'ttl', mid, 'Chest');
+      const hd = el('div', 'wrow', mid); hd.style.cssText = 'justify-content:space-between;align-items:center;gap:6px';
+      el('div', 'ttl', hd, 'Chest');
+      const bs = el('div', 'wrow', hd); bs.style.gap = '4px';
+      this.button(bs, 'Take all', 'Move everything into your pack', () => this.takeAll());
+      this.button(bs, 'Stash', 'Move stacks the chest already holds out of your backpack (not the hotbar)', () => this.stashMatching());
+      this.button(bs, 'Sort', 'Merge stacks and sort the chest', () => { this.sortRange(this.chest!, 0, 27); return true; });
       const grid = el('div', 'grid', mid); grid.style.gridTemplateColumns = 'repeat(9, 44px)';
       for (let i = 0; i < 27; i++) this.slot(grid, this.chest!, i, 'chest');
     } else if (this.mode === 'forge') {
@@ -225,7 +232,10 @@ export class Windows {
       requestAnimationFrame(() => sc.querySelector('.cur')?.scrollIntoView({ block: 'center' }));
     }
 
-    el('div', 'ttl', panel, 'Inventory');
+    const ih = el('div', 'wrow', panel); ih.style.cssText = 'align-items:center;gap:8px';
+    el('div', 'ttl', ih, 'Inventory');
+    this.button(ih, 'Sort', 'Merge stacks and sort the backpack (the hotbar stays as it is)', () => { this.sortRange(inv.slots, 9, 36); return true; });
+    this.coinEl = el('div', 'coins', ih);
     const main = el('div', 'grid', panel); main.style.gridTemplateColumns = 'repeat(9, 44px)';
     for (let i = 9; i < 36; i++) this.slot(main, inv.slots, i, 'inv');
     const hot = el('div', 'grid', panel); hot.style.gridTemplateColumns = 'repeat(9, 44px)'; hot.style.marginTop = '4px';
@@ -241,6 +251,7 @@ export class Windows {
       this.forgeEls[0].style.width = (d.burnMax > 0 ? (d.burn / d.burnMax) * 100 : 0) + '%';
       this.forgeEls[1].style.width = (d.need > 0 ? (d.prog / d.need) * 100 : 0) + '%';
     }
+    if (this.coinEl && inv.coins !== this.coinShown) { this.coinShown = inv.coins; this.coinEl.textContent = inv.coins + ' coins'; }
     const fr = this.forge ? this.forge.data.rev : 0;
     if (inv.rev + fr * 1e6 === this.rev) return;
     this.rev = inv.rev + fr * 1e6;
@@ -335,6 +346,52 @@ export class Windows {
     else g.audio.play('error', 0.5);
     if (full) g.toast('No room in your pack', '#ff9a8a');
     inv.touch();
+  }
+  /** A small button that acts on mousedown without letting the root handler drop the cursor stack. */
+  private button(parent: HTMLElement, label: string, tip: string, act: () => boolean): HTMLElement {
+    const b = el('button', 'btn sm', parent, label); b.dataset.tip = tip;
+    b.onmousedown = (e) => { e.stopPropagation(); if (e.button !== 0) return; if (act()) { this.g.audio.play('click', 0.5); this.afterEdit(); } else this.g.audio.play('error', 0.4); };
+    return b;
+  }
+  private takeAll(): boolean {
+    const inv = this.g.inv, c = this.chest!;
+    let moved = false;
+    for (let i = 0; i < c.length; i++) { const s = c[i]; if (!s) continue; const left = inv.add(s); if (left !== s.n) moved = true; if (left) s.n = left; else c[i] = null; }
+    if (!moved && c.some((s) => s)) this.g.toast('No room in your pack', '#ff9a8a');
+    return moved;
+  }
+  private stashMatching(): boolean {
+    const inv = this.g.inv, c = this.chest!;
+    let moved = false;
+    for (let i = 9; i < 36; i++) {
+      const s = inv.slots[i];
+      if (!s || s.m) continue;
+      let found = false;
+      for (let j = 0; j < c.length; j++) { const t = c[j]; if (t && t.k === s.k && !t.m) { found = true; break; } }
+      if (found) { const n = s.n; this.moveInto(inv.slots, i, c, 0, c.length); if ((inv.slots[i]?.n ?? 0) !== n) moved = true; }
+    }
+    return moved;
+  }
+  /** Move the stack at src[i] into dst[from..to): top up matching stacks first, then fill empty slots. */
+  private moveInto(src: Slot[], i: number, dst: Slot[], from: number, to: number): void {
+    const s = src[i]!, d = item(s.k);
+    let n = s.n;
+    if (d.stack > 1 && !s.m) for (let j = from; j < to && n > 0; j++) { const t = dst[j]; if (t && t !== s && t.k === s.k && !t.m && t.n < d.stack) { const mv = Math.min(n, d.stack - t.n); t.n += mv; n -= mv; } }
+    for (let j = from; j < to && n > 0; j++) if (!dst[j]) { const mv = Math.min(n, d.stack); dst[j] = { k: s.k, n: mv, m: s.m }; n -= mv; }
+    if (n === 0) src[i] = null; else s.n = n;
+  }
+  /** Merge partial stacks and order arr[from..to) by kind, rarity and name. */
+  private sortRange(arr: Slot[], from: number, to: number): void {
+    const merged = new Map<string, number>(), loose: Item[] = [];
+    for (let i = from; i < to; i++) {
+      const s = arr[i]; if (!s) continue;
+      if (s.m || item(s.k).stack === 1) loose.push(s); else merged.set(s.k, (merged.get(s.k) ?? 0) + s.n);
+      arr[i] = null;
+    }
+    const list = loose;
+    for (const [k, total] of merged) { const st = item(k).stack; for (let n = total; n > 0; n -= st) list.push({ k, n: Math.min(st, n) }); }
+    list.sort((a, b) => sortRank(a.k) - sortRank(b.k) || itemRarity(b) - itemRarity(a) || itemName(a).localeCompare(itemName(b)) || b.n - a.n);
+    for (let i = 0; i < list.length; i++) arr[from + i] = list[i];
   }
   private returnGrid(): void {
     const g = this.g, inv = g.inv;
@@ -473,12 +530,7 @@ export class Windows {
   }
   private quickMove(v: View): void {
     const g = this.g, inv = g.inv, s = v.arr[v.i]!, d = item(s.k);
-    const into = (arr: Slot[], from: number, to: number): void => {
-      let n = s.n;
-      if (d.stack > 1 && !s.m) for (let i = from; i < to && n > 0; i++) { const t = arr[i]; if (t && t.k === s.k && !t.m && t.n < d.stack) { const mv = Math.min(n, d.stack - t.n); t.n += mv; n -= mv; } }
-      for (let i = from; i < to && n > 0; i++) if (!arr[i]) { const mv = Math.min(n, d.stack); arr[i] = { k: s.k, n: mv, m: s.m }; n -= mv; }
-      if (n === 0) v.arr[v.i] = null; else s.n = n;
-    };
+    const into = (arr: Slot[], from: number, to: number): void => this.moveInto(v.arr, v.i, arr, from, to);
     if (v.kind === 'inv') {
       if (this.shop) {
         const val = Math.max(1, Math.floor(itemValue(s.k) * 0.3)) * s.n;
