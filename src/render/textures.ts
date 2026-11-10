@@ -111,9 +111,11 @@ const pitted = (g: number[], n: number, flecks = 0): P => (t, r, s) => {
 };
 /** Slate: broken horizontal strata. The bands are directional, so this tile must never be rotated. */
 const slateBase = (g: number[]): P => (t, _r, s) => t.each((x, y) => {
-  const yy = (y + Math.round(vn(x, 0, 4, s) * 2)) & 15, row = yy >> 2, iy = yy & 3;
-  if (iy === 3 && hash01((x + row * 5) >> 2, row, 3, s) < 0.78) return g[0];
-  return g[(iy === 0 ? 3 : 2) - (hash01(row, 0, 7, s) < 0.3 ? 1 : 0)];
+  // four beds of uneven thickness (3, 5, 4, 4 px) that undulate together, each with a lit lip over a broken seam
+  const yy = (y + Math.round(vn(x, 0, 4, s) * 2.6)) & 15, row = yy < 3 ? 0 : yy < 8 ? 1 : yy < 12 ? 2 : 3, iy = yy - (row === 0 ? 0 : row === 1 ? 3 : row === 2 ? 8 : 12);
+  if (iy === (row === 0 ? 2 : row === 1 ? 4 : 3) && hash01((x + row * 5) >> 2, row, 3, s) < 0.72) return g[0];
+  const dark = row === (hashInt(0, 0, 7, s) & 3) ? 1 : 0;   // one bed is a darker rock
+  return g[(iy === 0 ? 3 : 2) - dark];
 });
 const slate = (g: number[]): P => (t, r, s) => { slateBase(g)(t, r, s); for (let i = 0; i < 5; i++) t.set((r() * 16) | 0, (r() * 16) | 0, g[4]); };
 const soil = (g: number[], pebbles = 7, pits = 5): P => (t, r, s) => {
@@ -203,7 +205,7 @@ const leaves = (g: number[], holes: number, dotC = 0): P => (t, r, s) => {
   for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = n(x, y); if (v < th) t.set(x, y, g[0], 0); else t.set(x, y, v < th + 0.14 ? g[0] : g[1]); }
   const st = (x: number, y: number, c: number): void => { if (t.getA(x, y)) t.set(x, y, c); };   // never paints over a gap
   for (let i = 0; i < 25; i++) {
-    const x = Math.round((i % 5) * 3.2 + r() * 2), y = Math.round(((i / 5) | 0) * 3.2 + r() * 2), dot = r() < 0.36;
+    const x = Math.round((i % 5) * 3.2 + r() * 2), y = Math.round(((i / 5) | 0) * 3.2 + r() * 2), dot = r() < 0.26;
     if (!t.getA(x, y) || !t.getA(x + 1, y + 1)) continue;
     st(x, y, g[3]); st(x + 1, y, g[2]); st(x, y + 1, g[2]); st(x + 1, y + 1, g[1]); st(x + 2, y + 1, g[0]); st(x + 1, y + 2, g[0]);
     if (dotC && dot) { st(x, y, dotC); st(x + 1, y, mix(dotC, g[2], 0.5)); }
@@ -212,8 +214,9 @@ const leaves = (g: number[], holes: number, dotC = 0): P => (t, r, s) => {
 /** Turf seen from above: soft clumps with short blades (bright tip, shadow beneath). Written with
  *  alpha `a`: 0 for biome-tinted grass, whose hue shift is baked into the grey ramp. */
 const turfTop = (g: number[], a: number): P => (t, r, s) => {
-  const lvl = (x: number, y: number): number => (vn(x & 15, y & 15, 4, s) * 0.7 + vn(x & 15, y & 15, 8, s + 1) * 0.3 < 0.36 ? 1 : 2);
-  t.each((x, y) => g[lvl(x, y)], a);
+  const nz = (x: number, y: number): number => vn(x & 15, y & 15, 4, s) * 0.7 + vn(x & 15, y & 15, 8, s + 1) * 0.3;
+  const lvl = (x: number, y: number): number => (nz(x, y) < 0.36 ? 1 : 2), deep = mix(g[0], g[1], 0.5);
+  t.each((x, y) => (nz(x, y) < 0.24 ? deep : g[lvl(x, y)]), a);   // the hollows of the darker clumps go one half-step deeper
   const dim = (x: number, y: number): void => t.set(x, y, g[lvl(x, y) - 1], a);   // a blade's shadow is one step below the turf under it
   for (let i = 0; i < 16; i++) {
     const x = (i & 3) * 4 + ((r() * 4) | 0), y = (i >> 2) * 4 + ((r() * 4) | 0), lean = r() < 0.5 ? -1 : 1, k = (r() * 3) | 0;
@@ -237,10 +240,12 @@ const turfSide = (base: P, g: number[], tinted: boolean): P => (t, r, s) => {
 const BLOB = [[1, 0, 2], [2, 0, 1], [0, 1, 2], [1, 1, 1], [2, 1, 1], [3, 1, 0], [1, 2, 0], [2, 2, 0]];
 const VEIN = [[0, 2, 1], [1, 1, 2], [2, 1, 1], [3, 0, 2], [4, 0, 1], [2, 2, 0], [3, 1, 0]];
 const SHARD = [[1, 0, 2], [0, 1, 2], [1, 1, 1], [0, 2, 1], [1, 2, 0], [0, 3, 0]];
+// three ways to seat the four clusters (they never touch, even jittered and wrapped), picked per ore so veins do not all share one grid
+const SEATS = [[[2, 2], [10, 4], [4, 10], [11, 11]], [[1, 5], [8, 1], [11, 9], [4, 12]], [[3, 1], [12, 6], [3, 9], [8, 12]]];
 const ore = (base: P, c: number, shape: number[][], glow = false, dark = sh(c, -0.35), hi = sh(c, 0.55)): P => (t, r, s) => {
   base(t, r, s);
   const a = glow ? 0 : 255, tones = [dark, c, hi];
-  for (const [ax, ay] of [[2, 2], [10, 4], [4, 10], [11, 11]]) {
+  for (const [ax, ay] of SEATS[(s >>> 3) % 3]) {
     const x = ax + ((r() * 3) | 0) - 1, y = ay + ((r() * 3) | 0) - 1;
     // shadows first, then the ore, so a shadow can never darken its own cluster
     for (const [dx, dy] of shape) t.shade((x + dx + 1) & 15, (y + dy + 1) & 15, -0.4);
@@ -288,14 +293,17 @@ const overlayMoss = (base: P, moss: number, amt = 0.3): P => (t, r, s) => {
 const clear: P = (t) => t.d.fill(0);
 const plantP = (draw: (t: Px, r: Rnd) => void): P => (t, r) => { clear(t, r, 0); draw(t, r); };
 
-/** A clump of blades that fans outward from the middle, shaded dark at the root to a bright tip. */
-const tuft = (g: number[], n = 11): P => plantP((t, r) => {
+/** A clump of separate blades that fans outward from the middle, shaded dark at the root to a bright
+ *  tip. A short back row is drawn first, one step darker, so the taller front blades stand off it. */
+const tuft = (g: number[], n = 9): P => plantP((t, r) => {
+  const nb = n >> 1;
   for (let i = 0; i < n; i++) {
-    let x = Math.round(7.5 + (r() + r() + r() - 1.5) * 5.5);
-    const h = Math.max(4, Math.round(13 - Math.abs(x - 7.5) * 0.9 - r() * 3)), lean = Math.sign(x - 7.5);
+    const back = i < nb, slot = back ? (i + 0.5) / nb : (i - nb + 0.5) / (n - nb);
+    const x0 = Math.round(1.5 + slot * 13 + (r() - 0.5) * 1.6), off = (x0 - 7.5) / 7.5;
+    const h = Math.round((back ? 7 : 12) - Math.abs(off) * (back ? 1.5 : 5) + r() * 2.5), bend = off * (2 + r() * 2.5) + (r() - 0.5) * 3.4;
     for (let k = 0; k < h; k++) {
-      t.put(x, 15 - k, g[k === h - 1 ? 3 : k < h * 0.3 ? 0 : k < h * 0.6 ? 1 : 2]);
-      if (k > h * 0.4 && r() < 0.35) x += lean;
+      const f = k / (h - 1), lv = k === h - 1 ? 3 : f < 0.3 ? 0 : f < 0.65 ? 1 : 2;
+      t.put(Math.round(x0 + bend * f * f), 15 - k, g[back ? Math.max(0, lv - 1) : lv]);
     }
   }
 });
@@ -471,22 +479,33 @@ export const PAINTERS: Record<string, P> = {
   pale_log: station(logSide(C.paleBark), (t, r) => { for (let i = 0; i < 6; i++) { const x = (r() * 14) | 0, y = (r() * 16) | 0; t.rect(x, y, x + 2, y, 0x3a3630); } }),
   pale_log_top: logTop(C.paleBark, 0xe6d6a8, [3]), pale_leaves: leaves([0x6ea850, 0x90ca5c, 0xacde68, 0xdef292], 0.14), pale_planks: planks(0xdcc890, [4, 4, 4, 4], 2),
   kapok_log: logSide(C.kapokBark), kapok_log_top: logTop(C.kapokBark, 0xc48a52, [2, 4]), kapok_leaves: leaves(LEAF_G, 0.07), kapok_planks: planks(0xa8663a),
-  rose_log: logSide(C.roseBark), rose_log_top: logTop(C.roseBark, 0xd89aa0, [2, 5]), rose_leaves: leaves([0xc46e9a, 0xe890b8, 0xf8accc, 0xfdcade], 0.12, 0xfff0f6), rose_planks: planks(0xc97a86),
+  rose_log: logSide(C.roseBark), rose_log_top: logTop(C.roseBark, 0xd89aa0, [2, 5]), rose_leaves: leaves([0xc46e9a, 0xe48ab4, 0xf2a2c6, 0xfbbad4], 0.12, 0xfff0f6), rose_planks: planks(0xc97a86),
 
-  tall_grass: tuft(GR), fern: plantP((t, r) => {
-    for (const [bx, lean] of [[7, -1], [8, 1], [7, 0]] as const) for (let k = 0; k < 11; k++) {
-      const x = bx + Math.round(lean * k * 0.45), y = 15 - k;
-      t.put(x, y, sh(0xd4d4d4, -0.3 + k * 0.04));
-      if (k > 2 && k % 2 === 0) { t.put(x - 1, y, 0xe6e6e6); t.put(x + 1, y, 0xe6e6e6); if (k < 9) { t.put(x - 2, y + 1, 0xcccccc); t.put(x + 2, y + 1, 0xcccccc); } }
+  tall_grass: tuft(GR), fern: plantP((t) => {
+    // arching fronds from one crown, outer pair first: [tip dx, tip y, rise of the arch above the tip]
+    for (const [ex, ey, up] of [[-7, 11, 6], [7, 10, 6], [-3, 3, 1], [3, 4, 1]]) for (let i = 0; i <= 16; i++) {
+      const f = i / 16, a = (1 - f) * (1 - f), b = 2 * f * (1 - f), c = f * f, cx = 7.5 + ex * 0.5, cy = ey - up;
+      const x = a * 7.5 + b * cx + c * (7.5 + ex), y = a * 15 + b * cy + c * ey;
+      const tx = (cx - 7.5) * (1 - f) + (7.5 + ex - cx) * f, ty = (cy - 15) * (1 - f) + (ey - cy) * f, tl = Math.hypot(tx, ty) || 1, nx = -ty / tl, ny = tx / tl;
+      t.put(Math.round(x), Math.round(y), GR[f < 0.25 ? 0 : 1]);
+      if (i < 6 || i & 1) continue;
+      // a leaflet either side of the stem; the upper one catches the light
+      for (const sd of [-1, 1]) { const px = Math.round(x + nx * 1.2 * sd), py = Math.round(y + ny * 1.2 * sd); t.put(px, py, GR[py < y - 0.5 || i === 16 ? 3 : 2]); }
     }
-    void r;
   }),
   flower_red: flower(0, 0xe2452f, 0xffd24a), flower_yellow: flower(1, 0xf7c832, 0xb86a1c), flower_blue: flower(2, 0x4f86ea, 0xf2f2ff), flower_white: flower(3, 0xf4f1fa, 0xf0c040),
   dead_bush: plantP((t, r) => { const c = 0x8a6a42; t.line(8, 15, 8, 9, c); t.line(8, 11, 4, 6, c); t.line(8, 10, 12, 5, sh(c, -0.2)); t.line(5, 8, 3, 9, c); t.line(11, 7, 13, 8, sh(c, 0.2)); t.line(8, 9, 7, 4, sh(c, 0.15)); void r; }),
   reeds: plantP((t, r) => { for (const x of [3, 7, 8, 12]) { const h = 12 + ((r() * 4) | 0); for (let k = 0; k < h; k++) t.put(x, 15 - k, sh(0x6fae4a, k % 4 === 3 ? -0.35 : (x & 1) * 0.15)); t.put(x, 15 - h, 0x8a5f3c); } }),
   mushroom_brown: shroom(0x9a6a44, 0xe6dcc6, 0), mushroom_red: shroom(0xd23a32, 0xeee6d6, 0xfff6ea),
   cactus: (t, r) => t.each((x, y) => ((x % 4 === 1 && y % 5 === 2) ? 0xf2f0d0 : sh(0x4f9a44, (x % 4 === 0 ? -0.3 : x % 4 === 2 ? 0.16 : 0) + (r() - 0.5) * 0.1))),
-  cactus_top: (t, r) => t.each((x, y) => { const d = Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5)); return sh(0x4f9a44, (d > 6.6 ? -0.35 : (d | 0) % 3 === 0 ? 0.2 : 0) + (r() - 0.5) * 0.1); }),
+  // ribs run in to a pale crown, with a spine cluster on every other rib
+  cactus_top: (t) => {
+    t.each((x, y) => {
+      const dx = x - 7.5, dy = y - 7.5, d = Math.max(Math.abs(dx), Math.abs(dy)), rib = Math.cos(Math.atan2(dy, dx) * 8);
+      return sh(0x4f9a44, d > 7 ? -0.35 : Math.hypot(dx, dy) < 2 ? 0.3 : (rib > 0.45 ? 0.16 : rib < -0.45 ? -0.24 : 0) + (d > 6 ? 0.1 : 0));
+    });
+    for (const [x, y] of [[7, 7], [4, 4], [11, 4], [4, 11], [11, 11]]) t.set(x, y, 0xf2f0d0);
+  },
   berry_bush: bush(0x3f8a3a, 0xd8344a), berry_bush_empty: bush(0x3f8a3a, 0),
   glowshroom: shroom(0x3fe6c8, 0xbff7ea, 0xeafff8, true),
 
