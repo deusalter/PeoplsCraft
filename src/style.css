@@ -79,7 +79,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 .float { position: absolute; left: 0; top: 0; font-weight: 800; font-size: 15px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; white-space: nowrap; will-change: transform; pointer-events: none; }
 .float.big { font-size: 22px; } .float.tag { font-size: 12px; font-weight: 600; color: #fff; }
 #prompt { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); font-size: 12px; padding: 3px 9px; background: rgba(13, 15, 20, 0.7); border: 1px solid var(--edge); white-space: nowrap; }
-#hurt { position: absolute; inset: 0; box-shadow: inset 0 0 120px 30px rgba(200, 20, 10, 0.9); opacity: 0; transition: opacity 0.25s; }
+#hurt { position: absolute; inset: 0; box-shadow: inset 0 0 120px 30px rgba(200, 20, 10, 0.9); opacity: 0; }
+#hurtdir { position: absolute; left: 50%; top: 50%; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; opacity: 0;
+  background: conic-gradient(from -26deg, rgba(255, 70, 50, 0) 0deg, rgba(255, 80, 60, 0.9) 18deg 34deg, rgba(255, 70, 50, 0) 52deg, transparent 52deg);
+  -webkit-mask: radial-gradient(circle, transparent 104px, #000 107px, #000 118px, transparent 121px); mask: radial-gradient(circle, transparent 104px, #000 107px, #000 118px, transparent 121px); }
+#lowhp { position: absolute; inset: 0; box-shadow: inset 0 0 160px 20px rgba(160, 10, 10, 0.55); opacity: 0; transition: opacity 0.4s; }
+#hud.lowhp #lowhp { opacity: 1; animation: lowhp 1s ease-in-out infinite alternate; } @keyframes lowhp { from { opacity: 0.5; } to { opacity: 1; } }
+#crosshair { transition: transform 0.08s ease-out; }
+#crosshair.hit { mix-blend-mode: normal; opacity: 1; transform: rotate(45deg) scale(1.15); } #crosshair.hit::before, #crosshair.hit::after { box-shadow: 0 0 2px #000; }
+#crosshair.crit::before, #crosshair.crit::after { background: var(--gold); }
 #portalfx { position: absolute; inset: 0; background: radial-gradient(circle, rgba(160, 90, 255, 0.0) 20%, rgba(120, 60, 220, 0.85) 100%); opacity: 0; }
 
 /* ---------- windows ---------- */

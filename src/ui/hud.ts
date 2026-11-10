@@ -24,6 +24,8 @@ function setBar(b: Bar, frac: number, text: string): void {
   if (Math.abs(frac - b.v) > 0.002) { b.v = frac; b.fill.style.transform = `scaleX(${frac})`; if (b.ghost) b.ghost.style.transform = b.fill.style.transform; }
   if (text !== b.t) { b.t = text; b.label.textContent = text; }
 }
+const HURT_FX: Keyframe[] = [{ opacity: 0.8 }, { opacity: 0 }];
+const HURT_T: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }, DIR_T: KeyframeAnimationOptions = { duration: 1000, easing: 'ease-in' };
 interface Floater { el: HTMLElement; x: number; y: number; z: number; life: number; max: number; vy: number }
 
 export class Hud {
@@ -39,6 +41,7 @@ export class Hud {
   private bossKey = ''; private bossNotches: HTMLElement[] = []; private bossHpI = -1; private bossText = ''; private bossPhase = 0;
   private quest: HTMLElement; private event: HTMLElement; private eventBar: Bar; private eventText: HTMLElement;
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
+  private hurtDir: HTMLElement; private cross: HTMLElement; private hitT = 0; private hitOn = false; private critOn = false;
   private floats: Floater[] = []; private tags: HTMLElement[] = [];
   private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private buffKey = ''; private coinV = -1; private lvlV = -1; private ptsV = -1;
   private v = new THREE.Vector3();
@@ -50,7 +53,8 @@ export class Hud {
   constructor(ui: HTMLElement, private g: Game) {
     const r = this.root = el('div', '#hud', ui);
     this.hurt = el('div', '#hurt', r); this.portal = el('div', '#portalfx', r);
-    el('div', '#crosshair', r);
+    el('div', '#lowhp', r); this.hurtDir = el('div', '#hurtdir', r);
+    this.cross = el('div', '#crosshair', r);
     const wrap = el('div', '#hotwrap', r), bars = el('div', 'bars', wrap);
     this.hp = bar('hp', bars, true); this.food = bar('food', bars); this.mana = bar('mana', bars); this.coins = el('div', '#coins', bars);
     this.xp = bar('xp', bars);
@@ -124,7 +128,19 @@ export class Hud {
     if ((text === null) !== (this.promptText === null)) this.prompt.classList.toggle('hidden', text === null);
     this.promptText = text;
   }
-  flashHurt(): void { this.hurt.style.transition = 'none'; this.hurt.style.opacity = '0.75'; requestAnimationFrame(() => { this.hurt.style.transition = 'opacity 0.5s'; this.hurt.style.opacity = '0'; }); }
+  /** `angle` is where the hit came from relative to the view, in radians clockwise from straight ahead. */
+  flashHurt(angle?: number): void {
+    this.hurt.animate(HURT_FX, HURT_T);
+    if (angle === undefined) return;
+    this.hurtDir.style.transform = `rotate(${angle.toFixed(3)}rad)`;
+    this.hurtDir.animate(HURT_FX, DIR_T);
+  }
+  /** Brief crosshair confirmation when a player attack lands. */
+  hitMark(crit: boolean): void {
+    this.hitT = 0.14;
+    if (!this.hitOn) { this.hitOn = true; this.cross.classList.add('hit'); }
+    if (crit !== this.critOn) { this.critOn = crit; this.cross.classList.toggle('crit', crit); }
+  }
   setPortal(a: number, gold: boolean): void {
     this.portal.style.opacity = String(a);
     this.portal.style.background = gold ? 'radial-gradient(circle, rgba(255,210,90,0) 20%, rgba(240,180,60,0.85) 100%)' : 'radial-gradient(circle, rgba(160,90,255,0) 20%, rgba(120,60,220,0.85) 100%)';
@@ -173,7 +189,8 @@ export class Hud {
     if (foodI !== this.foodI) { this.foodI = foodI; this.foodText = foodI <= 4 ? `HUNGRY ${foodI} / 20` : `${foodI} / 20`; }
     setBar(this.hp, st.hp / st.maxHp, this.hpText);
     const hpLow = st.hp / st.maxHp < 0.25;
-    if (hpLow !== this.hpLow) { this.hpLow = hpLow; this.hp.root.classList.toggle('low', hpLow); }
+    if (hpLow !== this.hpLow) { this.hpLow = hpLow; this.hp.root.classList.toggle('low', hpLow); this.root.classList.toggle('lowhp', hpLow); }
+    if (this.hitT > 0) { this.hitT -= dt; if (this.hitT <= 0) { this.hitOn = false; this.critOn = false; this.cross.classList.remove('hit', 'crit'); } }
     setBar(this.food, st.hunger / 20, this.foodText);
     const foodLow = st.hunger <= 4;
     if (foodLow !== this.foodLow) { this.foodLow = foodLow; this.food.root.classList.toggle('low', foodLow); }

@@ -221,7 +221,10 @@ export class Game implements InteractHost {
     const took = st.damage(dmg);
     if (took === 0) return;
     if (took < 0) { this.floater(p.x, p.y + 2, p.z, 'Dodged', '#9ad0ff'); return; }
-    this.hud.flashHurt(); p.shake(Math.min(0.7, 0.25 + took / st.maxHp)); this.audio.play('hurt');
+    // where the blow came from, in view space: forward is (-sin yaw, -cos yaw), right is (cos yaw, -sin yaw)
+    const sx = fx - p.x, sz = fz - p.z, sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
+    this.hud.flashHurt(Math.hypot(sx, sz) < 0.05 ? undefined : Math.atan2(cy * sx - sy * sz, -sy * sx - cy * sz));
+    p.shake(Math.min(0.7, 0.25 + took / st.maxHp)); this.audio.play('hurt');
     const dx = p.x - fx, dz = p.z - fz, l = Math.hypot(dx, dz) || 1, kr = 1 - Math.min(0.9, st.d.knockRes);
     p.kbx += (dx / l) * knock * kr; p.kbz += (dz / l) * knock * kr;
     if (p.onGround && kr > 0.3) p.vy = 5;
@@ -354,7 +357,7 @@ export class Game implements InteractHost {
       if (this.atkCd <= 0) {
         this.atkCd = 1 / rate; this.swing = 1; this.audio.play('swing', 0.6);
         const dmg = (wpn?.dmg ?? 2) * st.dmgMult('melee') * (crit ? 2 : 1) * (0.92 + Math.random() * 0.16);
-        this.mobs.hurt(r.m, dmg, dir.x, dir.z, wpn?.knock ?? 3, crit);
+        this.mobs.hurt(r.m, dmg, dir.x, dir.z, wpn?.knock ?? 3, crit); this.hud.hitMark(crit);
         p.shake(crit ? 0.22 : 0.12); st.exhaustion += 0.03;
       }
       return true;
