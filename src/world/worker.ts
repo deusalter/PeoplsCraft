@@ -28,6 +28,6 @@ ctx.onmessage = (e: MessageEvent) => {
     const light = packCenterLight();
     const tr: Transferable[] = [light.buffer];
     for (const p of parts) if (p) tr.push(p.pos.buffer, p.uv.buffer, p.light.buffer, p.tint.buffer, p.idx.buffer);
-    ctx.postMessage({ t: 'mesh', id: m.id, cx: m.cx, cz: m.cz, rev: m.rev, parts, light, ms: performance.now() - t0 }, tr);
+    ctx.postMessage({ t: 'mesh', id: m.id, cx: m.cx, cz: m.cz, parts, light, ms: performance.now() - t0 }, tr);
   }
 };

@@ -1,7 +1,7 @@
 // Main-thread chunk manager. Owns block data, schedules worker jobs nearest-first,
 // uploads meshes inside a per-frame budget and unloads by distance.
 import * as THREE from 'three';
-import { BUILD_MAX, CH, chunkKey } from '../core/constants';
+import { BUILD_MAX, CH, CVOL, chunkKey } from '../core/constants';
 import { T_EMITS } from '../data/blocks';
 import type { EntInit } from './gen/types';
 import type { MeshPart } from './mesher';
@@ -18,6 +18,7 @@ export class Chunk {
   state = 0;            // 0 new, 1 loading, 2 ready
   dirty = true; pending = false; meshed = false; urgent = false;
   rev = 0; modified = false; hasEmit = false;
+  fails = 0;            // worker or load failures in a row (retries are capped)
   meshes: (THREE.Mesh | null)[] = [null, null, null];
   ents = new Map<number, BlockEnt>();
   constructor(readonly cx: number, readonly cz: number, readonly key: number) {}
@@ -206,16 +207,27 @@ export class World {
         if (!s) { c.state = 0; this.savedKeys.delete(c.key); this.scan = 0; return; }
         c.blocks = s.blocks; c.biomes = s.biomes; c.hasEmit = s.hasEmit; c.modified = false;
         for (const e of s.ents) c.ents.set(((((e.z & 15) << 4) | (e.x & 15)) << 8) | e.y, e);
-        c.state = 2; c.dirty = true; this.scan = 0;
+        c.state = 2; c.dirty = true; c.fails = 0; this.scan = 0;
         if (this.onChunkReady) this.onChunkReady(c, false, []);
+      }, (e) => {
+        if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+        // retry a failed read, but never fall back to generating over a saved build
+        if (++c.fails < 3) { c.state = 0; this.scan = 0; } else console.warn(`chunk ${c.cx},${c.cz} could not be read`, e);
       });
       return false;
     }
     const dim = this.dim;
     this.pool.run({ t: 'gen', cx: c.cx, cz: c.cz, dim, seed: this.seed }, [], (m) => {
       if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+      if (!m) {
+        // the worker threw: try once more, then leave the chunk empty so its eight neighbours can still mesh
+        if (++c.fails < 2) c.state = 0;
+        else { c.blocks = new Uint8Array(CVOL); c.biomes = new Uint8Array(256); c.state = 2; c.dirty = true; console.warn(`chunk ${c.cx},${c.cz} failed to generate and was left empty`); }
+        this.scan = 0;
+        return;
+      }
       c.blocks = m.blocks; c.biomes = m.biomes; c.hasEmit = m.hasEmit;
-      c.state = 2; c.dirty = true; this.scan = 0;
+      c.state = 2; c.dirty = true; c.fails = 0; this.scan = 0;
       if (this.onChunkReady) this.onChunkReady(c, true, m.ents);
     });
     return true;
@@ -230,16 +242,23 @@ export class World {
     }
     c.pending = true; c.dirty = false;
     const dim = this.dim;
-    this.pool.run({ t: 'mesh', cx: c.cx, cz: c.cz, rev: c.rev, sky: this.hasSky, blocks, biomes, emit }, tr, (m) => {
-      if (this.dim !== dim) return;
+    this.pool.run({ t: 'mesh', cx: c.cx, cz: c.cz, sky: this.hasSky, blocks, biomes, emit }, tr, (m) => {
+      if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+      if (!m) {
+        // the worker threw: retry a couple of times, then count the chunk as meshed so nothing waits on it for ever
+        c.pending = false;
+        if (++c.fails < 3) { c.dirty = true; this.scan = 0; } else { c.meshed = true; console.warn(`chunk ${c.cx},${c.cz} could not be meshed`); }
+        return;
+      }
+      m.c = c;
       if (front) this.results.unshift(m); else this.results.push(m);
     });
   }
 
-  private applyMesh(m: { cx: number; cz: number; rev: number; parts: (MeshPart | null)[]; light: Uint8Array; ms: number }): void {
-    const c = this.chunks.get(chunkKey(m.cx, m.cz));
-    if (!c) return;
-    c.pending = false; c.light = m.light; c.meshed = true;
+  private applyMesh(m: { c: Chunk; parts: (MeshPart | null)[]; light: Uint8Array; ms: number }): void {
+    const c = m.c;
+    if (this.chunks.get(c.key) !== c) return;   // unloaded, or unloaded and created again, while the job ran
+    c.pending = false; c.light = m.light; c.meshed = true; c.fails = 0;
     this.meshMs = this.meshMs * 0.95 + m.ms * 0.05;
     for (let i = 0; i < 3; i++) {
       const p = m.parts[i];
