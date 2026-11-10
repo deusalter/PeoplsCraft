@@ -63,8 +63,9 @@ class HollowsGen implements Generator {
         if (blocks[base + y] !== 0) continue;
         const below = blocks[base + y - 1], above = blocks[base + y + 1], r = hash01(wx, y, wz, seed + 3);
         if (below === STONE) {
-          if (crystal) { if (r < 0.06) { const c = r < 0.03 ? B.crystal_violet : B.crystal_cyan, n = 1 + ((r * 90) | 0); for (let k = 0; k < n && blocks[base + y + k] === 0; k++) blocks[base + y + k] = c; } }
-          else {
+          if (crystal) { if (r < 0.018) { const c = r < 0.009 ? B.crystal_violet : B.crystal_cyan, n = 1 + ((r * 280) | 0); for (let k = 0; k < n && blocks[base + y + k] === 0; k++) blocks[base + y + k] = c; } }
+          else if (r > 0.6 && r < 0.63) blocks[base + y] = B.lumen_frond;
+          if (!crystal) {
             blocks[base + y - 1] = B.mycel;
             if (r < 0.1) blocks[base + y] = B.lumen_frond; else if (r < 0.14) blocks[base + y] = B.glowshroom; else if (r < 0.16) blocks[base + y] = B.mushroom_brown;
             else if (r < 0.172 && lx >= 3 && lx <= 12 && lz >= 3 && lz <= 12) {

@@ -73,7 +73,7 @@ const INIT: BlockInit[] = [
   rock('nightglass', 'Nightglass', 14, 4, { sound: 'glass', desc: 'Volcanic glass. Only a Lumenite pick bites into it.' }),
   { key: 'water', name: 'Water', tex: 'water', shape: 'liquid', mat: 'translucent', atten: 2, tint: 3, liquid: 1, liqH: 14, hard: -1, drops: [], sound: 'liquid' },
   flow(7), flow(6), flow(5), flow(4), flow(3), flow(2), flow(1),
-  { key: 'lava', name: 'Lava', tex: 'lava', shape: 'liquid', mat: 'opaque', atten: 0, liquid: 2, liqH: 14, light: [15, 9, 3], emissive: 200, hard: -1, drops: [], sound: 'liquid', damage: 4 },
+  { key: 'lava', name: 'Lava', tex: 'lava', shape: 'liquid', mat: 'opaque', atten: 0, liquid: 2, liqH: 14, light: [15, 9, 3], emissive: 150, hard: -1, drops: [], sound: 'liquid', damage: 4 },
 
   wood('oak_log', 'Oak Log', ['oak_log_top', 'oak_log_top', 'oak_log']),
   leaf('oak_leaves', 'Oak Leaves', 2, [['apple', 0.04, 1, 1]]),
@@ -141,24 +141,24 @@ const INIT: BlockInit[] = [
   { key: 'door_x_open', name: 'Door', tex: 'door', shape: 'box', box: [0, 0, 0, 4, 16, 16], door: true, hard: 1.5, tool: 'axe', sound: 'wood', use: 'door', drops: [['door', 1, 1, 1]] },
   { key: 'door_z_open', name: 'Door', tex: 'door', shape: 'box', box: [0, 0, 0, 16, 16, 4], door: true, hard: 1.5, tool: 'axe', sound: 'wood', use: 'door', drops: [['door', 1, 1, 1]] },
 
-  { key: 'crystal_cyan', name: 'Azure Crystal', tex: 'crystal_cyan', light: [3, 13, 15], emissive: 190, hard: 1.5, tool: 'pick', power: 1, sound: 'crystal' },
-  { key: 'crystal_violet', name: 'Violet Crystal', tex: 'crystal_violet', light: [12, 5, 15], emissive: 190, hard: 1.5, tool: 'pick', power: 1, sound: 'crystal' },
-  { key: 'crystal_amber', name: 'Amber Crystal', tex: 'crystal_amber', light: [15, 11, 3], emissive: 190, hard: 1.5, tool: 'pick', power: 1, sound: 'crystal' },
+  { key: 'crystal_cyan', name: 'Azure Crystal', tex: 'crystal_cyan', light: [3, 13, 15], emissive: 80, hard: 1.5, tool: 'pick', power: 1, sound: 'crystal' },
+  { key: 'crystal_violet', name: 'Violet Crystal', tex: 'crystal_violet', light: [12, 5, 15], emissive: 80, hard: 1.5, tool: 'pick', power: 1, sound: 'crystal' },
+  { key: 'crystal_amber', name: 'Amber Crystal', tex: 'crystal_amber', light: [15, 11, 3], emissive: 80, hard: 1.5, tool: 'pick', power: 1, sound: 'crystal' },
   rock('iron_block', 'Iron Block', 5, 2, { sound: 'metal' }),
   rock('gold_block', 'Gold Block', 4, 3, { sound: 'metal' }),
-  rock('lumenite_block', 'Lumenite Block', 5, 3, { sound: 'crystal', light: [5, 12, 13], emissive: 160 }),
+  rock('lumenite_block', 'Lumenite Block', 5, 3, { sound: 'crystal', light: [5, 12, 13], emissive: 80 }),
 
   // Gloomroot Hollows
   rock('gloomstone', 'Gloomstone', 3.5, 4),
   { key: 'mycel', name: 'Mycel Turf', tex: ['mycel_top', 'gloomstone', 'mycel_side'], hard: 1, tool: 'shovel', sound: 'dirt', drops: [['gloomstone', 1, 1, 1]] },
   wood('gloom_stem', 'Gloomcap Stem', ['gloom_stem_top', 'gloom_stem_top', 'gloom_stem']),
-  { key: 'gloomcap_teal', name: 'Teal Gloomcap', tex: 'gloomcap_teal', hard: 0.4, tool: 'axe', sound: 'cloth', light: [2, 9, 8], emissive: 110 },
-  { key: 'gloomcap_violet', name: 'Violet Gloomcap', tex: 'gloomcap_violet', hard: 0.4, tool: 'axe', sound: 'cloth', light: [8, 3, 11], emissive: 110 },
+  { key: 'gloomcap_teal', name: 'Teal Gloomcap', tex: 'gloomcap_teal', hard: 0.4, tool: 'axe', sound: 'cloth', light: [2, 9, 8], emissive: 70 },
+  { key: 'gloomcap_violet', name: 'Violet Gloomcap', tex: 'gloomcap_violet', hard: 0.4, tool: 'axe', sound: 'cloth', light: [8, 3, 11], emissive: 70 },
   wood('gloom_planks', 'Gloomcap Planks', 'gloom_planks'),
   ore('umbrite_ore', 'Umbrite Ore', 6, 5, { light: [5, 2, 8], emissive: 150 }),
   ore('noctrium_ore', 'Noctrium Ore', 7, 6, { light: [1, 7, 6], emissive: 150 }),
   plant('lumen_frond', 'Lumen Frond', { light: [3, 11, 6], emissive: 220, replaceable: true, drops: [['fiber', 0.5, 1, 1]] }),
-  { key: 'sporelamp', name: 'Sporelamp', tex: 'sporelamp', hard: 0.6, sound: 'cloth', light: [14, 11, 5], emissive: 210 },
+  { key: 'sporelamp', name: 'Sporelamp', tex: 'sporelamp', hard: 0.6, sound: 'cloth', light: [14, 11, 5], emissive: 110 },
 
   // The Skyrift
   rock('riftstone', 'Riftstone', 4, 6),
@@ -170,13 +170,13 @@ const INIT: BlockInit[] = [
   ore('aetherium_ore', 'Aetherium Ore', 8, 7, { light: [4, 9, 13], emissive: 160 }),
   ore('prismite_ore', 'Prismite Ore', 9, 8, { light: [11, 9, 13], emissive: 180, sound: 'crystal' }),
   { key: 'cloud', name: 'Cloudstuff', tex: 'cloud', hard: 0.3, sound: 'snow' },
-  { key: 'prism_crystal', name: 'Prism Crystal', tex: 'prism_crystal', light: [13, 13, 15], emissive: 200, hard: 2, tool: 'pick', power: 1, sound: 'crystal' },
+  { key: 'prism_crystal', name: 'Prism Crystal', tex: 'prism_crystal', light: [13, 13, 15], emissive: 80, hard: 2, tool: 'pick', power: 1, sound: 'crystal' },
 
   // Gates
   rock('hollow_frame', 'Hollow Gate Frame', 10, 4, { light: [4, 2, 7], emissive: 110, drops: [] }),
-  { key: 'hollow_portal', name: 'Hollow Gate', tex: 'hollow_portal', mat: 'translucent', solid: false, opaque: false, atten: 0, selfCull: 1, light: [8, 4, 14], emissive: 255, hard: -1, drops: [], sound: 'glass' },
+  { key: 'hollow_portal', name: 'Hollow Gate', tex: 'hollow_portal', mat: 'translucent', solid: false, opaque: false, atten: 0, selfCull: 1, light: [8, 4, 14], emissive: 80, hard: -1, drops: [], sound: 'glass' },
   rock('rift_frame', 'Rift Gate Frame', 10, 4, { light: [8, 7, 3], emissive: 110, drops: [] }),
-  { key: 'rift_portal', name: 'Rift Gate', tex: 'rift_portal', mat: 'translucent', solid: false, opaque: false, atten: 0, selfCull: 1, light: [14, 12, 6], emissive: 255, hard: -1, drops: [], sound: 'glass' },
+  { key: 'rift_portal', name: 'Rift Gate', tex: 'rift_portal', mat: 'translucent', solid: false, opaque: false, atten: 0, selfCull: 1, light: [14, 12, 6], emissive: 80, hard: -1, drops: [], sound: 'glass' },
 
   // Boss altars (one per arena type)
   altar(1, 'Rootbound Altar', [4, 11, 3]),

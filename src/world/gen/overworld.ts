@@ -103,7 +103,7 @@ export class OverworldGen implements Generator {
   private ph = new Int16Array(W * W); private pb = new Uint8Array(W * W); private pOpen = new Uint8Array(W * W);
   private pTemp = new Float32Array(W * W); private pRav = new Float32Array(W * W);
   private f1 = new Float32Array(25 * LY); private f2 = new Float32Array(25 * LY); private f3 = new Float32Array(25 * LY);
-  private col = newCol();
+  private col = newCol(); private pLow = new Int16Array(CAREA);
 
   constructor(readonly seed: number) {
     this.cl = new Climate(seed);
@@ -176,6 +176,12 @@ export class OverworldGen implements Generator {
     // ---- 3. ores, then caves carve through them -------------------------------
     placeOres(blocks, cx, cz, seed, OVERWORLD_ORES, [STONE, DEEP]);
 
+    const pLow = this.pLow;
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      let lo = 999;
+      for (let dz = -4; dz <= 4; dz += 2) for (let dx = -4; dx <= 4; dx += 2) { const v = ph[(lz + dz + PAD) * W + lx + dx + PAD]; if (v < lo) lo = v; }
+      pLow[(lz << 4) | lx] = lo;
+    }
     const maxLy = Math.min(62, (maxH >> 2) + 1);
     for (let lz = 0; lz < 5; lz++) for (let lx = 0; lx < 5; lx++) {
       const wx = ox + lx * 4, wz = oz + lz * 4, o = (lz * 5 + lx) * LY;
@@ -212,7 +218,8 @@ export class OverworldGen implements Generator {
               const tx = dx / 4, x = cx4 * 4 + dx;
               const p = (z + PAD) * W + x + PAD, h = ph[p];
               if (y > h) continue;
-              const depth = h - y;
+              // measure depth from the lowest ground nearby, so cliffs are not riddled with openings
+              const depth = Math.min(h, pLow[(z << 4) | x] + 1) - y;
               const wetCol = h < SEA + 1 || ph[p - 1] < SEA || ph[p + 1] < SEA || ph[p - W] < SEA || ph[p + W] < SEA;
               if (wetCol && depth < 9) continue;
               const cheese = a0 + (a1 - a0) * tx, ta = b0 + (b1 - b0) * tx, tb = c0 + (c1 - c0) * tx;

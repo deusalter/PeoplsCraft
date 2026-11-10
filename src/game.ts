@@ -21,6 +21,7 @@ import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
 import { ItemModels } from './render/itemModel';
 import { EventSystem } from './systems/events';
+import { Fluids } from './systems/fluids';
 import { Inventory, Slot } from './systems/inventory';
 import { NpcSystem } from './systems/npcs';
 import { QuestSystem } from './systems/quests';
@@ -46,7 +47,7 @@ export class Game implements InteractHost {
   readonly particles = new Particles(); readonly boxes = new BoxBatch(); readonly audio = new GameAudio();
   readonly mobs: MobSystem; readonly proj: ProjectileSystem; readonly drops: DropSystem;
   readonly icons: Icons; readonly models: ItemModels; readonly hud: Hud; readonly win: Windows; readonly menu: GameMenu;
-  readonly quests: QuestSystem; readonly events: EventSystem; readonly npcs: NpcSystem;
+  readonly quests: QuestSystem; readonly events: EventSystem; readonly npcs: NpcSystem; readonly fluids: Fluids;
   time = 0; clock = 0.06; dim = 0; ready = false; paused = false;
   creative = false; creativeHidden = false; god = false;
   spawn: [number, number, number] | null = null;
@@ -78,7 +79,7 @@ export class Game implements InteractHost {
     this.gfx.scene.add(this.drops.group);
     this.hud = new Hud(ui, this); this.win = new Windows(ui, this); this.menu = new GameMenu(ui, this);
     this.debug = new DebugOverlay(ui);
-    this.quests = new QuestSystem(this); this.events = new EventSystem(this); this.npcs = new NpcSystem(this);
+    this.quests = new QuestSystem(this); this.events = new EventSystem(this); this.npcs = new NpcSystem(this); this.fluids = new Fluids(this.world);
 
     // held-item view model
     const mat = makeItemMaterial(true); mat.side = THREE.DoubleSide;
@@ -109,6 +110,7 @@ export class Game implements InteractHost {
 
     this.world.onBlockChange = (x, y, z, _old, now) => {
       if (!T_SOLID[now] || !T_OPAQUE[now]) { const up = this.world.getBlock(x, y + 1, z); if (T_SUPPORT[up]) this.breakNatural(x, y + 1, z); }
+      if (T_REPLACE[now] && !T_LIQUID[now]) this.fluids.poke(x, y, z);
     };
     this.world.onChunkReady = (_c, fresh, ents) => {
       if (!fresh) return;
@@ -491,7 +493,7 @@ export class Game implements InteractHost {
     if (!home) this.portalReturn[this.dim] = [Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
     const px = Math.floor(p.x), pz = Math.floor(p.z);
     this.ready = false; this.keysReady = false; p.frozen = true; this.showLoading(to === 0 ? 'Returning to the Overworld' : `Crossing into ${DIMS[to].name}`);
-    this.mobs.clear(); this.proj.clear(); this.drops.clear(); if (this.events.active) this.events.end(false);
+    this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); if (this.events.active) this.events.end(false);
     this.world.setDim(to, DIMS[to].hasSky);
     this.dim = to; this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
     const ret = home ? null : this.portalReturn[to];
@@ -604,7 +606,7 @@ export class Game implements InteractHost {
     st.tick(dt, inv, p.sprinting);
     this.mobs.tick(dt); this.proj.tick(dt); this.drops.tick(dt);
     this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; this.tickBlocks(0.25); }
-    this.tickPortal(dt);
+    this.tickPortal(dt); this.fluids.tick(dt);
     this.events.tick(dt); this.npcs.tick(dt); this.quests.tick(dt);
     this.clock += dt / DAY_LENGTH;
     this.saveT += dt; if (this.saveT > 30) { this.saveT = 0; void this.save(); }
@@ -617,7 +619,7 @@ export class Game implements InteractHost {
       if (u) prompt = u.startsWith('altar') ? 'Right-click: make an offering' : u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
       else if (!this.canHarvest(h.id) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
     }
-    this.hud.setPrompt(this.win.open || this.menu.open ? null : prompt);
+    this.hud.setPrompt(this.win.open || this.menu.open ? null : !inp.locked && !inp.uiMode ? 'Click to take control' : prompt);
   }
 
   private tickBlocks(dt: number): void {
