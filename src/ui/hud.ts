@@ -66,8 +66,10 @@ export class Hud {
     this.lvl = el('div', '#lvl', r); this.itemName = el('div', '#itemname', r);
     this.toasts = el('div', '#toasts', r); this.banner = el('div', '#banner', r);
     this.boss = el('div', '#boss', r); this.bossTitle = el('div', 'tt', this.boss); this.bossName = el('div', 'nm', this.boss); this.bossBar = bar('', this.boss, true);
-    this.quest = el('div', '#quest', r);
-    this.event = el('div', '#event', r); this.eventText = el('div', '', this.event); this.eventBar = bar('', this.event); this.event.classList.add('hidden');
+    // the tracker and the event box share one flowing column so neither can cover the other
+    const side = el('div', '#side', r);
+    this.quest = el('div', '#quest', side);
+    this.event = el('div', '#event', side); this.eventText = el('div', '', this.event); this.eventBar = bar('', this.event); this.event.classList.add('hidden');
     this.buffs = el('div', '#buffs', r); this.prompt = el('div', '#prompt', r); this.prompt.classList.add('hidden');
     for (let i = 0; i < 48; i++) { const e = el('div', 'float', r); e.style.display = 'none'; this.floats.push({ el: e, x: 0, y: 0, z: 0, life: 0, max: 1, vy: 0 }); }
     for (let i = 0; i < 10; i++) { const e = el('div', 'float tag', r); e.style.display = 'none'; this.tags.push(e); }
