@@ -84,7 +84,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #event .bar { height: 7px; margin-top: 4px; } #event .bar > i { background: var(--bad); }
 #buffs { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 2px; font-size: 11px; }
 #ui.dbg #buffs { top: 190px; }
-#buffs div { padding: 2px 7px; background: rgba(13, 15, 20, 0.62); border-left: 2px solid var(--good); }
+#buffs div { padding: 2px 7px; background: rgba(13, 15, 20, 0.62); border-left: 2px solid var(--good); display: grid; grid-template-columns: auto auto; column-gap: 10px; }
+#buffs b { font-weight: 600; } #buffs .t { text-align: right; color: #c4c9d8; font-variant-numeric: tabular-nums; } #buffs small { grid-column: 1 / 3; font-size: 10px; color: #8b93a8; }
+#buffs .exp { border-left-color: var(--bad); animation: bexp 0.5s infinite alternate; } #buffs .exp .t { color: #ff9a8a; } @keyframes bexp { to { background: rgba(70, 20, 18, 0.7); } }
 .float { position: absolute; left: 0; top: 0; font-weight: 800; font-size: 15px; text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; white-space: nowrap; will-change: transform; pointer-events: none; }
 .float.big { font-size: 22px; } .float.tag { font-size: 12px; font-weight: 600; color: #fff; }
 #prompt { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); font-size: 12px; padding: 3px 9px; background: rgba(13, 15, 20, 0.7); border: 1px solid var(--edge); white-space: nowrap; }

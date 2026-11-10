@@ -24,6 +24,13 @@ function setBar(b: Bar, frac: number, text: string): void {
   if (Math.abs(frac - b.v) > 0.002) { b.v = frac; b.fill.style.transform = `scaleX(${frac})`; if (b.ghost) b.ghost.style.transform = b.fill.style.transform; }
   if (text !== b.t) { b.t = text; b.label.textContent = text; }
 }
+const STAT_WORDS: Record<string, string> = { def: 'defense', speed: 'speed', regen: 'regen', hp: 'health', mana: 'mana', crit: 'crit', melee: 'melee', ranged: 'ranged', magic: 'magic', mining: 'mining' };
+/** "+6 defense, +20% speed": fractional stats read as percentages. */
+function buffLine(stats: Record<string, number | undefined>): string {
+  const out: string[] = [];
+  for (const k in stats) { const v = stats[k]; if (!v) continue; out.push((v > 0 ? '+' : '') + (Math.abs(v) < 1 && k !== 'regen' ? Math.round(v * 100) + '%' : v) + ' ' + (STAT_WORDS[k] ?? k)); }
+  return out.join(', ');
+}
 const HURT_FX: Keyframe[] = [{ opacity: 0.8 }, { opacity: 0 }];
 const HURT_T: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }, DIR_T: KeyframeAnimationOptions = { duration: 1000, easing: 'ease-in' };
 interface Floater { el: HTMLElement; x: number; y: number; z: number; life: number; max: number; vy: number }
@@ -43,8 +50,27 @@ export class Hud {
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
   private hurtDir: HTMLElement; private cross: HTMLElement; private hitT = 0; private hitOn = false; private critOn = false;
   private floats: Floater[] = []; private tags: HTMLElement[] = [];
-  private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private questIdx = -1; private questT = 0; private regenOn = false; private buffKey = ''; private coinV = -1; private lvlV = -1; private ptsV = -1;
+  private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private questIdx = -1; private questT = 0; private regenOn = false; private buffGen = 0; private coinV = -1; private lvlV = -1; private ptsV = -1;
   private v = new THREE.Vector3();
+  private buffRows = new Map<string, { el: HTMLElement; time: HTMLElement; sec: number; gen: number; exp: boolean }>();
+  /** Bound once so the per-frame buff pass allocates nothing; text is written only when a second ticks over. */
+  private buffCb = (t: number, k: string): void => {
+    let row = this.buffRows.get(k);
+    if (!row) {
+      const e = el('div', '', this.buffs), b = BUFFS[k];
+      el('b', '', e, b?.name ?? k);
+      const time = el('span', 't', e);
+      if (b) el('small', '', e, buffLine(b.stats));
+      row = { el: e, time, sec: -1, gen: 0, exp: false };
+      this.buffRows.set(k, row);
+    }
+    row.gen = this.buffGen;
+    const sec = Math.ceil(t);
+    if (sec !== row.sec) {
+      row.sec = sec; row.time.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+      if ((sec <= 10) !== row.exp) { row.exp = sec <= 10; row.el.classList.toggle('exp', row.exp); }
+    }
+  };
   // cached values so frames where nothing changed build no strings and touch no classes
   private hpI = -1; private maxHpI = -1; private hpText = ''; private manaI = -1; private maxManaI = -1; private manaText = ''; private foodI = -1; private foodText = '';
   private hpLow = false; private foodLow = false; private bossOn = false; private eventOn = false; private promptText: string | null = null; private evKind = ''; private evProg = -1;
@@ -247,12 +273,9 @@ export class Hud {
       if (ev.active !== this.evKind || (ev.active !== 'moon' && pr !== this.evProg)) { this.evKind = ev.active; this.evProg = pr; this.eventText.textContent = ev.label(); }
       setBar(this.eventBar, pr, '');
     }
-    let bk = '';
-    for (const [k, t] of st.buffs) bk += k + Math.ceil(t / 5) + ';';
-    if (bk !== this.buffKey) {
-      this.buffKey = bk; this.buffs.innerHTML = '';
-      for (const [k, t] of st.buffs) el('div', '', this.buffs, `${BUFFS[k]?.name ?? k}  ${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`);
-    }
+    this.buffGen++;
+    st.buffs.forEach(this.buffCb);
+    if (this.buffRows.size !== st.buffs.size) for (const [k, row] of this.buffRows) if (row.gen !== this.buffGen) { row.el.remove(); this.buffRows.delete(k); }
 
     // floating text
     const cam = g.gfx.camera, w = this.vw, h = this.vh, v = this.v;
