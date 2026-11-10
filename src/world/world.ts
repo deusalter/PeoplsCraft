@@ -1,0 +1,314 @@
+// Main-thread chunk manager. Owns block data, schedules worker jobs nearest-first,
+// uploads meshes inside a per-frame budget and unloads by distance.
+import * as THREE from 'three';
+import { BUILD_MAX, CH, chunkKey } from '../core/constants';
+import { B, T_EMITS } from '../data/blocks';
+import type { EntInit } from './gen/types';
+import type { MeshPart } from './mesher';
+import { WorkerPool } from './pool';
+
+export interface BlockEnt { x: number; y: number; z: number; kind: string; data: any }
+export interface SavedChunk { blocks: Uint8Array; biomes: Uint8Array; hasEmit: boolean; ents: BlockEnt[] }
+
+export class Chunk {
+  blocks: Uint8Array | null = null;
+  light: Uint8Array | null = null;
+  biomes: Uint8Array | null = null;
+  state = 0;            // 0 new, 1 loading, 2 ready
+  dirty = true; pending = false; meshed = false; urgent = false;
+  rev = 0; modified = false; hasEmit = false;
+  meshes: (THREE.Mesh | null)[] = [null, null, null];
+  ents = new Map<number, BlockEnt>();
+  constructor(readonly cx: number, readonly cz: number, readonly key: number) {}
+}
+
+const sphere = new THREE.Sphere();
+
+export class World {
+  readonly chunks = new Map<number, Chunk>();
+  readonly group = new THREE.Group();
+  renderDist = 12;
+  hasSky = true;
+  savedKeys = new Set<number>();
+  loader: ((cx: number, cz: number) => Promise<SavedChunk | null>) | null = null;
+  onUnload: ((c: Chunk) => void) | null = null;
+  onBlockChange: ((x: number, y: number, z: number, old: number, now: number) => void) | null = null;
+  onChunkReady: ((c: Chunk, fresh: boolean, ents: EntInit[]) => void) | null = null;
+  meshMs = 0;
+  uploadsThisFrame = 0;
+
+  private offsets = new Int16Array(0);
+  private results: any[] = [];
+  private urgent: Chunk[] = [];
+  private pcx = 1e9; private pcz = 1e9; private scan = 0;
+  private last: Chunk | null = null;
+  private unloadTimer = 0;
+
+  constructor(readonly pool: WorkerPool, readonly materials: THREE.Material[], public seed: number, public dim: number) {
+    this.setRenderDist(this.renderDist);
+    this.group.matrixAutoUpdate = false;
+  }
+
+  setRenderDist(r: number): void {
+    this.renderDist = r;
+    // every chunk in mesh range, plus the ring of neighbours those meshes need for lighting
+    const R = r + 2, lim = r * r + r, list: [number, number, number][] = [];
+    for (let z = -R; z <= R; z++) for (let x = -R; x <= R; x++) {
+      let need = false;
+      for (let dz = -1; dz <= 1 && !need; dz++) for (let dx = -1; dx <= 1; dx++) {
+        if ((x + dx) * (x + dx) + (z + dz) * (z + dz) <= lim) { need = true; break; }
+      }
+      if (need) list.push([x * x + z * z, x, z]);
+    }
+    list.sort((a, b) => a[0] - b[0]);
+    this.offsets = new Int16Array(list.length * 2);
+    list.forEach((o, i) => { this.offsets[i * 2] = o[1]; this.offsets[i * 2 + 1] = o[2]; });
+    this.scan = 0; this.pcx = 1e9;
+  }
+
+  // ---- block access ----------------------------------------------------------
+  chunkAt(cx: number, cz: number): Chunk | null {
+    const l = this.last;
+    if (l && l.cx === cx && l.cz === cz) return l;
+    const c = this.chunks.get(chunkKey(cx, cz));
+    if (!c) return null;
+    this.last = c;
+    return c;
+  }
+  getBlock(x: number, y: number, z: number): number {
+    if (y < 0 || y >= CH) return 0;
+    const c = this.chunkAt(x >> 4, z >> 4);
+    if (!c || !c.blocks) return 0;
+    return c.blocks[((((z & 15) << 4) | (x & 15)) << 8) | y];
+  }
+  /** True when the column's chunk has block data (entities freeze instead of falling through). */
+  ready(x: number, z: number): boolean {
+    const c = this.chunkAt(x >> 4, z >> 4);
+    return !!c && c.state === 2;
+  }
+  /** Packed light: sky in the high nibble, block light in the low nibble. */
+  getLight(x: number, y: number, z: number): number {
+    if (y >= CH) return this.hasSky ? 0xf0 : 0;
+    if (y < 0) return 0;
+    const c = this.chunkAt(x >> 4, z >> 4);
+    if (!c || !c.light) return this.hasSky ? 0xf0 : 0;
+    return c.light[((((z & 15) << 4) | (x & 15)) << 8) | y];
+  }
+  biomeAt(x: number, z: number): number {
+    const c = this.chunkAt(x >> 4, z >> 4);
+    return c && c.biomes ? c.biomes[((z & 15) << 4) | (x & 15)] : 0;
+  }
+  /** Highest non-air block in a column, or -1 if the chunk is not loaded. */
+  topY(x: number, z: number): number {
+    const c = this.chunkAt(x >> 4, z >> 4);
+    if (!c || !c.blocks) return -1;
+    const base = (((z & 15) << 4) | (x & 15)) << 8;
+    for (let y = CH - 2; y > 0; y--) if (c.blocks[base + y] !== 0) return y;
+    return 0;
+  }
+
+  setBlock(x: number, y: number, z: number, id: number, silent = false): boolean {
+    if (y < 1 || y > BUILD_MAX) return false;
+    const cx = x >> 4, cz = z >> 4, c = this.chunkAt(cx, cz);
+    if (!c || !c.blocks) return false;
+    const lx = x & 15, lz = z & 15, i = (((lz << 4) | lx) << 8) | y, old = c.blocks[i];
+    if (old === id) return false;
+    c.blocks[i] = id; c.modified = true;
+    if (T_EMITS[id]) c.hasEmit = true;
+    if (c.ents.size && c.ents.has(i) && !silent) c.ents.delete(i);
+    this.markDirty(c);
+    // light can travel 15 blocks, so neighbours inside that reach need a new mesh too
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      if (!dx && !dz) continue;
+      const ddx = dx < 0 ? lx + 1 : dx > 0 ? 16 - lx : 0, ddz = dz < 0 ? lz + 1 : dz > 0 ? 16 - lz : 0;
+      if (ddx + ddz > 15) continue;
+      const n = this.chunkAt(cx + dx, cz + dz);
+      if (n && n.state === 2) this.markDirty(n);
+    }
+    if (!silent && this.onBlockChange) this.onBlockChange(x, y, z, old, id);
+    return true;
+  }
+  private markDirty(c: Chunk): void {
+    c.dirty = true; c.rev++;
+    if (c.meshed && !c.urgent) { c.urgent = true; this.urgent.push(c); }
+    this.scan = 0;
+  }
+
+  // ---- block entities ----------------------------------------------------------
+  getEnt(x: number, y: number, z: number): BlockEnt | null {
+    const c = this.chunkAt(x >> 4, z >> 4);
+    return (c && c.ents.get(((((z & 15) << 4) | (x & 15)) << 8) | y)) || null;
+  }
+  setEnt(x: number, y: number, z: number, kind: string, data: any): BlockEnt | null {
+    const c = this.chunkAt(x >> 4, z >> 4);
+    if (!c) return null;
+    const e: BlockEnt = { x, y, z, kind, data };
+    c.ents.set(((((z & 15) << 4) | (x & 15)) << 8) | y, e);
+    c.modified = true;
+    return e;
+  }
+  removeEnt(x: number, y: number, z: number): void {
+    const c = this.chunkAt(x >> 4, z >> 4);
+    if (c && c.ents.delete(((((z & 15) << 4) | (x & 15)) << 8) | y)) c.modified = true;
+  }
+
+  // ---- scheduling ------------------------------------------------------------------
+  update(px: number, pz: number, budgetMs: number): void {
+    const cx = Math.floor(px / 16), cz = Math.floor(pz / 16);
+    if (cx !== this.pcx || cz !== this.pcz) { this.pcx = cx; this.pcz = cz; this.scan = 0; this.unloadTimer = 0; }
+    if (--this.unloadTimer < 0) { this.unloadTimer = 120; this.unloadFar(); }
+
+    const t0 = performance.now();
+    let n = 0;
+    while (this.results.length && (n < 2 || performance.now() - t0 < budgetMs)) { this.applyMesh(this.results.shift()); n++; }
+    this.uploadsThisFrame = n;
+    while (this.pool.idleCount > 0 && this.dispatchOne()) { /* keep the pool fed */ }
+  }
+
+  private neighborsReady(c: Chunk): boolean {
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const n = this.chunks.get(chunkKey(c.cx + dx, c.cz + dz));
+      if (!n || n.state !== 2) return false;
+    }
+    return true;
+  }
+
+  private dispatchOne(): boolean {
+    const urgent = this.urgent;
+    for (let i = 0; i < urgent.length; i++) {
+      const c = urgent[i];
+      if (!c.dirty || c.state !== 2 || !this.chunks.has(c.key)) { c.urgent = false; urgent.splice(i--, 1); continue; }
+      if (c.pending || !this.neighborsReady(c)) continue;
+      c.urgent = false; urgent.splice(i, 1);
+      this.sendMesh(c, true);
+      return true;
+    }
+    const offs = this.offsets, R = this.renderDist, meshR = R * R + R;
+    let adv = true;
+    for (let i = this.scan; i < offs.length; i += 2) {
+      const dx = offs[i], dz = offs[i + 1], cx = this.pcx + dx, cz = this.pcz + dz, key = chunkKey(cx, cz);
+      let c = this.chunks.get(key);
+      if (!c) { c = new Chunk(cx, cz, key); this.chunks.set(key, c); }
+      const inMesh = dx * dx + dz * dz <= meshR;
+      if (adv) { if (c.state === 2 && (!inMesh || (c.meshed && !c.dirty))) this.scan = i + 2; else adv = false; }
+      if (c.state === 0) { if (this.requestChunk(c)) return true; continue; }
+      if (c.state === 2 && c.dirty && !c.pending && inMesh && this.neighborsReady(c)) { this.sendMesh(c, false); return true; }
+    }
+    return false;
+  }
+
+  /** Returns true if a worker was consumed. */
+  private requestChunk(c: Chunk): boolean {
+    c.state = 1;
+    if (this.loader && this.savedKeys.has(c.key)) {
+      const dim = this.dim;
+      this.loader(c.cx, c.cz).then((s) => {
+        if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+        if (!s) { c.state = 0; this.savedKeys.delete(c.key); this.scan = 0; return; }
+        c.blocks = s.blocks; c.biomes = s.biomes; c.hasEmit = s.hasEmit; c.modified = false;
+        for (const e of s.ents) c.ents.set(((((e.z & 15) << 4) | (e.x & 15)) << 8) | e.y, e);
+        c.state = 2; c.dirty = true; this.scan = 0;
+        if (this.onChunkReady) this.onChunkReady(c, false, []);
+      });
+      return false;
+    }
+    const dim = this.dim;
+    this.pool.run({ t: 'gen', cx: c.cx, cz: c.cz, dim, seed: this.seed }, [], (m) => {
+      if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
+      c.blocks = m.blocks; c.biomes = m.biomes; c.hasEmit = m.hasEmit;
+      c.state = 2; c.dirty = true; this.scan = 0;
+      if (this.onChunkReady) this.onChunkReady(c, true, m.ents);
+    });
+    return true;
+  }
+
+  private sendMesh(c: Chunk, front: boolean): void {
+    const blocks: Uint8Array[] = [], biomes: Uint8Array[] = [], emit: boolean[] = [], tr: Transferable[] = [];
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const n = this.chunks.get(chunkKey(c.cx + dx, c.cz + dz))!;
+      const b = n.blocks!.slice(), bi = n.biomes!.slice();
+      blocks.push(b); biomes.push(bi); emit.push(n.hasEmit); tr.push(b.buffer, bi.buffer);
+    }
+    c.pending = true; c.dirty = false;
+    const dim = this.dim;
+    this.pool.run({ t: 'mesh', cx: c.cx, cz: c.cz, rev: c.rev, sky: this.hasSky, blocks, biomes, emit }, tr, (m) => {
+      if (this.dim !== dim) return;
+      if (front) this.results.unshift(m); else this.results.push(m);
+    });
+  }
+
+  private applyMesh(m: { cx: number; cz: number; rev: number; parts: (MeshPart | null)[]; light: Uint8Array; ms: number }): void {
+    const c = this.chunks.get(chunkKey(m.cx, m.cz));
+    if (!c) return;
+    c.pending = false; c.light = m.light; c.meshed = true;
+    this.meshMs = this.meshMs * 0.95 + m.ms * 0.05;
+    for (let i = 0; i < 3; i++) {
+      const p = m.parts[i];
+      let mesh = c.meshes[i];
+      if (!p) { if (mesh) { mesh.geometry.dispose(); this.group.remove(mesh); c.meshes[i] = null; } continue; }
+      const g = new THREE.BufferGeometry();
+      const free = function (this: THREE.BufferAttribute) { (this as any).array = null; };
+      g.setAttribute('aPos', new THREE.BufferAttribute(p.pos, 4).onUpload(free));
+      g.setAttribute('aUv', new THREE.BufferAttribute(p.uv, 4).onUpload(free));
+      g.setAttribute('aLight', new THREE.BufferAttribute(p.light, 4, true).onUpload(free));
+      g.setAttribute('aTint', new THREE.BufferAttribute(p.tint, 4, true).onUpload(free));
+      g.setIndex(new THREE.BufferAttribute(p.idx, 1).onUpload(free));
+      g.boundingBox = new THREE.Box3(new THREE.Vector3(0, p.minY, 0), new THREE.Vector3(16, p.maxY, 16));
+      g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
+      if (mesh) { mesh.geometry.dispose(); mesh.geometry = g; }
+      else {
+        mesh = new THREE.Mesh(g, this.materials[i]);
+        mesh.position.set(c.cx * 16, 0, c.cz * 16);
+        mesh.matrixAutoUpdate = false; mesh.updateMatrix(); mesh.matrixWorld.copy(mesh.matrix);
+        mesh.matrixWorldAutoUpdate = false;
+        mesh.renderOrder = i;
+        c.meshes[i] = mesh; this.group.add(mesh);
+      }
+    }
+  }
+
+  private unloadFar(): void {
+    const lim = this.renderDist + 3;
+    for (const c of this.chunks.values()) {
+      if (Math.abs(c.cx - this.pcx) <= lim && Math.abs(c.cz - this.pcz) <= lim) continue;
+      this.dropChunk(c, true);
+    }
+  }
+  private dropChunk(c: Chunk, save: boolean): void {
+    if (save && c.modified && c.state === 2 && this.onUnload) this.onUnload(c);
+    for (let i = 0; i < 3; i++) { const m = c.meshes[i]; if (m) { m.geometry.dispose(); this.group.remove(m); c.meshes[i] = null; } }
+    this.chunks.delete(c.key);
+    if (this.last === c) this.last = null;
+  }
+
+  /** Drop everything (dimension change or leaving the world). Modified chunks are saved first. */
+  clear(save: boolean): void {
+    for (const c of [...this.chunks.values()]) this.dropChunk(c, save);
+    this.results.length = 0; this.urgent.length = 0; this.scan = 0; this.pcx = 1e9; this.last = null;
+  }
+  setDim(dim: number, hasSky: boolean): void { this.clear(true); this.dim = dim; this.hasSky = hasSky; }
+
+  /** Count chunks with a mesh, and how many are still waiting. */
+  counts(): { loaded: number; meshed: number; waiting: number } {
+    let loaded = 0, meshed = 0, waiting = 0;
+    const R = this.renderDist, lim = R * R + R;
+    for (const c of this.chunks.values()) {
+      if (c.state === 2) loaded++;
+      if (c.meshed) meshed++;
+      const dx = c.cx - this.pcx, dz = c.cz - this.pcz;
+      if (dx * dx + dz * dz <= lim && (!c.meshed || c.dirty)) waiting++;
+    }
+    return { loaded, meshed, waiting };
+  }
+  /** True once every chunk within `r` chunks of the position has a mesh. */
+  areaMeshed(px: number, pz: number, r: number): boolean {
+    const cx = Math.floor(px / 16), cz = Math.floor(pz / 16);
+    for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
+      const c = this.chunks.get(chunkKey(cx + dx, cz + dz));
+      if (!c || !c.meshed) return false;
+    }
+    return true;
+  }
+  static readonly BEDROCK = B.bedrock;
+}
+void sphere;

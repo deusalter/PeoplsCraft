@@ -1,0 +1,24 @@
+:root {
+  --ink: #0d0f14; --panel: #1b1f2a; --panel2: #262b39; --edge: #3b4254; --text: #e9e4d6; --dim: #9aa0b2;
+  --gold: #f2c14e; --ember: #ff8a3c; --good: #7fd66b; --bad: #e5544b; --mana: #5aa9ff;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color: var(--text); user-select: none; -webkit-user-select: none; }
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+#ui { position: fixed; inset: 0; pointer-events: none; font-size: 13px; }
+#ui > * { pointer-events: none; }
+#debug { position: absolute; left: 8px; top: 8px; margin: 0; padding: 8px 10px; background: rgba(8, 10, 14, 0.62); color: #dfe6f2;
+  font: 12px/1.45 ui-monospace, Menlo, monospace; border-left: 2px solid var(--gold); white-space: pre; z-index: 30; }
+#crosshair { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; opacity: 0.85; mix-blend-mode: difference; }
+#crosshair::before, #crosshair::after { content: ''; position: absolute; background: #fff; }
+#crosshair::before { left: 8px; top: 2px; width: 2px; height: 14px; }
+#crosshair::after { left: 2px; top: 8px; width: 14px; height: 2px; }
+#loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  background: radial-gradient(ellipse at 50% 60%, #1c2233 0%, #0a0c12 70%); z-index: 50; pointer-events: auto; }
+#loading h1 { margin: 0; font-size: 44px; letter-spacing: 0.3em; color: var(--gold); text-shadow: 0 0 24px rgba(242, 193, 78, 0.45), 0 3px 0 #5a3d10; }
+#loading .bar { width: 320px; height: 8px; background: #11141c; border: 1px solid var(--edge); }
+#loading .bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--ember), var(--gold)); transition: width 0.15s; }
+#loading .msg { color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase; font-size: 11px; }
+#hint { position: absolute; left: 50%; bottom: 22%; transform: translateX(-50%); padding: 10px 18px; background: rgba(8, 10, 14, 0.7);
+  border: 1px solid var(--edge); color: var(--text); letter-spacing: 0.08em; }
