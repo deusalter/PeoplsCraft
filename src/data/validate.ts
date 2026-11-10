@@ -4,7 +4,7 @@ import { PAINTERS } from '../render/textures';
 import { BLOCKS, TEXTURE_NAMES } from './blocks';
 import { ITEMS, TAGGED } from './items';
 import { LOOT } from './loot';
-import { MOB_LIST, MOBS, PROJECTILES } from './mobs';
+import { MAX_PARTS, MOB_LIST, MOBS, PROJECTILES } from './mobs';
 import { NPCS } from './npcs';
 import { QUESTS } from './quests';
 import { RECIPES, SMELTS } from './recipes';
@@ -33,6 +33,14 @@ export function validateData(): string[] {
   for (const m of MOB_LIST) {
     for (const d of m.drops) has(d[0], 'mob ' + m.key);
     if (m.proj && !PROJECTILES[m.proj]) bad.push(`mob ${m.key}: unknown projectile ${m.proj}`);
+    if (m.parts.length > MAX_PARTS) bad.push(`mob ${m.key}: ${m.parts.length} boxes, the limit is ${MAX_PARTS}`);
+    if ((m.boss?.seg?.length ?? 0) > MAX_PARTS) bad.push(`mob ${m.key}: its body segment has more than ${MAX_PARTS} boxes`);
+    m.boss?.seg?.forEach((q, i, all) => { if (q.par && !all.slice(0, i).some((o) => o.n === q.par)) bad.push(`mob ${m.key}: segment box ${i} rides on "${q.par}", which no earlier box names`); });
+    if (m.boss?.segments && !m.boss.seg) bad.push(`boss ${m.key}: has body segments but no seg box list`);
+    m.parts.forEach((q, i) => {
+      if (q.par && !m.parts.slice(0, i).some((o) => o.n === q.par)) bad.push(`mob ${m.key}: box ${i} rides on "${q.par}", which no earlier box names`);
+      if (q.ph && (q.ph[0] > q.ph[1] || !m.boss)) bad.push(`mob ${m.key}: box ${i} has a bad or unused phase range`);
+    });
     for (const ph of m.boss?.phases ?? []) for (const a of [...ph.attacks, ...(ph.enter ? [ph.enter] : [])]) {
       if ('proj' in a && !PROJECTILES[a.proj]) bad.push(`boss ${m.key}: unknown projectile ${a.proj}`);
       if (a.t === 'summon' && !MOBS.has(a.mob)) bad.push(`boss ${m.key}: unknown add ${a.mob}`);

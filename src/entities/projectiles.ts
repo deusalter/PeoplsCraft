@@ -16,7 +16,7 @@ const hit = newRayHit(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v
 export class ProjectileSystem {
   private list: Proj[] = [];
   private cur: Proj | null = null;
-  private canHit = (m: { def: { hostile: boolean }; id: number }): boolean => m.def.hostile && !this.cur!.hit.has(m.id);
+  private canHit = (m: { def: { ai: string }; id: number }): boolean => m.def.ai !== 'npc' && m.def.ai !== 'minion' && !this.cur!.hit.has(m.id);
   constructor(private g: Game, cap = 600) { for (let i = 0; i < cap; i++) this.list.push(new Proj()); }
   clear(): void { for (const p of this.list) p.active = false; }
   get alive(): number { let n = 0; for (const p of this.list) if (p.active) n++; return n; }
@@ -62,15 +62,18 @@ export class ProjectileSystem {
   }
 
   render(batch: BoxBatch, alpha: number): void {
+    const w = this.g.world;
     for (const p of this.list) {
       if (!p.active) continue;
       const d = p.def, s = d.size;
+      // lit from where it was a tick ago: that cell is always open air, the one ahead may be solid
+      const l = w.getLight(Math.floor(p.px), Math.floor(p.py), Math.floor(p.pz));
       v1.set(p.px + (p.x - p.px) * alpha, p.py + (p.y - p.py) * alpha, p.pz + (p.z - p.pz) * alpha);
       v2.set(p.vx, p.vy, p.vz).normalize();
       q.setFromUnitVectors(up, v2);
-      const long = d.gravity > 5 ? 5 : 1.6;
-      m4.compose(v1, q, v2.set(s * (long > 2 ? 0.4 : 1), s * (long > 2 ? 0.4 : 1), s * long));
-      batch.add(m4, d.color, 1, 0, 0, d.glow);
+      const long = d.gravity > 5 ? 5 : 1.6, thin = s * (long > 2 ? 0.4 : 1);
+      m4.compose(v1, q, v2.set(thin, thin, s * long));
+      batch.add(m4, d.color, (l >> 4) / 15, (l & 15) / 15, 0, d.glow, 0, thin, thin, s * long);
     }
   }
 }

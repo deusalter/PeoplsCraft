@@ -70,6 +70,8 @@ export class Gfx {
   settings: GfxSettings = { ...PRESETS.medium };
   /** Geometry drawn into the shadow map (the world's chunk group). */
   shadowCasters: THREE.Object3D | null = null;
+  /** Creature boxes: drawn into the shadow map after the chunks, with their own depth material. */
+  boxCaster: { renderDepth(r: THREE.WebGLRenderer, cam: THREE.Camera): void } | null = null;
   dayAmt = 1;
   sunElev = 1;
   readonly lightDir = new THREE.Vector3(0, 1, 0);
@@ -344,6 +346,7 @@ export class Gfx {
     const r = this.renderer;
     r.setRenderTarget(this.shadowRt); r.clear();
     r.render(casters, cam);
+    if (this.boxCaster) this.boxCaster.renderDepth(r, cam);
     for (let i = 0; i < kids.length; i++) { const m = kids[i]; m.visible = true; m.material = this.materials[m.renderOrder]; }
   }
 

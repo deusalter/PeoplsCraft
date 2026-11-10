@@ -74,6 +74,7 @@ export class Game implements InteractHost {
     this.climate = new Climate(meta.seed);
     this.gfx.scene.add(this.world.group, this.boxes.mesh, this.particles.mesh);
     this.gfx.shadowCasters = this.world.group;
+    this.gfx.boxCaster = this.boxes;
     this.input = new Input(canvas);
     this.interact = new Interact(this.gfx.scene, this.world, this.player);
     this.mobs = new MobSystem(this); this.proj = new ProjectileSystem(this); this.drops = new DropSystem(this);
@@ -804,6 +805,7 @@ export class Game implements InteractHost {
     this.world.setCull(this.gfx.camera.position.x, this.gfx.camera.position.z);
     if (!this.paused) this.particles.update(dt, this.world);
     this.boxes.begin(); this.mobs.render(this.boxes, a, this.time); this.proj.render(this.boxes, a); this.boxes.end();
+    this.drops.render(a);
     this.updateHand(dt);
     this.gfx.flash = 0;
     this.gfx.render(this.ready && !this.stats.dead && this.hudOn);
