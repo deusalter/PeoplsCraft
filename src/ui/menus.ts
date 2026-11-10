@@ -91,7 +91,7 @@ export class TitleMenu {
   /** What Escape does on the current screen (null on the home screen). */
   private back: (() => void) | null = null;
   private onEsc = (e: KeyboardEvent): void => { if (e.code === 'Escape' && this.back) { e.preventDefault(); this.back(); } };
-  constructor(ui: HTMLElement, private db: SaveDB, private settings: Settings, private onPlay: (m: WorldMeta) => void) {
+  constructor(ui: HTMLElement, private db: SaveDB, private settings: Settings, private onPlay: (m: WorldMeta) => void, private canSave = true) {
     this.root = el('div', '#menu', ui); this.root.classList.add('solid');
     window.addEventListener('keydown', this.onEsc);
     void this.home();
@@ -100,6 +100,7 @@ export class TitleMenu {
     this.root.innerHTML = '';
     drawCairn(el('canvas', '#cairn', this.root));
     el('h1', '', this.root, GAME_TITLE.toUpperCase()); el('div', 'sub', this.root, sub);
+    if (!this.canSave) el('div', 'warn', this.root, 'This browser is blocking storage. Worlds will not be saved.');
   }
   private async home(): Promise<void> {
     this.head('a voxel sandbox of lost lights'); this.back = null;
@@ -161,12 +162,14 @@ export class GameMenu {
     g.paused = true; this.show(); this.sub = false;
     this.root.innerHTML = '';
     el('h2', '', this.root, 'PAUSED'); el('div', 'sub', this.root, g.cfg.meta.name);
+    const saved = el('div', 'saved', this.root, g.cfg.canSave === false ? 'Saving is unavailable in this browser' : 'Saving...');
+    if (g.cfg.canSave === false) saved.classList.add('warn');
     const col = el('div', 'col', this.root);
     el('button', 'btn gold', col, 'Resume').onclick = () => this.close();
     el('button', 'btn', col, 'Settings').onclick = () => this.options();
     el('button', 'btn', col, 'Controls').onclick = () => { this.sub = true; this.root.innerHTML = ''; el('h2', '', this.root, 'CONTROLS'); keysPanel(this.root); el('button', 'btn', this.root, 'Back').onclick = () => this.pause(); };
     el('button', 'btn', col, 'Save and quit to title').onclick = async () => { await g.save(); location.reload(); };
-    void g.save();
+    void g.save().then(() => { if (g.cfg.canSave !== false) saved.textContent = g.lastSave > Date.now() - 5000 ? 'Progress saved' : 'Could not save just now'; });
   }
   /** Escape: back out of a sub-screen, or resume from the pause screen. */
   escape(): void { if (this.sub) this.pause(); else this.close(); }

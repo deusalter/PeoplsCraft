@@ -136,3 +136,5 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #menu.death { background: radial-gradient(ellipse at 50% 42%, rgba(96, 16, 12, 0.5) 0%, rgba(22, 4, 4, 0.92) 75%); animation: deathin 0.8s ease-out; }
 @keyframes deathin { from { opacity: 0; } }
 #prompt kbd { font: inherit; color: var(--gold); padding: 0 5px; margin-right: 6px; border: 1px solid var(--edge); background: rgba(255, 255, 255, 0.04); }
+#menu .warn { color: #ff9a8a; font-size: 12px; letter-spacing: 0.06em; } #menu .saved { color: var(--dim); font-size: 11px; letter-spacing: 0.1em; margin-top: -8px; }
+#saved { position: absolute; right: 14px; bottom: 12px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); text-shadow: 1px 1px 0 #000; opacity: 0; }

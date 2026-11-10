@@ -37,7 +37,7 @@ import { WorkerPool } from './world/pool';
 import { BlockEnt, Chunk, World } from './world/world';
 
 const STEP = 1 / 60;
-export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings }
+export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings; /** false when the browser blocks IndexedDB */ canSave?: boolean }
 const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
 // Interaction prompts, built once so the per-tick prompt check allocates nothing.
 const IS_NPC = (m: Mob): boolean => m.def.ai === 'npc';
@@ -69,6 +69,8 @@ export class Game implements InteractHost {
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
   private npcPromptT = 0; private npcPrompt: string | null = null; private conClosed = 0;
+  /** Date.now() of the last successful save (0 = not yet). */
+  lastSave = 0; private saveFailT = -1e9; private noSaveWarned = false;
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -127,7 +129,11 @@ export class Game implements InteractHost {
     // a click on the world resumes after a refused re-lock (Input requests the lock on the same click)
     canvas.addEventListener('mousedown', () => { this.audio.unlock(); if (this.paused && this.ready && !this.menu.open && !this.stats.dead) { this.paused = false; this.hud.setPrompt(null); } });
     window.addEventListener('resize', () => this.gfx.resize());
-    window.addEventListener('beforeunload', () => { void this.save(); });
+    window.addEventListener('beforeunload', (e) => {
+      void this.save();
+      // Ctrl+W is next to the sprint keys: ask before closing mid-play (not with a menu open, not in automated ?quick runs)
+      if (this.ready && this.input.locked && !this.stats.dead && !location.search.includes('quick')) { e.preventDefault(); e.returnValue = ''; }
+    });
     document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); });
 
     this.world.onBlockChange = (x, y, z, _old, now) => {
@@ -782,6 +788,7 @@ export class Game implements InteractHost {
     if (!this.keysReady || !w.areaMeshed(p.x, p.z, 3)) return;
     if (this.arriving >= 0) this.land();
     p.frozen = false; this.ready = true; this.portalArmed = false;
+    if (this.cfg.canSave === false && !this.noSaveWarned) { this.noSaveWarned = true; this.hud.showBanner('Saving is unavailable', 'This browser is blocking storage. Progress is lost when the tab closes.', '#ff9a8a'); }
     const l = this.loading; this.loading = null;
     if (l) { const rm = (): void => l.remove(); l.classList.add('out'); l.addEventListener('transitionend', rm, { once: true }); setTimeout(rm, 700); }
     if (!this.cfg.meta.data && this.dim === 0 && !this.flags.has('started')) {
@@ -832,7 +839,13 @@ export class Game implements InteractHost {
     m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
       spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
-    try { await this.cfg.db.putWorld(m); } catch (e) { console.warn('save failed', e); }
+    try {
+      await this.cfg.db.putWorld(m);
+      if (this.cfg.canSave !== false) { this.lastSave = Date.now(); this.hud.saved(); }
+    } catch (e) {
+      console.warn('save failed', e);
+      if (performance.now() - this.saveFailT > 60000) { this.saveFailT = performance.now(); this.toast('Save failed. Your progress may not be kept.', '#ff9a8a'); }
+    }
   }
 
   private debugLines(): string[] {

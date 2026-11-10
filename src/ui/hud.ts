@@ -32,7 +32,7 @@ export class Hud {
   private boss: HTMLElement; private bossName: HTMLElement; private bossTitle: HTMLElement; private bossBar: Bar;
   private quest: HTMLElement; private event: HTMLElement; private eventBar: Bar; private eventText: HTMLElement;
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
-  private floats: Floater[] = []; private tags: HTMLElement[] = []; private promptText = '';
+  private floats: Floater[] = []; private tags: HTMLElement[] = []; private promptText = ''; private savedEl: HTMLElement;
   private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private buffKey = ''; private coinV = -1; private lvlV = -1;
   private v = new THREE.Vector3();
 
@@ -52,6 +52,7 @@ export class Hud {
     this.quest = el('div', '#quest', r);
     this.event = el('div', '#event', r); this.eventText = el('div', '', this.event); this.eventBar = bar('', this.event); this.event.classList.add('hidden');
     this.buffs = el('div', '#buffs', r); this.prompt = el('div', '#prompt', r); this.prompt.classList.add('hidden');
+    this.savedEl = el('div', '#saved', r, 'Saved');
     for (let i = 0; i < 48; i++) { const e = el('div', 'float', r); e.style.display = 'none'; this.floats.push({ el: e, x: 0, y: 0, z: 0, life: 0, max: 1, vy: 0 }); }
     for (let i = 0; i < 10; i++) { const e = el('div', 'float tag', r); e.style.display = 'none'; this.tags.push(e); }
   }
@@ -83,6 +84,8 @@ export class Hud {
     }
     this.prompt.classList.remove('hidden');
   }
+  /** Brief "Saved" mark in the corner (fades by CSS transition, no per-frame work). */
+  saved(): void { const s = this.savedEl; s.style.transition = 'none'; s.style.opacity = '1'; requestAnimationFrame(() => { s.style.transition = 'opacity 1.5s 0.6s'; s.style.opacity = '0'; }); }
   flashHurt(): void { this.hurt.style.transition = 'none'; this.hurt.style.opacity = '0.75'; requestAnimationFrame(() => { this.hurt.style.transition = 'opacity 0.5s'; this.hurt.style.opacity = '0'; }); }
   setPortal(a: number, gold: boolean): void {
     this.portal.style.opacity = String(a);
