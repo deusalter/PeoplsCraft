@@ -51,6 +51,7 @@ export function settingsPanel(parent: HTMLElement, s: Settings, apply: () => voi
     toggle('Bloom', 'bloom'); toggle('Sun shadows', 'shadows'); toggle('Tone mapping', 'tonemap'); toggle('Vignette', 'vignette');
     toggle('Clouds', 'clouds'); toggle('Swaying foliage and waves', 'sway'); toggle('Anti-aliasing (MSAA)', 'msaa');
     toggle('Edge smoothing (FXAA)', 'fxaa'); toggle('Eye adaptation', 'adapt'); toggle('Adaptive resolution', 'autoScale');
+    slider('Texture filtering', 0, 4, 1, () => Math.round(Math.log2(s.gfx.aniso || 1)), (v) => { s.gfx.aniso = 2 ** v; s.preset = 'custom'; }, (v) => (v ? 2 ** v + 'x' : 'Off'));
     el('div', 'ttl', box, 'Controls and sound').style.marginTop = '6px';
     slider('Mouse sensitivity', 0.3, 2.5, 0.05, () => s.sens, (v) => (s.sens = v), (v) => v.toFixed(2));
     slider('Effects volume', 0, 1, 0.05, () => s.sfx, (v) => (s.sfx = v), (v) => Math.round(v * 100) + '%');

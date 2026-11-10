@@ -27,7 +27,7 @@ function cloudMap(): THREE.DataTexture {
 
 /** Uniforms shared by every world material. */
 export const U = {
-  uAtlas: { value: null as THREE.Texture | null },
+  uAtlas: { value: null as THREE.Texture | null }, uAtlasF: { value: null as THREE.Texture | null },
   uTime: { value: 0 }, uSway: { value: 1 },
   uLightDir: v3(0, 1, 0), uLightColor: v3(), uSkyLight: v3(), uAmbient: v3(),
   uZenith: v3(), uHorizon: v3(), uSunDir: v3(0, 1, 0), uGlowColor: v3(),
@@ -42,12 +42,12 @@ export const U = {
 export interface GfxSettings {
   renderDist: number; fov: number; bloom: boolean; tonemap: boolean; vignette: boolean; shadows: boolean;
   clouds: boolean; sway: boolean; msaa: boolean; scale: number; shadowSize: number;
-  fxaa: boolean; adapt: boolean; autoScale: boolean;
+  fxaa: boolean; adapt: boolean; autoScale: boolean; aniso: number;
 }
 export const PRESETS: Record<string, GfxSettings> = {
-  low: { renderDist: 8, fov: 75, bloom: false, tonemap: true, vignette: false, shadows: false, clouds: true, sway: false, msaa: false, scale: 0.75, shadowSize: 1024, fxaa: false, adapt: false, autoScale: true },
-  medium: { renderDist: 12, fov: 75, bloom: true, tonemap: true, vignette: true, shadows: false, clouds: true, sway: true, msaa: false, scale: 1, shadowSize: 2048, fxaa: true, adapt: true, autoScale: true },
-  high: { renderDist: 12, fov: 75, bloom: true, tonemap: true, vignette: true, shadows: true, clouds: true, sway: true, msaa: true, scale: 1, shadowSize: 2048, fxaa: true, adapt: true, autoScale: true },
+  low: { renderDist: 8, fov: 75, bloom: false, tonemap: true, vignette: false, shadows: false, clouds: true, sway: false, msaa: false, scale: 0.75, shadowSize: 1024, fxaa: false, adapt: false, autoScale: true, aniso: 1 },
+  medium: { renderDist: 12, fov: 75, bloom: true, tonemap: true, vignette: true, shadows: false, clouds: true, sway: true, msaa: false, scale: 1, shadowSize: 2048, fxaa: true, adapt: true, autoScale: true, aniso: 4 },
+  high: { renderDist: 12, fov: 75, bloom: true, tonemap: true, vignette: true, shadows: true, clouds: true, sway: true, msaa: true, scale: 1, shadowSize: 2048, fxaa: true, adapt: true, autoScale: true, aniso: 8 },
 };
 
 function chunkMaterial(define: string | null, o: THREE.ShaderMaterialParameters): THREE.ShaderMaterial {
@@ -104,7 +104,7 @@ export class Gfx {
     this.renderer.info.autoReset = false;
     this.renderer.autoClear = false;
     this.black.needsUpdate = true;
-    U.uAtlas.value = this.atlas.texture;
+    U.uAtlas.value = this.atlas.texture; U.uAtlasF.value = this.atlas.filtered;
     U.uCloudMap.value = cloudMap();
 
     this.materials = [
@@ -174,6 +174,8 @@ export class Gfx {
     this.mFinal.uniforms.uTonemap.value = s.tonemap ? 1 : 0;
     this.mFinal.uniforms.uVignette.value = s.vignette ? 0.35 : 0;
     if (!s.adapt) this.exposure = 1;
+    const an = Math.min(Math.max(1, s.aniso), this.renderer.capabilities.getMaxAnisotropy()), ft = this.atlas.filtered;
+    if (ft.anisotropy !== an) { ft.anisotropy = an; ft.needsUpdate = true; }
     if (remake) { this.makeShadowTarget(); this.resize(); }
   }
 

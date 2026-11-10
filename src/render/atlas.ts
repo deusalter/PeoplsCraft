@@ -7,6 +7,9 @@ import { TS, paintTile } from './textures';
 export class Atlas {
   readonly tiles: Uint8ClampedArray[] = [];
   readonly texture: THREE.DataArrayTexture;
+  /** The same tiles, linearly filtered, for the terrain shader: it snaps to texels itself, and three only applies
+   *  anisotropic filtering to a texture that is not nearest-filtered. */
+  readonly filtered: THREE.DataArrayTexture;
   /** Average opaque colour per layer (0xRRGGBB), used for particles and map colours. */
   readonly avg: number[] = [];
 
@@ -22,12 +25,16 @@ export class Atlas {
       this.tiles.push(t); this.avg.push((r << 16) | (g << 8) | b);
       data.set(t, i * TS * TS * 4);
     }
-    const tex = new THREE.DataArrayTexture(data, TS, TS, n);
-    tex.format = THREE.RGBAFormat; tex.type = THREE.UnsignedByteType;
-    tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestMipmapLinearFilter;
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.generateMipmaps = true; tex.colorSpace = THREE.NoColorSpace;
-    tex.needsUpdate = true;
-    this.texture = tex;
+    const make = (mag: THREE.MagnificationTextureFilter, min: THREE.MinificationTextureFilter): THREE.DataArrayTexture => {
+      const tex = new THREE.DataArrayTexture(data, TS, TS, n);
+      tex.format = THREE.RGBAFormat; tex.type = THREE.UnsignedByteType;
+      tex.magFilter = mag; tex.minFilter = min;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.generateMipmaps = true; tex.colorSpace = THREE.NoColorSpace;
+      tex.needsUpdate = true;
+      return tex;
+    };
+    this.texture = make(THREE.NearestFilter, THREE.NearestMipmapLinearFilter);
+    this.filtered = make(THREE.LinearFilter, THREE.LinearMipmapLinearFilter);
   }
 }

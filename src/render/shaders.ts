@@ -126,6 +126,7 @@ precision highp float;
 precision highp sampler2DArray;
 precision highp sampler2DShadow;
 uniform sampler2DArray uAtlas;
+uniform sampler2DArray uAtlasF;   // the same tiles with linear and anisotropic filtering
 uniform sampler2DShadow uShadowMap;
 uniform float uShadowOn;
 uniform float uShadowTexel;
@@ -154,6 +155,13 @@ ${CLOUD_COMMON}
 float h21(vec2 p) { p = fract(p * vec2(0.1031, 0.1030)); p += dot(p, p.yx + 33.33); return fract((p.x + p.y) * p.x); }
 float curve(float x) { return x * x * (0.35 + 0.65 * x); }
 vec3 curve3(vec3 x) { return x * x * (0.35 + 0.65 * x); }
+// Block texture lookup that keeps hard texels up close (with their seams antialiased over one pixel) and is trilinear
+// and anisotropic at range. The position is clamped inside its tile so a face never picks up the tile's opposite edge.
+vec4 tileTex(vec2 uv, float layer) {
+  vec2 f = (uv - floor(uv)) * 16.0, seam = floor(f + 0.5);
+  f = seam + clamp((f - seam) / clamp(fwidth(uv) * 16.0, 1e-5, 1.0), -0.5, 0.5);
+  return textureGrad(uAtlasF, vec3(clamp(f, 0.5, 15.5) / 16.0, layer), dFdx(uv), dFdy(uv));
+}
 
 float sunShadow() {
   if (uShadowOn <= 0.0) return 1.0;
@@ -171,7 +179,6 @@ float sunShadow() {
 }
 
 void main() {
-  vec3 uvl = vec3(vUv, vLayer);
   vec3 V = vWorld - cameraPosition;
   float dist = length(V);
   vec3 dir = V / max(dist, 1e-4);
@@ -186,12 +193,12 @@ void main() {
     vec2 flow = vec2(uTime * 0.035, uTime * 0.022);
     tex = mix(texture(uAtlas, vec3(vUv + flow, vLayer)), texture(uAtlas, vec3(vUv * 1.0 - flow.yx + 0.37, vLayer)), 0.5);
     ao = 1.0;   // water carries its shoreline factor in the AO channel
-  } else tex = texture(uAtlas, uvl);
+  } else tex = tileTex(vUv, vLayer);
   vec3 base = tex.rgb * vTint.rgb;
   glow = vWater > 0.5 ? 0.0 : 1.0;
   alpha = tex.a;
 #elif defined(CUTOUT)
-  vec4 tex = texture(uAtlas, uvl);
+  vec4 tex = tileTex(vUv, vLayer);
   // mip-averaged alpha of sparse foliage drops under a fixed threshold at range, so relax it with distance
   if (tex.a < mix(0.42, 0.18, min(vFol, 1.0) * smoothstep(48.0, 128.0, dist))) discard;
   vec3 base = tex.rgb * vTint.rgb;
@@ -204,7 +211,7 @@ void main() {
     vec2 fl = vec2(uTime * 0.012, uTime * 0.008);
     tex = mix(texture(uAtlas, vec3(vUv + fl, vLayer)), texture(uAtlas, vec3(vUv.yx - fl + 0.41, vLayer)), 0.5);
     em *= 0.82 + 0.18 * sin(uTime * 1.1 + vWorld.x * 0.6 + vWorld.z * 0.8);
-  } else tex = texture(uAtlas, uvl);
+  } else tex = tileTex(vUv, vLayer);
   float mask = 1.0 - tex.a;
   vec3 base = em > 0.0 ? tex.rgb : tex.rgb * mix(vec3(1.0), vTint.rgb, mask);
   glow = mask;
