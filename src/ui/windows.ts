@@ -13,6 +13,7 @@ import { el } from './hud';
 type Kind = 'inv' | 'armor' | 'acc' | 'craft' | 'out' | 'chest' | 'fin' | 'ffuel' | 'fout';
 interface View { arr: Slot[]; i: number; kind: Kind; root: HTMLElement; ic: HTMLElement; n: HTMLElement; sig: string }
 export type WinMode = 'inv' | 'station' | 'chest' | 'forge' | 'shop' | 'guide';
+type WinOpts = { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef };
 
 const STAT_TEXT: Record<string, [string, boolean]> = {
   melee: ['melee damage', true], ranged: ['ranged damage', true], magic: ['magic damage', true], summon: ['summon damage', true], dmg: ['damage', true], crit: ['critical chance', true],
@@ -65,6 +66,7 @@ export class Windows {
   private bookTab = 'hand'; private bookChips: HTMLElement[] = []; private makeChip: HTMLElement | null = null; private search: HTMLInputElement | null = null;
   private coinEl: HTMLElement | null = null; private coinShown = -1;
   private sold: { it: Item; price: number }[] = []; private sellConfirm: { v: View; t: number } | null = null; private shopHead: HTMLElement | null = null;
+  private back: { mode: WinMode; o: WinOpts } | null = null;
   private lastV: View | null = null; private lastT = 0; private dragSet: Set<View> | null = null;
   private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
 
@@ -74,7 +76,7 @@ export class Windows {
     this.tip = el('div', '#tip', ui); this.tip.style.display = 'none';
     const r = this.root;
     r.addEventListener('mousedown', (e) => { if (this.search && e.target !== this.search) this.search.blur(); const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) this.dropCursor(); });
-    r.addEventListener('mouseup', (e) => { const v = this.viewOf(e.target); if (v && this.dragFrom && v !== this.dragFrom && g.inv.cursor) this.place(v, false); this.dragFrom = null; this.dragSet = null; });
+    r.addEventListener('mouseup', (e) => { const v = this.viewOf(e.target); if (v && e.button === 0 && this.dragFrom && v !== this.dragFrom && g.inv.cursor) this.place(v, false); this.dragFrom = null; this.dragSet = null; });
     window.addEventListener('mouseup', () => { this.dragSet = null; });
     r.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('mousemove', (e) => {
@@ -105,9 +107,12 @@ export class Windows {
   }
 
   // ---- open / close ----
-  show(mode: WinMode, o: { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef } = {}): void {
+  show(mode: WinMode, o: WinOpts = {}): void {
     const g = this.g;
+    // remember the window the Guide was opened from so Back (or G) returns to it
+    const from = this.open && mode === 'guide' && this.mode !== 'guide' ? { mode: this.mode, o: { station: this.station, chest: this.chest ?? undefined, forge: this.forge ?? undefined, shop: this.shop ?? undefined } } : null;
     if (this.open) this.close(true);
+    this.back = mode === 'guide' ? from : null;
     this.open = true; this.mode = mode;
     this.station = mode === 'station' ? o.station! : 'hand'; this.gridW = mode === 'station' ? 3 : 2;
     if (o.shop && o.shop !== this.shop) this.sold = [];
@@ -118,6 +123,13 @@ export class Windows {
     this.cursor.style.transform = `translate(${this.mx - 16}px, ${this.my - 16}px)`;
     this.rev = -1; this.refresh();
   }
+  /** G: open the Guide, or leave it for the window it was opened from (closing if there was none). */
+  toggleGuide(): void {
+    if (!this.open || this.mode !== 'guide') this.show('guide');
+    else if (this.back) this.leaveGuide();
+    else this.close();
+  }
+  leaveGuide(): void { const b = this.back; this.back = null; if (b) this.show(b.mode, b.o); else this.show('inv'); }
   close(silent = false): void {
     if (!this.open) return;
     const g = this.g, inv = g.inv;
@@ -249,7 +261,8 @@ export class Windows {
         const r = el('div', 'qrow' + (q.done ? ' done' : q.current ? ' cur' : ''), sc);
         r.innerHTML = `${q.done ? '✔' : q.current ? '<b>➤</b>' : '·'} ${esc(q.title)}` + (q.current ? `<small>${esc(q.hint)}</small>` : '');
       }
-      const back = el('button', 'btn sm', mid, 'Back to crafting'); back.onclick = () => this.show('inv');
+      const b = this.back, label = !b ? 'Back to crafting' : b.mode === 'station' ? 'Back to ' + STATION_NAMES[b.o.station!] : b.mode === 'inv' ? 'Back to crafting' : 'Back';
+      const back = el('button', 'btn sm', mid, label); back.onclick = () => this.leaveGuide();
       requestAnimationFrame(() => sc.querySelector('.cur')?.scrollIntoView({ block: 'center' }));
     }
 
