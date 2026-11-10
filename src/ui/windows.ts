@@ -94,6 +94,7 @@ export class Windows {
     if (!this.open) return;
     const g = this.g, inv = g.inv;
     this.open = false; this.root.classList.add('hidden'); this.hideTip();
+    this.markContainer();
     for (let i = 0; i < inv.craft.length; i++) { const s = inv.craft[i]; if (s) { const left = inv.add(s); if (left) g.dropItem({ ...s, n: left }); inv.craft[i] = null; } }
     this.dropCursor(true);
     this.cursor.style.display = 'none';
@@ -302,11 +303,16 @@ export class Windows {
     this.afterEdit(v);
   }
   private acceptsBack(_v: View, _s: Item): boolean { return true; }
-  private afterEdit(v: View): void {
+  /** Any edit made while a container is open may have moved items into it (shift-click from the
+   *  inventory passes the inventory view), so always flag the container's chunk for saving. */
+  private afterEdit(_v?: View): void {
+    this.markContainer();
+    this.g.inv.touch();
+  }
+  private markContainer(): void {
     const g = this.g;
-    if (this.forge && (v.kind === 'fin' || v.kind === 'ffuel' || v.kind === 'fout')) { this.forge.data.rev++; g.markEntDirty(this.forge); }
-    if (this.chest && v.kind === 'chest') g.markChestDirty();
-    g.inv.touch();
+    if (this.forge) { this.forge.data.rev++; g.markEntDirty(this.forge); }
+    if (this.chest) g.markChestDirty();
   }
   private down(v: View, e: MouseEvent): void {
     const g = this.g, inv = g.inv, right = e.button === 2;
