@@ -19,7 +19,7 @@ const LIST = [
   b('tundra', 'Whitefell', 0x93b9a0, 0x7aa68c, 0x3068b8, [0.95, 1.0, 1.08], 0.25),
   b('desert', 'Amber Dunes', 0xc8b869, 0xa7a851, 0x3fb2d8, [1.1, 1.0, 0.86], 0.15),
   b('savanna', 'Amber Steppe', 0xbdb24d, 0x9aa23c, 0x3f9ad2, [1.06, 1.0, 0.9]),
-  b('jungle', 'Verdance', 0x3fc23a, 0x2fae2c, 0x2fb9c4, [0.9, 1.03, 0.92], 0.3),
+  b('jungle', 'Verdance', 0x4cae3e, 0x38983a, 0x2fb9c4, [0.9, 1.03, 0.92], 0.3),
   b('swamp', 'Mirefen', 0x6c8f49, 0x5d7f3c, 0x4f7a56, [0.82, 0.95, 0.8], 0.6),
   b('crags', 'Highcrags', 0x7dab66, 0x5f9552, 0x3878cc),
   b('peaks', 'Snowcrown Peaks', 0x93b9a0, 0x6f9c80, 0x3068b8, [0.96, 1.0, 1.06], 0.1),
