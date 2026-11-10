@@ -404,16 +404,16 @@ export class MobSystem {
     const yaw = m.pry + (m.ry - m.pry) * alpha;
     const sky = m.ls < 0 ? 1 : m.ls, blk = m.ls < 0 ? 0 : m.lb;
     let flash = Math.min(1, Math.max(0, m.hurt / 0.22)), s = m.scale, emul = 1, glowAdd = 0, fall = 0, topple = 0, shake = 0, u = 0;
-    // spawn: creatures scale up from their feet in 0.2 s, bosses grow in over 1.4 s (frozen showcase mobs show at full size)
-    if (ci < 0 && (m.age > 0 || !g.paused)) {
-      const age = m.age + (g.paused ? 0 : alpha / 60);
+    // spawn: creatures scale up from their feet in 0.2 s, bosses grow in over 1.4 s (while paused, e.g. the dev showcase, at full size)
+    if (ci < 0 && !g.paused) {
+      const age = m.age + alpha / 60;
       if (b) { const k = Math.min(1, age / 1.4); s *= Math.max(0.02, k * k * (3 - 2 * k)); } else s *= Math.min(1, 0.15 + age * 4.25);
     }
     if (ci >= 0) {
       const dur = this.corpseDur[ci], t = Math.min(dur, this.corpseT[ci] + (g.paused ? 0 : alpha / 60)), k = t / dur;
       if (b) {
         if (k < 0.6) { shake = Math.sin(t * 70) * 0.08; flash = (Math.sin(t * 30) * 0.5 + 0.5) * k; emul = 1 + 4 * k; glowAdd = k * 0.3; }
-        else { u = (k - 0.6) / 0.4; emul = 2; glowAdd = 0.2; }
+        else { u = (k - 0.6) / 0.4; flash = 0; emul = 2; glowAdd = 0.12 * (1 - u); }
       } else {
         flash = 1 - k; s *= 1 - Math.max(0, k - 0.7) / 0.3;
         if (m.noclip || d.ai === 'flyer' || d.ai === 'fish') fall = 4 * t * t; else topple = Math.min(1, k * 1.6) ** 2 * 1.5708;
@@ -517,7 +517,7 @@ export class MobSystem {
         if (T_LIQUID[id]) break;
         if (!T_SOLID[id]) continue;
         const hgt = Math.max(0, y - (by + 1));
-        sh.add(bx, by + 1, bz, cx, cz, rad * (1 + hgt * 0.05), 0.5 * Math.max(0, 1 - hgt / 12) * (0.35 + 0.65 * sky * day));
+        sh.add(bx, by + 1, bz, cx, cz, rad * (1 + hgt * 0.05), 0.6 * Math.max(0, 1 - hgt / 12) * (0.35 + 0.65 * sky * day));
         break;
       }
     }

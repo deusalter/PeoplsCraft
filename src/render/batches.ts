@@ -296,7 +296,9 @@ export class Particles {
       const fresh = this.lit[i * 2] < 0;
       if (fresh || ((i + frame) & 15) === 0) {
         const bx = Math.floor(this.px[i]), by = Math.floor(this.py[i]), bz = Math.floor(this.pz[i]);
-        if (fresh || !T_SOLID[w.getBlock(bx, by, bz)]) { const l = w.getLight(bx, by, bz); this.lit[i * 2] = (l >> 4) / 15; this.lit[i * 2 + 1] = (l & 15) / 15; }
+        // a particle born inside a block (dust kicked up at a buried body) takes the light of the cell above it
+        const solid = T_SOLID[w.getBlock(bx, by, bz)];
+        if (fresh || !solid) { const l = w.getLight(bx, solid ? by + 1 : by, bz); this.lit[i * 2] = (l >> 4) / 15; this.lit[i * 2 + 1] = (l & 15) / 15; }
       }
       const o = i * 4, k = this.life[i] / this.max[i];
       this.iPos[o] = this.px[i]; this.iPos[o + 1] = this.py[i]; this.iPos[o + 2] = this.pz[i]; this.iPos[o + 3] = this.size[i] * (k < 0.3 ? k / 0.3 : 1);
