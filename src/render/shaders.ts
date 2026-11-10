@@ -137,7 +137,7 @@ void main() {
   if (tex.a < 0.42) discard;
   vec3 base = tex.rgb * vTint.rgb;
   glow = smoothstep(0.45, 0.85, dot(tex.rgb, vec3(0.3, 0.5, 0.2)));
-  if (!gl_FrontFacing) N = -N;
+  if (!gl_FrontFacing && N.y < 0.5) N = -N;
 #else
   vec4 tex = texture(uAtlas, uvl);
   float mask = 1.0 - tex.a;
