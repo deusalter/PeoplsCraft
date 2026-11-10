@@ -151,7 +151,7 @@ export class GameMenu {
   close(): void {
     if (!this.open || this.dead) return;
     const g = this.g;
-    this.open = false; this.root.classList.add('hidden'); g.input.uiMode = false;
+    this.open = false; this.root.classList.add('hidden'); this.root.classList.remove('death'); g.input.uiMode = false;
     // stay paused until the pointer is really ours again (browsers refuse a re-lock without a click, e.g. after Esc)
     void g.input.lock().then((ok) => { if (ok) g.paused = false; else if (!this.open && g.paused) g.hud.setPrompt('Click to resume'); });
   }
@@ -180,11 +180,14 @@ export class GameMenu {
   death(cause: string, lost: number): void {
     const g = this.g;
     this.dead = true; this.show();
-    this.root.innerHTML = '';
+    this.root.innerHTML = ''; this.root.classList.add('death');
     const h = el('h2', '', this.root, 'YOU FELL'); h.style.color = '#ff8a7a';
     el('div', 'sub', this.root, cause + (lost ? ` · ${lost} coins lost` : ''));
     const col = el('div', 'col', this.root);
-    el('button', 'btn gold', col, 'Rise again').onclick = () => { this.dead = false; g.respawn(); this.close(); };
-    el('button', 'btn', col, 'Save and quit to title').onclick = async () => { g.respawn(); await g.save(); location.reload(); };
+    const rise = el('button', 'btn gold', col, 'Rise again'), quit = el('button', 'btn', col, 'Save and quit to title');
+    rise.onclick = () => { this.dead = false; g.respawn(); this.close(); };
+    quit.onclick = async () => { g.respawn(); await g.save(); location.reload(); };
+    // held back while the screen fades in, so a still-attacking click cannot respawn unseen
+    rise.disabled = quit.disabled = true; setTimeout(() => { rise.disabled = quit.disabled = false; }, 800);
   }
 }

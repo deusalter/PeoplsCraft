@@ -39,6 +39,13 @@ import { BlockEnt, Chunk, World } from './world/world';
 const STEP = 1 / 60;
 export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings }
 const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
+// Interaction prompts, built once so the per-tick prompt check allocates nothing.
+const IS_NPC = (m: Mob): boolean => m.def.ai === 'npc';
+const SUMMON_USE: string[] = [], ALTAR_OFFER: string[] = [], ALTAR_NEED: string[] = [], TRADE_PROMPT = new Map<string, string>();
+for (const it of ITEMS.values()) if (it.use?.startsWith('summon')) {
+  const n = +it.use.slice(6);
+  SUMMON_USE[n] = it.use; ALTAR_OFFER[n] = `Right-click: offer the ${it.name}`; ALTAR_NEED[n] = `Needs ${/^[AEIOU]/.test(it.name) ? 'an' : 'a'} ${it.name}`;
+}
 
 export class Game implements InteractHost {
   readonly gfx: Gfx; readonly pool: WorkerPool; readonly world: World; readonly input: Input;
@@ -61,6 +68,7 @@ export class Game implements InteractHost {
   private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
+  private npcPromptT = 0; private npcPrompt: string | null = null; private conClosed = 0;
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -100,6 +108,8 @@ export class Game implements InteractHost {
       if (e.key === 'Enter') { const c = this.console.value.trim(); this.closeConsole(); if (c) this.toast(this.cheat(c.replace(/^\//, '')), '#8fd0ff'); }
       else if (e.key === 'Escape') this.closeConsole();
     };
+    // clicking or tabbing away must not leave the console open with the game ignoring input
+    this.console.onblur = () => { if (this.console.style.display !== 'none') { this.closeConsole(); this.conClosed = performance.now(); } };
 
     this.input.onKey = (code) => this.onKey(code);
     this.input.onLockChange = (locked) => {
@@ -109,7 +119,7 @@ export class Game implements InteractHost {
     // alt-tabbing away with a window or the console open would otherwise leave the world running
     window.addEventListener('blur', () => {
       if (!this.ready || this.stats.dead || this.menu.open) return;
-      const con = this.console.style.display !== 'none';
+      const con = this.console.style.display !== 'none' || performance.now() - this.conClosed < 250;
       if (!this.win.open && !con) return;
       if (con) this.closeConsole();
       this.win.close(true); this.menu.pause();
@@ -564,7 +574,7 @@ export class Game implements InteractHost {
     if ((code === 'KeyT' || code === 'Slash') && !this.win.open) { this.console.style.display = 'block'; this.console.value = ''; this.input.uiMode = true; this.input.unlock(); setTimeout(() => this.console.focus(), 0); return true; }
     return false;
   }
-  private closeConsole(): void { this.console.style.display = 'none'; this.console.blur(); this.input.uiMode = false; this.input.lock(); }
+  private closeConsole(): void { if (this.console.style.display === 'none') return; this.console.style.display = 'none'; this.console.blur(); this.input.uiMode = false; this.input.lock(); }
 
   /** Developer commands (also reachable from the T command line). */
   cheat(cmd: string): string {
@@ -640,9 +650,22 @@ export class Game implements InteractHost {
     // prompts
     const h = this.interact.hit;
     let prompt: string | null = null;
-    if (h.hit && h.dist < this.reach()) {
+    // townsfolk first, as secondary() tries them before blocks; the ray is cheap but only needs checking a few times a second
+    if (--this.npcPromptT <= 0) {
+      this.npcPromptT = 6;
+      const d = p.dir(this.v), r = this.mobs.rayHit(p.x, p.y + p.eye, p.z, d.x, d.y, d.z, h.hit ? Math.min(4, h.dist) : 4, 0.15, IS_NPC);
+      this.npcPrompt = null;
+      if (r && this.npcs.def(r.m.def.key)) {
+        let t = TRADE_PROMPT.get(r.m.def.key);
+        if (!t) { t = `Right-click: trade with ${r.m.def.name}`; TRADE_PROMPT.set(r.m.def.key, t); }
+        this.npcPrompt = t;
+      }
+    }
+    if (this.npcPrompt) prompt = this.npcPrompt;
+    else if (h.hit && h.dist < this.reach()) {
       const u = BLOCKS[h.id].use;
-      if (u) prompt = u.startsWith('altar') ? 'Right-click: make an offering' : u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
+      if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.mobs.activeBoss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !this.isNight() ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
+      else if (u) prompt = u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
       else if (!this.canHarvest(h.id) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
     }
     this.hud.setPrompt(this.win.open || this.menu.open ? null : !inp.locked && !inp.uiMode ? 'Click to take control' : prompt);
@@ -759,7 +782,8 @@ export class Game implements InteractHost {
     if (!this.keysReady || !w.areaMeshed(p.x, p.z, 3)) return;
     if (this.arriving >= 0) this.land();
     p.frozen = false; this.ready = true; this.portalArmed = false;
-    this.loading?.remove(); this.loading = null;
+    const l = this.loading; this.loading = null;
+    if (l) { const rm = (): void => l.remove(); l.classList.add('out'); l.addEventListener('transitionend', rm, { once: true }); setTimeout(rm, 700); }
     if (!this.cfg.meta.data && this.dim === 0 && !this.flags.has('started')) {
       this.flags.add('started');
       this.hud.showBanner(this.cfg.meta.name, 'Click to look around · E for inventory · G for the guide', '#ffe9a8');

@@ -32,7 +32,7 @@ export class Hud {
   private boss: HTMLElement; private bossName: HTMLElement; private bossTitle: HTMLElement; private bossBar: Bar;
   private quest: HTMLElement; private event: HTMLElement; private eventBar: Bar; private eventText: HTMLElement;
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
-  private floats: Floater[] = []; private tags: HTMLElement[] = [];
+  private floats: Floater[] = []; private tags: HTMLElement[] = []; private promptText = '';
   private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private buffKey = ''; private coinV = -1; private lvlV = -1;
   private v = new THREE.Vector3();
 
@@ -76,7 +76,11 @@ export class Hud {
   }
   setPrompt(text: string | null): void {
     if (!text) { this.prompt.classList.add('hidden'); return; }
-    if (this.prompt.textContent !== text) this.prompt.textContent = text;
+    if (this.promptText !== text) {
+      // "Right-click: open" shows the key part as a key cap
+      this.promptText = text; const i = text.indexOf(': ');
+      if (i > 0) { this.prompt.innerHTML = ''; el('kbd', '', this.prompt, text.slice(0, i)); this.prompt.append(text.slice(i + 2)); } else this.prompt.textContent = text;
+    }
     this.prompt.classList.remove('hidden');
   }
   flashHurt(): void { this.hurt.style.transition = 'none'; this.hurt.style.opacity = '0.75'; requestAnimationFrame(() => { this.hurt.style.transition = 'opacity 0.5s'; this.hurt.style.opacity = '0'; }); }

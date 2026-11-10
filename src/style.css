@@ -130,3 +130,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #cursor { width: calc(32px * var(--ui, 1)); height: calc(32px * var(--ui, 1)); margin: calc(16px - 16px * var(--ui, 1)) 0 0 calc(16px - 16px * var(--ui, 1)); }
 #cursor .n { font-size: calc(12px * var(--ui, 1)); }
 #boss { width: max(280px, min(520px, 60vw / var(--ui, 1), 100vw / var(--ui, 1) - 560px)); } /* keep clear of the quest box at large scales */
+
+/* loading fade-out, death screen, key caps in prompts */
+#loading.out { opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+#menu.death { background: radial-gradient(ellipse at 50% 42%, rgba(96, 16, 12, 0.5) 0%, rgba(22, 4, 4, 0.92) 75%); animation: deathin 0.8s ease-out; }
+@keyframes deathin { from { opacity: 0; } }
+#prompt kbd { font: inherit; color: var(--gold); padding: 0 5px; margin-right: 6px; border: 1px solid var(--edge); background: rgba(255, 255, 255, 0.04); }
