@@ -1,6 +1,5 @@
 // Pooled projectiles: arrows, spell bolts and everything bosses throw.
 import * as THREE from 'three';
-import { T_SOLID } from '../data/blocks';
 import type { Style } from '../data/items';
 import { PROJECTILES, ProjDef } from '../data/mobs';
 import type { Game } from '../game';
@@ -39,8 +38,8 @@ export class ProjectileSystem {
       p.vy -= p.def.gravity * dt;
       const sx = p.vx * dt, sy = p.vy * dt, sz = p.vz * dt, len = Math.hypot(sx, sy, sz) || 1e-6, dx = sx / len, dy = sy / len, dz = sz / len;
       // terrain
-      raycast(w, p.x, p.y, p.z, dx, dy, dz, len, hit);
-      let stop = hit.hit && T_SOLID[hit.id] ? hit.dist : len, dead = hit.hit && !!T_SOLID[hit.id];
+      raycast(w, p.x, p.y, p.z, dx, dy, dz, len, hit, false, true);
+      let stop = hit.hit ? hit.dist : len, dead = hit.hit;
       if (p.player) {
         this.cur = p;
         const r = g.mobs.rayHit(p.x, p.y, p.z, dx, dy, dz, stop, p.def.size * 0.5 + 0.1, this.canHit);
