@@ -3,6 +3,7 @@ import { BLOCKS } from '../data/blocks';
 import { Item, MOD_BY_KEY, RARITY, STYLE_INFO, Stats, item, itemName, itemRarity, matches, setBonus } from '../data/items';
 import { RECIPES, Recipe, SMELTS, STATION_NAMES } from '../data/recipes';
 import type { NpcDef } from '../data/npcs';
+import { sourceOf } from '../data/sources';
 import type { Game } from '../game';
 import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } from '../systems/inventory';
 import { ATTR_DESC, Attr, STAT_NAMES } from '../systems/stats';
@@ -767,6 +768,7 @@ export class Windows {
     if (d.fuel) h += `<div class="ln">Fuel: burns ${d.fuel}s</div>`;
     if (d.block !== undefined && BLOCKS[d.block].light) h += `<div class="ln">Gives off light</div>`;
     if (d.desc) h += `<div class="ds">${esc(d.desc)}</div>`;
+    else if (kind === 'Material' && ctx !== 'recipe') { const src = sourceOf(s.k); if (src) h += `<div class="src" style="margin:4px 0 0">${esc(src)}</div>`; }
     h += this.compare(s, v);
     if (this.shop && ctx === 'slot' && v?.kind === 'inv') h += `<div class="ty" style="margin-top:4px">Sells for ${sellPrice(s.k)} coins${s.n > 1 ? ` each (${sellPrice(s.k) * s.n} for the stack)` : ''}</div>`;
     if (ctx === 'slot' && v) h += this.clickHint(s, v);
@@ -780,6 +782,7 @@ export class Windows {
       for (const s of g.inv.craft) if (s && matches(want, s.k)) have += s.n;
       const name = want[0] === '#' ? 'Any ' + want.slice(1) : item(want).name;
       h += `<div class="${have >= n ? 'gd' : 'bd'}">${n} × ${esc(name)} <span style="color:#6a7088">(${have})</span></div>`;
+      if (have < n) { const src = sourceOf(want); if (src) h += `<div class="src">${esc(src)}</div>`; }
     }
     let most = Infinity;
     for (const [want, n] of needs(r)) { let have = g.inv.count(want); for (const c of g.inv.craft) if (c && matches(want, c.k)) have += c.n; most = Math.min(most, Math.floor(have / n)); }
