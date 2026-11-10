@@ -269,7 +269,10 @@ export class World {
       }
       c.blocks = m.blocks; c.biomes = m.biomes; c.hasEmit = m.hasEmit;
       c.state = 2; c.dirty = true; c.fails = 0; this.scan = 0;
+      // block entities the generator placed come back identical on regeneration: they do not make the chunk worth saving
+      const was = c.modified;
       if (this.onChunkReady) this.onChunkReady(c, true, m.ents);
+      c.modified = was;
       this.pump();
     });
     return true;
