@@ -531,16 +531,18 @@ export class Game implements InteractHost {
    *  Arrival gates (a Hollow Gate in the Hollows, a Rift Gate in the Skyrift) keep their sheet: they are the way home. */
   private collapseGate(x: number, y: number, z: number, kind: number): void {
     const w = this.world, portal = kind === 1 ? B.hollow_portal : B.rift_portal, st = [x, y, z], ret = this.portalReturn[this.dim];
-    let n = 0;
+    let n = 0, first = true;
     while (st.length && n < 16) {
       const cz = st.pop()!, cy = st.pop()!, cx = st.pop()!;
-      for (let i = 0; i < 6; i++) {
-        const ax = cx + (i === 0 ? 1 : i === 1 ? -1 : 0), ay = cy + (i === 2 ? 1 : i === 3 ? -1 : 0), az = cz + (i === 4 ? 1 : i === 5 ? -1 : 0);
+      // the broken block may be a corner of the frame, which touches the sheet only diagonally: seed from all 26 neighbours
+      for (let i = 0, cnt = first ? 27 : 6; i < cnt; i++) {
+        const ax = cx + (first ? (i % 3) - 1 : i === 0 ? 1 : i === 1 ? -1 : 0), ay = cy + (first ? ((i / 3) | 0) % 3 - 1 : i === 2 ? 1 : i === 3 ? -1 : 0), az = cz + (first ? ((i / 9) | 0) - 1 : i === 4 ? 1 : i === 5 ? -1 : 0);
         if (w.getBlock(ax, ay, az) !== portal) continue;
         w.setBlock(ax, ay, az, 0); st.push(ax, ay, az); n++;
         // crossing back into this dimension must not aim at a gate that is no longer there
         if (ret && ax === ret[0] && az === ret[2] && Math.abs(ay - ret[1]) <= 2) delete this.portalReturn[this.dim];
       }
+      first = false;
     }
     if (!n) return;
     this.drops.spawn(x + 0.5, y + 0.5, z + 0.5, { k: kind === 1 ? 'hollow_gate_kit' : 'rift_gate_kit', n: 1 });
