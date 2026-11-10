@@ -83,6 +83,7 @@ export class Game implements InteractHost {
 
     // held-item view model
     const mat = makeItemMaterial(true); mat.side = THREE.DoubleSide;
+    mat.uniforms.uLightDir = { value: this.gfx.handLightDir };   // the hand is drawn in view space
     this.armGeo = new THREE.BoxGeometry(0.22, 0.22, 0.7);
     const n = this.armGeo.getAttribute('position').count, col = new Uint8Array(n * 3);
     for (let i = 0; i < n; i++) { col[i * 3] = 224; col[i * 3 + 1] = 176; col[i * 3 + 2] = 136; }
@@ -726,6 +727,7 @@ export class Game implements InteractHost {
     p.applyCamera(this.gfx.camera, a, dt, this.cfg.settings.gfx.fov, this.time, this.cfg.settings.bob);
     this.audio.lx = p.x; this.audio.ly = p.y + p.eye; this.audio.lz = p.z;
     this.updateEnv(dt);
+    if (this.world.uploadsThisFrame > 0) this.gfx.shadowDirty = true;
     this.gfx.update(this.time, this.env, this.gfx.camera.position);
     if (!this.paused) this.particles.update(dt, this.world);
     this.boxes.begin(); this.mobs.render(this.boxes, a, this.time); this.proj.render(this.boxes, a); this.boxes.end();
@@ -736,6 +738,7 @@ export class Game implements InteractHost {
     this.hud.update(dt);
     this.audio.update();
     const t3 = performance.now(), pr = this.prof;
+    if (this.ready && !this.paused && !document.hidden && this.world.uploadsThisFrame === 0) this.gfx.tune(dt * 1000, t3 - t0);
     pr.world = Math.max(pr.world, t1 - t0); pr.tick = Math.max(pr.tick, t2 - t1); pr.render = Math.max(pr.render, t3 - t2);
     if (this.debug.frame(dt)) { this.debug.set(this.debugLines()); pr.world = pr.tick = pr.render = 0; }
     inp.endFrame();
@@ -761,6 +764,7 @@ export class Game implements InteractHost {
     for (let i = 0; i < 3; i++) e.fogTint[i] += (bio.fog[i] - e.fogTint[i]) * k;
     e.haze += (bio.haze - e.haze) * k;
     const sky = w.getLight(x, y, z) >> 4;
+    if (this.ready) this.gfx.setEye(dt, w.getLight(x, y, z), bio.water);
     const caveT = DIMS[this.dim].hasSky && sky < 5 && y < w.topY(x, z) - 4 ? 1 : 0;
     e.cave += (caveT - e.cave) * Math.min(1, dt * 1.2);
     e.underwater = p.headInWater; e.time = this.clock % 1; e.dim = this.dim;
@@ -806,7 +810,7 @@ export class Game implements InteractHost {
     const tod = ((this.clock % 1) * 24 + 6) % 24;
     return [
       `chunks  ${c.meshed} meshed / ${c.loaded} loaded / ${c.waiting} waiting   workers ${this.pool.busy}/${this.pool.size}   mesh ${w.meshMs.toFixed(1)} ms`,
-      `draw    ${info.render.calls} calls   ${(info.render.triangles / 1000).toFixed(0)}k tris   ${info.memory.geometries} geometries`,
+      `draw    ${info.render.calls} calls   ${(info.render.triangles / 1000).toFixed(0)}k tris   ${info.memory.geometries} geometries   scale ${Math.round(this.gfx.renderScale * 100)}%`,
       `cpu     chunks ${this.prof.world.toFixed(1)} ms   sim ${this.prof.tick.toFixed(1)} ms   draw ${this.prof.render.toFixed(1)} ms (worst)`,
       `pos     ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)}   chunk ${x >> 4} ${z >> 4}   facing ${facing}`,
       `world   ${DIMS[this.dim].name}   ${BIOMES[w.biomeAt(x, z)]?.name ?? '?'}   light sky ${l >> 4} block ${l & 15}   day ${Math.floor(this.clock)} ${Math.floor(tod)}:${String(Math.floor((tod % 1) * 60)).padStart(2, '0')}`,
