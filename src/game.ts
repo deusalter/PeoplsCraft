@@ -713,7 +713,7 @@ export class Game implements InteractHost {
     const p = this.player, inp = this.input, sens = 0.0023 * this.cfg.settings.sens;
     if (inp.locked && !this.stats.dead) p.look(inp.dx, inp.dy, sens);
     const t0 = performance.now();
-    if (this.keysReady) this.world.update(p.x, p.z, 3);
+    if (this.keysReady) this.world.update(p.x, p.z, this.ready ? 1.5e6 : 8e6);
     if (!this.ready) this.checkReady();
     const t1 = performance.now();
     if (!this.paused) {

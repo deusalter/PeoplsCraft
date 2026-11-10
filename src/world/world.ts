@@ -43,6 +43,7 @@ export class World {
   private pcx = 1e9; private pcz = 1e9; private scan = 0;
   private last: Chunk | null = null;
   private unloadTimer = 0;
+  private warm: THREE.Mesh[] = [];
 
   constructor(readonly pool: WorkerPool, readonly materials: THREE.Material[], public seed: number, public dim: number) {
     this.setRenderDist(this.renderDist);
@@ -153,14 +154,19 @@ export class World {
   }
 
   // ---- scheduling ------------------------------------------------------------------
-  update(px: number, pz: number, budgetMs: number): void {
+  /** `budgetBytes` caps the mesh data handed to the GPU this frame; the first result and block edits always go through. */
+  update(px: number, pz: number, budgetBytes: number): void {
     const cx = Math.floor(px / 16), cz = Math.floor(pz / 16);
     if (cx !== this.pcx || cz !== this.pcz) { this.pcx = cx; this.pcz = cz; this.scan = 0; this.unloadTimer = 0; }
     if (--this.unloadTimer < 0) { this.unloadTimer = 120; this.unloadFar(); }
 
-    const t0 = performance.now();
-    let n = 0;
-    while (this.results.length && (n < 2 || performance.now() - t0 < budgetMs)) { this.applyMesh(this.results.shift()); n++; }
+    // three uploads a geometry when its mesh first passes culling. Last frame's new meshes were drawn unculled once,
+    // so they were uploaded inside that frame's budget instead of in a burst when the camera turns towards them.
+    const warm = this.warm, res = this.results;
+    for (let i = 0; i < warm.length; i++) warm[i].frustumCulled = true;
+    warm.length = 0;
+    let n = 0, bytes = 0;
+    while (res.length && (n < 1 || bytes < budgetBytes || res[0].front)) { bytes += this.applyMesh(res.shift()); n++; }
     this.uploadsThisFrame = n;
     this.pump();
   }
@@ -188,6 +194,8 @@ export class World {
       this.sendMesh(c, true);
       return true;
     }
+    // finished meshes wait in `results` for the upload budget: do not let them pile up (a hidden tab renders no frames)
+    if (this.results.length >= 48) return false;
     const offs = this.offsets, R = this.renderDist, meshR = R * R + R;
     let adv = true;
     for (let i = this.scan; i < offs.length; i += 2) {
@@ -258,15 +266,17 @@ export class World {
         this.pump();
         return;
       }
-      m.c = c;
+      m.c = c; m.front = front;
       if (front) this.results.unshift(m); else this.results.push(m);
       this.pump();
     });
   }
 
-  private applyMesh(m: { c: Chunk; parts: (MeshPart | null)[]; light: Uint8Array; ms: number }): void {
+  /** Installs a finished mesh and returns how many bytes it will upload. */
+  private applyMesh(m: { c: Chunk; parts: (MeshPart | null)[]; light: Uint8Array; ms: number }): number {
     const c = m.c;
-    if (this.chunks.get(c.key) !== c) return;   // unloaded, or unloaded and created again, while the job ran
+    if (this.chunks.get(c.key) !== c) return 0;   // unloaded, or unloaded and created again, while the job ran
+    let bytes = 0;
     c.pending = false; c.light = m.light; c.meshed = true; c.fails = 0;
     this.meshMs = this.meshMs * 0.95 + m.ms * 0.05;
     for (let i = 0; i < 3; i++) {
@@ -282,6 +292,7 @@ export class World {
       g.setIndex(new THREE.BufferAttribute(p.idx, 1).onUpload(free));
       g.boundingBox = new THREE.Box3(new THREE.Vector3(0, p.minY, 0), new THREE.Vector3(16, p.maxY, 16));
       g.boundingSphere = g.boundingBox.getBoundingSphere(new THREE.Sphere());
+      bytes += p.pos.byteLength + p.uv.byteLength + p.light.byteLength + p.tint.byteLength + p.idx.byteLength;
       if (mesh) { mesh.geometry.dispose(); mesh.geometry = g; }
       else {
         mesh = new THREE.Mesh(g, this.materials[i]);
@@ -291,7 +302,9 @@ export class World {
         mesh.renderOrder = i;
         c.meshes[i] = mesh; this.group.add(mesh);
       }
+      mesh.frustumCulled = false; this.warm.push(mesh);
     }
+    return bytes;
   }
 
   private unloadFar(): void {
@@ -311,7 +324,7 @@ export class World {
   /** Drop everything (dimension change or leaving the world). Modified chunks are saved first. */
   clear(save: boolean): void {
     for (const c of [...this.chunks.values()]) this.dropChunk(c, save);
-    this.results.length = 0; this.urgent.length = 0; this.scan = 0; this.pcx = 1e9; this.last = null;
+    this.results.length = 0; this.urgent.length = 0; this.warm.length = 0; this.scan = 0; this.pcx = 1e9; this.last = null;
   }
   setDim(dim: number, hasSky: boolean): void { this.clear(true); this.dim = dim; this.hasSky = hasSky; }
 
