@@ -704,8 +704,14 @@ export class Game implements InteractHost {
       const c = w.chunkAt(cx + dx, cz + dz);
       if (!c || !c.ents.size) continue;
       for (const e of c.ents.values()) {
-        if (e.kind === 'forge') this.tickForge(e, c, dt);
-        else if (e.kind === 'nest') {
+        if (e.kind === 'forge') {
+          // replay the time since this forge was last ticked, so it keeps working while its chunk is far away or unloaded
+          const d = e.data, now = this.clock * DAY_LENGTH;
+          let left = d.at === undefined ? dt : Math.min(900, Math.max(dt, now - d.at));
+          const quiet = left > 1;
+          d.at = now;
+          while (left > 0) { const st = Math.min(left, 0.5); this.tickForge(e, c, st, quiet); left -= st; if (d.burn <= 0 && d.prog <= 0) break; }
+        } else if (e.kind === 'nest') {
           if (w.getBlock(e.x, e.y, e.z) !== B.brood_nest) { w.removeEnt(e.x, e.y, e.z); continue; }   // orphan from an older save
           const d = e.data; d.t = (d.t ?? 0) - dt;
           const dist = Math.hypot(e.x - p.x, e.y - p.y, e.z - p.z);
@@ -725,7 +731,7 @@ export class Game implements InteractHost {
       if (w.getBlock(x, y, z) === B.berry_bush_empty && Math.random() < 0.02) w.setBlock(x, y, z, B.berry_bush);
     }
   }
-  private tickForge(e: BlockEnt, c: Chunk, dt: number): void {
+  private tickForge(e: BlockEnt, c: Chunk, dt: number, quiet = false): void {
     const d = e.data, s = d.s as Slot[], w = this.world;
     const inp = s[0], r = inp ? SMELTS.find((q) => matches(q.in, inp.k) && q.forge <= d.level) : undefined;
     const out = s[2], room = !!r && (!out || (out.k === r.out && out.n + r.n <= item(r.out).stack));
@@ -740,13 +746,13 @@ export class Game implements InteractHost {
           if (--inp!.n <= 0) s[0] = null;
           if (out) out.n += r.n; else s[2] = { k: r.out, n: r.n };
           d.rev++; c.modified = true; this.flags.add('smelt:' + r.out);
-          if (Math.hypot(e.x - this.player.x, e.z - this.player.z) < 12) this.audio.play('fizz', 0.4, 1, [e.x, e.y, e.z]);
+          if (!quiet && Math.hypot(e.x - this.player.x, e.z - this.player.z) < 12) this.audio.play('fizz', 0.4, 1, [e.x, e.y, e.z]);
         }
       } else d.prog = Math.max(0, d.prog - dt * 2);
     } else { d.prog = 0; d.need = 0; }
     const now = d.burn > 0, id = w.getBlock(e.x, e.y, e.z);
     if (was !== now && (id === B.furnace || id === B.furnace_lit)) w.setBlock(e.x, e.y, e.z, now ? B.furnace_lit : B.furnace, true);
-    if (now && Math.random() < 0.3) this.particles.spawn(e.x + 0.5 + (Math.random() - 0.5) * 0.4, e.y + 1.05, e.z + 0.5 + (Math.random() - 0.5) * 0.4, 0, 0.8, 0, 1.2, 0.1, 0x8a8a92, 0, -0.4);
+    if (now && !quiet && Math.random() < 0.3) this.particles.spawn(e.x + 0.5 + (Math.random() - 0.5) * 0.4, e.y + 1.05, e.z + 0.5 + (Math.random() - 0.5) * 0.4, 0, 0.8, 0, 1.2, 0.1, 0x8a8a92, 0, -0.4);
   }
   private tickPortal(dt: number): void {
     const p = this.player, id = this.world.getBlock(Math.floor(p.x), Math.floor(p.y + 0.5), Math.floor(p.z));
