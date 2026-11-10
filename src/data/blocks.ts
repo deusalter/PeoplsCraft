@@ -270,4 +270,11 @@ for (const b of BLOCKS) {
   T_SUPPORT[i] = b.support ? 1 : 0; T_DAMAGE[i] = b.damage;
   for (let f = 0; f < 6; f++) { T_LAYER[i * 6 + f] = b.faces.length ? texLayer(b.faces[f]) : 0; T_BOX[i * 6 + f] = b.box[f]; }
 }
+// Natural ground whose tile is mirrored at random per block, so plains and cliffs do not show a one-block grid.
+// Only list tiles without lettering or diagonal features: a mirrored tile must still read as the same material.
+export const T_VARY = new Uint8Array(N);
+for (const k of ['stone', 'deepstone', 'bedrock', 'dirt', 'grass', 'sand', 'gravel', 'clay', 'snow', 'mud', 'snowy_grass', 'scoria', 'gloomstone', 'mycel', 'riftstone', 'skysoil']) {
+  const d = BLOCK_BY_KEY.get(k);
+  if (d) T_VARY[d.id] = 1;
+}
 export const MAT_OPAQUE = 0, MAT_CUTOUT = 1, MAT_TRANSLUCENT = 2;

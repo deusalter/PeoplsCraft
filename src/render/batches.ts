@@ -4,30 +4,25 @@ import * as THREE from 'three';
 import { T_SOLID } from '../data/blocks';
 import type { World } from '../world/world';
 import { U } from './gfx';
-import { SKY_COMMON } from './shaders';
+import { FOG_COMMON, SKY_COMMON } from './shaders';
 
 const LIGHT_GLSL = /* glsl */ `
 uniform vec3 uLightDir; uniform vec3 uLightColor; uniform vec3 uSkyLight; uniform vec3 uAmbient;
-uniform float uFogDensity; uniform float uFogStart; uniform float uFogEnd; uniform float uCave; uniform float uUnderwater; uniform vec3 uWaterFog;
 ${SKY_COMMON}
+${FOG_COMMON}
 float curve(float x) { return x * x * (0.35 + 0.65 * x); }
 vec3 lit(vec3 albedo, vec3 N, float sky, float blk) {
   float shade = 0.78 + 0.22 * N.y - 0.06 * abs(N.x) + 0.06 * abs(N.z);
   vec3 l = uSkyLight * curve(sky) * shade + uLightColor * max(dot(N, uLightDir), 0.0) * smoothstep(0.5, 0.98, sky) + curve(blk) * vec3(1.75, 1.5, 1.2) + uAmbient * shade;
+  l += uLightColor * vec3(1.0, 0.92, 0.8) * (curve(sky) * 0.07 * (1.0 - max(N.y, 0.0)));   // ground bounce, as on terrain
   return albedo * l;
 }
-vec3 fogged(vec3 col, vec3 world) {
-  vec3 V = world - cameraPosition; float dist = length(V); vec3 dir = V / max(dist, 1e-4);
-  float f = max(1.0 - exp(-pow(dist * uFogDensity, 2.0)), smoothstep(uFogStart, uFogEnd, length(V.xz)));
-  vec3 fc = mix(skyBase(normalize(vec3(dir.x, max(dir.y, 0.0) * 0.5 + 0.015, dir.z))), uAmbient * 0.6, uCave);
-  if (uUnderwater > 0.5) { f = 1.0 - exp(-dist * 0.085); fc = uWaterFog; }
-  return mix(col, fc, f);
-}
+vec3 fogged(vec3 col, vec3 world) { return applyFog(col, world); }
 `;
 const worldUniforms = (): Record<string, THREE.IUniform> => ({
   uLightDir: U.uLightDir, uLightColor: U.uLightColor, uSkyLight: U.uSkyLight, uAmbient: U.uAmbient, uZenith: U.uZenith, uHorizon: U.uHorizon,
   uSunDir: U.uSunDir, uGlowColor: U.uGlowColor, uFogDensity: U.uFogDensity, uFogStart: U.uFogStart, uFogEnd: U.uFogEnd, uCave: U.uCave,
-  uUnderwater: U.uUnderwater, uWaterFog: U.uWaterFog,
+  uUnderwater: U.uUnderwater, uWaterFog: U.uWaterFog, uMist: U.uMist,
 });
 
 // ---- boxes ------------------------------------------------------------------------------

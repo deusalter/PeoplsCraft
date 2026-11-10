@@ -3,16 +3,17 @@
 // slice when their lighting is uniform; liquids, plants and boxes are emitted individually.
 //
 // Vertex layout (24 bytes):
-//   aPos   Int16 x4   position in 1/16 blocks, w = flags (bits 0-2 normal, 3-4 sway)
+//   aPos   Int16 x4   position in 1/16 blocks, w = flags (bits 0-2 normal, 3-4 sway, 5 water, 6 mirror the tile
+//                     at random per block, 7 lava, 8 face is under water)
 //   aUv    Uint16 x4  uv in 1/16 tiles, texture layer, aux (emissive strength or water depth)
 //   aLight Uint8 x4   sky, block R, G, B
-//   aTint  Uint8 x4   biome tint RGB, ambient occlusion
+//   aTint  Uint8 x4   biome tint RGB, ambient occlusion (on water tops: how much open water surrounds the corner)
 import { CH, RS } from '../core/constants';
 import { hashInt } from '../core/noise';
 import { FOLIAGE_RGB, GRASS_RGB, WATER_RGB } from '../data/biomes';
 import {
   MAT_CUTOUT, SHAPE_BOX, SHAPE_CROSS, SHAPE_CUBE, SHAPE_LIQUID, T_BOX, T_DOOR, T_EMISSIVE, T_LAYER, T_LIQH, T_LIQUID,
-  T_MAT, T_OPAQUE, T_SELFCULL, T_SHAPE, T_SWAY, T_TINT, texLayer,
+  T_MAT, T_OPAQUE, T_SELFCULL, T_SHAPE, T_SWAY, T_TINT, T_VARY, texLayer,
 } from '../data/blocks';
 import { lb, lg, lr, rb, sky } from './light';
 
@@ -94,8 +95,8 @@ function visible(id: number, nb: number, positive: boolean): boolean {
   return true;
 }
 const keyOf = (id: number, dir: number): number =>
-  T_LAYER[id * 6 + dir] | (T_EMISSIVE[id] << 10) | (T_MAT[id] << 18) | ((T_SWAY[id] === 1 ? 1 : 0) << 20) | (1 << 23);
-const bright = (c: number): number => ((c >> 24) & 3) * 64 + (c & 63) + ((c >> 6) & 63);
+  T_LAYER[id * 6 + dir] | (T_EMISSIVE[id] << 10) | (T_MAT[id] << 18) | ((T_SWAY[id] === 1 ? 1 : 0) << 20) | (T_VARY[id] << 22) | (1 << 23);
+const bright = (c: number): number => ((c >> 24) & 3) * 64 + (c & 63) + Math.max((c >> 6) & 63, (c >> 12) & 63, (c >> 18) & 63);
 
 function buildTints(biomes: Uint8Array[]): void {
   for (let n = 0; n < 9; n++) {
@@ -138,7 +139,7 @@ function greedy(U: number, V: number, dir: number, s: number): void {
     } else mKey[k] = 0;
 
     const o = outs[(key >> 18) & 3]; o.reserve();
-    const layer = key & 1023, aux = (key >> 10) & 255, flags = dir | (((key >> 20) & 3) << 3);
+    const layer = key & 1023, aux = (key >> 10) & 255, flags = dir | (((key >> 20) & 3) << 3) | (((key >> 22) & 1) << 6) | (((key >> 24) & 1) << 8);
     const u0 = u * 16, u1 = (u + w) * 16, v0 = v * 16, v1 = (v + h) * 16;
     if (dir < 2) {
       const x = (s + (dir === 0 ? 1 : 0)) * 16;
@@ -159,7 +160,7 @@ function greedy(U: number, V: number, dir: number, s: number): void {
 }
 
 function setFace(k: number, id: number, dir: number, P: number, SU: number, SV: number, vA: number, vB: number, vC: number, vD: number): void {
-  mKey[k] = keyOf(id, dir);
+  mKey[k] = keyOf(id, dir) | (T_LIQUID[rb[P]] === 1 ? 1 << 24 : 0);   // faces under water get caustics
   faceLight(k, P, SU, SV);
   const tt = T_TINT[id];
   if (tt) { const o = tt * 289; mT0[k] = tintGrid[o + vA]; mT1[k] = tintGrid[o + vB]; mT2[k] = tintGrid[o + vC]; mT3[k] = tintGrid[o + vD]; }
@@ -267,34 +268,38 @@ export function meshCenter(biomes: Uint8Array[], wx0: number, wz0: number): (Mes
       const X = x * 16, Y = y * 16, Z = z * 16, tt = T_TINT[id], g = z * 17 + x;
       const t = tt ? tintGrid[tt * 289 + g] : WHITE;
       if (sh === SHAPE_CROSS) {
-        const o = outs[MAT_CUTOUT], c = pack(L(i), 1, 3), layer = T_LAYER[id * 6], aux = T_EMISSIVE[id];
+        // the root is darkened so plants sit on the ground instead of floating over it
+        const o = outs[MAT_CUTOUT], c = pack(L(i), 1, 3), cb = pack(L(i), 1, 1), layer = T_LAYER[id * 6], aux = T_EMISSIVE[id];
         const hh = hashInt(wx0 + x, y, wz0 + z, 77), jx = (hh & 3) - 1, jz = ((hh >> 2) & 3) - 1;
         const x0 = X + 1 + jx, x1 = X + 15 + jx, z0 = Z + 1 + jz, z1 = Z + 15 + jz, top = 6 | (T_SWAY[id] ? 2 << 3 : 0);
         o.reserve();
-        o.vert(x0, Y, z0, 6, 0, 16, layer, aux, c, t); o.vert(x1, Y, z1, 6, 16, 16, layer, aux, c, t);
+        o.vert(x0, Y, z0, 6, 0, 16, layer, aux, cb, t); o.vert(x1, Y, z1, 6, 16, 16, layer, aux, cb, t);
         o.vert(x1, Y + 16, z1, top, 16, 0, layer, aux, c, t); o.vert(x0, Y + 16, z0, top, 0, 0, layer, aux, c, t); o.quad(false, false);
         o.reserve();
-        o.vert(x0, Y, z1, 6, 0, 16, layer, aux, c, t); o.vert(x1, Y, z0, 6, 16, 16, layer, aux, c, t);
+        o.vert(x0, Y, z1, 6, 0, 16, layer, aux, cb, t); o.vert(x1, Y, z0, 6, 16, 16, layer, aux, cb, t);
         o.vert(x1, Y + 16, z0, top, 16, 0, layer, aux, c, t); o.vert(x0, Y + 16, z1, top, 0, 0, layer, aux, c, t); o.quad(false, false);
       } else if (sh === SHAPE_LIQUID) {
         const fam = T_LIQUID[id], o = outs[T_MAT[id]], layer = T_LAYER[id * 6], water = fam === 1;
         const above = rb[i + 1], same = T_LIQUID[above] === fam;
-        const yt = Y + (same ? 16 : T_LIQH[id]), wf = water ? 32 : 0, wave = (water && !same ? 3 << 3 : 0) | wf, em = T_EMISSIVE[id];
+        const yt = Y + (same ? 16 : T_LIQH[id]), wf = water ? 32 : fam === 2 ? 128 : 0, wave = (water && !same ? 3 << 3 : 0) | wf, em = T_EMISSIVE[id];
         if (!same && !T_OPAQUE[above]) {
           const P = i + 1;
           faceLight(0, P, SX, SZ);
-          let d0 = em, d1 = em, d2 = em, d3 = em;
+          let d0 = em, d1 = em, d2 = em, d3 = em, s0 = 3, s1 = 3, s2 = 3, s3 = 3;
           if (water) {
+            // shoreline factor per corner: 3 minus the solid cells touching it at water level (the shader draws foam from it)
+            const xm = T_OPAQUE[rb[i - SX]], xp = T_OPAQUE[rb[i + SX]], zm = T_OPAQUE[rb[i - SZ]], zp = T_OPAQUE[rb[i + SZ]];
+            s0 -= xm + zm + T_OPAQUE[rb[i - SX - SZ]]; s1 -= xp + zm + T_OPAQUE[rb[i + SX - SZ]]; s2 -= xp + zp + T_OPAQUE[rb[i + SX + SZ]]; s3 -= xm + zp + T_OPAQUE[rb[i - SX + SZ]];
             const a = liquidDepth(i - SX - SZ, 1), b = liquidDepth(i - SZ, 1), c2 = liquidDepth(i + SX - SZ, 1), d = liquidDepth(i - SX, 1);
             const e = liquidDepth(i, 1), f = liquidDepth(i + SX, 1), gg = liquidDepth(i - SX + SZ, 1), h = liquidDepth(i + SZ, 1), k = liquidDepth(i + SX + SZ, 1);
             d0 = ((a + b + d + e) * 8) | 0; d1 = ((b + c2 + e + f) * 8) | 0; d2 = ((e + f + h + k) * 8) | 0; d3 = ((d + e + gg + h) * 8) | 0;
           }
           const to = tt * 289;
           o.reserve();
-          o.vert(X, yt, Z, 2 | wave, X, Z, layer, d0, mC0[0] | (3 << 24), tt ? tintGrid[to + g] : WHITE);
-          o.vert(X + 16, yt, Z, 2 | wave, X + 16, Z, layer, d1, mC1[0] | (3 << 24), tt ? tintGrid[to + g + 1] : WHITE);
-          o.vert(X + 16, yt, Z + 16, 2 | wave, X + 16, Z + 16, layer, d2, mC2[0] | (3 << 24), tt ? tintGrid[to + g + 18] : WHITE);
-          o.vert(X, yt, Z + 16, 2 | wave, X, Z + 16, layer, d3, mC3[0] | (3 << 24), tt ? tintGrid[to + g + 17] : WHITE);
+          o.vert(X, yt, Z, 2 | wave, X, Z, layer, d0, (mC0[0] & 0xffffff) | (s0 << 24), tt ? tintGrid[to + g] : WHITE);
+          o.vert(X + 16, yt, Z, 2 | wave, X + 16, Z, layer, d1, (mC1[0] & 0xffffff) | (s1 << 24), tt ? tintGrid[to + g + 1] : WHITE);
+          o.vert(X + 16, yt, Z + 16, 2 | wave, X + 16, Z + 16, layer, d2, (mC2[0] & 0xffffff) | (s2 << 24), tt ? tintGrid[to + g + 18] : WHITE);
+          o.vert(X, yt, Z + 16, 2 | wave, X, Z + 16, layer, d3, (mC3[0] & 0xffffff) | (s3 << 24), tt ? tintGrid[to + g + 17] : WHITE);
           o.quad(true, false);
         }
         const aux = water ? 96 : em;

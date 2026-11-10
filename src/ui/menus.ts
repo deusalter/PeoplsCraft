@@ -29,7 +29,9 @@ function drawCairn(c: HTMLCanvasElement): void {
 
 export function settingsPanel(parent: HTMLElement, s: Settings, apply: () => void): HTMLElement {
   const box = el('div', 'panel wcol', parent); box.style.minWidth = '380px';
+  box.style.maxHeight = 'calc(100vh - 240px)'; box.style.overflowY = 'auto';   // the list is taller than a laptop screen
   const render = (): void => {
+    const top = box.scrollTop;   // a toggle rebuilds the list: keep the place
     box.innerHTML = '';
     el('div', 'ttl', box, 'Graphics preset');
     const seg = el('div', 'opt', box), sg = el('div', 'seg', seg);
@@ -50,12 +52,15 @@ export function settingsPanel(parent: HTMLElement, s: Settings, apply: () => voi
     slider('Resolution scale', 0.5, 1, 0.05, () => s.gfx.scale, (v) => { s.gfx.scale = v; s.preset = 'custom'; }, (v) => Math.round(v * 100) + '%');
     toggle('Bloom', 'bloom'); toggle('Sun shadows', 'shadows'); toggle('Tone mapping', 'tonemap'); toggle('Vignette', 'vignette');
     toggle('Clouds', 'clouds'); toggle('Swaying foliage and waves', 'sway'); toggle('Anti-aliasing (MSAA)', 'msaa');
+    toggle('Edge smoothing (FXAA)', 'fxaa'); toggle('Eye adaptation', 'adapt'); toggle('Adaptive resolution', 'autoScale');
+    slider('Texture filtering', 0, 4, 1, () => Math.round(Math.log2(s.gfx.aniso || 1)), (v) => { s.gfx.aniso = 2 ** v; s.preset = 'custom'; }, (v) => (v ? 2 ** v + 'x' : 'Off'));
     el('div', 'ttl', box, 'Controls and sound').style.marginTop = '6px';
     slider('Mouse sensitivity', 0.3, 2.5, 0.05, () => s.sens, (v) => (s.sens = v), (v) => v.toFixed(2));
     slider('Effects volume', 0, 1, 0.05, () => s.sfx, (v) => (s.sfx = v), (v) => Math.round(v * 100) + '%');
     slider('Music volume', 0, 1, 0.05, () => s.music, (v) => (s.music = v), (v) => Math.round(v * 100) + '%');
     const o = el('div', 'opt', box); el('span', '', o, 'View bobbing');
     const b = el('button', 'btn sm' + (s.bob ? ' gold' : ''), o, s.bob ? 'On' : 'Off'); b.onclick = () => { s.bob = !s.bob; apply(); render(); };
+    box.scrollTop = top;
   };
   render();
   return box;
