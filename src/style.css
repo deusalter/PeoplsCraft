@@ -77,6 +77,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 .grid { display: grid; gap: 3px; }
 .ttl { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; }
 .arrow { align-self: center; font-size: 22px; color: var(--dim); padding: 0 4px; }
+#win .slot[data-v]:hover { background: rgba(80, 90, 120, 0.9); }
+#win .slot.ok { box-shadow: inset 0 0 0 2px var(--good), 0 0 8px rgba(127, 214, 107, 0.35); }
 #book { display: grid; grid-template-columns: repeat(7, 38px); gap: 3px; max-height: 208px; overflow-y: auto; padding-right: 4px; align-content: start; }
 #book .slot { width: 38px; height: 38px; cursor: pointer; } #book .slot .ic { left: 3px; top: 3px; } #book .slot .n { font-size: 10px; right: 2px; }
 #book .slot.no .ic { opacity: 0.25; filter: grayscale(1); } #book .slot:hover { background: rgba(80, 90, 120, 0.9); }

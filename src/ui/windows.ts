@@ -55,6 +55,7 @@ export class Windows {
   private bookEls: HTMLElement[] = []; private bookCats: number[] = []; private bookNames: string[] = []; private bookEmpty: HTMLElement | null = null;
   private bookTab = 'hand'; private bookChips: HTMLElement[] = []; private makeChip: HTMLElement | null = null; private search: HTMLInputElement | null = null;
   private coinEl: HTMLElement | null = null; private coinShown = -1;
+  private lastV: View | null = null; private lastT = 0; private dragSet: Set<View> | null = null;
   private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
 
   constructor(ui: HTMLElement, private g: Game) {
@@ -63,7 +64,8 @@ export class Windows {
     this.tip = el('div', '#tip', ui); this.tip.style.display = 'none';
     const r = this.root;
     r.addEventListener('mousedown', (e) => { if (this.search && e.target !== this.search) this.search.blur(); const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) this.dropCursor(); });
-    r.addEventListener('mouseup', (e) => { const v = this.viewOf(e.target); if (v && this.dragFrom && v !== this.dragFrom && g.inv.cursor) this.place(v, false); this.dragFrom = null; });
+    r.addEventListener('mouseup', (e) => { const v = this.viewOf(e.target); if (v && this.dragFrom && v !== this.dragFrom && g.inv.cursor) this.place(v, false); this.dragFrom = null; this.dragSet = null; });
+    window.addEventListener('mouseup', () => { this.dragSet = null; });
     r.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('mousemove', (e) => {
       this.mx = e.clientX; this.my = e.clientY;
@@ -74,6 +76,8 @@ export class Windows {
     r.addEventListener('mouseover', (e) => {
       const t = e.target as HTMLElement, v = this.viewOf(t);
       this.hover = v;
+      // right-button drag deals one item into each slot passed over
+      if (v && this.dragSet && (e.buttons & 2) && g.inv.cursor && !this.dragSet.has(v)) { this.dragSet.add(v); if (this.place(v, true)) g.audio.play('click', 0.3); }
       if (v) { const s = v.arr[v.i]; if (s) this.showTip(this.itemTip(s)); else this.hideTip(); return; }
       const ri = t.closest?.('[data-r]') as HTMLElement | null;
       this.hoverR = ri ? this.bookRecipes[+ri.dataset.r!] : null;
@@ -104,6 +108,7 @@ export class Windows {
     if (!this.open) return;
     const g = this.g, inv = g.inv;
     this.open = false; this.root.classList.add('hidden'); this.hideTip();
+    this.hover = null; this.dragFrom = null; this.dragSet = null; this.lastV = null; this.hoverR = null;
     this.markContainer();
     this.returnGrid();
     this.dropCursor(true);
@@ -131,6 +136,7 @@ export class Windows {
   }
   private build(): void {
     const g = this.g, inv = g.inv;
+    this.hover = null; this.dragFrom = null; this.dragSet = null; this.lastV = null; this.hoverR = null;
     this.root.innerHTML = ''; this.views = []; this.outView = null; this.book = null; this.statsEl = null; this.forgeEls = []; this.shopEl = null; this.search = null; this.coinEl = null; this.coinShown = -1;
     const panel = el('div', 'panel wcol', this.root), top = el('div', 'wrow', panel);
 
@@ -240,6 +246,7 @@ export class Windows {
     for (let i = 9; i < 36; i++) this.slot(main, inv.slots, i, 'inv');
     const hot = el('div', 'grid', panel); hot.style.gridTemplateColumns = 'repeat(9, 44px)'; hot.style.marginTop = '4px';
     for (let i = 0; i < 9; i++) this.slot(hot, inv.slots, i, 'inv');
+    const kh = el('div', 'cap', panel, 'Shift-click: move · Right-click: half · Double-click: gather · 1-9: to hotbar · Q: drop'); kh.style.cssText = 'text-align:left;max-width:none';
   }
 
   // ---- refresh ----
@@ -268,11 +275,13 @@ export class Windows {
       g.icons.apply(v.ic, s ? s.k : null);
       v.n.textContent = s && s.n > 1 ? String(s.n) : '';
       const r = s ? itemRarity(s) : 0;
-      v.root.className = 'slot' + (r > 0 ? ' r' + r : '');
+      v.root.className = 'slot' + (v.arr === inv.slots && v.i === inv.sel ? ' sel' : '') + (r > 0 ? ' r' + r : '');
       const lbl = v.root.querySelector('.lbl') as HTMLElement | null;
       if (lbl) lbl.style.display = s ? 'none' : '';
     }
     const c = inv.cursor;
+    // equipment and forge slots that would take the carried item light up
+    for (const v of this.views) if (v.kind === 'armor' || v.kind === 'acc' || v.kind === 'fin' || v.kind === 'ffuel') v.root.classList.toggle('ok', !!c && this.accepts(v, c));
     if (c) { this.cursor.style.display = 'block'; g.icons.apply(this.cursor, c.k); this.cursorN.textContent = c.n > 1 ? String(c.n) : ''; }
     else this.cursor.style.display = 'none';
     if (this.book) this.updateBook();
@@ -495,14 +504,64 @@ export class Windows {
     if (v.kind === 'out') { this.takeOutput(e.shiftKey); return; }
     const s = v.arr[v.i];
     if (e.shiftKey && s) { this.quickMove(v); return; }
+    // second click of a double-click on the slot just emptied: gather matching items into the cursor
+    const dbl = !right && this.lastV === v && performance.now() - this.lastT < 320;
+    this.lastV = v; this.lastT = performance.now();
+    if (dbl && inv.cursor && !s && this.gather()) { this.lastV = null; g.audio.play('click', 0.5); inv.touch(); return; }
     if (!inv.cursor) {
       if (!s) return;
       if (right && s.n > 1 && v.kind !== 'fout') { const half = Math.ceil(s.n / 2); inv.cursor = { k: s.k, n: half, m: s.m }; s.n -= half; }
       else { inv.cursor = s; v.arr[v.i] = null; }
       this.dragFrom = v; g.audio.play('click', 0.5);
       this.afterEdit(v);
-    } else if (this.place(v, right)) g.audio.play('click', 0.5);
+    } else if (this.place(v, right)) { g.audio.play('click', 0.5); if (right) this.dragSet = new Set([v]); }
     else { const why = this.refusal(v.kind, inv.cursor); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); }
+  }
+  /** Pull matching unmodified items from the pack (and open chest) into the cursor, partial stacks first. */
+  private gather(): boolean {
+    const c = this.g.inv.cursor!, d = item(c.k);
+    if (c.m || d.stack <= 1 || c.n >= d.stack) return false;
+    const before = c.n;
+    for (let pass = 0; pass < 2; pass++) for (let a = 0; a < 2; a++) {
+      const arr = a === 0 ? this.g.inv.slots : this.chest;
+      if (!arr) continue;
+      for (let i = 0; i < arr.length && c.n < d.stack; i++) {
+        const t = arr[i];
+        if (!t || t.k !== c.k || t.m || (pass === 0 && t.n >= d.stack)) continue;
+        const mv = Math.min(t.n, d.stack - c.n); c.n += mv; t.n -= mv; if (t.n <= 0) arr[i] = null;
+      }
+    }
+    if (c.n !== before) this.markContainer();
+    return c.n !== before;
+  }
+  /** Keys while a window is open: 1-9 swap the hovered slot with that hotbar slot, Q drops from it. */
+  key(code: string, e: KeyboardEvent): boolean {
+    if (code.length === 6 && code.startsWith('Digit') && code !== 'Digit0') { this.hotkey(code.charCodeAt(5) - 49); return true; }
+    if (code === 'KeyQ') { this.dropHover(e.ctrlKey || e.metaKey); return true; }
+    return false;
+  }
+  private hotkey(i: number): void {
+    const g = this.g, inv = g.inv, v = this.hover;
+    if (!v || v.kind === 'out' || (v.arr === inv.slots && v.i === i)) return;
+    const a = v.arr[v.i], b = inv.slots[i];
+    if (!a && !b) return;
+    const single = v.kind === 'armor' || v.kind === 'acc';
+    if (b && (!this.accepts(v, b) || v.kind === 'fout' || (single && b.n > 1))) { const why = this.refusal(v.kind, b); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); return; }
+    v.arr[v.i] = b; inv.slots[i] = a;
+    g.audio.play(single ? 'dig_cloth' : 'click', 0.5);
+    this.afterEdit(v);
+  }
+  private dropHover(all: boolean): void {
+    const g = this.g, v = this.hover;
+    if (g.inv.cursor) { this.dropCursor(); g.audio.play('click', 0.4); return; }
+    if (!v || v.kind === 'out') return;
+    const s = v.arr[v.i];
+    if (!s) return;
+    const n = all ? s.n : 1;
+    g.dropItem({ k: s.k, n, m: s.m });
+    s.n -= n; if (s.n <= 0) v.arr[v.i] = null;
+    g.audio.play('click', 0.4);
+    this.afterEdit(v);
   }
   private takeOutput(all: boolean): void {
     const g = this.g, inv = g.inv;
