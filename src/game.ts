@@ -105,7 +105,7 @@ export class Game implements InteractHost {
       else if (e.key === 'Escape') this.closeConsole();
     };
 
-    this.input.onKey = (code) => this.onKey(code);
+    this.input.onKey = (code, e) => this.onKey(code, e);
     this.input.onLockChange = (locked) => { if (locked) this.audio.unlock(); else if (!this.input.uiMode && this.ready && !this.stats.dead) this.menu.pause(); };
     canvas.addEventListener('mousedown', () => this.audio.unlock());
     window.addEventListener('resize', () => this.gfx.resize());
@@ -644,12 +644,13 @@ export class Game implements InteractHost {
   }
 
   // ---- input ----------------------------------------------------------------------------------
-  private onKey(code: string): boolean {
+  private onKey(code: string, e: KeyboardEvent): boolean {
     if (!this.ready || this.menu.dead) return false;
     if (code === 'Escape') { if (this.win.open) this.win.close(); else if (this.menu.open) this.menu.close(); else this.menu.pause(); return true; }
     if (this.menu.open || document.activeElement === this.console) return false;
+    if (this.win.open && this.win.key(code, e)) return true;
     if (code === 'KeyE') { if (this.win.open) this.win.close(); else this.win.show('inv'); return true; }
-    if (code === 'KeyG') { if (this.win.open && this.win.mode === 'guide') this.win.close(); else this.win.show('guide'); return true; }
+    if (code === 'KeyG') { this.win.toggleGuide(); return true; }
     if (code === 'F3') { this.debug.toggle(); return true; }
     if (code === 'F1') { this.hudOn = !this.hudOn; this.hud.setVisible(this.hudOn); return true; }
     if ((code === 'KeyT' || code === 'Slash') && !this.win.open) { this.console.style.display = 'block'; this.console.value = ''; this.input.uiMode = true; this.input.unlock(); setTimeout(() => this.console.focus(), 0); return true; }
