@@ -99,14 +99,17 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 .qrow small { display: block; color: #9aa0b2; font-size: 11px; margin-left: 18px; }
 
 /* ---------- menus ---------- */
-#menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; pointer-events: auto; z-index: 40;
+#menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 16px; pointer-events: auto; z-index: 40; overflow-y: auto; padding: 16px 0;
   background: radial-gradient(ellipse at 50% 38%, rgba(40, 52, 82, 0.55) 0%, rgba(8, 10, 16, 0.9) 75%); }
 #menu.solid { background: radial-gradient(ellipse at 50% 30%, #26324e 0%, #0a0c12 72%); }
 #menu h1 { margin: 0; font-size: 58px; letter-spacing: 0.32em; color: var(--gold); text-shadow: 0 0 34px rgba(242, 193, 78, 0.5), 0 4px 0 #5a3d10; padding-left: 0.32em; }
 #menu h2 { margin: 0; font-size: 22px; letter-spacing: 0.26em; color: var(--text); }
 #menu .sub { color: var(--dim); letter-spacing: 0.22em; font-size: 11px; text-transform: uppercase; margin-top: -8px; }
 #menu .col { display: flex; flex-direction: column; gap: 8px; min-width: 300px; }
-#menu .btn { padding: 10px 18px; font-size: 13px; text-align: center; }
+#menu .btn { padding: 10px 18px; font-size: 13px; text-align: center; } #menu .btn.sm { padding: 2px 10px; font-size: 12px; }
+#menu .worlds { display: flex; flex-direction: column; gap: 6px; max-height: min(330px, 45vh); }
+#menu .settings { flex-wrap: wrap; justify-content: center; gap: 22px; max-width: calc(100vw - 24px); } #menu .settings > .wcol { gap: 2px; width: 330px; }
+#menu .settings .ttl:not(:first-child) { margin-top: 8px; } #menu .settings .opt > span { white-space: nowrap; } #menu .settings .opt input[type=range] { width: 130px; }
 #menu input[type=text] { background: #0c0e13; border: 1px solid #000; box-shadow: inset 0 0 0 1px #3b4254; color: var(--text); font: inherit; padding: 8px 10px; outline: none; user-select: text; -webkit-user-select: text; }
 #menu input[type=text]:focus { box-shadow: inset 0 0 0 1px var(--gold); }
 .world { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(38, 43, 57, 0.8); box-shadow: inset 0 0 0 1px #4a5268; cursor: pointer; }

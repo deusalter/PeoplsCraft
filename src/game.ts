@@ -543,7 +543,7 @@ export class Game implements InteractHost {
   // ---- input ----------------------------------------------------------------------------------
   private onKey(code: string): boolean {
     if (!this.ready || this.menu.dead) return false;
-    if (code === 'Escape') { if (this.win.open) this.win.close(); else if (this.menu.open) this.menu.close(); else this.menu.pause(); return true; }
+    if (code === 'Escape') { if (this.win.open) this.win.close(); else if (this.menu.open) this.menu.escape(); else this.menu.pause(); return true; }
     if (this.menu.open || document.activeElement === this.console) return false;
     if (code === 'KeyE') { if (this.win.open) this.win.close(); else this.win.show('inv'); return true; }
     if (code === 'KeyG') { if (this.win.open && this.win.mode === 'guide') this.win.close(); else this.win.show('guide'); return true; }
