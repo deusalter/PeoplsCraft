@@ -150,7 +150,10 @@ export class GameMenu {
   private show(): void { this.open = true; this.root.classList.remove('hidden'); this.g.input.uiMode = true; this.g.input.unlock(); }
   close(): void {
     if (!this.open || this.dead) return;
-    this.open = false; this.root.classList.add('hidden'); this.g.input.uiMode = false; this.g.input.lock(); this.g.paused = false;
+    const g = this.g;
+    this.open = false; this.root.classList.add('hidden'); g.input.uiMode = false;
+    // stay paused until the pointer is really ours again (browsers refuse a re-lock without a click, e.g. after Esc)
+    void g.input.lock().then((ok) => { if (ok) g.paused = false; else if (!this.open && g.paused) g.hud.setPrompt('Click to resume'); });
   }
   pause(): void {
     const g = this.g;

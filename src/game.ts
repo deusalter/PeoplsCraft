@@ -102,8 +102,20 @@ export class Game implements InteractHost {
     };
 
     this.input.onKey = (code) => this.onKey(code);
-    this.input.onLockChange = (locked) => { if (locked) this.audio.unlock(); else if (!this.input.uiMode && this.ready && !this.stats.dead) this.menu.pause(); };
-    canvas.addEventListener('mousedown', () => this.audio.unlock());
+    this.input.onLockChange = (locked) => {
+      if (locked) { this.audio.unlock(); if (this.paused && !this.menu.open) { this.paused = false; this.hud.setPrompt(null); } }
+      else if (!this.input.uiMode && this.ready && !this.stats.dead) this.menu.pause();
+    };
+    // alt-tabbing away with a window or the console open would otherwise leave the world running
+    window.addEventListener('blur', () => {
+      if (!this.ready || this.stats.dead || this.menu.open) return;
+      const con = this.console.style.display !== 'none';
+      if (!this.win.open && !con) return;
+      if (con) this.closeConsole();
+      this.win.close(true); this.menu.pause();
+    });
+    // a click on the world resumes after a refused re-lock (Input requests the lock on the same click)
+    canvas.addEventListener('mousedown', () => { this.audio.unlock(); if (this.paused && this.ready && !this.menu.open && !this.stats.dead) { this.paused = false; this.hud.setPrompt(null); } });
     window.addEventListener('resize', () => this.gfx.resize());
     window.addEventListener('beforeunload', () => { void this.save(); });
     document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); });
