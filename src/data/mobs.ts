@@ -2,8 +2,39 @@
 // script built from reusable attack primitives, so a new boss is data only.
 import type { Drop } from './blocks';
 
-/** One box of a creature model. Sizes and positions are in blocks; the model faces +z. */
-export interface Part { s: [number, number, number]; p: [number, number, number]; o?: [number, number, number]; c: number; a?: string; e?: number }
+/**
+ * One box of a creature model. Units are blocks, angles are radians; the model stands on y = 0 and faces +z.
+ * Every box is placed as  Base * [parent joint] * T(p) * Ranim(a) * T(o) * R(r) * S(s):
+ *
+ *   s    box size.
+ *   p    the joint: the point the animation turns about (a hip, a neck, a jaw hinge). With `par` it is
+ *        measured from the parent's joint, in the parent's turned frame; otherwise from the feet.
+ *   o    offset of the box centre from the joint (default: centred on it). Boxes that must move as one
+ *        rigid piece (a head with its eyes, horns and hat) share the same `p` and `a` and differ only in `o`.
+ *   r    static tilt [x, y, z] (Euler XYZ) about the box's own centre: slanted plates, splayed claws, diamonds.
+ *   c    colour 0xRRGGBB.   e  emissive, 0..1 (glows and blooms; emissive boxes get no bevel).
+ *   t    surface pattern: 0 speckle (default), 1 bands, 2 blotches, 3 masonry, 4 glowing veins,
+ *        5 scales, 6 plate (dark inset frame), 7 streaks (fur / bark).
+ *   ph   [first, last] boss phase (0-based, inclusive) in which the box is drawn; ignored on non-bosses.
+ *        Use it to grow, shed or crack pieces between phases.
+ *   n    names this box's joint so later boxes can attach to it.
+ *   par  name of an EARLIER box whose joint this one rides on (forearm on upper arm, jaw on head).
+ *        Chains may be any depth; a hidden (`ph`) parent still carries its children.
+ *   ap   animation phase offset added to this box's oscillator, to stagger legs, ripple a tail or
+ *        desynchronise floating pieces.
+ *   a    animation tag (none = rigid):
+ *        legA legB    walk swing about x, opposite phases        armA armB  arm swing, melee swipe, boss cast pose
+ *        head         idle nod, attack lunge, glance at player   tail       side-to-side wag about y
+ *        wingA wingB  flap about z                               jawA jawB  upper / lower jaw, opened by attacks
+ *        bob          gentle vertical float                      drift      slow float that also wanders sideways
+ *        spin         orbit about y with a slight bob            spin2      slow counter-rotation about y
+ *        spinx spinz  continuous rotation about x / z            sway       loose two-axis sway (tendrils, banners)
+ *        squash       stretches with vertical speed (hoppers)    pulse      throbbing size and glow (cores, hearts)
+ */
+export interface Part {
+  s: [number, number, number]; p: [number, number, number]; o?: [number, number, number]; c: number; a?: string; e?: number;
+  r?: [number, number, number]; t?: number; ph?: [number, number]; n?: string; par?: string; ap?: number;
+}
 export interface SpawnRule { dim: number; biomes?: string[]; where: 'surface' | 'cave' | 'water' | 'air'; time: 'day' | 'night' | 'any'; y?: [number, number]; weight: number; group: [number, number]; flag?: string; event?: string }
 
 export type Attack =
@@ -28,11 +59,28 @@ export interface MobDef {
   spawn?: SpawnRule[]; boss?: BossSpec; glow?: boolean;
 }
 
+/** Most boxes one model may have (the renderer keeps one joint matrix per box). */
+export const MAX_PARTS = 160;
+const RIGS = new WeakMap<Part[], Int16Array | null>();
+/** Parent box index for every box of a model (-1 = none), or null when it has no `par` links at all. */
+export function rigOf(parts: Part[]): Int16Array | null {
+  let r = RIGS.get(parts);
+  if (r !== undefined) return r;
+  r = null;
+  if (parts.some((q) => q.par)) {
+    r = new Int16Array(parts.length).fill(-1);
+    for (let i = 0; i < parts.length; i++) { const par = parts[i].par; if (par) for (let j = i - 1; j >= 0; j--) if (parts[j].n === par) { r[i] = j; break; } }
+  }
+  RIGS.set(parts, r);
+  return r;
+}
+
 // ---- model builders ----------------------------------------------------------------
 const dark = (c: number, k = 0.7): number => (((c >> 16) * k) << 16) | ((((c >> 8) & 255) * k) << 8) | ((c & 255) * k) | 0;
-const eyes = (y: number, z: number, gap: number, c: number, e = 0, s = 0.09): Part[] => [
-  { s: [s, s, 0.04], p: [-gap, y, z], c, e, a: 'head' }, { s: [s, s, 0.04], p: [gap, y, z], c, e, a: 'head' },
-];
+/** A pair of eyes at height `y`, depth `z`. Pass the head's joint as `piv` so they turn with the head. */
+const eyes = (y: number, z: number, gap: number, c: number, e = 0, s = 0.09, piv?: [number, number, number]): Part[] => piv
+  ? [{ s: [s, s, 0.04], p: piv, o: [-gap, y - piv[1], z - piv[2]], c, e, a: 'head' }, { s: [s, s, 0.04], p: piv, o: [gap, y - piv[1], z - piv[2]], c, e, a: 'head' }]
+  : [{ s: [s, s, 0.04], p: [-gap, y, z], c, e, a: 'head' }, { s: [s, s, 0.04], p: [gap, y, z], c, e, a: 'head' }];
 interface QuadOpt { w: number; h: number; l: number; leg: number; head: number; hc?: number; legC?: number; eye?: number; glow?: number; horn?: number; tail?: number; back?: number }
 function quad(c: number, o: QuadOpt): Part[] {
   const by = o.leg + o.h / 2, lw = Math.min(0.2, o.w * 0.3), hx = o.w / 2 - lw / 2, hz = o.l / 2 - lw / 2, lc = o.legC ?? dark(c);
@@ -42,9 +90,9 @@ function quad(c: number, o: QuadOpt): Part[] {
     { s: [o.head, o.head, o.head], p: [0, hy, hzp], c: o.hc ?? c, a: 'head' },
     { s: [lw, o.leg, lw], p: [-hx, o.leg, hz], o: [0, -o.leg / 2, 0], c: lc, a: 'legA' }, { s: [lw, o.leg, lw], p: [hx, o.leg, hz], o: [0, -o.leg / 2, 0], c: lc, a: 'legB' },
     { s: [lw, o.leg, lw], p: [-hx, o.leg, -hz], o: [0, -o.leg / 2, 0], c: lc, a: 'legB' }, { s: [lw, o.leg, lw], p: [hx, o.leg, -hz], o: [0, -o.leg / 2, 0], c: lc, a: 'legA' },
-    ...eyes(hy + o.head * 0.12, hzp + o.head / 2, o.head * 0.26, o.eye ?? 0x15131c, o.glow ?? 0),
+    ...eyes(hy + o.head * 0.12, hzp + o.head / 2, o.head * 0.26, o.eye ?? 0x15131c, o.glow ?? 0, Math.max(0.07, o.head * 0.2), [0, hy, hzp]),
   ];
-  if (o.horn) ps.push({ s: [0.08, 0.2, 0.08], p: [-o.head * 0.35, hy + o.head / 2 + 0.08, hzp], c: o.horn, a: 'head' }, { s: [0.08, 0.2, 0.08], p: [o.head * 0.35, hy + o.head / 2 + 0.08, hzp], c: o.horn, a: 'head' });
+  if (o.horn) ps.push({ s: [0.08, 0.2, 0.08], p: [0, hy, hzp], o: [-o.head * 0.35, o.head / 2 + 0.08, 0], c: o.horn, a: 'head' }, { s: [0.08, 0.2, 0.08], p: [0, hy, hzp], o: [o.head * 0.35, o.head / 2 + 0.08, 0], c: o.horn, a: 'head' });
   if (o.tail) ps.push({ s: [0.1, 0.1, 0.4], p: [0, by + o.h * 0.2, -o.l / 2], o: [0, 0, -0.2], c: o.tail, a: 'tail' });
   if (o.back) ps.push({ s: [o.w * 0.7, 0.14, o.l * 0.8], p: [0, o.leg + o.h + 0.06, 0], c: o.back });
   return ps;
@@ -58,14 +106,16 @@ function biped(c: number, o: BipedOpt): Part[] {
     { s: [o.w, torso, o.w * 0.55], p: [0, ty, 0], c },
     { s: [aw, al, aw], p: [-(o.w / 2 + aw / 2), leg + torso - 0.04, 0], o: [0, -al / 2, 0], c: o.arms ?? skin, a: 'armA' }, { s: [aw, al, aw], p: [o.w / 2 + aw / 2, leg + torso - 0.04, 0], o: [0, -al / 2, 0], c: o.arms ?? skin, a: 'armB' },
     { s: [head, head, head], p: [0, hy, 0], c: skin, a: 'head' },
-    ...eyes(hy + head * 0.08, head / 2, head * 0.24, o.eye ?? 0x15131c, o.glow ?? 0, head * 0.2),
+    ...eyes(hy + head * 0.08, head / 2, head * 0.24, o.eye ?? 0x15131c, o.glow ?? 0, head * 0.2, [0, hy, 0]),
   ];
-  if (o.hat) ps.push({ s: [head * 1.2, head * 0.3, head * 1.2], p: [0, hy + head * 0.55, 0], c: o.hat, a: 'head' });
+  if (o.hat) ps.push({ s: [head * 1.2, head * 0.3, head * 1.2], p: [0, hy, 0], o: [0, head * 0.55, 0], c: o.hat, a: 'head' });
   if (o.cape) ps.push({ s: [o.w * 0.95, torso * 1.5, 0.06], p: [0, leg + torso, -o.w * 0.3], o: [0, -torso * 0.7, 0], c: o.cape, a: 'tail' });
   return ps;
 }
 function blob(c: number, s: number, core: number, eye = 0x15131c, glow = 0): Part[] {
-  return [{ s: [s, s * 0.8, s], p: [0, s * 0.4, 0], c, a: 'squash' }, { s: [s * 0.5, s * 0.4, s * 0.5], p: [0, s * 0.42, 0], c: core, a: 'squash', e: glow * 0.6 },
+  // boxes are opaque, so the core shows as a band through both flanks plus a window low on the face
+  return [{ s: [s, s * 0.8, s], p: [0, s * 0.4, 0], c, a: 'squash' }, { s: [s * 1.04, s * 0.3, s * 0.5], p: [0, s * 0.42, 0], c: core, a: 'squash', e: glow * 0.6 },
+    { s: [s * 0.5, s * 0.3, 0.04], p: [0, s * 0.26, s / 2], c: core, a: 'squash', e: glow * 0.6 },
     ...eyes(s * 0.5, s / 2, s * 0.22, eye, glow, s * 0.14)];
 }
 function flyer(c: number, body: number, span: number, wing: number, eye = 0xffe06a, glow = 0.9): Part[] {
@@ -74,8 +124,10 @@ function flyer(c: number, body: number, span: number, wing: number, eye = 0xffe0
     ...eyes(body * 0.6, body * 0.65, body * 0.22, eye, glow, body * 0.16)];
 }
 function wisp(c: number, s: number, bits: number): Part[] {
-  const ps: Part[] = [{ s: [s, s, s], p: [0, s, 0], c, e: 1, a: 'bob' }, { s: [s * 0.5, s * 0.5, s * 0.5], p: [0, s, 0], c: 0xffffff, e: 1, a: 'bob' }];
-  for (let i = 0; i < 4; i++) ps.push({ s: [s * 0.3, s * 0.3, s * 0.3], p: [0, s, 0], o: [Math.cos(i * 1.57) * s * 1.1, Math.sin(i * 2.1) * s * 0.3, Math.sin(i * 1.57) * s * 1.1], c: bits, e: 0.8, a: 'spin' });
+  // a tilted diamond shell with a white three-bar star poking through it
+  const ps: Part[] = [{ s: [s * 0.85, s * 0.85, s * 0.85], p: [0, s, 0], r: [0.62, 0.79, 0], c, e: 1, a: 'bob' },
+    { s: [s * 1.5, s * 0.34, s * 0.34], p: [0, s, 0], c: 0xffffff, e: 1, a: 'bob' }, { s: [s * 0.34, s * 1.5, s * 0.34], p: [0, s, 0], c: 0xffffff, e: 1, a: 'bob' }, { s: [s * 0.34, s * 0.34, s * 1.5], p: [0, s, 0], c: 0xffffff, e: 1, a: 'bob' }];
+  for (let i = 0; i < 4; i++) ps.push({ s: [s * 0.3, s * 0.3, s * 0.3], p: [0, s, 0], o: [Math.cos(i * 1.57) * s * 1.1, Math.sin(i * 2.1) * s * 0.3, Math.sin(i * 1.57) * s * 1.1], r: [0.6, 0.6, 0], c: bits, e: 0.8, a: 'spin' });
   return ps;
 }
 const fish = (c: number, belly: number): Part[] => [{ s: [0.16, 0.24, 0.5], p: [0, 0.16, 0], c }, { s: [0.14, 0.1, 0.4], p: [0, 0.08, 0], c: belly },
@@ -89,9 +141,9 @@ const M: MobDef[] = [
     parts: quad(0xe8e2d2, { w: 0.8, h: 0.7, l: 1.15, leg: 0.42, head: 0.42, hc: 0x4a3a30, legC: 0x4a3a30, horn: 0xd8c8a0, back: 0xf6f2e6 }),
     drops: [['raw_meat', 1, 1, 2], ['hide', 0.8, 1, 2]], spawn: [{ dim: 0, biomes: ['plains', 'forest', 'palewood', 'bloomvale', 'savanna'], where: 'surface', time: 'day', weight: 10, group: [2, 4] }] },
   { key: 'gobblet', name: 'Gobblet', hp: 6, dmg: 0, def: 0, speed: 1.9, xp: 1, coins: [0, 0], hw: 0.25, h: 0.6, ai: 'passive', hostile: false, voice: 1.7,
-    parts: [{ s: [0.36, 0.34, 0.46], p: [0, 0.42, 0], c: 0xb86a3a }, { s: [0.22, 0.26, 0.22], p: [0, 0.72, 0.2], c: 0xd8c0a0, a: 'head' }, { s: [0.08, 0.06, 0.12], p: [0, 0.7, 0.36], c: 0xf2a02a, a: 'head' },
+    parts: [{ s: [0.36, 0.34, 0.46], p: [0, 0.42, 0], c: 0xb86a3a }, { s: [0.22, 0.26, 0.22], p: [0, 0.72, 0.2], c: 0xd8c0a0, a: 'head' }, { s: [0.08, 0.06, 0.12], p: [0, 0.72, 0.2], o: [0, -0.02, 0.16], c: 0xf2a02a, a: 'head' },
       { s: [0.06, 0.26, 0.06], p: [-0.1, 0.26, 0], o: [0, -0.13, 0], c: 0xf2a02a, a: 'legA' }, { s: [0.06, 0.26, 0.06], p: [0.1, 0.26, 0], o: [0, -0.13, 0], c: 0xf2a02a, a: 'legB' },
-      { s: [0.3, 0.26, 0.08], p: [0, 0.56, -0.24], c: 0x6a3a22, a: 'tail' }, ...eyes(0.78, 0.31, 0.07, 0x101018, 0, 0.05)],
+      { s: [0.3, 0.26, 0.08], p: [0, 0.56, -0.24], c: 0x6a3a22, a: 'tail' }, ...eyes(0.78, 0.31, 0.07, 0x101018, 0, 0.05, [0, 0.72, 0.2])],
     drops: [['raw_meat', 1, 1, 1], ['feather', 1, 1, 3]], spawn: [{ dim: 0, biomes: ['plains', 'forest', 'palewood', 'jungle', 'swamp'], where: 'surface', time: 'day', weight: 8, group: [2, 4] }] },
   { key: 'burrowhog', name: 'Burrowhog', hp: 16, dmg: 0, def: 1, speed: 1.8, xp: 3, coins: [0, 0], hw: 0.4, h: 0.85, ai: 'passive', hostile: false, voice: 0.6,
     parts: quad(0x6a4a34, { w: 0.7, h: 0.55, l: 1.0, leg: 0.3, head: 0.44, hc: 0x7a5a40, horn: 0xe6dfcc, tail: 0x4a3222 }),
@@ -107,7 +159,7 @@ const M: MobDef[] = [
     parts: biped(0x2a2440, { h: 1.8, w: 0.5, skin: 0x3a3258, glow: 1, eye: 0xc8a0ff, long: true }),
     drops: [['shade_essence', 0.45, 1, 1], ['bone', 0.4, 1, 2]], spawn: [{ dim: 0, where: 'surface', time: 'night', weight: 12, group: [1, 3] }, { dim: 0, where: 'cave', time: 'any', y: [8, 70], weight: 5, group: [1, 2] }] },
   { key: 'thornling', name: 'Thornling', hp: 16, dmg: 7, def: 0, speed: 2.1, xp: 6, coins: [0, 3], hw: 0.3, h: 1.0, ai: 'melee', hostile: true, aggro: 14, voice: 1.2,
-    parts: [...biped(0x5a8a3a, { h: 1.0, w: 0.5, skin: 0x6a9a44, legs: 0x6a4a2a, glow: 0.8, eye: 0xffe06a }), { s: [0.1, 0.3, 0.1], p: [0, 1.1, 0], c: 0xe2452f, a: 'head' }],
+    parts: [...biped(0x5a8a3a, { h: 1.0, w: 0.5, skin: 0x6a9a44, legs: 0x6a4a2a, glow: 0.8, eye: 0xffe06a }), { s: [0.1, 0.3, 0.1], p: [0, 0.875, 0], o: [0, 0.225, 0], c: 0xe2452f, a: 'head' }],
     drops: [['thorn', 0.7, 1, 2], ['fiber', 0.8, 1, 3]], spawn: [{ dim: 0, biomes: ['forest', 'jungle', 'palewood', 'bloomvale', 'swamp'], where: 'surface', time: 'any', weight: 5, group: [1, 2] }] },
   { key: 'gelcap', name: 'Gelcap', hp: 14, dmg: 6, def: 0, speed: 2.4, xp: 5, coins: [0, 3], hw: 0.4, h: 0.7, ai: 'hopper', hostile: true, aggro: 14, voice: 1.5,
     parts: [...blob(0x7ad6a0, 0.8, 0x3f8a5a), { s: [0.9, 0.16, 0.9], p: [0, 0.72, 0], c: 0xd86a5a, a: 'squash' }],
@@ -181,11 +233,11 @@ const M: MobDef[] = [
 const minion = (key: string, name: string, parts: Part[], speed: number): MobDef =>
   ({ key, name, hp: 1, dmg: 0, def: 0, speed, xp: 0, coins: [0, 0], hw: 0.25, h: 0.5, ai: 'minion', hostile: false, parts, drops: [], glow: true });
 M.push(
-  minion('m_thornling', 'Thornling', [...blob(0x5a8a3a, 0.4, 0x6ae05a, 0xffe06a, 1), { s: [0.08, 0.2, 0.08], p: [0, 0.44, 0], c: 0xe2452f }], 7),
+  minion('m_thornling', 'Thornling', [...blob(0x5a8a3a, 0.4, 0x6ae05a, 0xffe06a, 1), { s: [0.08, 0.2, 0.08], p: [0, 0.44, 0], c: 0xe2452f, a: 'squash' }], 7),
   minion('m_wisp', 'Lumen Wisp', wisp(0x4fe6e0, 0.2, 0xc0fff8), 8),
   minion('m_brazier', 'Brazier Spirit', wisp(0xff7a2a, 0.24, 0xffe06a), 8.5),
   minion('m_shade', 'Bound Shade', flyer(0x3a2a5a, 0.3, 0.4, 0x9a5af0, 0xc8a0ff, 1), 9),
-  minion('m_mycelid', 'Mycelid Sprite', [...blob(0x3f8f86, 0.42, 0x8af0d8, 0x101018, 1), { s: [0.5, 0.12, 0.5], p: [0, 0.4, 0], c: 0x6a3f9a, e: 0.4 }], 9.5),
+  minion('m_mycelid', 'Mycelid Sprite', [...blob(0x3f8f86, 0.42, 0x8af0d8, 0x101018, 1), { s: [0.5, 0.12, 0.5], p: [0, 0.4, 0], c: 0x6a3f9a, e: 0.4, a: 'squash' }], 9.5),
   minion('m_zephyr', 'Zephyr', flyer(0xdfeeff, 0.3, 0.5, 0x9ab6ff, 0xffffff, 1), 11),
   minion('m_shardling', 'Shard Mote', wisp(0xf6a0f0, 0.24, 0xf4f0ff), 11),
   minion('m_moon', 'Moonbound Fawn', quad(0x2a2040, { w: 0.3, h: 0.26, l: 0.5, leg: 0.24, head: 0.24, glow: 1, eye: 0xfff0d0, horn: 0xfff0d0 }), 12),
@@ -204,14 +256,14 @@ const colossus: Part[] = [
   { s: [1.1, 1.3, 1.1], p: [-0.8, 1.3, 0], o: [0, -0.65, 0], c: 0x4a5a3a, a: 'legA' }, { s: [1.1, 1.3, 1.1], p: [0.8, 1.3, 0], o: [0, -0.65, 0], c: 0x4a5a3a, a: 'legB' },
   { s: [2.8, 2.2, 1.8], p: [0, 2.4, 0], c: 0x5a6a48 }, { s: [3.0, 0.5, 2.0], p: [0, 3.6, 0], c: 0x5a8a42 },
   { s: [0.9, 2.4, 0.9], p: [-1.85, 3.3, 0], o: [0, -1.2, 0], c: 0x6a7a55, a: 'armA' }, { s: [0.9, 2.4, 0.9], p: [1.85, 3.3, 0], o: [0, -1.2, 0], c: 0x6a7a55, a: 'armB' },
-  { s: [1.2, 1.0, 1.1], p: [0, 4.3, 0.2], c: 0x6a7a55, a: 'head' }, { s: [0.24, 0.2, 0.06], p: [-0.3, 4.4, 0.78], c: 0x9aff6a, e: 1, a: 'head' }, { s: [0.24, 0.2, 0.06], p: [0.3, 4.4, 0.78], c: 0x9aff6a, e: 1, a: 'head' },
+  { s: [1.2, 1.0, 1.1], p: [0, 4.3, 0.2], c: 0x6a7a55, a: 'head' }, { s: [0.24, 0.2, 0.06], p: [0, 4.3, 0.2], o: [-0.3, 0.1, 0.58], c: 0x9aff6a, e: 1, a: 'head' }, { s: [0.24, 0.2, 0.06], p: [0, 4.3, 0.2], o: [0.3, 0.1, 0.58], c: 0x9aff6a, e: 1, a: 'head' },
   { s: [0.5, 0.5, 0.5], p: [0, 2.6, 0.95], c: 0x6ae05a, e: 0.9 }, { s: [0.3, 0.8, 0.3], p: [-0.9, 4.2, -0.4], c: 0x4f9e33 }, { s: [0.3, 1.1, 0.3], p: [0.7, 4.3, -0.5], c: 0x4f9e33 },
 ];
 const maw: Part[] = [
   { s: [1.6, 1.6, 1.8], p: [0, 0.9, 0], c: 0xcfae62 }, { s: [1.7, 0.3, 1.2], p: [0, 1.75, 0], c: 0x8a6a34 },
   { s: [1.3, 0.5, 0.9], p: [0, 1.25, 0.9], o: [0, 0, 0.45], c: 0xdcc88c, a: 'jawA' }, { s: [1.3, 0.5, 0.9], p: [0, 0.6, 0.9], o: [0, 0, 0.45], c: 0xb89650, a: 'jawB' },
   { s: [0.2, 0.2, 0.06], p: [-0.5, 1.5, 0.92], c: 0xff8a2a, e: 1 }, { s: [0.2, 0.2, 0.06], p: [0.5, 1.5, 0.92], c: 0xff8a2a, e: 1 },
-  { s: [0.16, 0.3, 0.16], p: [-0.4, 0.95, 1.6], c: 0xf2f0d0, a: 'jawA' }, { s: [0.16, 0.3, 0.16], p: [0.4, 0.95, 1.6], c: 0xf2f0d0, a: 'jawA' },
+  { s: [0.16, 0.3, 0.16], p: [0, 1.25, 0.9], o: [-0.4, -0.3, 0.7], c: 0xf2f0d0, a: 'jawA' }, { s: [0.16, 0.3, 0.16], p: [0, 1.25, 0.9], o: [0.4, -0.3, 0.7], c: 0xf2f0d0, a: 'jawA' },
 ];
 const warden: Part[] = [
   { s: [1.3, 2.2, 0.8], p: [0, 1.9, 0], c: 0x8a94a8 }, { s: [1.5, 1.3, 1.0], p: [0, 0.7, 0], c: 0x5a6274, a: 'tail' },
