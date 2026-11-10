@@ -3,8 +3,8 @@
 // slice when their lighting is uniform; liquids, plants and boxes are emitted individually.
 //
 // Vertex layout (24 bytes):
-//   aPos   Int16 x4   position in 1/16 blocks, w = flags (bits 0-2 normal, 3-4 sway, 5 water, 7 lava, 8 face is
-//                     under water; bit 6 is kept free for per-block tile variation)
+//   aPos   Int16 x4   position in 1/16 blocks, w = flags (bits 0-2 normal, 3-4 sway, 5 water, 6 mirror the tile
+//                     at random per block, 7 lava, 8 face is under water)
 //   aUv    Uint16 x4  uv in 1/16 tiles, texture layer, aux (emissive strength or water depth)
 //   aLight Uint8 x4   sky, block R, G, B
 //   aTint  Uint8 x4   biome tint RGB, ambient occlusion (on water tops: how much open water surrounds the corner)
@@ -13,7 +13,7 @@ import { hashInt } from '../core/noise';
 import { FOLIAGE_RGB, GRASS_RGB, WATER_RGB } from '../data/biomes';
 import {
   MAT_CUTOUT, SHAPE_BOX, SHAPE_CROSS, SHAPE_CUBE, SHAPE_LIQUID, T_BOX, T_DOOR, T_EMISSIVE, T_LAYER, T_LIQH, T_LIQUID,
-  T_MAT, T_OPAQUE, T_SELFCULL, T_SHAPE, T_SWAY, T_TINT, texLayer,
+  T_MAT, T_OPAQUE, T_SELFCULL, T_SHAPE, T_SWAY, T_TINT, T_VARY, texLayer,
 } from '../data/blocks';
 import { lb, lg, lr, rb, sky } from './light';
 
@@ -95,7 +95,7 @@ function visible(id: number, nb: number, positive: boolean): boolean {
   return true;
 }
 const keyOf = (id: number, dir: number): number =>
-  T_LAYER[id * 6 + dir] | (T_EMISSIVE[id] << 10) | (T_MAT[id] << 18) | ((T_SWAY[id] === 1 ? 1 : 0) << 20) | (1 << 23);
+  T_LAYER[id * 6 + dir] | (T_EMISSIVE[id] << 10) | (T_MAT[id] << 18) | ((T_SWAY[id] === 1 ? 1 : 0) << 20) | (T_VARY[id] << 22) | (1 << 23);
 const bright = (c: number): number => ((c >> 24) & 3) * 64 + (c & 63) + Math.max((c >> 6) & 63, (c >> 12) & 63, (c >> 18) & 63);
 
 function buildTints(biomes: Uint8Array[]): void {
@@ -139,7 +139,7 @@ function greedy(U: number, V: number, dir: number, s: number): void {
     } else mKey[k] = 0;
 
     const o = outs[(key >> 18) & 3]; o.reserve();
-    const layer = key & 1023, aux = (key >> 10) & 255, flags = dir | (((key >> 20) & 3) << 3) | (((key >> 24) & 1) << 8);
+    const layer = key & 1023, aux = (key >> 10) & 255, flags = dir | (((key >> 20) & 3) << 3) | (((key >> 22) & 1) << 6) | (((key >> 24) & 1) << 8);
     const u0 = u * 16, u1 = (u + w) * 16, v0 = v * 16, v1 = (v + h) * 16;
     if (dir < 2) {
       const x = (s + (dir === 0 ? 1 : 0)) * 16;

@@ -83,6 +83,7 @@ flat out float vWater;
 flat out float vFol;    // 0 solid, 1 leaves, 2 cross plant
 flat out float vLava;
 flat out float vSub;    // face lies under water
+flat out float vVary;   // mirror the tile at random per block
 const vec3 NORMALS[7] = vec3[7](vec3(1,0,0), vec3(-1,0,0), vec3(0,1,0), vec3(0,-1,0), vec3(0,0,1), vec3(0,0,-1), vec3(0,1,0));
 void main() {
   int flags = int(aPos.w);
@@ -111,6 +112,7 @@ void main() {
   vWater = float((flags >> 5) & 1);
   vLava = float((flags >> 7) & 1);
   vSub = float((flags >> 8) & 1);
+  vVary = float((flags >> 6) & 1);
   vFol = (flags & 7) == 6 ? 2.0 : sway == 1 ? 1.0 : 0.0;
   // shadow lookup from the unswayed position (the depth pass does not sway), pushed off the surface by an offset
   // that grows with the shadow texel and the grazing angle; back faces of leaves are pushed towards the light
@@ -149,6 +151,7 @@ flat in float vWater;
 flat in float vFol;
 flat in float vLava;
 flat in float vSub;
+flat in float vVary;
 ${SKY_COMMON}
 ${FOG_COMMON}
 ${CLOUD_COMMON}
@@ -158,7 +161,17 @@ vec3 curve3(vec3 x) { return x * x * (0.35 + 0.65 * x); }
 // Block texture lookup that keeps hard texels up close (with their seams antialiased over one pixel) and is trilinear
 // and anisotropic at range. The position is clamped inside its tile so a face never picks up the tile's opposite edge.
 vec4 tileTex(vec2 uv, float layer) {
-  vec2 f = (uv - floor(uv)) * 16.0, seam = floor(f + 0.5);
+  vec2 cell = floor(uv), f = (uv - cell) * 16.0;
+  if (vVary > 0.5) {
+    // natural ground: mirror the tile at random per block so it does not repeat on a one-block grid. Sides only flip
+    // left to right, which keeps a grass fringe or strata the right way up
+    vec3 p = fract(vec3(cell, floor(dot(vWorld - vNormal * 0.5, abs(vNormal)))) * vec3(0.1031, 0.1030, 0.0973));
+    p += dot(p, p.yxz + 33.33);
+    float h = fract((p.x + p.y) * p.z);
+    if (h > 0.5) f.x = 16.0 - f.x;
+    if (abs(vNormal.y) > 0.5 && fract(h * 2.0) > 0.5) f.y = 16.0 - f.y;
+  }
+  vec2 seam = floor(f + 0.5);
   f = seam + clamp((f - seam) / clamp(fwidth(uv) * 16.0, 1e-5, 1.0), -0.5, 0.5);
   return textureGrad(uAtlasF, vec3(clamp(f, 0.5, 15.5) / 16.0, layer), dFdx(uv), dFdy(uv));
 }
