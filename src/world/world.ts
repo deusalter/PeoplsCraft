@@ -162,6 +162,11 @@ export class World {
     let n = 0;
     while (this.results.length && (n < 2 || performance.now() - t0 < budgetMs)) { this.applyMesh(this.results.shift()); n++; }
     this.uploadsThisFrame = n;
+    this.pump();
+  }
+  /** Hand work to every idle worker. Runs each frame and again whenever a job finishes, so a worker never waits for the next frame. */
+  pump(): void {
+    if (this.pcx === 1e9) return;   // no position yet (start, dimension change): the saved-chunk list may not be in
     while (this.pool.idleCount > 0 && this.dispatchOne()) { /* keep the pool fed */ }
   }
 
@@ -204,11 +209,12 @@ export class World {
       const dim = this.dim;
       this.loader(c.cx, c.cz).then((s) => {
         if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
-        if (!s) { c.state = 0; this.savedKeys.delete(c.key); this.scan = 0; return; }
+        if (!s) { c.state = 0; this.savedKeys.delete(c.key); this.scan = 0; this.pump(); return; }
         c.blocks = s.blocks; c.biomes = s.biomes; c.hasEmit = s.hasEmit; c.modified = false;
         for (const e of s.ents) c.ents.set(((((e.z & 15) << 4) | (e.x & 15)) << 8) | e.y, e);
         c.state = 2; c.dirty = true; c.fails = 0; this.scan = 0;
         if (this.onChunkReady) this.onChunkReady(c, false, []);
+        this.pump();
       }, (e) => {
         if (this.dim !== dim || this.chunks.get(c.key) !== c) return;
         // retry a failed read, but never fall back to generating over a saved build
@@ -223,12 +229,13 @@ export class World {
         // the worker threw: try once more, then leave the chunk empty so its eight neighbours can still mesh
         if (++c.fails < 2) c.state = 0;
         else { c.blocks = new Uint8Array(CVOL); c.biomes = new Uint8Array(256); c.state = 2; c.dirty = true; console.warn(`chunk ${c.cx},${c.cz} failed to generate and was left empty`); }
-        this.scan = 0;
+        this.scan = 0; this.pump();
         return;
       }
       c.blocks = m.blocks; c.biomes = m.biomes; c.hasEmit = m.hasEmit;
       c.state = 2; c.dirty = true; c.fails = 0; this.scan = 0;
       if (this.onChunkReady) this.onChunkReady(c, true, m.ents);
+      this.pump();
     });
     return true;
   }
@@ -248,10 +255,12 @@ export class World {
         // the worker threw: retry a couple of times, then count the chunk as meshed so nothing waits on it for ever
         c.pending = false;
         if (++c.fails < 3) { c.dirty = true; this.scan = 0; } else { c.meshed = true; console.warn(`chunk ${c.cx},${c.cz} could not be meshed`); }
+        this.pump();
         return;
       }
       m.c = c;
       if (front) this.results.unshift(m); else this.results.push(m);
+      this.pump();
     });
   }
 

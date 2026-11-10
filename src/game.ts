@@ -721,6 +721,7 @@ export class Game implements InteractHost {
       let n = 0;
       while (this.acc >= STEP && n < 5) { this.tick(STEP); this.acc -= STEP; n++; if (n === 1) inp.endTick(); }
       if (n === 5) this.acc = 0;
+      this.world.pump();   // send remesh jobs for this frame's block edits now, not next frame
     }
     const t2 = performance.now(), a = this.paused ? 1 : this.acc / STEP;
     p.applyCamera(this.gfx.camera, a, dt, this.cfg.settings.gfx.fov, this.time, this.cfg.settings.bob);
