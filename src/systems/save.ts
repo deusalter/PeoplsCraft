@@ -47,10 +47,10 @@ export class SaveDB {
     if (!this.db) return null;
     const r = await req(this.store('chunks', 'readonly').get(`${id}|${dim}|${cx}|${cz}`));
     if (!r) return null;
-    return { blocks: unrle(r.d, size), biomes: r.b, hasEmit: r.h, ents: r.e || [] };
+    return { blocks: unrle(r.d, size), biomes: r.b, hasEmit: r.h, ents: r.e || [], pal: r.p ?? 0 };
   }
   putChunk(id: string, dim: number, cx: number, cz: number, c: SavedChunk): void {
     if (!this.db) return;
-    try { this.store('chunks', 'readwrite').put({ d: rle(c.blocks), b: c.biomes, h: c.hasEmit, e: c.ents }, `${id}|${dim}|${cx}|${cz}`); } catch (e) { console.warn('chunk save failed', e); }
+    try { this.store('chunks', 'readwrite').put({ d: rle(c.blocks), b: c.biomes, h: c.hasEmit, e: c.ents, p: c.pal ?? 0 }, `${id}|${dim}|${cx}|${cz}`); } catch (e) { console.warn('chunk save failed', e); }
   }
 }

@@ -4,7 +4,7 @@ import { T_SOLID } from '../data/blocks';
 import type { Style } from '../data/items';
 import { PROJECTILES, ProjDef } from '../data/mobs';
 import type { Game } from '../game';
-import { newRayHit, raycast } from '../player/physics';
+import { newRayHit, rayBox, raycast } from '../player/physics';
 import type { BoxBatch } from '../render/batches';
 
 class Proj {
@@ -15,6 +15,8 @@ const hit = newRayHit(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v
 
 export class ProjectileSystem {
   private list: Proj[] = [];
+  private cur: Proj | null = null;
+  private canHit = (m: { def: { hostile: boolean }; id: number }): boolean => m.def.hostile && !this.cur!.hit.has(m.id);
   constructor(private g: Game, cap = 600) { for (let i = 0; i < cap; i++) this.list.push(new Proj()); }
   clear(): void { for (const p of this.list) p.active = false; }
   get alive(): number { let n = 0; for (const p of this.list) if (p.active) n++; return n; }
@@ -40,23 +42,15 @@ export class ProjectileSystem {
       raycast(w, p.x, p.y, p.z, dx, dy, dz, len, hit);
       let stop = hit.hit && T_SOLID[hit.id] ? hit.dist : len, dead = hit.hit && !!T_SOLID[hit.id];
       if (p.player) {
-        const r = g.mobs.rayHit(p.x, p.y, p.z, dx, dy, dz, stop, p.def.size * 0.5 + 0.1, (m) => m.def.hostile && !p.hit.has(m.id));
+        this.cur = p;
+        const r = g.mobs.rayHit(p.x, p.y, p.z, dx, dy, dz, stop, p.def.size * 0.5 + 0.1, this.canHit);
         if (r) {
           g.mobs.hurt(r.m, p.dmg, p.vx, p.vz, p.knock, p.crit);
           if (p.def.pierce && p.hit.size < 3) p.hit.add(r.m.id); else { stop = r.t; dead = true; }
         }
       } else {
-        // segment vs player box
-        const lo = [pl.x - pl.hw - 0.12, pl.y - 0.05, pl.z - pl.hw - 0.12], hi = [pl.x + pl.hw + 0.12, pl.y + pl.h + 0.05, pl.z + pl.hw + 0.12], o = [p.x, p.y, p.z], d = [dx, dy, dz];
-        let tn = 0, tf = stop, miss = false;
-        for (let a = 0; a < 3 && !miss; a++) {
-          if (Math.abs(d[a]) < 1e-9) { if (o[a] < lo[a] || o[a] > hi[a]) miss = true; continue; }
-          let t0 = (lo[a] - o[a]) / d[a], t1 = (hi[a] - o[a]) / d[a];
-          if (t0 > t1) { const s = t0; t0 = t1; t1 = s; }
-          if (t0 > tn) tn = t0; if (t1 < tf) tf = t1;
-          if (tn > tf) miss = true;
-        }
-        if (!miss) { g.hurtPlayer(p.dmg, p.x - dx, p.z - dz, 'a projectile', null, 4); dead = true; stop = tn; }
+        const t = rayBox(p.x, p.y, p.z, dx, dy, dz, pl.x - pl.hw - 0.12, pl.y - 0.05, pl.z - pl.hw - 0.12, pl.x + pl.hw + 0.12, pl.y + pl.h + 0.05, pl.z + pl.hw + 0.12, stop);
+        if (t >= 0) { g.hurtPlayer(p.dmg, p.x - dx, p.z - dz, 'a projectile', null, 4); dead = true; stop = t; }
       }
       p.x += dx * stop; p.y += dy * stop; p.z += dz * stop;
       if (p.def.trail !== undefined && Math.random() < dt * 30) g.particles.spawn(p.x, p.y, p.z, (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6, 0.35, p.def.size * 0.5, p.def.trail, p.def.glow, 0);

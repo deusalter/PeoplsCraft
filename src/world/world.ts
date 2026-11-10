@@ -2,13 +2,14 @@
 // uploads meshes inside a per-frame budget and unloads by distance.
 import * as THREE from 'three';
 import { BUILD_MAX, CH, chunkKey } from '../core/constants';
-import { B, T_EMITS } from '../data/blocks';
+import { T_EMITS } from '../data/blocks';
 import type { EntInit } from './gen/types';
 import type { MeshPart } from './mesher';
 import { WorkerPool } from './pool';
 
 export interface BlockEnt { x: number; y: number; z: number; kind: string; data: any }
-export interface SavedChunk { blocks: Uint8Array; biomes: Uint8Array; hasEmit: boolean; ents: BlockEnt[] }
+/** `pal` is the index of the block-id palette the chunk was written with (see Game.palettes). */
+export interface SavedChunk { blocks: Uint8Array; biomes: Uint8Array; hasEmit: boolean; ents: BlockEnt[]; pal?: number }
 
 export class Chunk {
   blocks: Uint8Array | null = null;
@@ -21,8 +22,6 @@ export class Chunk {
   ents = new Map<number, BlockEnt>();
   constructor(readonly cx: number, readonly cz: number, readonly key: number) {}
 }
-
-const sphere = new THREE.Sphere();
 
 export class World {
   readonly chunks = new Map<number, Chunk>();
@@ -309,6 +308,4 @@ export class World {
     }
     return true;
   }
-  static readonly BEDROCK = B.bedrock;
 }
-void sphere;

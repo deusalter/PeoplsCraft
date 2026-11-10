@@ -109,3 +109,12 @@ export function raycast(w: World, ox: number, oy: number, oz: number, dx: number
   }
   return out;
 }
+
+/** Distance along a ray to an axis-aligned box, or -1 if it misses within `max`. Allocation-free. */
+export function rayBox(ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, max: number): number {
+  let tn = 0, tf = max, t0: number, t1: number, q: number;
+  if (Math.abs(dx) < 1e-9) { if (ox < x0 || ox > x1) return -1; } else { t0 = (x0 - ox) / dx; t1 = (x1 - ox) / dx; if (t0 > t1) { q = t0; t0 = t1; t1 = q; } if (t0 > tn) tn = t0; if (t1 < tf) tf = t1; if (tn > tf) return -1; }
+  if (Math.abs(dy) < 1e-9) { if (oy < y0 || oy > y1) return -1; } else { t0 = (y0 - oy) / dy; t1 = (y1 - oy) / dy; if (t0 > t1) { q = t0; t0 = t1; t1 = q; } if (t0 > tn) tn = t0; if (t1 < tf) tf = t1; if (tn > tf) return -1; }
+  if (Math.abs(dz) < 1e-9) { if (oz < z0 || oz > z1) return -1; } else { t0 = (z0 - oz) / dz; t1 = (z1 - oz) / dz; if (t0 > t1) { q = t0; t0 = t1; t1 = q; } if (t0 > tn) tn = t0; if (t1 < tf) tf = t1; if (tn > tf) return -1; }
+  return tn;
+}

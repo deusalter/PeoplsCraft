@@ -5,9 +5,9 @@ import { BUILD_MAX, CVOL, DAY_LENGTH, SEA, chunkKey } from './core/constants';
 import { B, BLOCKS, T_DAMAGE, T_LAYER, T_LIQUID, T_OPAQUE, T_REPLACE, T_SOLID, T_SUPPORT } from './data/blocks';
 import { BIOME, BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
-import { Item, ITEMS, TIERS, item, itemName, itemRarity, RARITY, rollModifier, matches } from './data/items';
+import { Item, ITEMS, TIERS, item, RARITY, rollModifier, matches } from './data/items';
 import { LOOT } from './data/loot';
-import { BOSSES, mob as mobDef } from './data/mobs';
+import { BOSSES } from './data/mobs';
 import { SMELTS } from './data/recipes';
 import { DropSystem } from './entities/drops';
 import { Mob, MobSystem } from './entities/mobs';
@@ -60,7 +60,7 @@ export class Game implements InteractHost {
   private portalT = 0; private portalArmed = true; private portalReturn: Record<number, [number, number, number]> = {}; private arriving = -1;
   private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private recallT = 0; private safe: [number, number, number] = [0, 0, 0];
   private console: HTMLInputElement; private v = new THREE.Vector3(); private worldSpawn: [number, number] = [0, 0];
-  private chestOpen: Chunk | null = null; private hudOn = true;
+  private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -117,7 +117,21 @@ export class Game implements InteractHost {
       for (const e of ents) this.world.setEnt(e.x, e.y, e.z, e.kind, e.kind === 'nest' ? { mob: e.data, t: 0 } : { loot: e.data, s: null });
     };
     this.world.onUnload = (c) => this.saveChunk(c);
-    this.world.loader = (cx, cz) => cfg.db.getChunk(meta.id, this.dim, cx, cz, CVOL);
+    // Saved chunks hold raw block ids. Each save records the id->key table it was written with, so a
+    // later build with a different block table can translate old chunks as they load.
+    const keys = BLOCKS.map((q) => q.key);
+    this.palettes = d?.palettes ?? [];
+    if (!this.palettes.length || this.palettes[this.palettes.length - 1].join() !== keys.join()) this.palettes.push(keys);
+    this.world.loader = async (cx, cz) => {
+      const c = await cfg.db.getChunk(meta.id, this.dim, cx, cz, CVOL);
+      const cur = this.palettes.length - 1;
+      if (c && (c.pal ?? 0) !== cur) {
+        const from = this.palettes[c.pal ?? 0] ?? keys, map = new Uint8Array(256);
+        from.forEach((k, i) => { const id = keys.indexOf(k); map[i] = id < 0 ? 0 : id; });
+        for (let i = 0; i < c.blocks.length; i++) c.blocks[i] = map[c.blocks[i]];
+      }
+      return c;
+    };
 
     // restore
     if (d) {
@@ -772,7 +786,7 @@ export class Game implements InteractHost {
   // ---- persistence -------------------------------------------------------------------------------------
   private saveChunk(c: Chunk): void {
     if (!c.blocks || !c.biomes) return;
-    this.cfg.db.putChunk(this.cfg.meta.id, this.dim, c.cx, c.cz, { blocks: c.blocks, biomes: c.biomes, hasEmit: c.hasEmit, ents: [...c.ents.values()] });
+    this.cfg.db.putChunk(this.cfg.meta.id, this.dim, c.cx, c.cz, { blocks: c.blocks, biomes: c.biomes, hasEmit: c.hasEmit, ents: [...c.ents.values()], pal: this.palettes.length - 1 });
     this.world.savedKeys.add(c.key); c.modified = false;
   }
   async save(): Promise<void> {
@@ -780,7 +794,7 @@ export class Game implements InteractHost {
     const p = this.player, m = this.cfg.meta;
     m.played = Date.now();
     m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
-      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn };
+      spawn: this.spawn, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
     try { await this.cfg.db.putWorld(m); } catch (e) { console.warn('save failed', e); }
   }
@@ -801,4 +815,3 @@ export class Game implements InteractHost {
     ];
   }
 }
-void mobDef; void itemName; void itemRarity;

@@ -6,7 +6,7 @@ import { BIOMES } from '../data/biomes';
 import { DIMS } from '../data/dims';
 import { MOB_LIST, MobDef, SpawnRule, mob as mobDef } from '../data/mobs';
 import type { Game } from '../game';
-import { Body, boxFree, moveBody, newRayHit, raycast } from '../player/physics';
+import { Body, boxFree, moveBody, newRayHit, rayBox, raycast } from '../player/physics';
 import type { BoxBatch } from '../render/batches';
 import { BossState, bossTick, newBossState } from './boss';
 
@@ -43,7 +43,7 @@ export class MobSystem {
     m.x = m.px = x; m.y = m.py = y; m.z = m.pz = z; m.hw = d.hw; m.h = d.h; m.hp = m.maxHp = d.hp;
     m.yaw = Math.random() * 6.283; m.tx = x; m.tz = z; m.timer = Math.random() * 2;
     m.noclip = d.ai === 'minion' || (!!d.boss && d.boss.move !== 'walk');
-    if (d.boss) m.boss = newBossState(m);
+    if (d.boss) { m.boss = newBossState(m); m.dmgMul = 1.4; }
     return m;
   }
   clear(keepMinions = false): void { for (const m of this.list) if (m.active && !(keepMinions && m.def.ai === 'minion')) m.active = false; }
@@ -66,19 +66,14 @@ export class MobSystem {
     let best: Mob | null = null, bt = max;
     for (const m of this.list) {
       if (!m.active || (filter && !filter(m))) continue;
-      const lo = [m.x - m.hw - pad, m.y - pad, m.z - m.hw - pad], hi = [m.x + m.hw + pad, m.y + m.h + pad, m.z + m.hw + pad], o = [ox, oy, oz], d = [dx, dy, dz];
-      let tn = 0, tf = bt, miss = false;
-      for (let a = 0; a < 3 && !miss; a++) {
-        if (Math.abs(d[a]) < 1e-9) { if (o[a] < lo[a] || o[a] > hi[a]) miss = true; continue; }
-        let t0 = (lo[a] - o[a]) / d[a], t1 = (hi[a] - o[a]) / d[a];
-        if (t0 > t1) { const q = t0; t0 = t1; t1 = q; }
-        if (t0 > tn) tn = t0; if (t1 < tf) tf = t1;
-        if (tn > tf) miss = true;
-      }
-      if (!miss && tn < bt) { bt = tn; best = m; }
+      const t = rayBox(ox, oy, oz, dx, dy, dz, m.x - m.hw - pad, m.y - pad, m.z - m.hw - pad, m.x + m.hw + pad, m.y + m.h + pad, m.z + m.hw + pad, bt);
+      if (t >= 0 && t < bt) { bt = t; best = m; }
     }
-    return best ? { m: best, t: bt } : null;
+    if (!best) return null;
+    this.hitOut.m = best; this.hitOut.t = bt;
+    return this.hitOut;
   }
+  private hitOut: { m: Mob; t: number } = { m: null as unknown as Mob, t: 0 };
 
   // ---- damage ----
   hurt(m: Mob, raw: number, kx: number, kz: number, knock: number, crit: boolean): void {
