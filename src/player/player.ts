@@ -5,7 +5,7 @@ import type { World } from '../world/world';
 import type { Input } from './input';
 import { Body, boxFree, liquidAt, moveBody } from './physics';
 
-export const WALK = 4.32, SPRINT = 5.75, SNEAK = 1.35, JUMP_V = 9.0, GRAVITY = 32;
+export const WALK = 4.32, SPRINT = 5.75, SNEAK = 1.35, JUMP_V = 8.7, GRAVITY = 32;
 
 export class Player implements Body {
   x = 0; y = 120; z = 0; vx = 0; vy = 0; vz = 0;
