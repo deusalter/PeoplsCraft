@@ -163,7 +163,7 @@ export class Game implements InteractHost {
   applySettings(): void {
     const s = this.cfg.settings;
     this.gfx.applySettings(s.gfx);
-    if (this.world.renderDist !== s.gfx.renderDist) this.world.setRenderDist(s.gfx.renderDist);
+    this.world.setView(s.gfx.renderDist, DIMS[this.dim].fogScale);
     this.audio.setVolumes(s.sfx, s.music);
   }
   start(): void { this.last = performance.now(); this.raf = requestAnimationFrame(this.frame); }
@@ -509,7 +509,7 @@ export class Game implements InteractHost {
     this.ready = false; this.keysReady = false; p.frozen = true; this.showLoading(to === 0 ? 'Returning to the Overworld' : `Crossing into ${DIMS[to].name}`);
     this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); if (this.events.active) this.events.end(false);
     this.world.setDim(to, DIMS[to].hasSky);
-    this.dim = to; this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
+    this.dim = to; this.world.setView(cfg.settings.gfx.renderDist, DIMS[to].fogScale); this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
     const ret = home ? null : this.portalReturn[to];
     if (home) { const s = this.spawn; if (s) p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; } }
     else if (ret) p.teleport(ret[0] + 0.5, ret[1] + 0.1, ret[2] + 0.5);
@@ -728,6 +728,7 @@ export class Game implements InteractHost {
     this.audio.lx = p.x; this.audio.ly = p.y + p.eye; this.audio.lz = p.z;
     this.updateEnv(dt);
     this.gfx.update(this.time, this.env, this.gfx.camera.position);
+    this.world.setCull(this.gfx.camera.position.x, this.gfx.camera.position.z);
     if (!this.paused) this.particles.update(dt, this.world);
     this.boxes.begin(); this.mobs.render(this.boxes, a, this.time); this.proj.render(this.boxes, a); this.boxes.end();
     this.updateHand(dt);

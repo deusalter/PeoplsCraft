@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { BUILD_MAX, CH, CVOL, chunkKey } from '../core/constants';
 import { T_EMITS } from '../data/blocks';
+import { U } from '../render/gfx';
 import type { EntInit } from './gen/types';
 import type { MeshPart } from './mesher';
 import { WorkerPool } from './pool';
@@ -22,6 +23,19 @@ export class Chunk {
   meshes: (THREE.Mesh | null)[] = [null, null, null];
   ents = new Map<number, BlockEnt>();
   constructor(readonly cx: number, readonly cz: number, readonly key: number) {}
+}
+
+// Chunk meshes are culled through Mesh.intersectsFrustum, which three calls for the main and the shadow camera:
+// first by distance (a column wholly past the fog end is drawn in plain fog colour), then with a box around the
+// column, because three's own test uses the bounding sphere and that is about 60 blocks wide for a tall column.
+let cullX = 0, cullZ = 0, cullR2 = Infinity;
+const _box = new THREE.Box3();
+function chunkInFrustum(this: THREE.Mesh, f: THREE.Frustum | THREE.FrustumArray): boolean {
+  const p = this.position, b = this.geometry.boundingBox!;
+  const dx = Math.max(p.x - cullX, 0, cullX - p.x - 16), dz = Math.max(p.z - cullZ, 0, cullZ - p.z - 16);
+  if (dx * dx + dz * dz > cullR2) return false;
+  _box.min.set(p.x - 0.25, b.min.y - 0.25, p.z - 0.25); _box.max.set(p.x + 16.25, b.max.y + 0.25, p.z + 16.25);   // the pad covers leaf sway and the water wave
+  return (f as THREE.Frustum).intersectsBox(_box);
 }
 
 export class World {
@@ -65,6 +79,17 @@ export class World {
     this.offsets = new Int16Array(list.length * 2);
     list.forEach((o, i) => { this.offsets[i * 2] = o[1]; this.offsets[i * 2 + 1] = o[2]; });
     this.scan = 0; this.pcx = 1e9;
+  }
+  /** View distance in chunks: the setting, cut down to what the dimension's fog lets through. */
+  setView(chunks: number, fogScale: number): void {
+    const r = Math.min(chunks, Math.max(4, Math.ceil(chunks * fogScale) + 1));
+    if (r !== this.renderDist) this.setRenderDist(r);
+  }
+  /** Camera position for the distance cull. Call once the fog uniforms are set for the frame. */
+  setCull(x: number, z: number): void {
+    // sun shadows reach past a short fog: keep every caster inside the 144-block shadow box (half diagonal 102)
+    const r = U.uShadowOn.value > 0 ? Math.max(U.uFogEnd.value, 104) : U.uFogEnd.value;
+    cullX = x; cullZ = z; cullR2 = r * r;
   }
 
   // ---- block access ----------------------------------------------------------
@@ -300,6 +325,7 @@ export class World {
         mesh.matrixAutoUpdate = false; mesh.updateMatrix(); mesh.matrixWorld.copy(mesh.matrix);
         mesh.matrixWorldAutoUpdate = false;
         mesh.renderOrder = i;
+        mesh.intersectsFrustum = chunkInFrustum;
         c.meshes[i] = mesh; this.group.add(mesh);
       }
       mesh.frustumCulled = false; this.warm.push(mesh);
