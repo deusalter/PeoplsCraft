@@ -99,7 +99,7 @@ export class Hud {
     // compass: cardinal marks on a masked strip, pips (home, last death, guide target) on an unmasked layer above it
     const cw = el('div', '#compass', r), strip = el('div', 'strip', cw), pipL = el('div', 'pips', cw);
     el('div', 'mid', cw);
-    for (let i = 0; i < 8; i++) this.marks.push({ el: el('div', i % 2 ? 'm sm' : 'm', strip, COMPASS_NAMES[i]), b: (i * Math.PI) / 4, px: 1e9 });
+    for (let i = 0; i < 8; i++) this.marks.push({ el: el('div', i % 2 ? 'm sm' : 'm', strip, COMPASS_NAMES[i]), b: (i * Math.PI) / 4, px: -1e9 });
     for (let i = 0; i < 3; i++) {
       const e = el('div', 'pip ' + PIP_CLS[i], pipL); el('i', '', e);
       this.pips.push({ el: e, d: el('b', '', e), px: 1e9, on: true, edge: false, m: -1 });
@@ -211,6 +211,8 @@ export class Hud {
   }
   private pip(i: number, on: boolean, tx: number, tz: number, x: number, z: number, yaw: number): void {
     const q = this.pips[i];
+    // standing on a marker gives it no bearing, so it hides until the player walks away
+    if (on && Math.abs(tx - x) < 3 && Math.abs(tz - z) < 3) on = false;
     if (on !== q.on) { q.on = on; q.el.style.display = on ? '' : 'none'; }
     if (!on) return;
     const dx = tx - x, dz = tz - z, rel = wrapPi(Math.atan2(dx, -dz) + yaw), edge = Math.abs(rel) > CSPAN;
