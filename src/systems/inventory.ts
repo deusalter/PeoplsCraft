@@ -1,5 +1,5 @@
 // Player inventory, equipment slots and the crafting-grid matcher.
-import { Item, item, matches, rollModifier } from '../data/items';
+import { ITEMS, Item, item, matches, rollModifier } from '../data/items';
 import { RECIPES, Recipe } from '../data/recipes';
 
 export type Slot = Item | null;
@@ -69,7 +69,11 @@ export class Inventory {
     if (!d) return;
     const fix = (a: any[], n: number): Slot[] => { const out: Slot[] = new Array(n).fill(null); (a || []).forEach((s, i) => { if (i < n && s && typeof s.k === 'string') { try { item(s.k); out[i] = { k: s.k, n: s.n | 0, m: s.m }; } catch { /* item no longer exists */ } } }); return out; };
     this.slots = fix(d.s, INV_SIZE); this.armor = fix(d.a, 3); this.acc = fix(d.c, 5); this.craft = fix(d.g, 9);
-    this.cursor = null; if (d.cur && d.cur.k) this.add(d.cur);
+    // a save taken with a window open still holds the grid and cursor: put them back in the pack, keeping
+    // whatever does not fit where it was so the next window close drops it instead of deleting it
+    for (let i = 0; i < 9; i++) { const s = this.craft[i]; if (s) { const left = this.add(s); this.craft[i] = left ? { ...s, n: left } : null; } }
+    this.cursor = null;
+    if (d.cur && typeof d.cur.k === 'string' && ITEMS.has(d.cur.k)) { const c: Item = { k: d.cur.k, n: d.cur.n | 0, m: d.cur.m }, left = c.n > 0 ? this.add(c) : 0; if (left) this.cursor = { ...c, n: left }; }
     this.sel = d.sel | 0; this.coins = d.coins | 0; this.rev++;
   }
 }
@@ -142,6 +146,8 @@ export function canAfford(inv: Inventory, r: Recipe, grid: Slot[]): boolean {
 /** Lay a recipe out in the grid using items from the inventory. Returns false if short. */
 export function fillGrid(inv: Inventory, r: Recipe, grid: Slot[], w: number): boolean {
   for (let i = 0; i < grid.length; i++) { const s = grid[i]; if (s) { const left = inv.add(s); grid[i] = left ? { ...s, n: left } : null; } }
+  // a full pack can leave cells occupied; laying the recipe over them would delete those items
+  for (let i = 0; i < grid.length; i++) if (grid[i]) { inv.touch(); return false; }
   if (!canAfford(inv, r, [])) { inv.touch(); return false; }
   const take = (want: string): Item | null => {
     for (let i = 0; i < inv.slots.length; i++) {
@@ -159,8 +165,8 @@ export function fillGrid(inv: Inventory, r: Recipe, grid: Slot[], w: number): bo
   inv.touch();
   return true;
 }
-/** Consume one unit from each grid cell and return the crafted item. */
-export function takeCraft(r: Recipe, grid: Slot[], rnd: () => number): Item {
-  for (let i = 0; i < grid.length; i++) { const s = grid[i]; if (s) { s.n--; if (s.n <= 0) grid[i] = null; } }
+/** Consume one unit from each of the first `cells` grid cells (the visible ones) and return the crafted item. */
+export function takeCraft(r: Recipe, grid: Slot[], rnd: () => number, cells = grid.length): Item {
+  for (let i = 0; i < cells; i++) { const s = grid[i]; if (s) { s.n--; if (s.n <= 0) grid[i] = null; } }
   return { k: r.out, n: r.n, m: rollModifier(r.out, rnd, 0.3) };
 }

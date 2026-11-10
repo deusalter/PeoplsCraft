@@ -91,7 +91,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #tip { position: fixed; left: 0; top: 0; max-width: 300px; padding: 8px 10px; background: rgba(12, 10, 22, 0.96); border: 1px solid #5a4a8a; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6); font-size: 12px; line-height: 1.45; pointer-events: none !important; z-index: 70; }
 #tip .nm { font-size: 14px; font-weight: 700; } #tip .ty { color: var(--dim); font-size: 11px; margin-bottom: 4px; } #tip .ln { color: #c4c9d8; }
 #tip .gd { color: var(--good); } #tip .bd { color: var(--bad); } #tip .ds { color: #a8a0c8; font-style: italic; margin-top: 4px; } #tip .st { color: #8fd0ff; margin-top: 4px; } #tip .off { color: #6a7088; }
-.prog { position: relative; width: 44px; height: 8px; background: #0c0e13; box-shadow: inset 0 0 0 1px #2c3242; align-self: center; } .prog > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ember); }
+.prog { position: relative; width: 44px; height: 8px; background: #0c0e13; box-shadow: inset 0 0 0 1px #2c3242; align-self: center; } .prog > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ember); transition: width 0.25s linear; }
+.cap { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #6a7088; text-align: center; }
 .shoprow { display: flex; align-items: center; gap: 8px; padding: 2px 4px; font-size: 12px; } .shoprow:hover { background: rgba(255, 255, 255, 0.05); }
 .shoprow .nm { flex: 1; } .shoprow .pr { color: var(--gold); width: 54px; text-align: right; }
 .scroll { max-height: 300px; overflow-y: auto; padding-right: 6px; }

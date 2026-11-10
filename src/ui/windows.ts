@@ -156,9 +156,9 @@ export class Windows {
       const row = el('div', 'wrow', mid);
       const c1 = el('div', 'wcol', row);
       this.slot(c1, f.data.s, 0, 'fin', 'Ore');
-      const flame = el('div', 'prog', c1); this.forgeEls.push(el('i', '', flame)); flame.style.height = '6px';
+      const flame = el('div', 'prog', c1); this.forgeEls.push(el('i', '', flame)); flame.style.height = '6px'; flame.dataset.tip = 'Heat: fuel left in the fire';
       this.slot(c1, f.data.s, 1, 'ffuel', 'Fuel');
-      const pr = el('div', 'prog', row); this.forgeEls.push(el('i', '', pr));
+      const pc = el('div', 'wcol', row); pc.style.cssText = 'align-self:center;gap:2px'; const pr = el('div', 'prog', pc); this.forgeEls.push(el('i', '', pr)); el('div', 'cap', pc, 'Smelting');
       const o = this.slot(row, f.data.s, 2, 'fout'); o.root.style.alignSelf = 'center';
       const lv = f.data.level as number;
       const list = el('div', '', mid); list.style.cssText = 'font-size:11px;color:#9aa0b2;max-width:260px;line-height:1.5';
@@ -282,25 +282,47 @@ export class Windows {
     const d = item(it.k);
     switch (v.kind) {
       case 'armor': return !!d.armor && d.armor.slot === v.i;
-      case 'acc': return !!d.acc;
+      case 'acc': if (!d.acc) return false; for (let i = 0; i < 5; i++) { const a = this.g.inv.acc[i]; if (a && i !== v.i && a.k === it.k) return false; } return true;
+      case 'fin': return this.smeltable(it.k);
       case 'ffuel': return !!d.fuel;
       case 'out': case 'fout': return false;
       default: return true;
     }
   }
-  private place(v: View, right: boolean): void {
+  /** Can this forge smelt the item (at its own level)? */
+  private smeltable(k: string): boolean {
+    const lv = this.forge ? (this.forge.data.level as number) : 99;
+    for (const q of SMELTS) if (q.forge <= lv && matches(q.in, k)) return true;
+    return false;
+  }
+  /** Why `accepts(v, it)` said no, for a toast; '' when there is nothing useful to say. */
+  private refusal(kind: Kind, it: Item): string {
+    if (kind === 'acc' && item(it.k).acc) return 'Already wearing one: a second adds nothing';
+    if (kind === 'ffuel') return 'That does not burn';
+    if (kind === 'fin') {
+      const q = SMELTS.find((q) => matches(q.in, it.k));
+      if (!q) return 'That cannot be smelted';
+      return 'Needs a ' + (BLOCKS.find((b) => b.use === 'forge' + q.forge)?.name ?? 'hotter forge');
+    }
+    return '';
+  }
+  /** Put the cursor stack (or one item of it) into a view. Returns false when nothing changed. */
+  private place(v: View, right: boolean): boolean {
     const inv = this.g.inv, c = inv.cursor;
-    if (!c || !this.accepts(v, c)) return;
+    if (!c || !this.accepts(v, c)) return false;
     const s = v.arr[v.i], d = item(c.k), single = v.kind === 'armor' || v.kind === 'acc';
     if (!s) {
       if (right || (single && c.n > 1)) { v.arr[v.i] = { k: c.k, n: 1, m: c.m }; c.n--; } else { v.arr[v.i] = c; inv.cursor = null; }
     } else if (s.k === c.k && !s.m && !c.m && d.stack > 1 && !single) {
-      const mv = right ? 1 : Math.min(c.n, d.stack - s.n);
+      const mv = Math.min(right ? 1 : c.n, d.stack - s.n);
+      if (mv <= 0) return false;
       s.n += mv; c.n -= mv;
-    } else if (!right && this.acceptsBack(v, s)) { v.arr[v.i] = c; inv.cursor = s; }
+    } else if (!right && !(single && c.n > 1) && this.acceptsBack(v, s)) { v.arr[v.i] = c; inv.cursor = s; }
+    else return false;
     if (inv.cursor && inv.cursor.n <= 0) inv.cursor = null;
     if (single) this.g.audio.play('dig_cloth', 0.6);
     this.afterEdit(v);
+    return true;
   }
   private acceptsBack(_v: View, _s: Item): boolean { return true; }
   /** Any edit made while a container is open may have moved items into it (shift-click from the
@@ -325,7 +347,8 @@ export class Windows {
       else { inv.cursor = s; v.arr[v.i] = null; }
       this.dragFrom = v; g.audio.play('click', 0.5);
       this.afterEdit(v);
-    } else { this.place(v, right); g.audio.play('click', 0.5); }
+    } else if (this.place(v, right)) g.audio.play('click', 0.5);
+    else { const why = this.refusal(v.kind, inv.cursor); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); }
   }
   private takeOutput(all: boolean): void {
     const g = this.g, inv = g.inv;
@@ -338,12 +361,12 @@ export class Windows {
       if (!all) {
         const c = inv.cursor;
         if (c && (c.k !== r.out || c.m || d.stack === 1 || c.n + r.n > d.stack)) break;
-        const out = takeCraft(r, inv.craft, Math.random);
+        const out = takeCraft(r, inv.craft, Math.random, this.gridW * this.gridW);
         if (c) c.n += out.n; else inv.cursor = out;
         made += out.n; g.onCrafted(r.out, out.n);
         break;
       }
-      const out = takeCraft(r, inv.craft, Math.random), left = inv.add(out);
+      const out = takeCraft(r, inv.craft, Math.random, this.gridW * this.gridW), left = inv.add(out);
       if (left) g.dropItem({ ...out, n: left });
       made += out.n; g.onCrafted(r.out, out.n);
     }
@@ -363,8 +386,14 @@ export class Windows {
         const val = Math.max(1, Math.floor(itemValue(s.k) * 0.3)) * s.n;
         inv.coins += val; v.arr[v.i] = null; g.audio.play('coin'); g.toast(`Sold ${itemName(s)}${s.n > 1 ? ' x' + s.n : ''} for ${val} coins`, '#f2c14e');
       } else if (this.chest) into(this.chest, 0, 27);
-      else if (this.forge) { const fs = this.forge.data.s as Slot[]; if (d.fuel && !SMELTS.some((q) => matches(q.in, s.k))) into(fs, 1, 2); else into(fs, 0, 1); }
+      else if (this.forge) {
+        const fs = this.forge.data.s as Slot[];
+        if (this.smeltable(s.k)) into(fs, 0, 1);
+        else if (d.fuel) into(fs, 1, 2);
+        else { g.toast(this.refusal('fin', s), '#ff9a8a'); g.audio.play('error', 0.4); return; }
+      }
       else if (d.armor) { const cur = inv.armor[d.armor.slot]; inv.armor[d.armor.slot] = s; v.arr[v.i] = cur; g.audio.play('dig_cloth', 0.6); }
+      else if (d.acc && inv.acc.some((a) => a && a.k === s.k)) { g.toast('Already wearing one: a second adds nothing', '#ff9a8a'); g.audio.play('error', 0.4); return; }
       else if (d.acc && inv.acc.includes(null)) { inv.acc[inv.acc.indexOf(null)] = s; v.arr[v.i] = null; g.audio.play('dig_cloth', 0.6); }
       else if (v.i < 9) into(inv.slots, 9, 36); else into(inv.slots, 0, 9);
     } else {
