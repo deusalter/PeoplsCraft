@@ -15,6 +15,12 @@ const queue = new Int32Array(QN);
 const h15 = new Int16Array(RAREA);   // first y (from the top) where the column stops being fully sky-lit
 const stop = new Int16Array(RAREA);  // y where the direct beam died
 const SX = 256, SZ = RS * 256;
+// Only the centre chunk and a one-column rim (columns 15..32) are ever read back. `need` is a column's distance
+// from that footprint: every step costs at least one level, so a cell must have more light than that to matter.
+const need = new Uint8Array(RAREA);
+for (let z = 0; z < RS; z++) for (let x = 0; x < RS; x++) need[z * RS + x] = Math.max(0, 15 - x, x - 32) + Math.max(0, 15 - z, z - 32);
+const seeds: number[] = [];
+let skyDirty = true, blockDirty = true;
 
 /** Copy nine chunk arrays into the region buffer. Column-major layout makes this 2304 memcpys. */
 export function assembleRegion(chunks: Uint8Array[]): void {
@@ -32,7 +38,9 @@ function flood(L: Uint8Array, head: number, tail: number): void {
     const i = queue[head++ & QM];
     const l = L[i] - 1;
     if (l <= 0) continue;
-    const y = i & 255, c = i >> 8, x = c % RS, z = (c / RS) | 0;
+    const y = i & 255, c = i >> 8;
+    if (l < need[c]) continue;   // cannot reach the footprint: values out here end up too low, but nothing reads them
+    const x = c % RS, z = (c / RS) | 0;
     let j: number, id: number, nl: number;
     if (y > 0) { j = i - 1; id = rb[j]; if (!T_OPAQUE[id]) { nl = l - T_ATTEN[id]; if (nl > L[j]) { L[j] = nl; queue[tail++ & QM] = j; } } }
     if (y < CH - 1) { j = i + 1; id = rb[j]; if (!T_OPAQUE[id]) { nl = l - T_ATTEN[id]; if (nl > L[j]) { L[j] = nl; queue[tail++ & QM] = j; } } }
@@ -45,9 +53,12 @@ function flood(L: Uint8Array, head: number, tail: number): void {
 
 /** Light the region. `emit[n]` says whether chunk n contains any light-emitting block. */
 export function computeLight(hasSky: boolean, emit: boolean[]): void {
-  sky.fill(0); lr.fill(0); lg.fill(0); lb.fill(0);
+  // the buffers are 590 KB each: clear only the ones the previous job wrote to
+  if (skyDirty) { sky.fill(0); skyDirty = false; }
+  if (blockDirty) { lr.fill(0); lg.fill(0); lb.fill(0); blockDirty = false; }
 
   if (hasSky) {
+    skyDirty = true;
     // direct beams
     for (let c = 0; c < RAREA; c++) {
       const base = c << 8;
@@ -66,30 +77,33 @@ export function computeLight(hasSky: boolean, emit: boolean[]): void {
     // seed every lit cell that sits beside a column whose beam ended higher up
     let tail = 0;
     for (let z = 0; z < RS; z++) for (let x = 0; x < RS; x++) {
-      const c = z * RS + x, base = c << 8;
+      const c = z * RS + x, base = c << 8, nd = need[c], min = nd > 1 ? nd : 1;
+      if (nd > 14) continue;
       let hi = h15[c];
       if (x > 0 && h15[c - 1] > hi) hi = h15[c - 1];
       if (x < RS - 1 && h15[c + 1] > hi) hi = h15[c + 1];
       if (z > 0 && h15[c - RS] > hi) hi = h15[c - RS];
       if (z < RS - 1 && h15[c + RS] > hi) hi = h15[c + RS];
       if (hi > CH - 1) hi = CH - 1;
-      for (let y = stop[c] + 1; y <= hi; y++) if (sky[base + y] > 1) queue[tail++ & QM] = base + y;
+      for (let y = stop[c] + 1; y <= hi; y++) if (sky[base + y] > min) queue[tail++ & QM] = base + y;
     }
     flood(sky, 0, tail);
   }
 
   // block light, one channel at a time
   let tr = 0;
-  const seeds: number[] = [];
+  seeds.length = 0;
   for (let n = 0; n < 9; n++) {
     if (!emit[n]) continue;
     const bx = (n % 3) * 16, bz = ((n / 3) | 0) * 16;
     for (let z = 0; z < 16; z++) for (let x = 0; x < 16; x++) {
-      const base = ((bz + z) * RS + bx + x) << 8;
+      const col = (bz + z) * RS + bx + x, base = col << 8;
+      if (need[col] > 14) continue;
       for (let y = 1; y < CH - 1; y++) if (T_EMITS[rb[base + y]]) seeds.push(base + y);
     }
   }
   if (seeds.length) {
+    blockDirty = true;
     tr = 0; for (const i of seeds) { const v = T_EMIT_R[rb[i]]; if (v) { lr[i] = v; queue[tr++ & QM] = i; } } flood(lr, 0, tr);
     tr = 0; for (const i of seeds) { const v = T_EMIT_G[rb[i]]; if (v) { lg[i] = v; queue[tr++ & QM] = i; } } flood(lg, 0, tr);
     tr = 0; for (const i of seeds) { const v = T_EMIT_B[rb[i]]; if (v) { lb[i] = v; queue[tr++ & QM] = i; } } flood(lb, 0, tr);
