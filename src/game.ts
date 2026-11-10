@@ -260,9 +260,15 @@ export class Game implements InteractHost {
     this.gainXp(d.xp);
     const coins = Math.round((d.coins[0] + Math.random() * (d.coins[1] - d.coins[0])) * luck);
     if (coins > 0) { this.inv.coins += coins; this.inv.touch(); this.floater(m.x, m.y + m.h + 0.6, m.z, `+${coins}c`, '#f2c14e'); if (coins > 20) this.audio.play('coin'); }
+    // Boss loot pops up at the player: the body may be over the void, inside rock or under the sand.
+    // In mid-air (or dead) it goes to the last place the player stood, so it cannot fall out of the world.
+    const p = this.player, sf = this.safe, air = this.stats.dead || (!p.onGround && !p.inWater && !p.flying && Math.hypot(sf[0] - p.x, sf[1] - p.y, sf[2] - p.z) < 32);
+    const lx = air ? sf[0] : p.x, ly = (air ? sf[1] : p.y) + 1.2, lz = air ? sf[2] : p.z;
     for (const [k, chance, a, b] of d.drops) {
       if (Math.random() > chance * (d.boss ? 1 : luck)) continue;
-      this.drops.spawn(m.x, m.y + m.h * 0.5, m.z, { k, n: a + Math.floor(Math.random() * (b - a + 1)), m: rollModifier(k, Math.random, d.boss ? 0.7 : 0.4) });
+      const it = { k, n: a + Math.floor(Math.random() * (b - a + 1)), m: rollModifier(k, Math.random, d.boss ? 0.7 : 0.4) };
+      if (d.boss) this.drops.spawn(lx, ly, lz, it, (Math.random() - 0.5) * 1.5, 3.5, (Math.random() - 0.5) * 1.5, 0.3);
+      else this.drops.spawn(m.x, m.y + m.h * 0.5, m.z, it);
     }
     this.events.onKill(m);
     if (d.boss) {
