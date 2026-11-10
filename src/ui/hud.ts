@@ -43,7 +43,7 @@ export class Hud {
   private buffs: HTMLElement; private prompt: HTMLElement; private hurt: HTMLElement; private portal: HTMLElement;
   private hurtDir: HTMLElement; private cross: HTMLElement; private hitT = 0; private hitOn = false; private critOn = false;
   private floats: Floater[] = []; private tags: HTMLElement[] = [];
-  private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private buffKey = ''; private coinV = -1; private lvlV = -1; private ptsV = -1;
+  private rev = -1; private sel = -1; private nameT = 0; private questKey = ''; private questIdx = -1; private questT = 0; private regenOn = false; private buffKey = ''; private coinV = -1; private lvlV = -1; private ptsV = -1;
   private v = new THREE.Vector3();
   // cached values so frames where nothing changed build no strings and touch no classes
   private hpI = -1; private maxHpI = -1; private hpText = ''; private manaI = -1; private maxManaI = -1; private manaText = ''; private foodI = -1; private foodText = '';
@@ -56,7 +56,7 @@ export class Hud {
     el('div', '#lowhp', r); this.hurtDir = el('div', '#hurtdir', r);
     this.cross = el('div', '#crosshair', r);
     const wrap = el('div', '#hotwrap', r), bars = el('div', 'bars', wrap);
-    this.hp = bar('hp', bars, true); this.food = bar('food', bars); this.mana = bar('mana', bars); this.coins = el('div', '#coins', bars);
+    this.hp = bar('hp', bars, true); this.food = bar('food', bars); el('s', 'notch', this.food.root); this.mana = bar('mana', bars); this.coins = el('div', '#coins', bars);
     this.xp = bar('xp', bars);
     const hb = el('div', '#hotbar', wrap);
     for (let i = 0; i < HOTBAR; i++) {
@@ -230,8 +230,16 @@ export class Hud {
       this.questKey = q.key;
       this.quest.innerHTML = '';
       el('div', 't', this.quest, q.chapter); el('div', 'h', this.quest, q.title); el('div', 'd', this.quest, q.hint);
+      if (q.need > 0) {
+        const pr = el('div', 'p', this.quest); el('span', '', pr, `${q.have} / ${q.need}`);
+        const b = el('div', 'pb', pr); el('i', '', b).style.transform = `scaleX(${q.have / q.need})`;
+      }
       if (q.where) el('div', 'w', this.quest, q.where);
+      if (q.index !== this.questIdx) { if (this.questIdx >= 0) { this.quest.classList.add('new'); this.questT = 1.2; } this.questIdx = q.index; }
     }
+    if (this.questT > 0) { this.questT -= dt; if (this.questT <= 0) this.quest.classList.remove('new'); }
+    const regen = st.hunger >= 14 && st.hp < st.maxHp && !st.dead;
+    if (regen !== this.regenOn) { this.regenOn = regen; this.hp.root.classList.toggle('regen', regen); }
     const ev = g.events;
     if ((ev.active !== null) !== this.eventOn) { this.eventOn = ev.active !== null; this.event.classList.toggle('hidden', !this.eventOn); }
     if (ev.active) {
