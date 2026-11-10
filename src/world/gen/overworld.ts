@@ -243,6 +243,17 @@ export class OverworldGen implements Generator {
         if (rr < 0.006 + 0.028 * ((y - bottom) / (h - bottom))) blocks[base + y] = AIR;
       }
     }
+    // nightglass: deep rock touching lava sometimes quenches to glass. Reads only this chunk's own
+    // cells and a position hash, so no chunk depends on another and no shared RNG is consumed.
+    for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
+      const base = ((lz << 4) | lx) << 8, wx = ox + lx, wz = oz + lz;
+      for (let y = 4; y <= lavaY + 1; y++) {
+        const i = base + y, id = blocks[i];
+        if (id !== DEEP && id !== B.scoria) continue;
+        if (blocks[i + 1] !== LAVA && blocks[i - 1] !== LAVA && !(lx > 0 && blocks[i - 256] === LAVA) && !(lx < 15 && blocks[i + 256] === LAVA) && !(lz > 0 && blocks[i - 4096] === LAVA) && !(lz < 15 && blocks[i + 4096] === LAVA)) continue;
+        if (hash01(wx, y, wz, seed + 11) < 0.3) blocks[i] = B.nightglass;
+      }
+    }
 
     // ---- 4. deep cave dressing -------------------------------------------------
     for (let lz = 0; lz < CS; lz++) for (let lx = 0; lx < CS; lx++) {
