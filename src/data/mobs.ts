@@ -30,10 +30,20 @@ import type { Drop } from './blocks';
  *        spin         orbit about y with a slight bob            spin2      slow counter-rotation about y
  *        spinx spinz  continuous rotation about x / z            sway       loose two-axis sway (tendrils, banners)
  *        squash       stretches with vertical speed (hoppers)    pulse      throbbing size and glow (cores, hearts)
+ *        shinA shinB  knee of a two-part leg (child of legA/B)   foreA foreB  elbow of a two-part arm (child of armA/B)
+ *        wingA2 wingB2  outer wing, lags the inner one it rides  claw       talons: tucked, thrown forward in a dive
+ *        body         waist: leans into wind-ups and strikes     neck       lowers the head for a charge
+ *        mandA mandB  side jaws, opening about y                 cape       hangs, streams back when moving
+ *        halo         orbit that speeds up with boss phase and tilts into a barrel while the boss aims
+ *        float        loose stacked stone: bobs, twists and lifts apart with boss phase
+ *        arch         frame piece that spreads from its joint with boss phase
+ *        robe clap    bell-shaped skirt swinging from one hinge, and its clapper (child of the robe)
+ *        seal         slow wheel about z, faster with boss phase
+ *   k    animation gain: multiplies the tag's motion (0.3 = subtle, -1 = mirrored). Default 1.
  */
 export interface Part {
   s: [number, number, number]; p: [number, number, number]; o?: [number, number, number]; c: number; a?: string; e?: number;
-  r?: [number, number, number]; t?: number; ph?: [number, number]; n?: string; par?: string; ap?: number;
+  r?: [number, number, number]; t?: number; ph?: [number, number]; n?: string; par?: string; ap?: number; k?: number;
 }
 export interface SpawnRule { dim: number; biomes?: string[]; where: 'surface' | 'cave' | 'water' | 'air'; time: 'day' | 'night' | 'any'; y?: [number, number]; weight: number; group: [number, number]; flag?: string; event?: string }
 
@@ -49,7 +59,14 @@ export type Attack =
   | { t: 'beam'; proj: string; dmg: number; windup: number; dur: number }
   | { t: 'burrow'; dmg: number; ring?: [proj: string, n: number] };
 export interface Phase { below: number; speed: number; cd: [number, number]; attacks: Attack[]; enter?: Attack; say?: string }
-export interface BossSpec { n: number; move: 'walk' | 'hover' | 'burrow' | 'fly'; phases: Phase[]; title: string; intro: string; segments?: number }
+/** A boss script. Optional model hooks: `seg` is the box list of one body segment (drawn `segments` times along the trail behind a
+ *  burrower, tapering, each turned toward the link ahead; built round its own centre, facing +z); `cast` the height above the feet
+ *  that shots leave from (default 0.6 of the height); `spin` the speed of 'halo' / 'seal' pieces as [base, extra at the last phase];
+ *  `stomp` the camera shake of each footfall; `gallop` switches the legs to a bounding gait at speed; `castSound` plays at each cast. */
+export interface BossSpec {
+  n: number; move: 'walk' | 'hover' | 'burrow' | 'fly'; phases: Phase[]; title: string; intro: string; segments?: number;
+  seg?: Part[]; cast?: number; spin?: [number, number]; stomp?: number; gallop?: boolean; castSound?: string;
+}
 
 export interface MobDef {
   key: string; name: string; hp: number; dmg: number; def: number; speed: number; xp: number; coins: [number, number];
@@ -252,30 +269,193 @@ M.push(npc('n_wayfinder', 'Wayfinder', 0x3a7a5a, 0x8a5f34), npc('n_provisioner',
   npc('n_beastcaller', 'Beastcaller', 0x2f8a7a, 0xece6d2, 0xb88860), npc('n_deserter', 'Ashen Deserter', 0x5a5a62, 0x8a2a22, 0xa8a8b0));
 
 // ---- bosses --------------------------------------------------------------------------------
+type PartX = Omit<Partial<Part>, 's' | 'p' | 'c'>;
+/** Shorthand for one box: size, joint, colour, then any other Part fields. */
+const B = (sx: number, sy: number, sz: number, px: number, py: number, pz: number, c: number, x?: PartX): Part => ({ s: [sx, sy, sz], p: [px, py, pz], c, ...x });
+/** The boxes followed by their mirror image across x = 0 (a left limb and its right twin). Mirrored joints get a "'" on their
+ *  name, tags ending in A / B swap, and `ap` is added to the twin's animation phase. */
+function sym(ps: Part[], ap = 0): Part[] {
+  const names = new Set(ps.map((q) => q.n));
+  const flip = (q: Part): Part => ({ ...q, p: [-q.p[0], q.p[1], q.p[2]], o: q.o && [-q.o[0], q.o[1], q.o[2]], r: q.r && [q.r[0], -q.r[1], -q.r[2]],
+    a: q.a && (/A\d?$/.test(q.a) ? q.a.replace(/A(\d?)$/, 'B$1') : q.a.replace(/B(\d?)$/, 'A$1')), n: q.n && q.n + "'", par: q.par && (names.has(q.par) ? q.par + "'" : q.par), ap: (q.ap ?? 0) + ap || undefined });
+  return [...ps, ...ps.map(flip)];
+}
+
+// Mossback Colossus: a hunched hill of masonry on short legs, long arms ending in boulder fists, a moss mantle with a tree
+// growing from one shoulder, and a green heart caged by roots in its chest. Roots burst from its back in the second phase.
+const ST1 = 0x85837a, ST2 = 0x6c6b62, ST3 = 0x53524a, MOSS = 0x47852f, MOSS2 = 0x346326, MOSS3 = 0x64a83e, WOOD = 0x6a4a2a, WOOD2 = 0x4e3620;
 const colossus: Part[] = [
-  { s: [1.1, 1.3, 1.1], p: [-0.8, 1.3, 0], o: [0, -0.65, 0], c: 0x4a5a3a, a: 'legA' }, { s: [1.1, 1.3, 1.1], p: [0.8, 1.3, 0], o: [0, -0.65, 0], c: 0x4a5a3a, a: 'legB' },
-  { s: [2.8, 2.2, 1.8], p: [0, 2.4, 0], c: 0x5a6a48 }, { s: [3.0, 0.5, 2.0], p: [0, 3.6, 0], c: 0x5a8a42 },
-  { s: [0.9, 2.4, 0.9], p: [-1.85, 3.3, 0], o: [0, -1.2, 0], c: 0x6a7a55, a: 'armA' }, { s: [0.9, 2.4, 0.9], p: [1.85, 3.3, 0], o: [0, -1.2, 0], c: 0x6a7a55, a: 'armB' },
-  { s: [1.2, 1.0, 1.1], p: [0, 4.3, 0.2], c: 0x6a7a55, a: 'head' }, { s: [0.24, 0.2, 0.06], p: [0, 4.3, 0.2], o: [-0.3, 0.1, 0.58], c: 0x9aff6a, e: 1, a: 'head' }, { s: [0.24, 0.2, 0.06], p: [0, 4.3, 0.2], o: [0.3, 0.1, 0.58], c: 0x9aff6a, e: 1, a: 'head' },
-  { s: [0.5, 0.5, 0.5], p: [0, 2.6, 0.95], c: 0x6ae05a, e: 0.9 }, { s: [0.3, 0.8, 0.3], p: [-0.9, 4.2, -0.4], c: 0x4f9e33 }, { s: [0.3, 1.1, 0.3], p: [0.7, 4.3, -0.5], c: 0x4f9e33 },
+  B(3.4, 1.9, 2.2, 0, 2.4, 0, ST1, { o: [0, 1.7, 0.1], r: [0.15, 0, 0], t: 3, a: 'body', n: 'torso' }),
+  B(2.3, 1.0, 1.6, 0, 0, 0, ST2, { o: [0, 0.45, 0], par: 'torso' }),
+  B(2.7, 0.9, 1.8, 0, 2.0, 0, ST3), B(2.9, 0.3, 2.0, 0, 2.42, 0, WOOD, { t: 7 }),
+  // legs: thigh, then shin and foot riding the knee
+  ...sym([
+    B(1.15, 1.2, 1.25, -0.95, 1.9, 0, ST2, { o: [0, -0.5, 0], a: 'legA', n: 'hip' }),
+    B(1.3, 0.9, 1.4, 0, -0.95, 0, ST1, { o: [0, -0.35, 0.05], t: 3, a: 'shinA', par: 'hip', n: 'knee' }),
+    B(1.55, 0.42, 2.0, 0, 0, 0, ST3, { o: [0, -0.74, 0.3], par: 'knee' }),
+    B(1.2, 0.2, 0.7, 0, 0, 0, MOSS, { o: [0, -0.45, 0.85], t: 2, par: 'knee' }),
+  ]),
+  // caged heart
+  B(1.3, 1.2, 0.16, 0, 0, 0, 0x1a2014, { o: [0, 1.65, 1.2], par: 'torso' }),
+  B(0.62, 0.52, 0.34, 0, 1.65, 1.3, 0x7dff5a, { e: 1, a: 'pulse', par: 'torso' }),
+  B(1.5, 0.16, 0.2, 0, 0, 0, WOOD, { o: [0, 2.02, 1.38], t: 7, par: 'torso' }), B(1.5, 0.16, 0.2, 0, 0, 0, WOOD, { o: [0, 1.28, 1.34], t: 7, par: 'torso' }),
+  B(0.13, 0.9, 0.13, 0, 0, 0, WOOD2, { o: [-0.24, 1.65, 1.5], r: [0, 0, 0.12], par: 'torso' }), B(0.13, 0.9, 0.13, 0, 0, 0, WOOD2, { o: [0.2, 1.65, 1.5], r: [0, 0, -0.1], par: 'torso' }),
+  // moss mantle, drape and hanging strands
+  B(4.0, 0.5, 2.6, 0, 0, 0, MOSS, { o: [0, 2.85, -0.05], t: 2, par: 'torso' }), B(3.0, 0.4, 2.0, 0, 0, 0, MOSS3, { o: [0, 3.25, -0.25], t: 2, par: 'torso' }),
+  B(3.0, 1.7, 0.22, 0, 0, 0, MOSS2, { o: [0, 1.85, -1.08], t: 7, par: 'torso' }),
+  B(0.34, 0.8, 0.14, 0, 2.6, 1.28, MOSS2, { o: [-1.35, -0.4, 0], t: 7, a: 'sway', k: 0.4, par: 'torso' }), B(0.3, 0.55, 0.14, 0, 2.6, 1.28, MOSS, { o: [1.2, -0.28, 0], t: 7, a: 'sway', k: 0.4, ap: 2, par: 'torso' }),
+  // shoulders: the right one is the bigger, and carries the tree
+  B(1.7, 1.5, 1.8, 0, 0, 0, ST2, { o: [-2.4, 2.5, 0], t: 3, par: 'torso' }), B(1.95, 1.75, 2.05, 0, 0, 0, ST2, { o: [2.5, 2.6, 0], t: 3, par: 'torso' }),
+  B(1.5, 0.3, 1.6, 0, 0, 0, MOSS, { o: [-2.4, 3.35, 0], t: 2, par: 'torso' }), B(1.7, 0.3, 1.8, 0, 0, 0, MOSS3, { o: [2.5, 3.6, 0], t: 2, par: 'torso' }),
+  // arms: upper arm, then forearm and fist riding the elbow
+  ...sym([
+    B(1.0, 1.5, 1.0, -2.45, 2.3, 0, ST2, { o: [0, -0.8, 0], a: 'armA', par: 'torso', n: 'arm' }),
+    B(1.35, 1.5, 1.35, 0, -1.55, 0, ST1, { o: [0, -0.7, 0], t: 3, a: 'foreA', par: 'arm', n: 'fore' }),
+    B(1.45, 0.24, 1.45, 0, 0, 0, WOOD, { o: [0, -0.15, 0], t: 7, par: 'fore' }),
+    B(1.65, 1.3, 1.65, 0, 0, 0, ST3, { o: [0, -1.95, 0], t: 6, par: 'fore' }),
+    B(1.2, 0.2, 1.3, 0, 0, 0, MOSS, { o: [0, -1.22, 0.1], t: 2, par: 'fore' }),
+  ]),
+  // head, sunk between the shoulders, with a hanging jaw
+  B(1.3, 1.1, 1.3, 0, 2.85, 0.8, ST1, { a: 'head', par: 'torso', n: 'head' }),
+  B(1.5, 0.3, 0.6, 0, 0, 0, ST3, { o: [0, 0.3, 0.45], par: 'head' }), B(1.4, 0.26, 1.3, 0, 0, 0, MOSS3, { o: [0, 0.66, -0.05], t: 2, par: 'head' }),
+  B(0.32, 0.18, 0.08, 0, 0, 0, 0xc4ff8a, { o: [-0.33, 0.07, 0.66], e: 1, par: 'head' }), B(0.32, 0.18, 0.08, 0, 0, 0, 0xc4ff8a, { o: [0.33, 0.07, 0.66], e: 1, par: 'head' }),
+  B(1.1, 0.36, 1.1, 0, -0.45, 0.05, ST3, { o: [0, -0.12, 0.2], a: 'jawB', k: 0.6, par: 'head', n: 'jaw' }),
+  B(0.2, 0.3, 0.2, 0, 0, 0, 0xd8d2bc, { o: [-0.36, 0.16, 0.62], par: 'jaw' }), B(0.2, 0.3, 0.2, 0, 0, 0, 0xd8d2bc, { o: [0.36, 0.16, 0.62], par: 'jaw' }),
+  // back: a tree on the right shoulder, a broken stump and a leaning menhir
+  B(0.42, 1.7, 0.42, 1.4, 3.3, -0.7, WOOD, { o: [0, 0.8, 0], r: [0, 0, -0.12], t: 7, a: 'sway', k: 0.25, par: 'torso', n: 'tree' }),
+  B(1.9, 0.8, 1.9, 0, 0, 0, MOSS2, { o: [0.2, 1.85, 0], t: 2, par: 'tree' }), B(1.4, 0.7, 1.5, 0, 0, 0, MOSS, { o: [0.05, 2.5, 0.1], r: [0, 0.5, 0], t: 2, par: 'tree' }),
+  B(0.8, 0.5, 0.8, 0, 0, 0, MOSS3, { o: [0.3, 3.0, -0.05], t: 2, par: 'tree' }), B(0.9, 0.5, 0.9, 0, 0, 0, MOSS, { o: [1.0, 1.6, 0.5], r: [0, 0.3, 0.2], t: 2, par: 'tree' }),
+  B(0.3, 0.14, 0.9, 0, 0, 0, WOOD2, { o: [0.15, 1.2, 0.5], r: [0.5, 0, 0], par: 'tree' }),
+  B(0.46, 0.8, 0.46, 0, 0, 0, WOOD2, { o: [-1.25, 3.7, -0.6], t: 7, par: 'torso' }),
+  B(0.55, 1.3, 0.5, 0, 0, 0, ST3, { o: [-0.3, 3.7, -0.95], r: [-0.35, 0, 0.2], t: 3, par: 'torso' }),
+  // second phase: roots tear out of the back and coil round the arms
+  B(0.26, 1.9, 0.26, -1.3, 3.0, -0.9, WOOD, { o: [0, 0.95, 0], r: [-0.5, 0, 0.45], t: 7, a: 'sway', ph: [1, 1], par: 'torso' }),
+  B(0.26, 2.2, 0.26, 0.3, 3.0, -1.1, WOOD, { o: [0, 1.1, 0], r: [-0.8, 0, -0.1], t: 7, a: 'sway', ap: 1.7, ph: [1, 1], par: 'torso' }),
+  B(0.22, 1.5, 0.22, -2.6, 3.2, -0.3, WOOD2, { o: [0, 0.75, 0], r: [-0.2, 0, 0.7], t: 7, a: 'sway', ap: 3.1, ph: [1, 1], par: 'torso' }),
+  B(0.2, 0.2, 0.2, 0, 0, 0, 0x7dff5a, { o: [-0.55, 2.2, 1.3], e: 1, ph: [1, 1], par: 'torso' }), B(0.2, 0.2, 0.2, 0, 0, 0, 0x7dff5a, { o: [0.6, 1.2, 1.26], e: 1, ph: [1, 1], par: 'torso' }),
 ];
+// Dune Maw: an armoured worm. Four jaws (upper, lower and two side mandibles) open like a flower round a glowing gullet;
+// ember eyes run down both flanks, and every body segment carries a plate, a spine, two fins and a glowing belly.
+const SAND1 = 0xd8ba70, SAND2 = 0xb89650, SHELL = 0x8a6a34, SHELL2 = 0x5e4420, BONE = 0xf2ecd0, EMBER = 0xff8a2a, GULLET = 0xff5a2a;
 const maw: Part[] = [
-  { s: [1.6, 1.6, 1.8], p: [0, 0.9, 0], c: 0xcfae62 }, { s: [1.7, 0.3, 1.2], p: [0, 1.75, 0], c: 0x8a6a34 },
-  { s: [1.3, 0.5, 0.9], p: [0, 1.25, 0.9], o: [0, 0, 0.45], c: 0xdcc88c, a: 'jawA' }, { s: [1.3, 0.5, 0.9], p: [0, 0.6, 0.9], o: [0, 0, 0.45], c: 0xb89650, a: 'jawB' },
-  { s: [0.2, 0.2, 0.06], p: [-0.5, 1.5, 0.92], c: 0xff8a2a, e: 1 }, { s: [0.2, 0.2, 0.06], p: [0.5, 1.5, 0.92], c: 0xff8a2a, e: 1 },
-  { s: [0.16, 0.3, 0.16], p: [0, 1.25, 0.9], o: [-0.4, -0.3, 0.7], c: 0xf2f0d0, a: 'jawA' }, { s: [0.16, 0.3, 0.16], p: [0, 1.25, 0.9], o: [0.4, -0.3, 0.7], c: 0xf2f0d0, a: 'jawA' },
+  B(2.2, 2.0, 1.9, 0, 1.1, -0.35, SAND1, { t: 5 }), B(2.6, 2.4, 0.5, 0, 1.1, -1.15, SHELL, { t: 6 }), B(1.9, 1.7, 0.5, 0, 1.1, -1.6, SAND2),
+  B(2.4, 0.36, 1.7, 0, 2.2, -0.35, SHELL, { t: 1 }), B(1.6, 0.3, 1.2, 0, 2.48, -0.55, SHELL2, { t: 1, ph: [0, 0] }),
+  B(0.3, 1.0, 0.5, 0, 2.75, -0.8, SHELL2, { r: [-0.5, 0, 0] }), B(0.24, 0.7, 0.4, 0, 2.6, -0.1, SHELL2, { r: [-0.35, 0, 0] }),
+  // the second phase sheds the crest and shows the hot spine under it
+  B(0.5, 0.2, 1.3, 0, 2.42, -0.5, GULLET, { e: 0.9, ph: [1, 1] }), B(2.3, 0.12, 0.2, 0, 2.4, 0.1, GULLET, { e: 0.8, ph: [1, 1] }),
+  B(1.6, 1.4, 0.14, 0, 1.1, 0.62, GULLET, { e: 0.9 }), B(0.8, 0.7, 0.16, 0, 1.1, 0.66, 0xffd27a, { e: 1, a: 'pulse' }),
+  // upper and lower jaw with their teeth
+  B(2.0, 0.6, 1.8, 0, 1.8, 0.4, SAND1, { o: [0, 0, 0.85], t: 5, a: 'jawA', n: 'up' }), B(1.3, 0.42, 0.6, 0, 0, 0, SHELL, { o: [0, 0.02, 1.85], par: 'up' }),
+  B(2.1, 0.22, 1.2, 0, 0, 0, SHELL, { o: [0, 0.36, 0.7], t: 1, par: 'up' }),
+  ...[-0.78, -0.27, 0.27, 0.78].map((x) => B(0.2, 0.5, 0.2, 0, 0, 0, BONE, { o: [x, -0.5, 1.6 - Math.abs(x) * 0.25], par: 'up' })),
+  B(0.18, 0.36, 0.18, 0, 0, 0, BONE, { o: [-0.88, -0.44, 0.85], par: 'up' }), B(0.18, 0.36, 0.18, 0, 0, 0, BONE, { o: [0.88, -0.44, 0.85], par: 'up' }),
+  B(1.9, 0.55, 1.7, 0, 0.42, 0.4, SAND2, { o: [0, 0, 0.8], a: 'jawB', n: 'low' }), B(1.0, 0.3, 0.5, 0, 0, 0, SHELL2, { o: [0, -0.2, 1.6], par: 'low' }),
+  ...[-0.55, 0, 0.55].map((x) => B(0.2, 0.44, 0.2, 0, 0, 0, BONE, { o: [x, 0.46, 1.45 - Math.abs(x) * 0.3], par: 'low' })),
+  B(0.18, 0.32, 0.18, 0, 0, 0, BONE, { o: [-0.82, 0.4, 0.7], par: 'low' }), B(0.18, 0.32, 0.18, 0, 0, 0, BONE, { o: [0.82, 0.4, 0.7], par: 'low' }),
+  ...sym([
+    // side mandible with a hooked tip
+    B(0.36, 0.8, 1.5, -1.12, 1.1, 0.3, SHELL, { o: [0, 0, 0.7], t: 1, a: 'mandA', n: 'mand' }), B(0.3, 0.4, 0.6, 0, 0, 0, BONE, { o: [0.22, 0, 1.55], r: [0, 0.6, 0], par: 'mand' }),
+    // ember eyes and a swept horn
+    B(0.08, 0.34, 0.34, -1.12, 1.62, -0.05, EMBER, { e: 1 }), B(0.08, 0.2, 0.2, -1.12, 1.3, -0.5, EMBER, { e: 1 }), B(0.08, 0.16, 0.16, -1.12, 1.75, -0.6, EMBER, { e: 1 }),
+    B(0.3, 0.3, 1.3, -1.2, 2.0, -0.9, BONE, { r: [0.25, 0.3, 0] }),
+  ]),
 ];
+const mawSeg: Part[] = [
+  B(1.9, 1.8, 1.3, 0, 0, 0, SAND1, { t: 5 }), B(1.55, 1.45, 0.6, 0, 0, -0.75, SAND2),
+  B(2.05, 0.36, 1.05, 0, 0.86, 0, SHELL, { t: 1 }), B(0.22, 0.7, 0.4, 0, 1.2, -0.15, SHELL2, { r: [-0.5, 0, 0] }),
+  B(1.15, 0.14, 0.95, 0, -0.9, 0, EMBER, { e: 0.6 }),
+  ...sym([B(0.6, 0.14, 0.7, -0.95, -0.25, 0, SHELL, { o: [-0.3, 0, 0], r: [0, 0, 0.35], a: 'sway', k: 1.4 })]),
+];
+// The Pale Warden: a hooded keeper whose robe is a bell. The tiers swing from one hinge with a glowing clapper under them, the
+// hands float free of the sleeves, a square seal wheels behind the head (and breaks in the last phase) and lanterns circle it.
+const ROBE1 = 0xaab4c8, ROBE2 = 0x7e8aa6, ROBE3 = 0x5a6584, ROBE4 = 0x333a50, PALE = 0xe9e2cf, WGLOW = 0x6ab8f6, GOLD = 0xd8b44a;
 const warden: Part[] = [
-  { s: [1.3, 2.2, 0.8], p: [0, 1.9, 0], c: 0x8a94a8 }, { s: [1.5, 1.3, 1.0], p: [0, 0.7, 0], c: 0x5a6274, a: 'tail' },
-  { s: [0.9, 0.9, 0.9], p: [0, 3.5, 0], c: 0xe6dfcc, a: 'head' }, { s: [0.2, 0.26, 0.06], p: [-0.22, 3.55, 0.47], c: 0x6ab8f6, e: 1, a: 'head' }, { s: [0.2, 0.26, 0.06], p: [0.22, 3.55, 0.47], c: 0x6ab8f6, e: 1, a: 'head' },
-  { s: [0.4, 1.9, 0.4], p: [-0.9, 2.9, 0], o: [0, -0.95, 0], c: 0xe6dfcc, a: 'armA' }, { s: [0.4, 1.9, 0.4], p: [0.9, 2.9, 0], o: [0, -0.95, 0], c: 0xe6dfcc, a: 'armB' },
-  { s: [1.1, 0.3, 1.1], p: [0, 4.1, 0], c: 0x5a6274, a: 'head' }, { s: [0.3, 0.3, 0.3], p: [0, 4.9, 0], c: 0x6ab8f6, e: 1, a: 'spin', o: [1.2, 0, 0] }, { s: [0.3, 0.3, 0.3], p: [0, 4.9, 0], c: 0x6ab8f6, e: 1, a: 'spin', o: [-1.2, 0, 0] },
+  B(1.45, 1.0, 1.0, 0, 3.8, 0, ROBE1, { t: 7 }),
+  // bell robe and clapper
+  B(1.55, 0.8, 1.25, 0, 3.3, 0, ROBE2, { o: [0, -0.4, 0], t: 7, a: 'robe', n: 'bell' }),
+  B(2.0, 0.7, 1.7, 0, 0, 0, ROBE1, { o: [0, -1.1, 0], t: 7, par: 'bell' }), B(2.5, 0.6, 2.2, 0, 0, 0, ROBE3, { o: [0, -1.7, 0], t: 7, par: 'bell' }),
+  B(3.0, 0.36, 2.7, 0, 0, 0, ROBE4, { o: [0, -2.15, 0], t: 6, par: 'bell' }), B(3.06, 0.1, 2.76, 0, 0, 0, WGLOW, { o: [0, -2.36, 0], e: 0.7, par: 'bell' }),
+  B(2.56, 0.12, 2.26, 0, 0, 0, GOLD, { o: [0, -1.4, 0], par: 'bell' }),
+  B(0.16, 1.9, 0.16, 0, -0.8, 0, ROBE4, { o: [0, -0.95, 0], a: 'clap', par: 'bell', n: 'clap' }), B(0.52, 0.52, 0.52, 0, 0, 0, WGLOW, { o: [0, -2.08, 0], e: 1, par: 'clap' }),
+  // mantle, chest sigil and a ring of keys at the hip
+  B(2.5, 0.45, 1.4, 0, 4.35, 0, PALE, { t: 6 }), B(1.7, 0.3, 1.1, 0, 4.7, -0.05, ROBE3),
+  B(0.36, 0.5, 0.08, 0, 3.85, 0.52, WGLOW, { e: 1, a: 'pulse' }), B(0.7, 0.1, 0.08, 0, 3.85, 0.52, GOLD),
+  B(0.5, 0.5, 0.08, 0.6, 3.3, 0.68, GOLD, { o: [0, -0.3, 0], a: 'sway', k: 0.6, n: 'keys' }), B(0.1, 0.6, 0.08, 0, 0, 0, GOLD, { o: [-0.12, -0.8, 0], par: 'keys' }), B(0.1, 0.45, 0.08, 0, 0, 0, GOLD, { o: [0.14, -0.72, 0], par: 'keys' }),
+  // hooded mask
+  B(0.9, 1.15, 0.8, 0, 5.0, 0.15, PALE, { a: 'head', n: 'head' }),
+  B(1.2, 1.35, 0.95, 0, 0, 0, ROBE4, { o: [0, 0.14, -0.32], t: 7, par: 'head' }), B(0.66, 0.66, 0.66, 0, 0, 0, ROBE4, { o: [0, 0.95, -0.55], r: [-0.4, 0, 0], par: 'head' }),
+  B(1.0, 0.16, 0.5, 0, 0, 0, ROBE3, { o: [0, 0.66, 0.02], par: 'head' }),
+  B(0.15, 0.4, 0.06, 0, 0, 0, WGLOW, { o: [-0.22, 0.12, 0.41], e: 1, par: 'head' }), B(0.15, 0.4, 0.06, 0, 0, 0, WGLOW, { o: [0.22, 0.12, 0.41], e: 1, par: 'head' }),
+  B(0.44, 0.06, 0.06, 0, 0, 0, ROBE4, { o: [0, -0.32, 0.41], par: 'head' }), B(0.5, 0.3, 0.5, 0, 0, 0, PALE, { o: [0, -0.68, 0.08], par: 'head' }),
+  // arms: sleeve, then a flared cuff and a free-floating hand riding the elbow
+  ...sym([
+    B(0.56, 1.3, 0.62, -1.42, 4.3, 0, ROBE1, { o: [0, -0.65, 0], t: 7, a: 'armA', n: 'arm' }),
+    B(0.78, 0.9, 0.84, 0, -1.3, 0, ROBE2, { o: [0, -0.4, 0], t: 7, a: 'foreA', par: 'arm', n: 'fore' }),
+    B(0.84, 0.12, 0.9, 0, 0, 0, WGLOW, { o: [0, -0.8, 0], e: 0.6, par: 'fore' }),
+    B(0.36, 0.48, 0.36, 0, -1.1, 0, PALE, { e: 0.25, a: 'drift', k: 0.35, par: 'fore', n: 'hand' }), B(0.12, 0.26, 0.12, 0, 0, 0, PALE, { o: [0.22, -0.02, 0.06], e: 0.25, par: 'hand' }),
+  ], 1.3),
+  // the seal: an outer square that turns and an inner one that turns against it; two bars are gone in the last phase
+  B(3.9, 0.18, 0.16, 0, 4.5, -0.95, WGLOW, { o: [0, 1.86, 0], e: 0.9, a: 'seal', n: 'seal' }),
+  B(3.9, 0.18, 0.16, 0, 0, 0, WGLOW, { o: [0, -1.86, 0], e: 0.9, ph: [0, 1], par: 'seal' }),
+  B(0.18, 3.9, 0.16, 0, 0, 0, WGLOW, { o: [-1.86, 0, 0], e: 0.9, par: 'seal' }), B(0.18, 3.9, 0.16, 0, 0, 0, WGLOW, { o: [1.86, 0, 0], e: 0.9, ph: [0, 1], par: 'seal' }),
+  B(0.4, 0.4, 0.2, 0, 0, 0, GOLD, { o: [-1.86, 1.86, 0], par: 'seal' }), B(0.4, 0.4, 0.2, 0, 0, 0, GOLD, { o: [1.86, -1.86, 0], ph: [0, 1], par: 'seal' }),
+  B(0.4, 0.4, 0.2, 0, 0, 0, GOLD, { o: [1.86, 1.86, 0], par: 'seal' }), B(0.4, 0.4, 0.2, 0, 0, 0, GOLD, { o: [-1.86, -1.86, 0], par: 'seal' }),
+  B(2.5, 0.12, 0.12, 0, 4.5, -0.85, 0xd0e6ff, { o: [0, 1.2, 0], e: 0.8, a: 'seal', k: -1.6, n: 'seal2' }), B(2.5, 0.12, 0.12, 0, 0, 0, 0xd0e6ff, { o: [0, -1.2, 0], e: 0.8, par: 'seal2' }),
+  B(0.12, 2.5, 0.12, 0, 0, 0, 0xd0e6ff, { o: [-1.2, 0, 0], e: 0.8, par: 'seal2' }), B(0.12, 2.5, 0.12, 0, 0, 0, 0xd0e6ff, { o: [1.2, 0, 0], e: 0.8, par: 'seal2' }),
+  // last phase: cracks of light across the mask, the mantle and the bell
+  B(0.08, 0.75, 0.07, 0, 0, 0, WGLOW, { o: [0.1, 0.12, 0.41], r: [0, 0, 0.3], e: 1, ph: [2, 2], par: 'head' }),
+  B(0.1, 0.9, 0.07, 0.35, 3.85, 0.5, WGLOW, { r: [0, 0, -0.4], e: 1, ph: [2, 2] }),
+  B(0.1, 1.2, 0.08, 0, 0, 0, WGLOW, { o: [-0.5, -1.5, 1.08], r: [0, 0, 0.5], e: 1, ph: [2, 2], par: 'bell' }), B(0.1, 0.8, 0.08, 0, 0, 0, WGLOW, { o: [0.7, -1.9, 1.24], r: [0, 0, -0.6], e: 1, ph: [2, 2], par: 'bell' }),
+  // three lanterns circling
+  ...[0, 1, 2].flatMap((i): Part[] => [
+    B(0.34, 0.46, 0.34, 0, 3.4, 0, WGLOW, { o: [2.5, i * 0.5 - 0.5, 0], e: 1, a: 'halo', ap: i * 2.094 }),
+    B(0.44, 0.12, 0.44, 0, 3.4, 0, ROBE4, { o: [2.5, i * 0.5 - 0.21, 0], a: 'halo', ap: i * 2.094 }), B(0.44, 0.1, 0.44, 0, 3.4, 0, ROBE4, { o: [2.5, i * 0.5 - 0.78, 0], a: 'halo', ap: i * 2.094 }),
+  ]),
 ];
+// Sporemother: a mushroom the size of a house. A stepped, spotted cap over glowing gills, a veil of tendrils round the rim, a
+// stalk with a cluster of eyes and a slit mouth, two tentacle arms that cast, brood sacs on her back and roots trailing under
+// her until the last phase tears them off. The cap splits and glows from the second phase.
+const SP_TEAL = 0x3f8f86, SP_TEAL2 = 0x2c6a66, SP_PALE = 0xb9c4d4, SP_CAP1 = 0x6a3f9a, SP_CAP2 = 0x7d4eae, SP_CAP3 = 0x9060c2, SP_RIM = 0x4c2c74, SP_GLOW = 0x8af0d8, SP_SPOT = 0xe0b4ff;
+const ring = <T>(n: number, f: (cos: number, sin: number, i: number) => T): T[] => Array.from({ length: n }, (_, i) => f(Math.cos((i / n) * 6.2832), Math.sin((i / n) * 6.2832), i));
 const sporemother: Part[] = [
-  { s: [3.2, 2.0, 3.2], p: [0, 1.8, 0], c: 0x3f8f86, a: 'squash' }, { s: [4.4, 0.9, 4.4], p: [0, 3.2, 0], c: 0x6a3f9a, a: 'squash' }, { s: [3.0, 0.7, 3.0], p: [0, 3.95, 0], c: 0x8a5ab8, a: 'squash' },
-  { s: [1.4, 1.2, 1.4], p: [0, 0.6, 0], c: 0xa8b4c8 }, { s: [0.5, 0.4, 0.08], p: [-0.8, 2.0, 1.62], c: 0x8af0d8, e: 1 }, { s: [0.5, 0.4, 0.08], p: [0.8, 2.0, 1.62], c: 0x8af0d8, e: 1 },
-  { s: [0.6, 0.6, 0.6], p: [0, 3.4, 0], o: [2.6, 0, 0], c: 0x8af0d8, e: 0.9, a: 'spin' }, { s: [0.6, 0.6, 0.6], p: [0, 3.4, 0], o: [-2.6, 0, 0], c: 0x8af0d8, e: 0.9, a: 'spin' },
-  { s: [0.6, 0.6, 0.6], p: [0, 3.4, 0], o: [0, 0, 2.6], c: 0xd8a0ff, e: 0.9, a: 'spin' }, { s: [0.6, 0.6, 0.6], p: [0, 3.4, 0], o: [0, 0, -2.6], c: 0xd8a0ff, e: 0.9, a: 'spin' },
+  B(2.7, 1.9, 2.7, 0, 2.2, 0, SP_TEAL, { t: 2 }), B(2.0, 1.1, 2.0, 0, 0.95, 0, SP_PALE, { t: 2 }), B(1.4, 0.4, 1.4, 0, 0.3, 0, 0x8d98aa),
+  B(2.0, 1.4, 0.14, 0, 2.05, 1.36, 0x74c9b4), B(3.2, 0.26, 3.2, 0, 3.05, 0, 0xdcd3ea),
+  // cap: gills, a dark rim and three tiers, all riding one slow bob
+  B(4.7, 0.3, 4.7, 0, 3.4, 0, SP_GLOW, { e: 0.7, t: 1, a: 'bob', k: 0.5, n: 'cap' }),
+  B(5.9, 0.3, 5.9, 0, 0, 0, SP_RIM, { o: [0, 0.3, 0], par: 'cap' }), B(5.6, 0.6, 5.6, 0, 0, 0, SP_CAP1, { o: [0, 0.7, 0], t: 2, par: 'cap' }),
+  B(4.5, 0.65, 4.5, 0, 0, 0, SP_CAP2, { o: [0, 1.3, 0], t: 2, par: 'cap' }), B(3.1, 0.6, 3.1, 0, 0, 0, SP_CAP3, { o: [0, 1.9, 0], t: 2, par: 'cap' }),
+  B(1.5, 0.36, 1.5, 0, 0, 0, SP_CAP3, { o: [0, 2.36, 0], par: 'cap' }),
+  // glowing spots on every ledge and on the rim
+  ...([[2.45, 1.0], [-2.5, -0.6], [0.8, 2.5], [-1.2, -2.45], [2.35, -1.8], [-2.3, 1.9]] as const).map(([x, z], i) => B(0.7 - (i % 2) * 0.2, 0.1, 0.7 - (i % 2) * 0.2, 0, 0, 0, SP_SPOT, { o: [x, 1.02, z], e: 0.8, par: 'cap' })),
+  ...([[1.85, -0.4], [-0.3, 1.85], [-1.85, 0.6], [0.5, -1.9]] as const).map(([x, z]) => B(0.5, 0.1, 0.5, 0, 0, 0, SP_SPOT, { o: [x, 1.64, z], e: 0.8, par: 'cap' })),
+  B(0.45, 0.1, 0.45, 0, 0, 0, SP_SPOT, { o: [1.1, 2.22, 0.6], e: 0.8, par: 'cap' }), B(0.45, 0.1, 0.45, 0, 0, 0, SP_SPOT, { o: [-1.1, 2.22, -0.5], e: 0.8, par: 'cap' }),
+  B(0.7, 0.36, 0.1, 0, 0, 0, SP_SPOT, { o: [1.3, 0.7, 2.81], e: 0.8, par: 'cap' }), B(0.5, 0.3, 0.1, 0, 0, 0, SP_SPOT, { o: [-1.7, 0.72, 2.81], e: 0.8, par: 'cap' }),
+  B(0.1, 0.36, 0.7, 0, 0, 0, SP_SPOT, { o: [2.81, 0.7, -0.6], e: 0.8, par: 'cap' }), B(0.1, 0.3, 0.6, 0, 0, 0, SP_SPOT, { o: [-2.81, 0.72, 0.9], e: 0.8, par: 'cap' }),
+  B(0.6, 0.34, 0.1, 0, 0, 0, SP_SPOT, { o: [0.4, 0.7, -2.81], e: 0.8, par: 'cap' }),
+  // the veil: eight tendrils with glowing tips
+  ...ring(8, (c, sn, i) => [B(0.2, 1.2, 0.2, c * 2.6, 0.2, sn * 2.6, 0x9a6ad0, { o: [0, -0.6, 0], a: 'sway', ap: i * 1.1, par: 'cap', n: 'veil' + i }), B(0.28, 0.28, 0.28, 0, 0, 0, SP_GLOW, { o: [0, -1.3, 0], e: 0.9, par: 'veil' + i })]).flat(),
+  // face: one great eye, four lesser ones and a slit mouth
+  B(0.8, 0.66, 0.1, 0, 2.55, 1.44, SP_GLOW, { e: 1 }), B(0.2, 0.5, 0.1, 0, 2.55, 1.5, 0x10202a),
+  ...sym([B(0.34, 0.3, 0.1, -0.8, 2.85, 1.44, SP_GLOW, { e: 1 }), B(0.26, 0.24, 0.1, -0.62, 2.05, 1.44, SP_GLOW, { e: 1 })]),
+  B(0.4, 0.8, 0.1, 0, 1.75, 1.44, 0x1a1024), B(0.16, 0.5, 0.1, 0, 1.75, 1.48, 0xd86af6, { e: 0.8, a: 'pulse' }),
+  // tentacle arms ending in spore bulbs
+  ...sym([
+    B(0.5, 1.3, 0.5, -1.55, 2.95, 0.2, SP_TEAL2, { o: [0, -0.65, 0], a: 'armA', n: 'arm' }),
+    B(0.4, 1.2, 0.4, 0, -1.3, 0, SP_TEAL, { o: [0, -0.6, 0], a: 'foreA', par: 'arm', n: 'fore' }), B(0.62, 0.62, 0.62, 0, 0, 0, SP_GLOW, { o: [0, -1.4, 0], e: 0.8, par: 'fore' }),
+  ], 2),
+  // brood sacs
+  B(1.0, 1.0, 1.0, -1.3, 1.9, -1.1, SP_GLOW, { e: 0.5, a: 'pulse' }), B(0.8, 0.8, 0.8, 1.35, 1.6, -0.9, SP_GLOW, { e: 0.5, a: 'pulse', ap: 1.3 }), B(0.7, 0.7, 0.7, 0.1, 1.5, -1.5, SP_GLOW, { e: 0.5, a: 'pulse', ap: 2.5 }),
+  // roots, whole until the last phase and torn stubs with raw glowing ends after it
+  ...ring(4, (c, sn, i) => [
+    B(0.42, 1.2, 0.42, c * 0.75 - sn * 0.3, 0.6, sn * 0.75 + c * 0.3, 0x6b7a8a, { o: [0, -0.6, 0], t: 7, a: 'sway', ap: i * 1.9, ph: [0, 1], n: 'root' + i }),
+    B(0.26, 1.2, 0.26, 0, -1.15, 0, 0x566373, { o: [0, -0.6, 0], t: 7, a: 'sway', ap: i * 1.9 + 1, ph: [0, 1], par: 'root' + i }),
+    B(0.42, 0.6, 0.42, c * 0.75 - sn * 0.3, 0.6, sn * 0.75 + c * 0.3, 0x6b7a8a, { o: [0, -0.3, 0], t: 7, ph: [2, 2] }), B(0.3, 0.16, 0.3, c * 0.75 - sn * 0.3, 0.6, sn * 0.75 + c * 0.3, SP_GLOW, { o: [0, -0.66, 0], e: 1, ph: [2, 2] }),
+  ]).flat(),
+  // from the second phase the cap splits
+  B(2.4, 0.1, 0.4, 0, 0, 0, 0xf0c0ff, { o: [0, 2.56, 0], e: 1, ph: [1, 2], par: 'cap' }), B(0.4, 0.1, 2.4, 0, 0, 0, 0xf0c0ff, { o: [0, 2.56, 0], e: 1, ph: [1, 2], par: 'cap' }),
+  B(5.94, 0.12, 5.94, 0, 0, 0, 0xf0c0ff, { o: [0, 0.42, 0], e: 0.9, ph: [1, 2], par: 'cap' }),
+  // drifting spores
+  ...ring(5, (c, sn, i) => B(0.4, 0.4, 0.4, 0, 2.3, 0, i % 2 ? 0xd8a0ff : SP_GLOW, { o: [3.7, Math.sin(i * 2.1) * 0.7, 0], r: [0.6, 0.6, 0], e: 0.9, a: 'halo', ap: i * 1.2566 })),
 ];
 const regent: Part[] = [
   { s: [1.4, 1.2, 2.4], p: [0, 1.2, 0], c: 0x4a5a8a }, { s: [0.9, 0.9, 1.0], p: [0, 1.9, 1.4], c: 0xdfe6f2, a: 'head' }, { s: [0.3, 0.3, 0.7], p: [0, 1.75, 2.1], c: 0xf2c14e, a: 'head' },
@@ -306,27 +486,27 @@ const boss = (key: string, name: string, hp: number, dmg: number, def: number, h
   ({ key, name, hp, dmg, def, speed: spec.phases[0].speed, xp, coins: [hp / 12, hp / 8], hw, h, ai: 'boss', hostile: true, parts, drops, aggro: 90, knockRes: 1, boss: spec, voice: 0.25, glow: true });
 
 M.push(
-  boss('b_colossus', 'Mossback Colossus', 420, 12, 4, 1.4, 4.8, 150, colossus, [['heartroot', 1, 6, 9], ['mossheart_sprig', 0.33, 1, 1], ['salve', 1, 3, 5], ['iron_bar', 1, 4, 8]], {
-    n: 1, move: 'walk', title: 'Warden of the Greenwood', intro: 'The ground remembers how to stand up.', phases: [
+  boss('b_colossus', 'Mossback Colossus', 420, 12, 4, 1.7, 5.8, 150, colossus, [['heartroot', 1, 6, 9], ['mossheart_sprig', 0.33, 1, 1], ['salve', 1, 3, 5], ['iron_bar', 1, 4, 8]], {
+    n: 1, move: 'walk', stomp: 0.12, cast: 4.05, title: 'Warden of the Greenwood', intro: 'The ground remembers how to stand up.', phases: [
       { below: 1, speed: 2.6, cd: [1.8, 2.8], attacks: [{ t: 'slam', radius: 6, dmg: 14, windup: 0.9 }, { t: 'charge', speed: 11, dmg: 12, windup: 0.8, dur: 1.2 }] },
       { below: 0.5, speed: 3.3, cd: [1.3, 2.1], say: 'Roots tear free of the altar.', enter: { t: 'summon', mob: 'sproutling', n: 4 },
         attacks: [{ t: 'slam', radius: 7, dmg: 16, windup: 0.75, ring: ['rootspike', 10] }, { t: 'charge', speed: 13, dmg: 14, windup: 0.6, dur: 1.2 }, { t: 'rain', proj: 'rootspike', n: 7, radius: 7, dmg: 12 }, { t: 'summon', mob: 'sproutling', n: 2 }] },
     ] }),
-  boss('b_maw', 'Dune Maw', 900, 20, 8, 0.9, 1.8, 320, maw, [['scorched_core', 1, 6, 9], ['maw_fang', 0.33, 1, 1], ['gold_bar', 1, 5, 10], ['salve', 1, 3, 6]], {
-    n: 2, move: 'burrow', segments: 9, title: 'Hunger Beneath the Sand', intro: 'The dunes begin to breathe.', phases: [
+  boss('b_maw', 'Dune Maw', 900, 20, 8, 1.2, 2.2, 320, maw, [['scorched_core', 1, 6, 9], ['maw_fang', 0.33, 1, 1], ['gold_bar', 1, 5, 10], ['salve', 1, 3, 6]], {
+    n: 2, move: 'burrow', segments: 12, seg: mawSeg, title: 'Hunger Beneath the Sand', intro: 'The dunes begin to breathe.', phases: [
       { below: 1, speed: 9, cd: [2.2, 3.2], attacks: [{ t: 'burrow', dmg: 22 }, { t: 'volley', proj: 'sandball', n: 5, spread: 0.6, dmg: 14 }] },
       { below: 0.45, speed: 12, cd: [1.4, 2.2], say: 'The Maw thrashes, shedding grit and fury.', enter: { t: 'summon', mob: 'dune_mite', n: 4 },
         attacks: [{ t: 'burrow', dmg: 26, ring: ['sandball', 12] }, { t: 'volley', proj: 'sandball', n: 7, spread: 0.8, dmg: 16, bursts: 2, gap: 0.35 }, { t: 'summon', mob: 'dune_mite', n: 2 }] },
     ] }),
-  boss('b_warden', 'The Pale Warden', 1500, 26, 12, 0.8, 4.2, 600, warden, [['warden_sigil', 1, 6, 9], ['wardens_aegis', 0.33, 1, 1], ['lumenite', 1, 4, 8], ['greater_salve', 1, 2, 4]], {
-    n: 3, move: 'hover', title: 'Keeper of the Sealed Way', intro: 'A bell tolls with no bell to toll it.', phases: [
+  boss('b_warden', 'The Pale Warden', 1500, 26, 12, 1.05, 5.6, 600, warden, [['warden_sigil', 1, 6, 9], ['wardens_aegis', 0.33, 1, 1], ['lumenite', 1, 4, 8], ['greater_salve', 1, 2, 4]], {
+    n: 3, move: 'hover', cast: 3.85, spin: [0.7, 1.1], castSound: 'bell', title: 'Keeper of the Sealed Way', intro: 'A bell tolls with no bell to toll it.', phases: [
       { below: 1, speed: 3.4, cd: [1.6, 2.4], attacks: [{ t: 'volley', proj: 'wardenorb', n: 3, spread: 0.3, dmg: 20, bursts: 2, gap: 0.4 }, { t: 'teleport' }, { t: 'ring', proj: 'wardenorb', n: 12, dmg: 18 }] },
       { below: 0.6, speed: 4, cd: [1.3, 2], say: 'The Warden raises both hands.', attacks: [{ t: 'spiral', proj: 'wardenorb', arms: 3, dur: 3, dmg: 18, spin: 1.6 }, { t: 'volley', proj: 'wardenorb', n: 5, spread: 0.5, dmg: 22, bursts: 2, gap: 0.3 }, { t: 'teleport' }] },
       { below: 0.25, speed: 4.8, cd: [0.9, 1.5], say: 'The seal cracks. So does the Warden.', enter: { t: 'summon', mob: 'gloomshade', n: 4 },
         attacks: [{ t: 'rain', proj: 'wardenorb', n: 10, radius: 8, dmg: 22 }, { t: 'spiral', proj: 'wardenorb', arms: 4, dur: 3, dmg: 20, spin: -2 }, { t: 'teleport' }, { t: 'ring', proj: 'wardenorb', n: 18, dmg: 20 }] },
     ] }),
-  boss('b_sporemother', 'Sporemother', 2600, 34, 16, 1.9, 4.4, 1100, sporemother, [['queen_spore', 1, 6, 9], ['mycelial_crown', 0.33, 1, 1], ['umbrite_bar', 1, 6, 12], ['greater_salve', 1, 3, 5]], {
-    n: 4, move: 'hover', title: 'Mother of the Under-Bloom', intro: 'The cavern exhales.', phases: [
+  boss('b_sporemother', 'Sporemother', 2600, 34, 16, 2.3, 5.6, 1100, sporemother, [['queen_spore', 1, 6, 9], ['mycelial_crown', 0.33, 1, 1], ['umbrite_bar', 1, 6, 12], ['greater_salve', 1, 3, 5]], {
+    n: 4, move: 'hover', cast: 2.55, spin: [0.8, 0.8], title: 'Mother of the Under-Bloom', intro: 'The cavern exhales.', phases: [
       { below: 1, speed: 1.6, cd: [1.8, 2.6], attacks: [{ t: 'rain', proj: 'sporebomb', n: 8, radius: 9, dmg: 28 }, { t: 'summon', mob: 'sporeling', n: 2 }, { t: 'ring', proj: 'sporebomb', n: 14, dmg: 24 }] },
       { below: 0.55, speed: 2.2, cd: [1.4, 2.1], say: 'Her cap splits and glows.', attacks: [{ t: 'spiral', proj: 'sporebomb', arms: 4, dur: 3.5, dmg: 26, spin: 1.2 }, { t: 'ring', proj: 'sporebomb', n: 20, dmg: 26 }, { t: 'rain', proj: 'sporebomb', n: 12, radius: 10, dmg: 30 }, { t: 'summon', mob: 'sporeling', n: 3 }] },
       { below: 0.2, speed: 5.5, cd: [1, 1.6], say: 'Sporemother tears loose from her roots!', attacks: [{ t: 'charge', speed: 14, dmg: 40, windup: 0.7, dur: 1.4 }, { t: 'slam', radius: 8, dmg: 36, windup: 0.6, ring: ['sporebomb', 16] }, { t: 'spiral', proj: 'sporebomb', arms: 5, dur: 3, dmg: 28, spin: -1.8 }] },
