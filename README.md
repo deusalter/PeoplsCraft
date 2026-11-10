@@ -21,13 +21,15 @@ Needs a WebGL2 browser. Worlds are saved to IndexedDB in that browser.
 | Key | Action |
 | --- | --- |
 | W A S D, Space, Shift | Move, jump / swim up, sneak |
-| Ctrl or double-tap W | Sprint |
+| R, Ctrl or double-tap W | Sprint |
 | Left mouse | Mine, attack, fire |
 | Right mouse | Use, place, eat, talk |
+| Middle mouse | Pick the targeted block into your hand |
 | E / G | Inventory and crafting / Guide |
 | 1-9, wheel, Q | Hotbar, drop item |
 | F3 / F1 | Debug overlay / hide HUD |
 | T | Command line (`give`, `time`, `tp`, `gear`, `boss`, `locate`, `dim`, `creative`, `god` ...) |
+| Double-tap Space | Take off / land while in `creative` |
 | Esc | Pause, settings |
 
 ## How it is put together

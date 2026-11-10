@@ -6,16 +6,18 @@ import { GfxSettings, PRESETS } from '../render/gfx';
 import type { SaveDB, WorldMeta } from '../systems/save';
 import { el } from './hud';
 
-export interface Settings { preset: string; gfx: GfxSettings; sens: number; sfx: number; music: number; bob: boolean }
+export interface Settings { preset: string; gfx: GfxSettings; sens: number; sfx: number; music: number; bob: boolean;
+  shake: number; autoJump: boolean; autoTool: boolean; flyToggle: boolean; rawMouse: boolean }
 const KEY = 'cairnlight.settings';
 export function loadSettings(): Settings {
-  const def: Settings = { preset: 'medium', gfx: { ...PRESETS.medium }, sens: 1, sfx: 0.8, music: 0.45, bob: true };
+  const def: Settings = { preset: 'medium', gfx: { ...PRESETS.medium }, sens: 1, sfx: 0.8, music: 0.45, bob: true,
+    shake: 1, autoJump: false, autoTool: true, flyToggle: true, rawMouse: false };
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) return { ...def, ...s, gfx: { ...def.gfx, ...(s.gfx || {}) } }; } catch { /* first run */ }
   return def;
 }
 export const saveSettings = (s: Settings): void => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* storage unavailable */ } };
 
-const KEYS: [string, string][] = [['W A S D', 'Move'], ['Space', 'Jump / swim up'], ['Shift', 'Sneak'], ['Ctrl or double-tap W', 'Sprint'], ['Left mouse', 'Mine / attack'], ['Right mouse', 'Use / place'],
+const KEYS: [string, string][] = [['W A S D', 'Move'], ['Space', 'Jump / swim up'], ['Shift', 'Sneak'], ['R, Ctrl or double-tap W', 'Sprint'], ['Left mouse', 'Mine / attack'], ['Right mouse', 'Use / place'], ['Middle mouse', 'Pick block'],
   ['E', 'Inventory and crafting'], ['G', 'Guide'], ['Q', 'Drop item'], ['1-9, wheel', 'Hotbar'], ['F3', 'Debug overlay'], ['T', 'Command line'], ['Esc', 'Pause']];
 
 function drawCairn(c: HTMLCanvasElement): void {
@@ -56,6 +58,13 @@ export function settingsPanel(parent: HTMLElement, s: Settings, apply: () => voi
     slider('Music volume', 0, 1, 0.05, () => s.music, (v) => (s.music = v), (v) => Math.round(v * 100) + '%');
     const o = el('div', 'opt', box); el('span', '', o, 'View bobbing');
     const b = el('button', 'btn sm' + (s.bob ? ' gold' : ''), o, s.bob ? 'On' : 'Off'); b.onclick = () => { s.bob = !s.bob; apply(); render(); };
+    slider('Screen shake', 0, 1, 0.05, () => s.shake, (v) => (s.shake = v), (v) => Math.round(v * 100) + '%');
+    const flag = (label: string, k: 'autoJump' | 'autoTool' | 'flyToggle' | 'rawMouse'): void => {
+      const row = el('div', 'opt', box); el('span', '', row, label);
+      el('button', 'btn sm' + (s[k] ? ' gold' : ''), row, s[k] ? 'On' : 'Off').onclick = () => { s[k] = !s[k]; apply(); render(); };
+    };
+    flag('Auto-jump up single blocks', 'autoJump'); flag('Switch tools automatically', 'autoTool');
+    flag('Double-tap Space to fly (creative)', 'flyToggle'); flag('Raw mouse input (no acceleration)', 'rawMouse');
   };
   render();
   return box;
