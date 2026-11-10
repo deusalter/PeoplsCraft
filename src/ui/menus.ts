@@ -29,7 +29,9 @@ function drawCairn(c: HTMLCanvasElement): void {
 
 export function settingsPanel(parent: HTMLElement, s: Settings, apply: () => void): HTMLElement {
   const box = el('div', 'panel wcol', parent); box.style.minWidth = '380px';
+  box.style.maxHeight = 'calc(100vh - 240px)'; box.style.overflowY = 'auto';   // the list is taller than a laptop screen
   const render = (): void => {
+    const top = box.scrollTop;   // a toggle rebuilds the list: keep the place
     box.innerHTML = '';
     el('div', 'ttl', box, 'Graphics preset');
     const seg = el('div', 'opt', box), sg = el('div', 'seg', seg);
@@ -58,6 +60,7 @@ export function settingsPanel(parent: HTMLElement, s: Settings, apply: () => voi
     slider('Music volume', 0, 1, 0.05, () => s.music, (v) => (s.music = v), (v) => Math.round(v * 100) + '%');
     const o = el('div', 'opt', box); el('span', '', o, 'View bobbing');
     const b = el('button', 'btn sm' + (s.bob ? ' gold' : ''), o, s.bob ? 'On' : 'Off'); b.onclick = () => { s.bob = !s.bob; apply(); render(); };
+    box.scrollTop = top;
   };
   render();
   return box;
