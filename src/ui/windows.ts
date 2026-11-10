@@ -8,6 +8,7 @@ import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } 
 import { ATTR_DESC, Attr, STAT_NAMES } from '../systems/stats';
 import type { BlockEnt } from '../world/world';
 import { el } from './hud';
+import { uiScale } from './menus';
 
 type Kind = 'inv' | 'armor' | 'acc' | 'craft' | 'out' | 'chest' | 'fin' | 'ffuel' | 'fout';
 interface View { arr: Slot[]; i: number; kind: Kind; root: HTMLElement; ic: HTMLElement; n: HTMLElement; sig: string }
@@ -216,7 +217,7 @@ export class Windows {
       if (lbl) lbl.style.display = s ? 'none' : '';
     }
     const c = inv.cursor;
-    if (c) { this.cursor.style.display = 'block'; g.icons.apply(this.cursor, c.k); this.cursorN.textContent = c.n > 1 ? String(c.n) : ''; }
+    if (c) { this.cursor.style.display = 'block'; g.icons.apply(this.cursor, c.k, Math.round(32 * uiScale())); this.cursorN.textContent = c.n > 1 ? String(c.n) : ''; }
     else this.cursor.style.display = 'none';
     if (this.book) this.buildBook();
     if (this.statsEl) this.buildStats();

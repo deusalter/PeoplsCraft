@@ -4,7 +4,7 @@ import { installDevTools } from './dev';
 import { Game } from './game';
 import { SaveDB, WorldMeta } from './systems/save';
 import './style.css';
-import { TitleMenu, loadSettings } from './ui/menus';
+import { TitleMenu, applyUiScale, loadSettings } from './ui/menus';
 
 const canvas = document.getElementById('game') as HTMLCanvasElement;
 const ui = document.getElementById('ui') as HTMLElement;
@@ -15,6 +15,7 @@ async function boot(): Promise<void> {
   const db = new SaveDB();
   await db.open();
   const settings = loadSettings();
+  applyUiScale(settings.uiScale);
   const play = (meta: WorldMeta): void => {
     const game = new Game(canvas, ui, { meta, db, settings });
     installDevTools(game);

@@ -118,3 +118,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 .opt input[type=range] { width: 150px; accent-color: #f2c14e; } .opt .seg { display: flex; gap: 3px; }
 .keys { display: grid; grid-template-columns: auto auto; gap: 2px 18px; font-size: 11px; color: var(--dim); } .keys b { color: var(--text); font-weight: 600; }
 #cairn { width: 86px; height: 96px; image-rendering: pixelated; }
+
+/* ---------- interface scale (--ui, set from the settings) ---------- */
+/* Panels are zoomed; elements positioned from JS in viewport pixels (floating text, cursor stack, tooltip) are sized instead, so their maths stays valid. */
+#hud > :not(.float), #win > .panel, #menu, #loading > * { zoom: var(--ui, 1); }
+#win > .panel { max-height: calc(100vh / var(--ui, 1) - 16px); overflow-y: auto; }
+#win > .panel::-webkit-scrollbar { width: 6px; } #win > .panel::-webkit-scrollbar-thumb { background: #4a5268; }
+.float { font-size: calc(15px * var(--ui, 1)); } .float.big { font-size: calc(22px * var(--ui, 1)); } .float.tag { font-size: calc(12px * var(--ui, 1)); }
+#tip { font-size: calc(12px * var(--ui, 1)); max-width: calc(300px * var(--ui, 1)); padding: 0.67em 0.83em; }
+#tip .nm { font-size: 1.167em; } #tip .ty { font-size: 0.917em; }
+#cursor { width: calc(32px * var(--ui, 1)); height: calc(32px * var(--ui, 1)); margin: calc(16px - 16px * var(--ui, 1)) 0 0 calc(16px - 16px * var(--ui, 1)); }
+#cursor .n { font-size: calc(12px * var(--ui, 1)); }
+#boss { width: max(280px, min(520px, 60vw / var(--ui, 1), 100vw / var(--ui, 1) - 560px)); } /* keep clear of the quest box at large scales */

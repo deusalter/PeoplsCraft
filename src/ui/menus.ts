@@ -6,14 +6,26 @@ import { GfxSettings, PRESETS } from '../render/gfx';
 import type { SaveDB, WorldMeta } from '../systems/save';
 import { el } from './hud';
 
-export interface Settings { preset: string; gfx: GfxSettings; sens: number; sfx: number; music: number; bob: boolean }
+export interface Settings { preset: string; gfx: GfxSettings; sens: number; sfx: number; music: number; bob: boolean; /** 0 = automatic */ uiScale: number }
 const KEY = 'cairnlight.settings';
 export function loadSettings(): Settings {
-  const def: Settings = { preset: 'medium', gfx: { ...PRESETS.medium }, sens: 1, sfx: 0.8, music: 0.45, bob: true };
+  const def: Settings = { preset: 'medium', gfx: { ...PRESETS.medium }, sens: 1, sfx: 0.8, music: 0.45, bob: true, uiScale: 0 };
   try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); if (s) return { ...def, ...s, gfx: { ...def.gfx, ...(s.gfx || {}) } }; } catch { /* first run */ }
   return def;
 }
 export const saveSettings = (s: Settings): void => { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch { /* storage unavailable */ } };
+
+// Interface scale: written to --ui on <html>; CSS zooms the HUD, windows and menus by it.
+let uiChoice = 0, uiNow = 1, uiHooked = false;
+const autoUiScale = (): number => Math.max(0.75, Math.min(2, Math.floor(Math.min(window.innerWidth / 1280, window.innerHeight / 720) * 8) / 8));
+/** The scale currently in effect (after resolving Auto). */
+export const uiScale = (): number => uiNow;
+export function applyUiScale(v: number): void {
+  uiChoice = v;
+  uiNow = v > 0 ? Math.max(0.5, Math.min(2, v)) : autoUiScale();
+  document.documentElement.style.setProperty('--ui', String(uiNow));
+  if (!uiHooked) { uiHooked = true; window.addEventListener('resize', () => { if (uiChoice <= 0) applyUiScale(0); }); }
+}
 
 const KEYS: [string, string][] = [['W A S D', 'Move'], ['Space', 'Jump / swim up'], ['Shift', 'Sneak'], ['Ctrl or double-tap W', 'Sprint'], ['Left mouse', 'Mine / attack'], ['Right mouse', 'Use / place'],
   ['E', 'Inventory and crafting'], ['G', 'Guide'], ['Q', 'Drop item'], ['Ctrl+Q', 'Drop stack'], ['1-9, wheel', 'Hotbar'], ['Shift-click', 'Quick move'], ['Right-click', 'Split stack'],
@@ -57,6 +69,9 @@ export function settingsPanel(parent: HTMLElement, s: Settings, apply: () => voi
     el('div', 'ttl', box, 'Effects');
     toggle('Clouds', 'clouds'); toggle('Swaying foliage and waves', 'sway'); toggle('Anti-aliasing (MSAA)', 'msaa');
     el('div', 'ttl', box, 'Controls and sound');
+    // the leftmost stop (below 75%) means Auto; applied on release so the slider does not jump under the mouse while dragging
+    const ui = slider('UI scale', 0.625, 2, 0.125, () => s.uiScale || 0.625, (v) => (s.uiScale = v < 0.7 ? 0 : v), (v) => (v < 0.7 ? `Auto (${Math.round(autoUiScale() * 100)}%)` : Math.round(v * 100) + '%'));
+    ui.onchange = () => { applyUiScale(s.uiScale); apply(); };
     slider('Mouse sensitivity', 0.3, 2.5, 0.05, () => s.sens, (v) => (s.sens = v), (v) => v.toFixed(2));
     slider('Effects volume', 0, 1, 0.05, () => s.sfx, (v) => (s.sfx = v), (v) => Math.round(v * 100) + '%', true);
     slider('Music volume', 0, 1, 0.05, () => s.music, (v) => (s.music = v), (v) => Math.round(v * 100) + '%', true);
