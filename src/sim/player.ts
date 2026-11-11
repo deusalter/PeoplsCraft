@@ -2,6 +2,7 @@
 import type { Item } from '../data/items';
 import { PlayerBody } from './body';
 import { Inventory } from './inventory';
+import type { Mob } from './mobs';
 import { PlayerStats } from './stats';
 import type { Sim } from './sim';
 import type { PlayerRecord } from './storage';
@@ -87,4 +88,32 @@ export function warnFull(sim: Sim, p: SimPlayer): void {
   if (p.fullT > 0) return;
   p.fullT = 8;
   sim.sink.emit({ p: p.slot }, ['t', 'Inventory full', '#ff9a8a']); sim.sink.emit({ p: p.slot }, ['s', 'error', 0.4, 1]);
+}
+
+export function gainXp(sim: Sim, p: SimPlayer, n: number): void {
+  const st = p.stats, ups = st.addXp(Math.round(n));
+  if (!ups) return;
+  st.recompute(p.inv); st.hp = st.maxHp;
+  sim.sink.emit({ p: p.slot }, ['n', `Level ${st.level}`, '+2 attribute points · press E to spend', '#c8f58a']);
+  sim.sink.emit({ p: p.slot }, ['s', 'levelup', 1, 1]);
+}
+
+/** Damage from something at (fx, fz). `from` is the creature that dealt it, when thorns should answer. */
+export function hurtPlayer(sim: Sim, p: SimPlayer, dmg: number, fx: number, fz: number, cause: string, from: Mob | null = null, knock = 6): void {
+  const b = p.body, st = p.stats;
+  if (p.modes.god || p.modes.creative || st.dead || !active(p)) return;
+  const took = st.damage(dmg, sim.rnd);
+  if (took === 0) return;
+  if (took < 0) { sim.realms[p.dim].floater(b.x, b.y + 2, b.z, 'Dodged', '#9ad0ff', false); return; }
+  sim.sink.send(p.slot, { t: 'hurt', dmg: took, fx, fz, knock, cause });
+  if (from && st.d.thorns > 0) sim.realms[p.dim].mobs.hurt(from, took * st.d.thorns + 1, fx - b.x, fz - b.z, 2, false, p);
+  if (st.dead) onDeath(sim, p, cause);
+}
+
+export function onDeath(sim: Sim, p: SimPlayer, cause: string): void {
+  const lost = Math.floor(p.inv.coins * 0.15), b = p.body, mobs = sim.realms[p.dim].mobs;
+  p.deathAt = [p.dim, Math.floor(b.x), Math.floor(b.y), Math.floor(b.z)];
+  p.inv.coins -= lost; p.inv.touch(); p.window = null;
+  for (const m of mobs.list) if (m.active && m.def.ai === 'minion' && m.owner === p.id) mobs.remove(m);
+  sim.sink.send(p.slot, { t: 'dead', cause, lost, at: p.deathAt });
 }

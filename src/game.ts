@@ -11,10 +11,8 @@ import { BOSSES } from './data/mobs';
 import { SMELTS } from './data/recipes';
 import { EntityStore } from './client/entities';
 import { FxPlay } from './client/fxplay';
-import { LOCAL_ID, fromLegacy } from './client/legacy';
+import { LOCAL_ID, fromLegacy, toLegacy } from './client/legacy';
 import { WorldStore } from './client/worldstore';
-import { Mob, MobSystem } from './entities/mobs';
-import { ProjectileSystem } from './entities/projectiles';
 import { Input } from './player/input';
 import { Interact, InteractHost } from './player/interact';
 import { Player, STRIDE } from './player/player';
@@ -22,26 +20,31 @@ import { buildArm } from './player/viewmodel';
 import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
 import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
+import type { MobView } from './render/mobView';
 import { ItemModels } from './render/itemModel';
+import { dropItem } from './sim/actions';
 import { STEP } from './sim/clock';
 import type { DropSim } from './sim/drops';
 import type { Fluids } from './sim/fluids';
-import type { Fx, Scope, Sink } from './sim/fx';
+import type { EventSim } from './sim/events';
+import { BURST, type Fx, type Scope, type Sink } from './sim/fx';
 import { INV_SIZE, Inventory, Slot } from './sim/inventory';
 import { RayHit } from './sim/physics';
 import * as rules from './sim/rules';
-import type { SimPlayer } from './sim/player';
+import { rayHitMobs } from './sim/mobhit';
+import type { MobSim } from './sim/mobs';
+import { type NpcSim, npcOf } from './sim/npcs';
+import { type SimPlayer, hurtPlayer, onDeath } from './sim/player';
+import type { ProjSim } from './sim/projectiles';
 import { Sim } from './sim/sim';
 import type { PlayerStats } from './sim/stats';
 import type { BlockEnt } from './sim/voxels';
 import type { S2C } from './net/protocol';
-import { EventSystem } from './systems/events';
-import { NpcSystem } from './systems/npcs';
-import { QuestSystem } from './systems/quests';
 import type { SaveDB, WorldMeta } from './systems/save';
 import { DebugOverlay } from './ui/debug';
-import { Hud, el } from './ui/hud';
+import { Hud, el, moonTint } from './ui/hud';
 import { GameMenu, Settings } from './ui/menus';
+import { QuestView } from './ui/questView';
 import { Windows } from './ui/windows';
 import { Climate } from './world/gen/climate';
 import { locate } from './world/gen/structures';
@@ -52,7 +55,8 @@ export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings; /
 const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
 const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
 // Interaction prompts, built once so the per-tick prompt check allocates nothing.
-const IS_NPC = (m: Mob): boolean => m.def.ai === 'npc';
+const IS_NPC = (m: MobView): boolean => m.def.ai === 'npc';
+const NOT_FRIEND = (m: MobView): boolean => m.def.ai !== 'minion' && m.def.ai !== 'npc';
 const SUMMON_USE: string[] = [], ALTAR_OFFER: string[] = [], ALTAR_NEED: string[] = [], TRADE_PROMPT = new Map<string, string>();
 for (const it of ITEMS.values()) if (it.use?.startsWith('summon')) {
   const n = +it.use.slice(6);
@@ -64,9 +68,9 @@ export class Game implements InteractHost, Sink {
   readonly player = new Player(); readonly interact: Interact; readonly debug: DebugOverlay; readonly climate: Climate;
   readonly sim: Sim; readonly me: SimPlayer; readonly fx: FxPlay;
   readonly particles = new Particles(); readonly boxes = new BoxBatch(); readonly audio = new GameAudio();
-  readonly mobs: MobSystem; readonly proj: ProjectileSystem; readonly ents: EntityStore;
+  readonly ents: EntityStore;
   readonly icons: Icons; readonly models: ItemModels; readonly hud: Hud; readonly win: Windows; readonly menu: GameMenu;
-  readonly quests: QuestSystem; readonly events: EventSystem; readonly npcs: NpcSystem;
+  readonly quests: QuestView;
   time = 0; ready = false; paused = false;
   prof = { world: 0, tick: 0, render: 0 };
   private last = performance.now(); private acc = 0; private raf = 0; private keysReady = false;
@@ -90,6 +94,10 @@ export class Game implements InteractHost, Sink {
   get flags(): Set<string> { return this.sim.flags; }
   get fluids(): Fluids { return this.sim.realms[this.me.dim].fluids; }
   get drops(): DropSim { return this.sim.realms[this.me.dim].drops; }
+  get mobs(): MobSim { return this.sim.realms[this.me.dim].mobs; }
+  get proj(): ProjSim { return this.sim.realms[this.me.dim].proj; }
+  get events(): EventSim { return this.sim.events; }
+  get npcs(): NpcSim { return this.sim.npcs; }
   get clock(): number { return this.sim.shared.clock; }
   set clock(v: number) { this.sim.shared.clock = v; }
   get dim(): number { return this.me.dim; }
@@ -141,13 +149,12 @@ export class Game implements InteractHost, Sink {
     this.gfx.boxCaster = this.boxes;
     this.input = new Input(canvas);
     this.interact = new Interact(this.gfx.scene, this.world, this.player);
-    this.mobs = new MobSystem(this); this.proj = new ProjectileSystem(this);
-    this.ents = new EntityStore(this.world, this.models);
-    this.gfx.scene.add(this.ents.dropRender.group);
+    this.ents = new EntityStore(this, this.models);
+    this.gfx.scene.add(this.ents.mobRender.shadows.mesh, this.ents.dropRender.group);
     this.hud = new Hud(ui, this); this.win = new Windows(ui, this); this.menu = new GameMenu(ui, this);
     this.debug = new DebugOverlay(ui);
-    this.quests = new QuestSystem(this); this.events = new EventSystem(this); this.npcs = new NpcSystem(this);
-    this.fx = new FxPlay(this);
+    this.quests = new QuestView(this);
+    this.fx = new FxPlay(this); this.fx.onEntity = (ev) => this.ents.onFx(ev);
 
     // held-item view model
     const mat = makeItemMaterial(true); mat.side = THREE.DoubleSide;
@@ -221,10 +228,7 @@ export class Game implements InteractHost, Sink {
       return c;
     };
 
-    if (d) {
-      this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs);
-      this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
-    }
+    if (d) this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
     this.player.frozen = true;
     this.applySettings();
     void cfg.db.chunkList(meta.id, dim0).then((l) => { this.world.savedKeys = new Set(l.map((c) => chunkKey(c[0], c[1]))); this.keysReady = true; });
@@ -235,7 +239,22 @@ export class Game implements InteractHost, Sink {
     const p = this.me;
     if ('all' in to || ('p' in to ? to.p === p.slot : to.dim === p.dim && to.not !== p.slot)) this.fx.play(ev);
   }
-  send(_slot: number, _m: S2C): void {}
+  send(_slot: number, m: S2C): void {
+    const p = this.player, st = this.stats;
+    if (m.t === 'hurt') {
+      // where the blow came from, in view space: forward is (-sin yaw, -cos yaw), right is (cos yaw, -sin yaw)
+      const sx = m.fx - p.x, sz = m.fz - p.z, sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
+      this.hud.flashHurt(Math.hypot(sx, sz) < 0.05 ? undefined : Math.atan2(cy * sx - sy * sz, -sy * sx - cy * sz));
+      p.shake(Math.min(0.7, 0.25 + m.dmg / st.maxHp)); this.audio.play('hurt');
+      const dx = p.x - m.fx, dz = p.z - m.fz, l = Math.hypot(dx, dz) || 1, kr = 1 - Math.min(0.9, st.d.knockRes);
+      p.kbx += (dx / l) * m.knock * kr; p.kbz += (dz / l) * m.knock * kr;
+      if (p.onGround && kr > 0.3) p.vy = 5;
+    } else if (m.t === 'dead') {
+      const c = m.cause;
+      this.audio.play('death'); this.win.close(true);
+      this.menu.death((c === 'fall' ? 'The ground was farther than it looked' : c === 'lava' ? 'Lava does not negotiate' : c === 'void' ? 'There was nothing under you' : c === 'hunger' ? 'Starved' : `Slain by ${c}`) + `  ·  at ${m.at[1]}, ${m.at[2]}, ${m.at[3]}`, m.lost);
+    }
+  }
   broadcast(_m: S2C): void {}
 
   applySettings(): void {
@@ -253,17 +272,7 @@ export class Game implements InteractHost, Sink {
   difficulty(): number { return this.sim.difficulty(); }
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
   floater(x: number, y: number, z: number, text: string, color: string, big = false): void { this.hud.floater(x, y, z, text, color, big); }
-  dropItem(it: Item): void {
-    const p = this.player, d = p.dir(this.v);
-    this.drops.spawn(p.x + d.x * 0.4, p.y + p.eye - 0.3, p.z + d.z * 0.4, it, d.x * 5, d.y * 5 + 1.5, d.z * 5, 1.2);
-  }
-  gainXp(n: number): void {
-    const ups = this.stats.addXp(Math.round(n));
-    if (!ups) return;
-    this.stats.recompute(this.inv); this.stats.hp = this.stats.maxHp;
-    this.hud.showBanner(`Level ${this.stats.level}`, '+2 attribute points · press E to spend', '#c8f58a');
-    this.audio.play('levelup');
-  }
+  dropItem(it: Item): void { dropItem(this.sim, this.me, it); }
   onCrafted(key: string, _n: number): void { this.flags.add('craft:' + key); }
   markEntDirty(e: BlockEnt): void { const c = this.world.chunkAt(e.x >> 4, e.z >> 4); if (c) c.modified = true; }
   markChestDirty(): void { if (this.chestOpen) this.chestOpen.modified = true; }
@@ -274,30 +283,8 @@ export class Game implements InteractHost, Sink {
   }
 
   // ---- combat ---------------------------------------------------------------------------
-  hurtPlayer(dmg: number, fx: number, fz: number, cause: string, from: Mob | null = null, knock = 6): void {
-    const p = this.player, st = this.stats;
-    if (this.god || this.creative || st.dead) return;
-    const took = st.damage(dmg, Math.random);
-    if (took === 0) return;
-    if (took < 0) { this.floater(p.x, p.y + 2, p.z, 'Dodged', '#9ad0ff'); return; }
-    // where the blow came from, in view space: forward is (-sin yaw, -cos yaw), right is (cos yaw, -sin yaw)
-    const sx = fx - p.x, sz = fz - p.z, sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
-    this.hud.flashHurt(Math.hypot(sx, sz) < 0.05 ? undefined : Math.atan2(cy * sx - sy * sz, -sy * sx - cy * sz));
-    p.shake(Math.min(0.7, 0.25 + took / st.maxHp)); this.audio.play('hurt');
-    const dx = p.x - fx, dz = p.z - fz, l = Math.hypot(dx, dz) || 1, kr = 1 - Math.min(0.9, st.d.knockRes);
-    p.kbx += (dx / l) * knock * kr; p.kbz += (dz / l) * knock * kr;
-    if (p.onGround && kr > 0.3) p.vy = 5;
-    if (from && st.d.thorns > 0) this.mobs.hurt(from, took * st.d.thorns + 1, -dx, -dz, 2, false);
-    if (st.dead) this.onDeath(cause);
-  }
-  private onDeath(cause: string): void {
-    const lost = Math.floor(this.inv.coins * 0.15), p = this.player;
-    this.deathAt = [this.dim, Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
-    this.inv.coins -= lost; this.inv.touch();
-    this.audio.play('death'); this.win.close(true);
-    for (const m of this.mobs.list) if (m.active && m.def.ai === 'minion') m.active = false;
-    this.menu.death((cause === 'fall' ? 'The ground was farther than it looked' : cause === 'lava' ? 'Lava does not negotiate' : cause === 'void' ? 'There was nothing under you' : cause === 'hunger' ? 'Starved' : `Slain by ${cause}`) + `  ·  at ${this.deathAt[1]}, ${this.deathAt[2]}, ${this.deathAt[3]}`, lost);
-  }
+  private hurtPlayer(dmg: number, fx: number, fz: number, cause: string, knock = 6): void { hurtPlayer(this.sim, this.me, dmg, fx, fz, cause, null, knock); }
+  private onDeath(cause: string): void { onDeath(this.sim, this.me, cause); }
   respawn(): void { this.stats.respawn(); this.goHome(); }
   /** Send the player to their bed, or to the world spawn when there is none (death, Recall Stone). */
   private goHome(): void {
@@ -312,32 +299,6 @@ export class Game implements InteractHost, Sink {
     }
     p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning');
   }
-  onMobKilled(m: Mob): void {
-    const d = m.def, luck = 1 + this.stats.d.luck;
-    this.gainXp(d.xp);
-    const coins = Math.round((d.coins[0] + Math.random() * (d.coins[1] - d.coins[0])) * luck);
-    if (coins > 0) { this.inv.coins += coins; this.inv.touch(); this.floater(m.x, m.y + m.h + 0.6, m.z, `+${coins}c`, '#f2c14e'); if (coins > 20) this.audio.play('coin'); }
-    // Boss loot pops up at the player: the body may be over the void, inside rock or under the sand.
-    // In mid-air (or dead) it goes to the last place the player stood, so it cannot fall out of the world.
-    const p = this.player, sf = this.safe, air = this.stats.dead || (!p.onGround && !p.inWater && !p.flying && Math.hypot(sf[0] - p.x, sf[1] - p.y, sf[2] - p.z) < 32);
-    const lx = air ? sf[0] : p.x, ly = (air ? sf[1] : p.y) + 1.2, lz = air ? sf[2] : p.z;
-    for (const [k, chance, a, b] of d.drops) {
-      if (Math.random() > chance * (d.boss ? 1 : luck)) continue;
-      const it = { k, n: a + Math.floor(Math.random() * (b - a + 1)), m: rollModifier(k, Math.random, d.boss ? 0.7 : 0.4) };
-      if (d.boss) this.drops.spawn(lx, ly, lz, it, (Math.random() - 0.5) * 1.5, 3.5, (Math.random() - 0.5) * 1.5, 0.3);
-      else this.drops.spawn(m.x, m.y + m.h * 0.5, m.z, it);
-    }
-    this.events.onKill(m);
-    if (d.boss) {
-      this.flags.add('boss:' + d.boss.n);
-      this.hud.showBanner(`${d.name} has fallen`, d.boss.n === 8 ? 'The first light is yours' : 'Check the guide for what this unlocks', '#ffe27a');
-      this.audio.play('levelup'); this.player.shake(0.6);
-      for (let i = 0; i < 120; i++) this.particles.spawn(m.x, m.y + m.h * 0.5, m.z, (Math.random() - 0.5) * 16, Math.random() * 14, (Math.random() - 0.5) * 16, 1.6, 0.24, d.parts[(Math.random() * d.parts.length) | 0].c, 1, 6);
-      this.onBossGone(m, true);
-    }
-  }
-  onBossGone(_m: Mob, _won: boolean): void { for (const q of this.mobs.list) if (q.active && q.event && !q.boss && this.events.active === null) q.active = false; this.proj.clear(); }
-
   // ---- InteractHost -----------------------------------------------------------------------
   reach(): number { return rules.reach(this.stats, this); }
   breakTime(id: number): number { return rules.breakTime(id, this.inv, this.stats, this, this.player); }
@@ -426,30 +387,32 @@ export class Game implements InteractHost, Sink {
         const a = inv.slots[slot]!, extra = item(a.k).ammoDmg ?? 0;
         if (--a.n <= 0) inv.slots[slot] = null;
         inv.touch();
-        this.proj.fire('arrow', ex + dir.x * 0.4, ey - 0.12 + dir.y * 0.4, ez + dir.z * 0.4, dir.x, dir.y + 0.02, dir.z, (wpn.dmg + extra) * st.dmgMult('ranged') * (crit ? 2 : 1), true, wpn.projSpeed, 'ranged', wpn.knock, crit);
+        this.proj.fire('arrow', ex + dir.x * 0.4, ey - 0.12 + dir.y * 0.4, ez + dir.z * 0.4, dir.x, dir.y + 0.02, dir.z, (wpn.dmg + extra) * st.dmgMult('ranged') * (crit ? 2 : 1), this.me, wpn.projSpeed, 'ranged', wpn.knock, crit);
         this.audio.play('bow'); this.swing = 1;
       } else {
         const cost = wpn.mana ?? 0;
         if (st.mana < cost) { if (this.warnT <= 0) { this.toast('Not enough mana', '#9ad0ff'); this.audio.play('error', 0.5); this.warnT = 1.5; } return true; }
         st.mana -= cost; this.swing = 1;
-        if (style === 'magic') { this.proj.fire(wpn.proj!, ex + dir.x * 0.5, ey - 0.15 + dir.y * 0.5, ez + dir.z * 0.5, dir.x, dir.y, dir.z, wpn.dmg * st.dmgMult('magic') * (crit ? 2 : 1), true, wpn.projSpeed, 'magic', wpn.knock, crit); this.audio.play('magic'); }
+        if (style === 'magic') { this.proj.fire(wpn.proj!, ex + dir.x * 0.5, ey - 0.15 + dir.y * 0.5, ez + dir.z * 0.5, dir.x, dir.y, dir.z, wpn.dmg * st.dmgMult('magic') * (crit ? 2 : 1), this.me, wpn.projSpeed, 'magic', wpn.knock, crit); this.audio.play('magic'); }
         else {
-          const mine = this.mobs.list.filter((m) => m.active && m.def.ai === 'minion');
-          if (mine.length >= st.d.minions) mine.sort((a, b) => a.id - b.id)[0].active = false;
+          const mine = this.mobs.list.filter((m) => m.active && m.def.ai === 'minion' && m.owner === this.me.id);
+          if (mine.length >= st.d.minions) this.mobs.remove(mine.sort((a, b) => a.id - b.id)[0]);
           const m = this.mobs.spawn(wpn.minion!, p.x + dir.x, p.y + 1.5, p.z + dir.z);
-          if (m) { m.minionDmg = wpn.dmg; this.audio.play('summon'); for (let i = 0; i < 14; i++) this.particles.spawn(m.x, m.y + 0.3, m.z, (Math.random() - 0.5) * 3, Math.random() * 3, (Math.random() - 0.5) * 3, 0.6, 0.12, m.def.parts[0].c, 1, 0); }
+          if (m) { m.minionDmg = wpn.dmg; m.owner = this.me.id; this.audio.play('summon'); this.fx.burst(BURST.puff, m.x, m.y + 0.3, m.z, 14, m.def.parts[0].c); }
           this.atkCd = 0.6;
         }
       }
       return true;
     }
     const reach = (wpn?.reach ?? 3.3) + st.d.reach * 0.5, h = this.interact.hit;
-    const r = this.mobs.rayHit(ex, ey, ez, dir.x, dir.y, dir.z, reach, 0.18, (m) => m.def.ai !== 'minion' && m.def.ai !== 'npc');
+    const r = rayHitMobs(this.ents.mobs, ex, ey, ez, dir.x, dir.y, dir.z, reach, 0.18, NOT_FRIEND);
     if (r && (!h.hit || r.t <= h.dist + 0.2)) {
       if (this.atkCd <= 0) {
         this.atkCd = 1 / rate; this.swing = 1; this.audio.play('swing', 0.6);
         const dmg = (wpn?.dmg ?? 2) * st.dmgMult('melee') * (crit ? 2 : 1) * (0.92 + Math.random() * 0.16);
-        this.mobs.hurt(r.m, dmg, dir.x, dir.z, wpn?.knock ?? 3, crit); this.hud.hitMark(crit);
+        const m = this.mobs.byId(r.m.id);
+        if (m) this.mobs.hurt(m, dmg, dir.x, dir.z, wpn?.knock ?? 3, crit, this.me);
+        this.hud.hitMark(crit);
         p.shake(crit ? 0.22 : 0.12); st.exhaustion += 0.03;
       }
       return true;
@@ -464,8 +427,8 @@ export class Game implements InteractHost, Sink {
     const dir = p.dir(this.v);
     // talk to townsfolk
     if (pressed) {
-      const r = this.mobs.rayHit(p.x, p.y + p.eye, p.z, dir.x, dir.y, dir.z, hit ? Math.min(4, hit.dist) : 4, 0.15, (m) => m.def.ai === 'npc');
-      if (r) { const n = this.npcs.def(r.m.def.key); if (n) { r.m.talk = 6; this.audio.play('click'); this.win.show('shop', { shop: n }); return true; } }
+      const r = rayHitMobs(this.ents.mobs, p.x, p.y + p.eye, p.z, dir.x, dir.y, dir.z, hit ? Math.min(4, hit.dist) : 4, 0.15, IS_NPC);
+      if (r) { const n = npcOf(r.m.def.key), m = this.mobs.byId(r.m.id); if (n && m) { m.talk = 6; this.audio.play('click'); this.win.show('shop', { shop: n }); return true; } }
     }
     const it = inv.held(), d = it ? item(it.k) : null;
     if (hit && pressed && !p.sneaking) {
@@ -561,7 +524,7 @@ export class Game implements InteractHost, Sink {
       } else this.toast('Spawn point set.', '#b8f070');
       return true;
     }
-    if (use === 'guestbed') { this.toast(this.npcs.status(x, y, z), '#8fd0ff'); return true; }
+    if (use === 'guestbed') { this.toast(this.npcs.status(x, y, z, this.dim), '#8fd0ff'); return true; }
     if (use === 'door') {
       const swap: Record<string, string> = { door_x: 'door_x_open', door_x_open: 'door_x', door_z: 'door_z_open', door_z_open: 'door_z' }, to = B[swap[BLOCKS[hit.id].key]];
       for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === hit.id) w.setBlock(x, y + dy, z, to, true);
@@ -577,7 +540,7 @@ export class Game implements InteractHost, Sink {
   }
   private trySummon(n: number, x: number, y: number, z: number): void {
     const boss = BOSSES[n - 1], it = this.inv.held();
-    if (this.mobs.activeBoss()) return;
+    if (this.mobs.boss()) return;
     if (!it || item(it.k).use !== 'summon' + n) { const need = [...ITEMS.values()].find((q) => q.use === 'summon' + n); this.toast(`The altar waits for a ${need?.name ?? 'summoning item'}.`, '#ffd9a0'); return; }
     if (n === 7 && !this.isNight()) { this.toast('The Hart only answers at night.', '#ffd9a0'); return; }
     if (this.events.active) this.events.end(false);
@@ -728,7 +691,7 @@ export class Game implements InteractHost, Sink {
       case 'god': this.god = !this.god; return 'god ' + this.god;
       case 'heal': this.stats.hp = this.stats.maxHp; this.stats.hunger = 20; this.stats.mana = this.stats.maxMana; return 'healed';
       case 'level': this.stats.level = +a[1] || 1; this.stats.points += 2 * (+a[1] || 1); this.stats.recompute(this.inv); return 'level set';
-      case 'kill': for (const m of this.mobs.list) if (m.active && m.def.hostile) this.mobs.hurt(m, 1e6, 0, 0, 0, false); return 'cleared';
+      case 'kill': for (const m of this.mobs.list) if (m.active && m.def.hostile) this.mobs.hurt(m, 1e6, 0, 0, 0, false, this.me); return 'cleared';
       case 'spawn': return this.mobs.spawn(a[1], p.x + 3, p.y + 1, p.z) ? 'spawned' : 'failed';
       case 'boss': { const b = BOSSES[(+a[1] || 1) - 1]; const m = this.mobs.spawn(b.key, p.x, p.y + 3, p.z + 8); if (m) m.boss!.altar = [p.x, p.y, p.z]; return b.name; }
       case 'flag': this.flags.add(a[1]); return 'flag set';
@@ -787,7 +750,7 @@ export class Game implements InteractHost, Sink {
       if (p.inLava && !this.creative && !this.god) { st.hurtT = 0; if (st.damage(8, Math.random, true) > 0) { this.hud.flashHurt(); this.audio.play('fizz'); if (st.dead) this.onDeath('lava'); } }
       else for (let dy = 0; dy < 2; dy++) for (const [dx, dz] of [[0.36, 0], [-0.36, 0], [0, 0.36], [0, -0.36], [0, 0]]) {
         const id = w.getBlock(Math.floor(p.x + dx), Math.floor(p.y + dy * 0.9 - (dx || dz ? 0 : 0.1)), Math.floor(p.z + dz));
-        if (T_DAMAGE[id] && !T_LIQUID[id]) { this.hurtPlayer(T_DAMAGE[id] * 3, Math.floor(p.x + dx) + 0.5, Math.floor(p.z + dz) + 0.5, BLOCKS[id].name, null, 3); dy = 2; break; }
+        if (T_DAMAGE[id] && !T_LIQUID[id]) { this.hurtPlayer(T_DAMAGE[id] * 3, Math.floor(p.x + dx) + 0.5, Math.floor(p.z + dz) + 0.5, BLOCKS[id].name, 3); dy = 2; break; }
       }
       const da = this.deathAt;
       if (da && da[0] === this.dim && !st.dead && Math.abs(p.x - da[1]) < 6 && Math.abs(p.z - da[3]) < 6 && Math.abs(p.y - da[2]) < 8) this.deathAt = null;
@@ -801,12 +764,12 @@ export class Game implements InteractHost, Sink {
     this.interact.tick(dt, inp, this, inp.locked && !st.dead);
     if (inp.clicks[1] && this.interact.hit.hit) this.pickBlock(this.interact.hit.id);
     st.tick(dt, inv, p.sprinting);
-    this.ents.begin(this.sim.realms[this.dim]);
+    this.ents.begin(this.sim.realms[this.dim], dt);
     this.mobs.tick(dt); this.proj.tick(dt); this.drops.tick(dt);
     this.ents.end(this.sim.realms[this.dim], dt);
     this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; this.tickBlocks(0.25); }
     this.tickPortal(dt); this.fluids.tick(dt);
-    this.events.tick(dt); this.npcs.tick(dt); this.quests.tick(dt);
+    this.sim.events.tick(dt); this.sim.npcs.tick(dt); this.sim.quests.tick(dt); this.quests.tick(dt);
     this.clock += dt / DAY_LENGTH;
     this.saveT += dt; if (this.saveT > 30) { this.saveT = 0; void this.save(); }
 
@@ -816,9 +779,9 @@ export class Game implements InteractHost, Sink {
     // townsfolk first, as secondary() tries them before blocks; the ray is cheap but only needs checking a few times a second
     if (--this.npcPromptT <= 0) {
       this.npcPromptT = 6;
-      const d = p.dir(this.v), r = this.mobs.rayHit(p.x, p.y + p.eye, p.z, d.x, d.y, d.z, h.hit ? Math.min(4, h.dist) : 4, 0.15, IS_NPC);
+      const d = p.dir(this.v), r = rayHitMobs(this.ents.mobs, p.x, p.y + p.eye, p.z, d.x, d.y, d.z, h.hit ? Math.min(4, h.dist) : 4, 0.15, IS_NPC);
       this.npcPrompt = null;
-      if (r && this.npcs.def(r.m.def.key)) {
+      if (r && npcOf(r.m.def.key)) {
         let t = TRADE_PROMPT.get(r.m.def.key);
         if (!t) { t = `Right-click: trade with ${r.m.def.name}`; TRADE_PROMPT.set(r.m.def.key, t); }
         this.npcPrompt = t;
@@ -827,7 +790,7 @@ export class Game implements InteractHost, Sink {
     if (this.npcPrompt) prompt = this.npcPrompt;
     else if (h.hit && h.dist < this.reach()) {
       const u = BLOCKS[h.id].use;
-      if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.mobs.activeBoss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !this.isNight() ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
+      if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.ents.boss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !this.isNight() ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
       else if (u) prompt = u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
       else if (!rules.canHarvest(h.id, inv) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
     }
@@ -937,8 +900,9 @@ export class Game implements InteractHost, Sink {
     this.gfx.update(this.time, this.env, this.gfx.camera.position);
     this.world.setCull(this.gfx.camera.position.x, this.gfx.camera.position.z);
     if (!this.paused) this.particles.update(dt, this.world);
-    this.boxes.begin(); this.mobs.render(this.boxes, a, this.time); this.proj.render(this.boxes, a); this.boxes.end();
-    this.ents.sync(this.sim.realms[this.dim]); this.ents.renderDrops(a);
+    this.ents.sync(this.sim.realms[this.dim]);
+    this.boxes.begin(); this.ents.render(this.boxes, a, this.time); this.boxes.end();
+    this.ents.renderDrops(a);
     this.updateHand(dt);
     this.gfx.flash = 0;
     this.gfx.render(this.ready && !this.stats.dead && this.hudOn);
@@ -987,8 +951,8 @@ export class Game implements InteractHost, Sink {
     const caveT = DIMS[this.dim].hasSky && sky < 5 && y < w.topY(x, z) - 4 ? 1 : 0;
     e.cave += (caveT - e.cave) * Math.min(1, dt * 1.2);
     e.underwater = p.headInWater; e.time = this.clock % 1; e.dim = this.dim;
-    e.moonPhase = (Math.floor(this.clock) % 8) / 4 - 1; e.moonTint = this.events.moonTint();
-    const boss = this.mobs.activeBoss();
+    e.moonPhase = (Math.floor(this.clock) % 8) / 4 - 1; e.moonTint = moonTint(this.sim.shared.events);
+    const boss = this.ents.boss();
     this.audio.setMood(!this.ready ? 'none' : boss ? 'boss' : this.dim === 1 ? 'hollows' : this.dim === 2 ? 'rift' : e.cave > 0.5 ? 'cave' : this.isNight() ? 'night' : 'day');
   }
 
@@ -1025,11 +989,9 @@ export class Game implements InteractHost, Sink {
   }
   async save(): Promise<void> {
     if (!this.ready && !this.cfg.meta.data) return;
-    const p = this.player, m = this.cfg.meta;
+    const m = this.cfg.meta;
     m.played = Date.now();
-    m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
-      spawn: this.spawn, deathAt: this.deathAt, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes,
-      arriving: this.arriving, pendingBed: this.pendingBed, safe: this.safe, rnd: this.sim.shared.rnd, tick: this.sim.shared.tick };
+    m.data = toLegacy(this.sim, this.me, this.palettes);
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
     try {
       await this.cfg.db.putWorld(m);

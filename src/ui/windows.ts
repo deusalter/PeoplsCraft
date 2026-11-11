@@ -9,7 +9,8 @@ import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } 
 import { SlotKind, accepts, goods, refusal, sellPrice, smeltable } from '../sim/rules';
 import { ATTR_DESC, Attr, STAT_NAMES } from '../sim/stats';
 import type { BlockEnt } from '../sim/voxels';
-import { el } from './hud';
+import { QUESTS } from '../data/quests';
+import { el, moonIn } from './hud';
 import { uiScale } from './menus';
 
 type Kind = SlotKind;
@@ -244,7 +245,7 @@ export class Windows {
     } else if (this.mode === 'shop') {
       const n = this.shop!;
       el('div', 'ttl', mid, n.name);
-      const say = el('div', '', mid, '"' + g.npcs.line(n) + '"'); say.style.cssText = 'font-size:12px;color:#c4c9d8;max-width:300px;font-style:italic';
+      const say = el('div', '', mid, '"' + npcLine(g, n) + '"'); say.style.cssText = 'font-size:12px;color:#c4c9d8;max-width:300px;font-style:italic';
       this.shopHead = el('div', 'shophead', mid);
       this.shopEl = el('div', 'scroll', mid); this.shopEl.style.width = '300px';
       const hint = el('div', '', mid, 'Shift-click an item in your pack to sell the stack. Sold items can be bought back until you leave. Shift-click Buy for up to 10.'); hint.style.cssText = 'font-size:11px;color:#9aa0b2;max-width:300px;line-height:1.4';
@@ -772,4 +773,14 @@ export class Windows {
     if (most > 0 && most < Infinity) h += `<div class="ln" style="margin-top:2px">Makes up to ${most * r.n}</div>`;
     return h + this.itemTip({ k: r.out, n: 1 }, 'recipe').replace(/^<div class="nm".*?<\/div><div class="ty">.*?<\/div>/, '<div style="height:4px"></div>');
   }
+}
+
+/** What a townsperson says when the shop opens. */
+function npcLine(g: Game, n: NpcDef): string {
+  if (n.key === 'wayfinder') {
+    const moon = moonIn(g.flags, g.clock), r = Math.random();
+    if (moon >= 0 && r > 0.85) return moon === 0 ? 'The Hollow Moon turns tonight. Moonspawn carry the slivers.' : `The Hollow Moon turns in ${moon} night${moon > 1 ? 's' : ''}.`;
+    if (r < 0.6) return 'Next: ' + QUESTS[g.quests.index].hint;
+  }
+  return n.lines[(Math.random() * n.lines.length) | 0];
 }

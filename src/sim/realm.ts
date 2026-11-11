@@ -1,8 +1,11 @@
 // One dimension of the world: its blocks, block entities, light, and everything that lives in it.
 import { DropSim } from './drops';
 import { Fluids } from './fluids';
+import { BURST_R, FLOAT_R, SOUND_R } from './fx';
 import type { LightSource } from './light';
+import { MobSim } from './mobs';
 import { active, type SimPlayer } from './player';
+import { ProjSim } from './projectiles';
 import type { Sim } from './sim';
 import type { BlockEnt, BlockEnts, VoxelWrite } from './voxels';
 
@@ -19,7 +22,7 @@ export interface RealmStore extends VoxelWrite, BlockEnts, LightSource {
 export class Realm implements VoxelWrite, BlockEnts {
   /** Every in-memory player of this realm that is not parked, in join order. */
   readonly players: SimPlayer[] = [];
-  readonly drops: DropSim; readonly fluids: Fluids;
+  readonly mobs: MobSim; readonly proj: ProjSim; readonly drops: DropSim; readonly fluids: Fluids;
   readonly light: LightSource;
   blockT = 0;
   /** Players with a station, chest or forge window open, by cell key `x,y,z`. Not saved. */
@@ -28,7 +31,7 @@ export class Realm implements VoxelWrite, BlockEnts {
 
   constructor(readonly sim: Sim, readonly dim: 0 | 1 | 2, readonly store: RealmStore) {
     this.light = store;
-    this.drops = new DropSim(this);
+    this.mobs = new MobSim(this); this.proj = new ProjSim(this); this.drops = new DropSim(this);
     this.fluids = new Fluids(this);
   }
 
@@ -41,6 +44,11 @@ export class Realm implements VoxelWrite, BlockEnts {
   setEnt(x: number, y: number, z: number, kind: string, data: any): BlockEnt | null { return this.store.setEnt(x, y, z, kind, data); }
   removeEnt(x: number, y: number, z: number): void { this.store.removeEnt(x, y, z); }
   touchEnt(e: BlockEnt): void { this.store.touch(e); }
+
+  // ---- effects at a place in this realm ----
+  sound(name: string, vol: number, pitch: number, x: number, y: number, z: number): void { this.sim.sink.emit({ dim: this.dim, x, y, z, r: SOUND_R }, ['s', name, vol, pitch, x, y, z]); }
+  burst(kind: number, x: number, y: number, z: number, a = 0, c = 0): void { this.sim.sink.emit({ dim: this.dim, x, y, z, r: BURST_R }, ['p', kind, x, y, z, a, c]); }
+  floater(x: number, y: number, z: number, text: string, color: string, big: boolean): void { this.sim.sink.emit({ dim: this.dim, x, y, z, r: FLOAT_R }, ['f', x, y, z, text, color, big]); }
 
   /** Active, alive, not hidden. */
   targets(): readonly SimPlayer[] {

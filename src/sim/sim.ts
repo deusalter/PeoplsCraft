@@ -3,8 +3,11 @@ import { SEA } from '../core/constants';
 import type { Item } from '../data/items';
 import { PlayerBody } from './body';
 import { STEP, isNight } from './clock';
+import { EventSim } from './events';
 import type { Sink } from './fx';
+import { NpcSim } from './npcs';
 import { newPlayer, type SimPlayer } from './player';
+import { QuestSim } from './quests';
 import { Realm, type RealmStore } from './realm';
 import type { PlayerRecord, WorldRecord } from './storage';
 
@@ -44,10 +47,14 @@ export class Sim {
   readonly flags: Set<string>;
   readonly refused = { atk: 0, fire: 0, edit: 0 };
   readonly sink: Sink;
+  readonly events: EventSim; readonly npcs: NpcSim; readonly quests: QuestSim;
+  /** The next creature id; one counter for all realms. */
+  mobId = 1;
 
   constructor(readonly world: WorldRecord, readonly opt: SimOptions, readonly deps: SimDeps) {
     this.seed = world.seed; this.shared = world.state; this.flags = new Set(world.state.flags); this.sink = deps.sink;
     this.realms = [new Realm(this, 0, deps.store(0)), new Realm(this, 1, deps.store(1)), new Realm(this, 2, deps.store(2))];
+    this.events = new EventSim(this); this.npcs = new NpcSim(this); this.quests = new QuestSim(this);
   }
 
   get tick(): number { return this.shared.tick; }

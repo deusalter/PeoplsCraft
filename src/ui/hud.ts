@@ -4,6 +4,7 @@ import { RARITY, item, itemName, itemRarity } from '../data/items';
 import type { Game } from '../game';
 import { BOSS_BARS } from '../data/hudstyle';
 import { HOTBAR } from '../sim/inventory';
+import type { SharedState } from '../sim/sim';
 import { BUFFS } from '../sim/stats';
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
@@ -287,7 +288,7 @@ export class Hud {
     if (this.bannerT > 0) { this.bannerT -= dt; if (this.bannerT <= 0) { this.banner.style.opacity = '0'; if (this.bannerQ.length) this.bannerGap = 0.6; } }
     else if (this.bannerGap > 0) { this.bannerGap -= dt; if (this.bannerGap <= 0) { const q = this.bannerQ.shift(); if (q) this.showBanner(q[0], q[1], q[2]); } }
 
-    const b = g.mobs.activeBoss();
+    const b = g.ents.boss();
     if (!!b !== this.bossOn) { this.bossOn = !!b; this.boss.classList.toggle('show', !!b); this.root.classList.toggle('bossing', !!b); if (!b) this.bossKey = ''; }
     if (b) {
       const spec = b.def.boss!;
@@ -321,11 +322,11 @@ export class Hud {
     if (this.questT > 0) { this.questT -= dt; if (this.questT <= 0) this.quest.classList.remove('new'); }
     const regen = st.hunger >= 14 && st.hp < st.maxHp && !st.dead;
     if (regen !== this.regenOn) { this.regenOn = regen; this.hp.root.classList.toggle('regen', regen); }
-    const ev = g.events;
-    if ((ev.active !== null) !== this.eventOn) { this.eventOn = ev.active !== null; this.event.classList.toggle('hidden', !this.eventOn); }
-    if (ev.active) {
-      const pr = ev.progress();
-      if (ev.active !== this.evKind || (ev.active !== 'moon' && pr !== this.evProg)) { this.evKind = ev.active; this.evProg = pr; this.eventText.textContent = ev.label(); }
+    const ev = g.sim.shared.events;
+    if ((ev.a !== null) !== this.eventOn) { this.eventOn = ev.a !== null; this.event.classList.toggle('hidden', !this.eventOn); }
+    if (ev.a) {
+      const pr = eventProgress(ev, g.clock);
+      if (ev.a !== this.evKind || (ev.a !== 'moon' && pr !== this.evProg)) { this.evKind = ev.a; this.evProg = pr; this.eventText.textContent = eventLabel(ev); }
       setBar(this.eventBar, pr, '');
     }
     this.buffGen++;
@@ -347,7 +348,7 @@ export class Hud {
     }
     // name tags over nearby townsfolk
     let ti = 0;
-    for (const m of g.mobs.list) {
+    for (const m of g.ents.mobs) {
       if (!m.active || m.def.ai !== 'npc' || ti >= this.tags.length) continue;
       if (Math.hypot(m.x - g.player.x, m.z - g.player.z) > 12) continue;
       v.set(m.x, m.y + m.h + 0.35, m.z).project(cam);
@@ -359,3 +360,21 @@ export class Hud {
     for (; ti < this.tags.length; ti++) if (this.tags[ti].style.display !== 'none') this.tags[ti].style.display = 'none';
   }
 }
+
+// ---- the world event, read from its replicated state ----
+type EventState = SharedState['events'];
+export function eventLabel(ev: EventState): string {
+  switch (ev.a) {
+    case 'raid': return `Night raid  ${ev.k} / ${ev.g}`;
+    case 'ashen': return `The Ashen Host  ${ev.k} / ${ev.g}`;
+    case 'moon': return 'The Hollow Moon is risen';
+    default: return '';
+  }
+}
+export function eventProgress(ev: EventState, clock: number): number {
+  if (ev.a === 'moon') { const t = clock % 1; return 1 - Math.max(0, Math.min(1, (t - 0.5) / 0.5)); }
+  return ev.g ? ev.k / ev.g : 0;
+}
+export function moonTint(ev: EventState): [number, number, number] | null { return ev.a === 'moon' ? [1.0, 0.42, 0.78] : null; }
+/** Nights until the Hollow Moon (0 = tonight), or -1 before the Pale Warden has fallen. */
+export function moonIn(flags: ReadonlySet<string>, clock: number): number { return flags.has('boss:3') ? 7 - (Math.floor(clock) % 8) : -1; }

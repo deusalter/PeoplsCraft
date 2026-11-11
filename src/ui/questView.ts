@@ -1,48 +1,24 @@
-// Tracks progress through the guide and tells the HUD what to show next.
+// What the HUD shows of the guide: the current step, its progress, and where it points.
 import { DIM_NAMES } from '../core/constants';
-import { item } from '../data/items';
 import { QUESTS } from '../data/quests';
 import type { Game } from '../game';
 import { locate, structDim } from '../world/gen/structures';
 
 export interface Tracker { key: string; index: number; chapter: string; title: string; hint: string; where: string; have: number; need: number }
 
-export class QuestSystem {
-  index = 0;
+export class QuestView {
   /** Nearest structure the current step points at, in this dimension, for the HUD compass. */
   target: [number, number] | null = null;
   private t = 0; private where = ''; private whereT = 0; private cur: Tracker | null = null;
   constructor(private g: Game) {}
 
-  private done(i: number): boolean {
-    const q = QUESTS[i], g = this.g;
-    if (q.have) return g.inv.count(q.have[0]) >= q.have[1] || g.flags.has('had:' + q.key);
-    if (q.flag) {
-      if (g.flags.has(q.flag)) return true;
-      if (!q.flag.startsWith('craft:')) return false;
-      // a crafting step also counts when the thing was looted, bought, placed, or a better tool of its kind is owned
-      const key = q.flag.slice(6), t = item(key).tool;
-      if (g.flags.has('place:' + key) || g.inv.count(key) > 0) return true;
-      if (t) for (const s of g.inv.slots) { const o = s ? item(s.k).tool : undefined; if (o && o.kind === t.kind && o.power >= t.power) return true; }
-      return false;
-    }
-    if (q.level) return g.stats.level >= q.level;
-    return false;
-  }
+  /** The step the world is on. */
+  get index(): number { return this.g.sim.shared.quest; }
+
   tick(dt: number): void {
     this.t -= dt; this.whereT -= dt;
     if (this.t > 0) return;
     this.t = 0.5;
-    const g = this.g;
-    while (this.index < QUESTS.length - 1 && this.done(this.index)) {
-      const q = QUESTS[this.index];
-      g.flags.add('had:' + q.key);
-      this.index++; this.whereT = 0;
-      const xp = 15 + this.index * 6;
-      g.hud.toast(`Guide: ${q.title} ✔  (+${xp} xp)`, '#b8f070');
-      g.audio.play('quest');
-      g.gainXp(xp);
-    }
     this.rebuild();
   }
   /** Refresh the tracker: progress every half second, compass text every 1.5 s. */

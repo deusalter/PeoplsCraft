@@ -44,7 +44,7 @@ export function installDevTools(game: Game): void {
       p.teleport(X + 0.5, Y + 1.01, Z + 0.5); p.yaw = 0; p.pitch = 0.1; p.flying = false;
       await T.run(900);
       for (const m of g.mobs.list) m.active = false;
-      keys.forEach((k, i) => { const m = g.mobs.spawn(k, X + 0.5 + (i - (keys.length - 1) / 2) * gap, Y + 1.05, Z + 0.5 - dist); if (m) { m.yaw = Math.PI; m.px = m.x; m.py = m.y; m.pz = m.z; } });
+      keys.forEach((k, i) => { const m = g.mobs.spawn(k, X + 0.5 + (i - (keys.length - 1) / 2) * gap, Y + 1.05, Z + 0.5 - dist); if (m) m.yaw = Math.PI; });
       g.paused = true;       // simulation stops, rendering and idle animation continue
       await T.run(400);
       return `showing ${keys.join(', ')}; call T.run(300) again before a screenshot, and T.orbit(angle) to walk the camera around`;

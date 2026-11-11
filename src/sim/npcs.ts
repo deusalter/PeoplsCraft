@@ -1,33 +1,32 @@
 // Townsfolk housing. A Guest Bed in a closed, lit room with a door is a vacant home; each
-// morning anyone whose condition is met and who has no home moves into one.
+// morning anyone whose condition is met and who has no home moves into one. Homes are Overworld
+// places and live in shared.homes.
 import { BLOCKS, B, T_OPAQUE, T_SHAPE } from '../data/blocks';
 import { NPCS, NpcDef } from '../data/npcs';
-import { QUESTS } from '../data/quests';
-import type { Game } from '../game';
-import { standSpot } from '../sim/rules';
+import { standSpot } from './rules';
+import type { Sim } from './sim';
 
-interface Home { x: number; y: number; z: number; npc: string | null }
+export const npcOf = (mobKey: string): NpcDef | undefined => NPCS.find((n) => n.mob === mobKey);
 
-export class NpcSystem {
-  homes: Home[] = [];
+export class NpcSim {
   private t = 2;
-  constructor(private g: Game) {}
+  constructor(private sim: Sim) { this.sync(); }
+  get homes(): Sim['shared']['homes'] { return this.sim.shared.homes; }
 
   count(): number { return this.homes.filter((h) => h.npc).length; }
-  def(mobKey: string): NpcDef | undefined { return NPCS.find((n) => n.mob === mobKey); }
   addBed(x: number, y: number, z: number): void { if (!this.homes.some((h) => h.x === x && h.y === y && h.z === z)) this.homes.push({ x, y, z, npc: null }); this.t = 1; this.sync(); }
   removeBed(x: number, y: number, z: number): void {
-    const i = this.homes.findIndex((h) => h.x === x && h.y === y && h.z === z);
+    const sim = this.sim, mobs = sim.realms[0].mobs, i = this.homes.findIndex((h) => h.x === x && h.y === y && h.z === z);
     if (i < 0) return;
     const h = this.homes[i];
-    if (h.npc) { const d = NPCS.find((n) => n.key === h.npc)!; this.g.toast(`${d.name} has nowhere to stay and leaves.`, '#ff9a8a'); for (const m of this.g.mobs.list) if (m.active && m.def.key === d.mob) m.active = false; this.g.flags.delete('npc:' + h.npc); }
+    if (h.npc) { const d = NPCS.find((n) => n.key === h.npc)!; sim.sink.emit({ all: true }, ['t', `${d.name} has nowhere to stay and leaves.`, '#ff9a8a']); for (const m of mobs.list) if (m.active && m.def.key === d.mob) mobs.remove(m); sim.delFlag('npc:' + h.npc); }
     this.homes.splice(i, 1); this.sync();
   }
-  private sync(): void { this.g.mobs.safeZones = this.homes.filter((h) => h.npc).map((h) => [h.x, h.y, h.z]); }
+  private sync(): void { this.sim.realms[0].mobs.safeZones = this.homes.filter((h) => h.npc).map((h) => [h.x, h.y, h.z]); }
 
   /** Why a bed's room is not valid housing, or null if it is. Flood-fills the air around the bed. */
   check(x: number, y: number, z: number): string | null {
-    const w = this.g.world, seen = new Set<number>(), stack: number[] = [x, y, z];
+    const w = this.sim.realms[0], seen = new Set<number>(), stack: number[] = [x, y, z];
     let door = false, light = false, n = 0;
     const key = (a: number, b: number, c: number): number => ((a - x + 64) * 128 + (c - z + 64)) * 64 + (b - y + 32);
     while (stack.length) {
@@ -52,25 +51,26 @@ export class NpcSystem {
     return null;
   }
 
+  /** A newcomer's condition is met when the flag is set and, for a price, some player can show the coins. */
   private met(n: NpcDef): boolean {
-    const g = this.g;
-    if (n.need.flag && !g.flags.has(n.need.flag)) return false;
-    if (n.need.coins && g.inv.coins < n.need.coins && !g.flags.has('npc:' + n.key)) return false;
+    const sim = this.sim;
+    if (n.need.flag && !sim.flags.has(n.need.flag)) return false;
+    if (n.need.coins && !sim.flags.has('npc:' + n.key)) { let rich = false; for (const p of sim.players.values()) if (p.inv.coins >= n.need.coins) rich = true; if (!rich) return false; }
     return true;
   }
   tick(dt: number): void {
     this.t -= dt;
     if (this.t > 0) return;
     this.t = 5;
-    const g = this.g;
-    if (g.dim !== 0) return;
+    const sim = this.sim, realm = sim.realms[0], mobs = realm.mobs;
+    if (!realm.players.length) return;
     // move-ins
     for (const n of NPCS) {
       if (this.homes.some((h) => h.npc === n.key) || !this.met(n)) continue;
-      const home = this.homes.find((h) => !h.npc && g.world.ready(h.x, h.z) && this.check(h.x, h.y, h.z) === null);
+      const home = this.homes.find((h) => !h.npc && realm.ready(h.x, h.z) && this.check(h.x, h.y, h.z) === null);
       if (!home) continue;
-      home.npc = n.key; g.flags.add('npc:' + n.key);
-      g.hud.showBanner(`${n.name} has moved in`, '', '#b8f070'); g.audio.play('quest');
+      home.npc = n.key; sim.addFlag('npc:' + n.key);
+      sim.sink.emit({ all: true }, ['n', `${n.name} has moved in`, '', '#b8f070']); sim.sink.emit({ all: true }, ['s', 'quest', 1, 1]);
       this.sync();
       break;
     }
@@ -78,30 +78,20 @@ export class NpcSystem {
     for (const h of this.homes) {
       if (!h.npc) continue;
       const d = NPCS.find((n) => n.key === h.npc)!;
-      if (!g.world.ready(h.x, h.z) || Math.hypot(h.x - g.player.x, h.z - g.player.z) > 90) continue;
-      if (g.mobs.list.some((m) => m.active && m.def.key === d.mob)) continue;
-      const q = standSpot(g.world, h.x, h.y, h.z), m = g.mobs.spawn(d.mob, q[0], q[1], q[2]);
+      if (!realm.ready(h.x, h.z) || !realm.players.some((p) => Math.hypot(h.x - p.body.x, h.z - p.body.z) <= 90)) continue;
+      if (mobs.list.some((m) => m.active && m.def.key === d.mob)) continue;
+      const q = standSpot(realm, h.x, h.y, h.z), m = mobs.spawn(d.mob, q[0], q[1], q[2]);
       if (m) m.home = [h.x, h.y, h.z];
     }
   }
-  line(n: NpcDef): string {
-    if (n.key === 'wayfinder') {
-      const moon = this.g.events.moonIn(), r = Math.random();
-      if (moon >= 0 && r > 0.85) return moon === 0 ? 'The Hollow Moon turns tonight. Moonspawn carry the slivers.' : `The Hollow Moon turns in ${moon} night${moon > 1 ? 's' : ''}.`;
-      if (r < 0.6) return 'Next: ' + QUESTS[this.g.quests.index].hint;
-    }
-    return n.lines[(Math.random() * n.lines.length) | 0];
-  }
-  /** One-line status for a bed, shown when the player right-clicks it. */
-  status(x: number, y: number, z: number): string {
+  /** One-line status for a bed, shown when a player right-clicks it. */
+  status(x: number, y: number, z: number, dim: number): string {
     const h = this.homes.find((q) => q.x === x && q.y === y && q.z === z);
-    if (this.g.dim !== 0) return 'Townsfolk only settle in the Overworld.';
+    if (dim !== 0) return 'Townsfolk only settle in the Overworld.';
     if (h?.npc) return `${NPCS.find((n) => n.key === h.npc)!.name} lives here.`;
     const bad = this.check(x, y, z);
     if (bad) return bad;
     const next = NPCS.find((n) => !this.homes.some((q) => q.npc === n.key) && !this.met(n));
     return 'This room is ready. ' + (NPCS.some((n) => !this.homes.some((q) => q.npc === n.key) && this.met(n)) ? 'Someone will arrive shortly.' : next ? `${next.name}: ${next.why}` : 'Everyone has a home.');
   }
-  serialize(): unknown { return this.homes; }
-  load(d: any): void { this.homes = Array.isArray(d) ? d : []; this.sync(); }
 }
