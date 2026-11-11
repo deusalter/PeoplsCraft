@@ -384,6 +384,7 @@ export class Game implements InteractHost {
       const to = free >= 0 ? free : inv.sel, was = inv.slots[to];
       inv.slots[to] = at >= 0 ? inv.slots[at] : { k: key, n: item(key).stack };
       if (at >= 0) inv.slots[at] = was;
+      else if (was) { const left = inv.add(was); if (left) this.dropItem({ k: was.k, n: left, m: was.m }); }
       inv.sel = to;
     }
     inv.touch(); this.audio.play('click', 0.4);
