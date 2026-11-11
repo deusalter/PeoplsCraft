@@ -1,0 +1,295 @@
+{
+  "about": "Ordered sound changes that turn a Sanskrit headword (IAST) into its form in each of the two born tongues. derive.mjs applies them exactly as written. See ../languages.md.",
+  "notation": {
+    "patterns": "Each step is [pattern, replacement], a regular expression applied to the whole word wherever it matches. {V}, {C} and {P} stand for the classes below.",
+    "breath": "A stop with breath (kh, gh, ch, jh, ṭh, ḍh, th, dh, ph, bh) is one sound. While the rules run it is written as the stop and a raised h (kʰ). The prepare steps make that change before any rule runs.",
+    "phases": "stem rules run on each word before words are joined; core rules are the body of the changes; edge rules act on the end of the finished name. The spelling steps run last and change no sound.",
+    "examples": "Each ex pair shows what that one rule does to a form as it stands when the rule is reached. `node derive.mjs --selftest` checks every pair."
+  },
+  "classes": {"V":"aāiīuūeoṛ","C":"kgcjṭḍtdpbṅñṇnmyrlvśṣsh","P":"kgcjṭḍtdpb"},
+  "prepare": [["ṁ","ṃ"],["ṝ","ṛ"],["([kgcjṭḍtdpb])h","$1ʰ"]],
+  "letters": {"daughters":"āīūĀĪŪ","cutters":"āīūṛṅñṭḍṇśṣṃĀĪŪṚŚṢṬ"},
+  "limits": {"inventory":18,"bossBar":24},
+  "tongues": {
+    "hearth": {
+      "name": "The householders' tongue",
+      "speakers": "Householders: the born who hold hearths",
+      "rules": [
+        {
+          "id": "h01", "phase": "stem",
+          "say": "ai flattens to e and au to o",
+          "ex": [["taila","tela"],["gaura","gora"]],
+          "steps": [["ai","e"],["au","o"]]
+        },
+        {
+          "id": "h02", "phase": "stem",
+          "say": "A final ṛ becomes ā, and every final consonant falls",
+          "ex": [["pitṛ","pitā"],["rājan","rāja"],["manas","mana"]],
+          "steps": [["ṛ$","ā"],["[ḥṃ]$",""],["({C}ʰ?)+$",""]]
+        },
+        {
+          "id": "h03", "phase": "core",
+          "say": "ṛ becomes i at the start of a word or before a syllable with i, u before a syllable with u, and a elsewhere",
+          "ex": [["gṛha","gaha"],["vṛścika","viścika"],["mṛdu","mudu"]],
+          "steps": [["^ṛ","i"],["ṛ(?=[^aāiīuūeo]*[iī])","i"],["ṛ(?=[^aāiīuūeo]*[uū])","u"],["ṛ","a"]]
+        },
+        {
+          "id": "h04", "phase": "core",
+          "say": "ḥ doubles the consonant after it; ṃ becomes n or m, and before h it lengthens the vowel and falls",
+          "ex": [["duḥkʰa","dukkʰa"],["siṃha","sīha"],["vaṃśa","vanśa"]],
+          "steps": [["ḥ({C})","$1$1"],["ḥ",""],["aṃh","āh"],["iṃh","īh"],["uṃh","ūh"],["ṃy","ññ"],["ṃ(?=[pbm])","m"],["ṃ","n"]]
+        },
+        {
+          "id": "h05", "phase": "core",
+          "say": "kṣ becomes kkh; jñ becomes ññ; ts and ps become cch",
+          "ex": [["akṣi","akkʰi"],["prajñā","praññā"],["matsya","maccʰya"]],
+          "steps": [["kṣ","kkʰ"],["jñ","ññ"],["[tp]s","ccʰ"]]
+        },
+        {
+          "id": "h06", "phase": "core",
+          "say": "A sibilant before k, t, p or c is lost; the stop doubles and takes breath",
+          "ex": [["hasta","hattʰa"],["śuṣka","śukkʰa"],["aṣṭa","aṭṭʰa"]],
+          "steps": [["[śṣs]([kṭtpc])ʰ?","$1$1ʰ"]]
+        },
+        {
+          "id": "h07", "phase": "core",
+          "say": "A sibilant or h before a nasal changes places with it and is said h",
+          "ex": [["uṣṇa","uṇha"],["grīṣma","grīmha"],["cihna","cinha"]],
+          "steps": [["śn","ñh"],["[śṣs]([nṇm])","$1h"],["h([nṇm])","$1h"]]
+        },
+        {
+          "id": "h08", "phase": "core",
+          "say": "ty, dy and ny become cc, jj and ññ; hy becomes jjh and hv becomes bbh",
+          "ex": [["satya","sacca"],["madʰya","majjʰa"],["araṇya","arañña"]],
+          "steps": [["t(ʰ?)y","cc$1"],["d(ʰ?)y","jj$1"],["[nṇ]y","ññ"],["hy","jjʰ"],["hv","bbʰ"]]
+        },
+        {
+          "id": "h09", "phase": "core",
+          "say": "A vowel opens ry, rh, dm, tn, and a consonant before l at the start of a word; ml inside a word becomes mbil; hr at the start of a word loses its h",
+          "ex": [["sūrya","sūriya"],["padma","paduma"],["ratna","ratana"],["kleśa","kileśa"],["āmla","āmbila"]],
+          "steps": [["ry","riy"],["rh","rah"],["^hr","r"],["dm","dum"],["tn","tan"],["^([kgpbmśs])l","$1il"],["ml","mbil"]]
+        },
+        {
+          "id": "h10", "phase": "core",
+          "say": "r next to another consonant is lost and that consonant doubles; mr becomes mb",
+          "ex": [["mārga","māgga"],["putra","putta"],["tāmra","tāmba"]],
+          "steps": [["mr","mb"],["r({C})","$1$1"],["([kgcjṭḍtdpbśṣsv])(ʰ?)r","$1$1$2"]]
+        },
+        {
+          "id": "h11", "phase": "core",
+          "say": "Of two unlike stops the first becomes the second; a nasal after a stop is lost and the stop doubles; nm becomes mm and mn becomes nn",
+          "ex": [["sapta","satta"],["dugdʰa","duddʰa"],["agni","aggi"],["janma","jamma"]],
+          "steps": [["({P})ʰ?(?!\\1)({P})","$2$2"],["({P})(ʰ?)[nṇm]","$1$1$2"],["nm","mm"],["mn","nn"]]
+        },
+        {
+          "id": "h12", "phase": "core",
+          "say": "dv becomes b at the start of a word and bb inside it; elsewhere y, v and l next to a stronger consonant are lost and it doubles; vy and vv harden to bb",
+          "ex": [["dvāra","bāra"],["pakva","pakka"],["alpa","appa"],["aśva","aśśa"],["kāvya","kābba"]],
+          "steps": [["^dv","b"],["dv","bb"],["({P})(ʰ?)[yv]","$1$1$2"],["([lmśṣs])y","$1$1"],["([śṣsl])v","$1$1"],["l({P})","$1$1"],["lm","mm"],["({P})(ʰ?)l","$1$1$2"],["vy","vv"],["vv","bb"]]
+        },
+        {
+          "id": "h13", "phase": "core",
+          "say": "Three consonants make two; a doubled consonant is single after a nasal and at the start of a word",
+          "ex": [["canddda","canda"],["ttʰāna","tʰāna"],["kkʰetta","kʰetta"]],
+          "steps": [["({C})\\1{2,}","$1$1"],["([ṅñṇnm])([kgcjṭḍtdpbśṣs])\\2","$1$2"],["^({C})\\1","$1"],["^([ñnṇm])h","$1"]]
+        },
+        {
+          "id": "h14", "phase": "core",
+          "say": "A long vowel shortens before two consonants",
+          "ex": [["māgga","magga"],["rātti","ratti"],["tāmba","tamba"]],
+          "steps": [["ā(?={C}{C})","a"],["ī(?={C}{C})","i"],["ū(?={C}{C})","u"]]
+        },
+        {
+          "id": "h15", "phase": "core",
+          "say": "The three sibilants are one s",
+          "ex": [["śilā","silā"],["pāṣāṇa","pāsāṇa"]],
+          "steps": [["[śṣ]","s"]]
+        },
+        {
+          "id": "h16", "phase": "core",
+          "say": "A stop with breath, alone between vowels, wears to h; all other breath is lost",
+          "ex": [["mukʰa","muha"],["megʰa","meha"],["hattʰa","hatta"],["bʰūmi","būmi"]],
+          "steps": [["(?<={V})[kgṭḍtdpb]ʰ(?={V})","h"],["ʰ",""]]
+        },
+        {
+          "id": "h17", "phase": "core",
+          "say": "The curled consonants and the five nasals fall in with t, d, n and m",
+          "ex": [["kūṭa","kūta"],["vaṇṇa","vanna"],["aṅga","anga"]],
+          "steps": [["ṭ","t"],["ḍ","d"],["[ṇṅñ]","n"],["ḷ","l"]]
+        },
+        {
+          "id": "h18", "phase": "edge",
+          "say": "A long vowel at the end of a word is short",
+          "ex": [["silā","sila"],["nadī","nadi"]],
+          "steps": [["ā$","a"],["ī$","i"],["ū$","u"]]
+        },
+        {
+          "id": "h19", "phase": "edge",
+          "say": "In a word of three syllables or more a final a, i or u falls after a single consonant, unless that consonant is h, y or v",
+          "ex": [["nagara","nagar"],["pāsāna","pāsān"],["anguli","angul"],["samudda","samudda"]],
+          "steps": [["^(.*{V}.*{V}[kgcjtdpbnmrls])[aiu]$","$1"]]
+        }
+      ],
+      "spelling": {"say": "c is written ch, and doubled c is written cch", "ex": [["canda","chanda"],["sacca","saccha"]], "steps": [["cc","cch"],["c(?![ch])","ch"]]},
+      "join": {
+        "mode": "tight",
+        "say": "Words are joined before the changes run, describing word first. At the join a final vowel falls before a vowel, and a long final vowel is short. The joined word then wears as one word, so the head of the second word is worn as the inside of a word.",
+        "ex": [[["vālukā","deśa"],"Vālukades"],[["loha","kāra"],"Lohakār"],[["jala","sthāna"],"Jalattān"]],
+        "tight": [["[aāiīuū]\\+(?={V})",""],["ā\\+","a"],["ī\\+","i"],["ū\\+","u"],["\\+",""]]
+      },
+      "affixes": [
+        {"word":"-kāra","makes":"one who does or makes X","ex":[["kumbha","-kāra"],"Kumbakār"]},
+        {"word":"-śālā","makes":"place of X, under a roof","ex":[["loha","-śālā"],"Lohasāl"]},
+        {"word":"-deśa","makes":"place of X, a country","ex":[["tṛṇa","-deśa"],"Tanades"]},
+        {"word":"-maya","makes":"thing made of X","ex":[["śilā","-maya"],"Silamaya"]},
+        {"word":"-ka","makes":"little X","ex":[["kumbha","-ka"],"Kumbak"]},
+        {"word":"mahā","makes":"great X","ex":[["mahā","kūpa"],"Mahakūp"]},
+        {"word":"-gaṇa","makes":"a host of X","ex":[["pakṣin","-gaṇa"],"Pakkigan"]}
+      ]
+    },
+    "sand": {
+      "name": "The sand-country tongue",
+      "speakers": "The sand-country people",
+      "rules": [
+        {
+          "id": "s01", "phase": "stem",
+          "say": "ai flattens to e and au to o",
+          "ex": [["taila","tela"],["gaura","gora"]],
+          "steps": [["ai","e"],["au","o"]]
+        },
+        {
+          "id": "s02", "phase": "stem",
+          "say": "A final ṛ becomes ā, and every final consonant falls",
+          "ex": [["pitṛ","pitā"],["rājan","rāja"],["manas","mana"]],
+          "steps": [["ṛ$","ā"],["[ḥṃ]$",""],["({C}ʰ?)+$",""]]
+        },
+        {
+          "id": "s03", "phase": "core",
+          "say": "ṛ becomes i",
+          "ex": [["gṛha","giha"],["mṛga","miga"],["tṛṇa","tiṇa"]],
+          "steps": [["ṛ","i"]]
+        },
+        {
+          "id": "s04", "phase": "core",
+          "say": "ḥ doubles the consonant after it; ṃ becomes n or m, and before h it lengthens the vowel and falls",
+          "ex": [["duḥkʰa","dukkʰa"],["siṃha","sīha"],["vaṃśa","vanśa"]],
+          "steps": [["ḥ({C})","$1$1"],["ḥ",""],["aṃh","āh"],["iṃh","īh"],["uṃh","ūh"],["ṃy","ññ"],["ṃ(?=[pbm])","m"],["ṃ","n"]]
+        },
+        {
+          "id": "s05", "phase": "core",
+          "say": "kṣ becomes cch; jñ becomes ṇṇ; ts and ps become cch",
+          "ex": [["akṣi","accʰi"],["prajñā","praṇṇā"],["matsya","maccʰya"]],
+          "steps": [["kṣ","ccʰ"],["jñ","ṇṇ"],["[tp]s","ccʰ"]]
+        },
+        {
+          "id": "s06", "phase": "core",
+          "say": "A sibilant before k, t, p or c is lost; the stop doubles and takes breath",
+          "ex": [["hasta","hattʰa"],["śuṣka","śukkʰa"],["aṣṭa","aṭṭʰa"]],
+          "steps": [["[śṣs]([kṭtpc])ʰ?","$1$1ʰ"]]
+        },
+        {
+          "id": "s07", "phase": "core",
+          "say": "A sibilant or h before a nasal changes places with it and is said h",
+          "ex": [["uṣṇa","uṇha"],["grīṣma","grīmha"],["cihna","cinha"]],
+          "steps": [["śn","ñh"],["[śṣs]([nṇm])","$1h"],["h([nṇm])","$1h"]]
+        },
+        {
+          "id": "s08", "phase": "core",
+          "say": "ty, dy and ny become cc, jj and ññ; hy becomes jjh and hv becomes bbh",
+          "ex": [["satya","sacca"],["madʰya","majjʰa"],["araṇya","arañña"]],
+          "steps": [["t(ʰ?)y","cc$1"],["d(ʰ?)y","jj$1"],["[nṇ]y","ññ"],["hy","jjʰ"],["hv","bbʰ"]]
+        },
+        {
+          "id": "s09", "phase": "core",
+          "say": "ry becomes yy; a vowel opens rh, and a consonant before l at the start of a word; ml becomes mm; hr at the start of a word loses its h",
+          "ex": [["sūrya","sūyya"],["kleśa","kileśa"],["āmla","āmma"]],
+          "steps": [["ry","yy"],["rh","rah"],["^hr","r"],["^([kgpbmśs])l","$1il"],["ml","mm"]]
+        },
+        {
+          "id": "s10", "phase": "core",
+          "say": "r next to another consonant is lost and that consonant doubles; mr becomes mb",
+          "ex": [["mārga","māgga"],["putra","putta"],["tāmra","tāmba"]],
+          "steps": [["mr","mb"],["r({C})","$1$1"],["([kgcjṭḍtdpbśṣsv])(ʰ?)r","$1$1$2"]]
+        },
+        {
+          "id": "s11", "phase": "core",
+          "say": "Of two unlike stops the first becomes the second; a nasal after a stop is lost and the stop doubles; nm becomes mm and mn becomes nn",
+          "ex": [["sapta","satta"],["dugdʰa","duddʰa"],["agni","aggi"],["janma","jamma"]],
+          "steps": [["({P})ʰ?(?!\\1)({P})","$2$2"],["({P})(ʰ?)[nṇm]","$1$1$2"],["nm","mm"],["mn","nn"]]
+        },
+        {
+          "id": "s12", "phase": "core",
+          "say": "dv becomes b at the start of a word and bb inside it; elsewhere y, v and l next to a stronger consonant are lost and it doubles; vy and vv harden to bb",
+          "ex": [["dvāra","bāra"],["pakva","pakka"],["alpa","appa"],["aśva","aśśa"],["kāvya","kābba"]],
+          "steps": [["^dv","b"],["dv","bb"],["({P})(ʰ?)[yv]","$1$1$2"],["([lmśṣs])y","$1$1"],["([śṣsl])v","$1$1"],["l({P})","$1$1"],["lm","mm"],["({P})(ʰ?)l","$1$1$2"],["vy","vv"],["vv","bb"]]
+        },
+        {
+          "id": "s13", "phase": "core",
+          "say": "Three consonants make two; a doubled consonant is single after a nasal and at the start of a word; h after a nasal is lost and the nasal doubles",
+          "ex": [["canddda","canda"],["ttʰāna","tʰāna"],["uṇha","uṇṇa"]],
+          "steps": [["({C})\\1{2,}","$1$1"],["([ṅñṇnm])([kgcjṭḍtdpbśṣs])\\2","$1$2"],["^({C})\\1","$1"],["^([ñnṇm])h","$1"],["([ñnṇm])h","$1$1"]]
+        },
+        {
+          "id": "s14", "phase": "core",
+          "say": "Before a consonant, ava draws together to o and aya to e",
+          "ex": [["lavaṇa","loṇa"],["pavana","pona"],["nayana","nena"]],
+          "steps": [["ava(?={C})","o"],["aya(?={C})","e"]]
+        },
+        {
+          "id": "s15", "phase": "core",
+          "say": "k, t and p alone between vowels, or after a nasal, become g, d and b; ṭ becomes ḍ after a nasal; ṭ and ḍ alone between vowels become r",
+          "ex": [["loka","loga"],["śīta","śīda"],["dīpa","dība"],["danta","danda"],["kaṇṭaka","kaṇḍaga"],["kīṭa","kīra"]],
+          "steps": [["(?<={V}|[ṅñṇnm])k(?={V})","g"],["(?<={V}|[ṅñṇnm])t(?={V})","d"],["(?<={V}|[ṅñṇnm])p(?={V})","b"],["(?<=[ṅñṇnm])ṭ(?={V})","ḍ"],["(?<={V})(?:ṭ|ḍʰ?)(?={V})","r"]]
+        },
+        {
+          "id": "s16", "phase": "core",
+          "say": "A doubled consonant becomes single, and a short vowel before it grows long",
+          "ex": [["hattʰa","hātʰa"],["aggi","āgi"],["sukkʰa","sūkʰa"],["rātti","rāti"]],
+          "steps": [["a({C})\\1","ā$1"],["i({C})\\1","ī$1"],["u({C})\\1","ū$1"],["({C})\\1","$1"]]
+        },
+        {
+          "id": "s17", "phase": "core",
+          "say": "All breath is lost; the curled consonants and the five nasals fall in with t, d, n and m",
+          "ex": [["hātʰa","hāta"],["megʰa","mega"],["pāṣāṇa","pāṣāna"]],
+          "steps": [["ʰ",""],["ṭ","t"],["ḍ","d"],["[ṇṅñ]","n"],["ḷ","l"]]
+        },
+        {
+          "id": "s18", "phase": "core",
+          "say": "Every sibilant is said sh (written ś until the spelling step); then c becomes s",
+          "ex": [["sāra","śāra"],["canda","sanda"],["pāca","pāsa"]],
+          "steps": [["[ṣs]","ś"],["c","s"]]
+        },
+        {
+          "id": "s19", "phase": "core",
+          "say": "j becomes z, and so does y at the start of a word; v becomes b",
+          "ex": [["jala","zala"],["yūta","zūta"],["vana","bana"]],
+          "steps": [["j","z"],["^y","z"],["v","b"]]
+        },
+        {
+          "id": "s20", "phase": "edge",
+          "say": "A long vowel at the end of a word is short",
+          "ex": [["śilā","śila"],["nadī","nadi"]],
+          "steps": [["ā$","a"],["ī$","i"],["ū$","u"]]
+        }
+      ],
+      "spelling": {"say": "The sibilant is written sh", "ex": [["śila","shila"]], "steps": [["ś","sh"]]},
+      "join": {
+        "mode": "loose",
+        "say": "Each word is worn down by itself first and the two are then set side by side, describing word first. Every long vowel of the first word is short. The first word keeps its old stem vowel, which falls before a vowel. An ending (a word written with a leading hyphen) is joined the old way, before the changes run.",
+        "ex": [[["vālukā","bhūmi"],"Balugabūmi"],[["kāca","śakala"],"Kasashagala"],[["loha","-kāra"],"Lohagāra"]],
+        "tight": [["[aāiīuū]\\+(?={V})",""],["ā\\+","a"],["ī\\+","i"],["ū\\+","u"],["\\+",""]],
+        "first": [["ā","a"],["ī","i"],["ū","u"]],
+        "between": [["[aiu]\\+(?={V})",""],["\\+",""]]
+      },
+      "affixes": [
+        {"word":"-kāra","makes":"one who does or makes X","ex":[["kumbha","-kāra"],"Kumbagāra"]},
+        {"word":"-sthāna","makes":"place of X","ex":[["agni","-sthāna"],"Āgītāna"]},
+        {"word":"-deśa","makes":"place of X, a country","ex":[["tṛṇa","-deśa"],"Tinadesha"]},
+        {"word":"-maya","makes":"thing made of X","ex":[["śilā","-maya"],"Shilamaya"]},
+        {"word":"-ka","makes":"little X","ex":[["kumbha","-ka"],"Kumbaga"]},
+        {"word":"mahā","makes":"great X","ex":[["mahā","kūpa"],"Mahakūba"]},
+        {"word":"-yūtha","makes":"a pack of X","ex":[["pakṣin","-yūtha"],"Pāsiyūta"]}
+      ]
+    }
+  }
+}
