@@ -12,7 +12,8 @@ export interface InteractHost {
   /** Seconds to break the block with the held item; Infinity if it cannot be broken. */
   breakTime(id: number): number;
   onBroken(x: number, y: number, z: number, id: number): void;
-  /** Called once when mining turns to a new block, before its break time is read. */
+  /** Called once when mining turns to a new block, before its break time is read.
+   *  Not called while the press began as an attack, or within a second of the last attack. */
   onDigStart(id: number): void;
   onDigTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void;
   /** Left click. Return true if something other than mining consumed it (an attack). */
@@ -30,6 +31,8 @@ export class Interact {
   progress = 0;
   private tx = 0; private ty = -1; private tz = 0;
   private breakCd = 0; private useCd = 0; private digT = 0;
+  /** The current press hit a mob, and seconds since the last attack: no auto tool switch mid-fight. */
+  private fought = false; private fightT = 0;
   private outline: THREE.LineSegments;
   private crack: THREE.Mesh; private crackMat: THREE.ShaderMaterial;
   private dir = new THREE.Vector3();
@@ -71,7 +74,7 @@ export class Interact {
   /** Fixed-step update. Targets from the same eye position the last frame was drawn from. */
   tick(dt: number, input: Input, host: InteractHost, active: boolean): void {
     const p = this.player, h = this.hit, d = p.dir(this.dir);
-    if (!active) { h.hit = false; this.progress = 0; return; }
+    if (!active) { h.hit = false; this.progress = 0; this.fought = false; return; }
     raycast(this.world, p.ex, p.ey, p.ez, d.x, d.y, d.z, host.reach(), h);
     if (this.breakCd > 0) this.breakCd -= dt;
     if (this.useCd > 0) this.useCd -= dt;
@@ -79,9 +82,13 @@ export class Interact {
     // a click released before this tick still counts as held for one tick, so quick taps are never lost
     const held = input.buttons[0] || input.clicks[0];
     const consumed = host.primary(input.clicks[0], held);
+    if (this.fightT > 0) this.fightT -= dt;
+    if (consumed) { this.fought = true; this.fightT = 1; } else if (!held) this.fought = false;
+    // never swap out the tool the player is fighting with when the mob leaves the crosshair
+    const auto = !this.fought && this.fightT <= 0;
     if (h.hit && held && !consumed) {
-      if (h.x !== this.tx || h.y !== this.ty || h.z !== this.tz) { this.tx = h.x; this.ty = h.y; this.tz = h.z; this.progress = 0; host.onDigStart(h.id); }
-      else if (this.progress === 0) host.onDigStart(h.id);   // a fresh press on the block mined last
+      if (h.x !== this.tx || h.y !== this.ty || h.z !== this.tz) { this.tx = h.x; this.ty = h.y; this.tz = h.z; this.progress = 0; if (auto) host.onDigStart(h.id); }
+      else if (this.progress === 0 && auto) host.onDigStart(h.id);   // a fresh press on the block mined last
       const bt = host.breakTime(h.id);
       if (this.breakCd <= 0 && bt !== Infinity) {
         this.progress += bt <= 0 ? 1 : dt / bt;
