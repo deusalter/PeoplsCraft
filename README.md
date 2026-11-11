@@ -33,6 +33,13 @@ Needs a WebGL2 browser. Worlds are saved to IndexedDB in that browser.
 | Double-tap Space | Take off / land while in `creative` |
 | Esc | Pause, settings |
 
+In windows: shift-click moves a stack, right-click takes half or places one, double-click gathers
+a stack, and 1-9 sends the hovered stack to that hotbar slot. In the recipe book, click lays a
+recipe out, right-click crafts one and shift-click crafts as many as you can afford.
+
+Settings worth knowing about: interface scale, screen shake, auto-jump, automatic tool switching,
+edge smoothing (FXAA) on every preset, and sun shadows plus MSAA on the high preset.
+
 ## How it is put together
 
 ```
@@ -60,9 +67,14 @@ Design notes worth knowing before changing things:
 - **Meshing** is greedy per slice. Faces merge only when their four corners share lighting and tint,
   so smooth lighting and AO stay correct. Water tops are deliberately left unmerged so the vertex
   wave has no T-junction cracks. One mesh per chunk per material (opaque, cutout, translucent).
-- **Rendering** is linear HDR into a float target, then bloom, ACES tone mapping and vignette.
-  Fog samples the same sky function the sky dome uses, so distant terrain fades into the real sky colour.
+- **Rendering** is linear HDR into a float target, then bloom, eye adaptation, ACES tone mapping,
+  FXAA and vignette. Fog and height mist sample the same sky function the sky dome uses, so distant
+  terrain fades into the real sky colour. Clouds are a ray-marched blocky slab that also shades the
+  ground. The sun shadow map is redrawn on alternate frames unless something that casts is moving.
 - **Creatures** are box sculptures drawn through a single instanced mesh; particles are a second one.
+  A model is a list of `Part` boxes that can be rotated, parented to an earlier box's joint, shown
+  only in some boss phases, given a surface pattern and driven by an animation tag. The full list of
+  fields and tags is in the comment above `Part` in `data/mobs.ts`.
 - **Saves** store only modified chunks (run-length encoded) plus one world record. Each chunk
   remembers which block-id table it was written with, so the block list can change between builds.
 
@@ -89,6 +101,10 @@ All content is data. Nothing below needs engine changes.
 - `window.T` drives the game without real input or `requestAnimationFrame`
   (`T.run(ms)`, `T.loaded()`, `T.key`, `T.click`, `T.grab`, `T.cmd('give iron_sword')`).
   Background tabs throttle `requestAnimationFrame`, so automated checks must use these.
+- `T.showcase(['b_colossus', 'woolback'])` lines creatures up, frozen, on a platform, and
+  `T.orbit(angle)` walks the camera round them.
+- `?gallery` shows every block tile (as a 2x2 repeat, so seams show) and every item icon enlarged;
+  `?gallery=tiles&scale=6` and `?gallery=icons` narrow it down.
 
 ## Not in the game
 
