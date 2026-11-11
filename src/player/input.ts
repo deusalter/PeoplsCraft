@@ -1,4 +1,7 @@
 // Keyboard / mouse state with per-frame edge detection and pointer-lock handling.
+/** Modifier keys always get their keyup, even while Cmd is down. */
+const MODS = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight']);
+
 export class Input {
   private keys = new Set<string>();
   private hits = new Set<string>();
@@ -17,7 +20,6 @@ export class Input {
 
   constructor(readonly el: HTMLElement) {
     window.addEventListener('keydown', (e) => {
-      if (e.code === 'MetaLeft' || e.code === 'MetaRight') this.keys.clear();   // macOS sends no keyup for keys released while Cmd is down
       if (this.onKey && this.onKey(e.code, e)) { e.preventDefault(); return; }
       const typing = (e.target as HTMLElement)?.tagName === 'INPUT';
       if (typing) return;
@@ -25,7 +27,9 @@ export class Input {
       this.keys.add(e.code);
       if (['Space', 'Tab', 'F3', 'F1', 'F5', 'Slash'].includes(e.code) || (e.ctrlKey && this.locked)) e.preventDefault();
     });
-    window.addEventListener('keyup', (e) => { if (e.code === 'MetaLeft' || e.code === 'MetaRight') this.keys.clear(); else this.keys.delete(e.code); });
+    // macOS sends no keyup for non-modifier keys released while Cmd is down, so drop those when Cmd comes up;
+    // still-held ones come back with the next key repeat or press. Shift (sneak) and Ctrl (sprint) are kept.
+    window.addEventListener('keyup', (e) => { if (e.code === 'MetaLeft' || e.code === 'MetaRight') this.dropUnsynced(); else this.keys.delete(e.code); });
     window.addEventListener('blur', () => { this.keys.clear(); this.buttons.fill(false); });
     el.addEventListener('mousedown', (e) => {
       if (e.button === 1) e.preventDefault();   // no browser autoscroll on middle click
@@ -86,6 +90,7 @@ export class Input {
       });
     } catch { return Promise.resolve(false); }
   }
+  private dropUnsynced(): void { for (const k of this.keys) if (!MODS.has(k)) this.keys.delete(k); }
   unlock(): void { if (document.pointerLockElement) document.exitPointerLock(); }
   down(code: string): boolean { return !this.uiMode && this.keys.has(code); }
   hit(code: string): boolean { return !this.uiMode && this.hits.has(code); }
