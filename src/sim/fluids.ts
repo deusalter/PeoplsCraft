@@ -1,12 +1,12 @@
 // Minimal water behaviour: when a gap opens beside or beneath water, the water moves in.
 // Spread is budgeted per disturbance so a lake fills a trench but never floods a whole cave system.
 import { B, T_LIQUID, T_OPAQUE, T_REPLACE, T_SOLID } from '../data/blocks';
-import type { World } from '../world/world';
+import type { VoxelWrite } from './voxels';
 
 export class Fluids {
   private q: number[] = [];   // x, y, z, budget
   private t = 0;
-  constructor(private w: World) {}
+  constructor(private w: VoxelWrite) {}
   clear(): void { this.q.length = 0; }
   /** Call when a block changed; queues the cell if water could now enter it. */
   poke(x: number, y: number, z: number): void { if (this.q.length < 4000) this.q.push(x, y, z, 7); }

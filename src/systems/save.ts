@@ -1,24 +1,11 @@
 // IndexedDB persistence: one record per world, plus one per modified chunk (run-length encoded).
+import { rle, unrle } from '../sim/rle';
 import type { SavedChunk } from '../world/world';
 
 export interface WorldMeta { id: string; name: string; seed: number; seedText: string; created: number; played: number; data: any }
 // The database keeps the project's working name so worlds saved before the rename still load.
 const DB = 'cairnlight', VER = 1;
 
-let scratch = new Uint8Array(0);   // worst case is two bytes per cell
-function rle(a: Uint8Array): Uint8Array {
-  if (scratch.length < a.length * 2) scratch = new Uint8Array(a.length * 2);
-  const out = scratch;
-  let o = 0;
-  for (let i = 0; i < a.length;) { const v = a[i]; let n = 1; while (n < 255 && i + n < a.length && a[i + n] === v) n++; out[o++] = v; out[o++] = n; i += n; }
-  return out.slice(0, o);
-}
-function unrle(a: Uint8Array, size: number): Uint8Array {
-  const out = new Uint8Array(size);
-  let o = 0;
-  for (let i = 0; i + 1 < a.length && o < size; i += 2) { out.fill(a[i], o, Math.min(size, o + a[i + 1])); o += a[i + 1]; }
-  return out;
-}
 const req = <T>(r: IDBRequest<T>): Promise<T> => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
 
 export class SaveDB {
