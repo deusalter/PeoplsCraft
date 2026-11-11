@@ -49,15 +49,21 @@ src/
   data/        every table: blocks, items, recipes, mobs + bosses, loot, npcs, quests, biomes, dims
   world/       chunk storage and scheduling (world.ts), worker entry, lighting, greedy mesher
     gen/       climate, overworld, the two dimensions, structures
-  render/      atlas + texture painters, shaders, renderer/sky/post (gfx.ts), instanced batches, icons, item models
-  sim/         no Three.js, no DOM: swept-AABB physics, the player body, inventory + crafting, stats, fluids,
-               shared rules, the chunk generation job
+  render/      atlas + texture painters, shaders, renderer/sky/post (gfx.ts), instanced batches, icons, item models,
+               creatures, projectiles and drops as drawn (mobView, projView, dropView)
+  sim/         the whole simulation, with no Three.js and no DOM: Sim (three realms, the players, shared state,
+               one seeded random stream), creatures + AI, boss brain, spawning, projectiles, drops, loot,
+               world events, townsfolk, the guide, player actions, gates, travel, block ticking, cheats;
+               swept-AABB physics, the player body, inventory + crafting, stats, fluids, shared rules,
+               the chunk generation job
+  net/         messages the simulation sends a client
+  client/      what stands between the simulation and the screen: entity views, fx playback, the adapter that
+               lets the simulation run on the loaded World, the save format bridge
   player/      input, first-person camera, block interaction
-  entities/    creatures + AI, boss brain, projectiles, dropped items
-  systems/     save, quests, events, townsfolk
-  ui/          HUD, windows (inventory / crafting / chest / forge / shop / guide), menus, debug overlay
+  systems/     save
+  ui/          HUD, windows (inventory / crafting / chest / forge / shop / guide), guide tracker, menus, debug overlay
   audio/       synthesized effects and generative music
-  game.ts      owns the systems, fixed-step simulation, render loop
+  game.ts      the client: view, input, HUD and audio; steps the simulation and plays what it sends out
 ```
 
 Design notes worth knowing before changing things:

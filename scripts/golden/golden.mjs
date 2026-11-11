@@ -66,7 +66,7 @@ export async function installHelpers() {
       }
       return false;
     },
-    caps: (h, p) => { mobs().hostileCap = h; mobs().passiveCap = p; },
+    caps: (h, p) => { for (const r of T.sim.realms) { r.mobs.hostileCap = h; r.mobs.passiveCap = p; } },
     clearMobs: () => { for (const m of mobs().list) m.active = false; },
     save: () => g().save(),
     /** Set every cell of a box to one block, as the `fill` command of section 10.1 will. */

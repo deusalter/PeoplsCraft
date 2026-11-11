@@ -507,9 +507,9 @@ export class Game implements InteractHost, Sink {
     if (this.keysReady) this.world.update(p.x, p.z, this.ready ? 1.5e6 : 8e6);
     if (!this.ready) this.checkReady();
     const t1 = performance.now();
+    let n = 0;
     if (!this.paused) {
       this.acc += dt;
-      let n = 0;
       while (this.acc >= STEP && n < 5) { this.tick(STEP); this.acc -= STEP; n++; if (n === 1) inp.endTick(); }
       if (n === 5) this.acc = 0;
       this.world.pump();   // send remesh jobs for this frame's block edits now, not next frame
@@ -523,7 +523,8 @@ export class Game implements InteractHost, Sink {
     this.gfx.update(this.time, this.env, this.gfx.camera.position);
     this.world.setCull(this.gfx.camera.position.x, this.gfx.camera.position.z);
     if (!this.paused) this.particles.update(dt, this.world);
-    this.ents.sync(this.sim.realms[this.dim]);
+    // a tick leaves the views current; without one (paused, a frame between ticks) pick up what changed outside the step
+    if (n === 0 || !this.ready) this.ents.sync(this.sim.realms[this.dim]);
     this.boxes.begin(); this.ents.render(this.boxes, a, this.time); this.boxes.end();
     this.ents.renderDrops(a);
     this.updateHand(dt);

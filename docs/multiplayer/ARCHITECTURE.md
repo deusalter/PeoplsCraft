@@ -2690,6 +2690,77 @@ code that reads them stays in `Player`.
 in the same order and was checked equal to `gfx.dayAmt` bit for bit over a full Overworld day and at
 the fixed times of the other two dimensions.
 
+D21. Stage 1b (2.3, 3.3, 3.4, 4.6, 6.1, 10.1). What the one-thread stage builds differently, and what it
+leaves to the stages that bring the wire, the stores and the co-op rules.
+(a) Stores. `SimDeps` is `{ sink, store(dim), log, requestSave }`: there is no `ChunkSource` or
+`EditStore` yet. `store(dim)` returns a `RealmStore` (`sim/realm.ts`): `VoxelWrite`, `BlockEnts`,
+`LightSource`, plus `chunkEnts(cx, cz)`, `areaReady(x, z, r)`, `touch(ent)` and an `onChange` hook that
+`Realm` points at `blocks.onBlockChange`. `client/worldstore.ts` implements it over the one loaded
+`World` (a store of another dimension reads as unloaded; `areaReady` is `World.areaMeshed`, the test
+`goHome` and `checkReady` make today) and creates generator block entities as chunks arrive. `Realm`
+has `store`, not `chunks`. Chunk saving (palettes, loader, `saveChunk`, `save`) stays in `Game`.
+(b) `Sim` has what a one-thread game calls: the constructor, `rnd`, `isNight`, `difficulty`, `addFlag`,
+`delFlag`, `join`, `running`, `step`, `prepare`, `online`, and `exportShared()` (the detached shared
+state a save holds). `handle`, `handleMove`, `resume`, `leave`, `takeDirty` and `committed` arrive with
+the protocol and the storage. `tick` is an accessor on `shared.tick`. `join` takes a fifth, optional
+argument: the `PlayerBody` to use. `Game` passes its own `Player`, so `SimPlayer.body` is that object:
+the client moves it, the sim reads it and teleports by writing it, then says so with `tp`.
+(c) `SimPlayer` has four more fields: `clientReady` (the client said its area is meshed), `fresh`
+(joined without a record), `deadOnJoin` and `arriveMsg`. `loading` stays true until the arrival is
+complete (bed check, `land`, the final `tp {load: false}`), not only until `ready`. A record loaded with
+no health is `dead` from `join` on, but the `dead` message is sent when the player turns active, where
+today's death screen appears. Credits (`actCredit`, `useCredit`, `digCredit`), `dig`, the movement and
+linger fields are carried and unused.
+(d) Order inside a step. `Sim.step`: arrivals; per active player `stats.sync`, `fullT`, `recallT`, fall
+damage, `safe`, hazards (every 0.5 s, with `deathAt` clearing and starvation), the void rule,
+`stats.tick`; per realm with players `mobs.tick` (spawn attempts last), `proj.tick`, `drops.tick`, block
+ticks; then the portal timer of every active player; then `fluids.tick` of those realms; `events`,
+`npcs`, `quests`; the clock. That is the order `Game.tick` ran the same operations in (6.1 lists
+`stats.tick` before the hazards and the portal timer among the player's). One thing does move: the
+client's half of the tick (the body, `interact.tick` and the actions it calls) now runs wholly before
+the step, so fall damage and hazards follow that tick's actions where they used to precede them.
+(e) Sink. `Game` implements `Sink` and plays every event at once, in the call. It honours `p`, `dim` and
+`not`, and ignores the radius of a positional scope: nothing is culled by distance today, and a
+positional sound is silent past 34 blocks in `audio.play` anyway. The forge hiss goes to each player
+within 12 blocks (x, z), as the check in `tickForge` did.
+(f) Events and messages. `src/net/protocol.ts` holds the four `S2C` messages the sim sends so far (`hurt`,
+`dead`, `tp`, `open`); `open` carries the container cell until `st.box` exists (1c), and the client
+builds the window from the entity it reads there. The sim emits `md` for every removal that is not a
+realm being emptied, and `pe` (how 1 or 2) and `mk`, all with scope `{dim}`; the host will route them
+by interest. `ps`, `da`, `dn`, `dd`, `dg`, `pg` are not emitted yet: the views are filled from the
+lists. Burst kind 12 (`summoned`) is new: the motes round a creature a boss calls up rise in a different
+shape from the puff of kind 3. A toast with colour `''` uses the HUD default.
+(g) State the sim keeps for the view: `Mob.sq` (landing squash, set from the velocity before the move),
+`Mob.tpn` (counts jumps; the `tpToggle` of 2.4), and `BossState.fxm`, the continuous emitters that ran
+this tick (telegraph, sight line, charge dust, weave dust, burrow dust). The client draws them with
+today's probabilities, coloured by `kind`, from the position the tick began at. Shade smoke is derived
+as 4.6 says (hurt flag in daylight), so an event shade that is struck in sunlight smokes for 0.22 s.
+(h) Views. `EntityStore.begin(realm, dt)` runs just before the step (previous position and pose, eased
+light), `end(realm, dt)` just after (corpses, emitters, drop light), `sync(realm)` on frames without a
+tick. Something that appears during a step is first drawn where the step left it, one tick ahead of
+where it used to start. A corpse is made on `md` how 1 from the creature as it is at that instant.
+(i) Rules still shaped for one player, widened only as far as "which player" (section 7 is stage 5): a
+creature deals with the closest player of its realm whatever that player's state, and `hidden` stops
+only the melee chase, as today; a kill pays the player of the last blow; a drop goes to the closest
+player; an event's reward goes to every player in the Overworld and its host gathers round the first
+active one; a guide step and a townsperson's price are met by any one player. No spawn caps by
+distance, no boss scaling, hold or refunds, no gate registry upkeep; `shared.gates`, `summons` and
+`owed` stay empty. Creature pool 320 (2.3); drop pool still 160 (480 comes with 7.4).
+(j) Random draws. One `mulberry32` stream, `shared.rnd`, seeded from the world seed and saved in the
+legacy record as `data.rnd` (with `data.tick`). Every draw sits where its `Math.random` sat, except the
+critical-hit roll, which is drawn when a blow lands or a shot leaves instead of on every tick the
+button is held. Particle draws stay `Math.random` on the client. The crafting modifier roll in
+`ui/windows.ts` draws from `sim.rnd` until the ops of 1c give it its own stream.
+(k) Per realm now, where `Game` had one: the block-tick timer, the spawn timer, the caps. The harness
+commands `caps` and `freeze` set all three realms.
+(l) Harness. `T.sim` is there; `T.cmd` still returns a string; `showcase` runs on commands. Of the
+commands of 10.1, `caps`, `clearmobs`, `freeze`, `fill`, `spawnat` and `god on|off` exist; `hash`,
+`simhash` and `tickstats` need sim chunks.
+(m) Windows. The sim sets `p.window` when it opens a chest, forge or shop and when the client reports a
+station; the client clears it each tick its own window is closed, and reports any open window as
+`uiOpen`. `closeViewers` only forgets viewers. The window code still mutates containers and calls
+`Game.markEntDirty` / `markChestDirty`, which now end in `Realm.touchEnt`.
+
 ---
 
 ## 14. Review log

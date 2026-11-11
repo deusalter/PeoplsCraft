@@ -36,9 +36,9 @@ export function cheat(sim: Sim, p: SimPlayer, cmd: string): string {
     }
     case 'seed': return String(sim.seed);
     // ---- scene setting for tests ----
-    case 'caps': mobs.hostileCap = +a[1] || 0; mobs.passiveCap = +a[2] || 0; return 'caps set';
+    case 'caps': for (const r of sim.realms) { r.mobs.hostileCap = +a[1] || 0; r.mobs.passiveCap = +a[2] || 0; } return 'caps set';
     case 'clearmobs': mobs.clear(); return 'cleared';
-    case 'freeze': mobs.frozen = onOff(mobs.frozen); return 'freeze ' + mobs.frozen;
+    case 'freeze': { const on = onOff(mobs.frozen); for (const r of sim.realms) r.mobs.frozen = on; return 'freeze ' + on; }
     case 'fill': {
       const id = (B as Record<string, number>)[a[7]], n = a.slice(1, 7).map(Number);
       if (id === undefined || n.some(Number.isNaN)) return 'fill x0 y0 z0 x1 y1 z1 <block>';
