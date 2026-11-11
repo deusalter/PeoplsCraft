@@ -157,7 +157,7 @@ const INIT: BlockInit[] = [
   wood('gloom_planks', 'Gloomcap Planks', 'gloom_planks'),
   ore('umbrite_ore', 'Umbrite Ore', 6, 5, { light: [5, 2, 8], emissive: 150 }),
   ore('noctrium_ore', 'Noctrium Ore', 7, 6, { light: [1, 7, 6], emissive: 150 }),
-  plant('lumen_frond', 'Lumen Frond', { light: [3, 11, 6], emissive: 220, replaceable: true, drops: [['lumen_frond', 1, 1, 1], ['fiber', 0.5, 1, 1]] }),
+  plant('lumen_frond', 'Lumen Frond', { light: [3, 11, 6], emissive: 220, replaceable: true }),
   { key: 'sporelamp', name: 'Sporelamp', tex: 'sporelamp', hard: 0.6, sound: 'cloth', light: [14, 11, 5], emissive: 110 },
 
   // The Skyrift
