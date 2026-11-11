@@ -9,6 +9,9 @@ import { DIMS } from './data/dims';
 import { Item, ITEMS, TIERS, item, RARITY, rollModifier, matches } from './data/items';
 import { BOSSES } from './data/mobs';
 import { SMELTS } from './data/recipes';
+import { FxPlay } from './client/fxplay';
+import { LOCAL_ID, fromLegacy } from './client/legacy';
+import { WorldStore } from './client/worldstore';
 import { DropSystem } from './entities/drops';
 import { Mob, MobSystem } from './entities/mobs';
 import { ProjectileSystem } from './entities/projectiles';
@@ -20,13 +23,17 @@ import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
 import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
 import { ItemModels } from './render/itemModel';
-import { STEP, isNight } from './sim/clock';
-import { Fluids } from './sim/fluids';
+import { STEP } from './sim/clock';
+import type { Fluids } from './sim/fluids';
+import type { Fx, Scope, Sink } from './sim/fx';
 import { INV_SIZE, Inventory, Slot } from './sim/inventory';
 import { RayHit } from './sim/physics';
 import * as rules from './sim/rules';
-import { PlayerStats } from './sim/stats';
+import type { SimPlayer } from './sim/player';
+import { Sim } from './sim/sim';
+import type { PlayerStats } from './sim/stats';
 import type { BlockEnt } from './sim/voxels';
+import type { S2C } from './net/protocol';
 import { EventSystem } from './systems/events';
 import { NpcSystem } from './systems/npcs';
 import { QuestSystem } from './systems/quests';
@@ -51,23 +58,15 @@ for (const it of ITEMS.values()) if (it.use?.startsWith('summon')) {
   SUMMON_USE[n] = it.use; ALTAR_OFFER[n] = `Right-click: offer the ${it.name}`; ALTAR_NEED[n] = `Needs ${/^[AEIOU]/.test(it.name) ? 'an' : 'a'} ${it.name}`;
 }
 
-export class Game implements InteractHost {
+export class Game implements InteractHost, Sink {
   readonly gfx: Gfx; readonly pool: WorkerPool; readonly world: World; readonly input: Input;
   readonly player = new Player(); readonly interact: Interact; readonly debug: DebugOverlay; readonly climate: Climate;
-  readonly inv = new Inventory(); readonly stats = new PlayerStats(); readonly flags = new Set<string>();
+  readonly sim: Sim; readonly me: SimPlayer; readonly fx: FxPlay;
   readonly particles = new Particles(); readonly boxes = new BoxBatch(); readonly audio = new GameAudio();
   readonly mobs: MobSystem; readonly proj: ProjectileSystem; readonly drops: DropSystem;
   readonly icons: Icons; readonly models: ItemModels; readonly hud: Hud; readonly win: Windows; readonly menu: GameMenu;
-  readonly quests: QuestSystem; readonly events: EventSystem; readonly npcs: NpcSystem; readonly fluids: Fluids;
-  time = 0; clock = 0.06; dim = 0; ready = false; paused = false;
-  creative = false; creativeHidden = false; god = false;
-  spawn: [number, number, number] | null = null;
-  /** Recall stone cooldown in seconds; the HUD shades the stone's slot with it. */
-  recallT = 0;
-  /** Where the player starts without a bed, as x and z. */
-  worldSpawn: [number, number] = [0, 0];
-  /** Last death as [dimension, x, y, z], shown on the compass until the player walks back to it. */
-  deathAt: [number, number, number, number] | null = null;
+  readonly quests: QuestSystem; readonly events: EventSystem; readonly npcs: NpcSystem;
+  time = 0; ready = false; paused = false;
   prof = { world: 0, tick: 0, render: 0 };
   private last = performance.now(); private acc = 0; private raf = 0; private keysReady = false;
   private env: Env = { time: 0, dim: 0, fogTint: [1, 1, 1], haze: 0, cave: 0, underwater: false, moonTint: null, moonPhase: 0, darkness: 0 };
@@ -76,24 +75,65 @@ export class Game implements InteractHost {
   private armGeo: THREE.BufferGeometry;
   private swayX = 0; private swayY = 0; private fallY = 0; private lastYaw = 0; private lastPitch = 0;   // held-item inertia
   private stepN = 0; private wasWet = false; private wasUnder = false; private splashCd = 0;
-  private portalT = 0; private portalArmed = true; private portalReturn: Record<number, [number, number, number]> = {}; private arriving = -1;
-  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0; private hazardT = 0; private fullT = 0; private safe: [number, number, number] = [0, 0, 0];
+  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0;
   private console: HTMLInputElement; private v = new THREE.Vector3();
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
-  private pendingBed = false; private deadOnLoad = false; private arriveMsg = '';
+  private deadOnLoad = false; private arriveMsg = '';
   private npcPromptT = 0; private npcPrompt: string | null = null; private conClosed = 0;
   /** Date.now() of the last successful save (0 = not yet). */
   lastSave = 0; private saveFailT = -1e9; private noSaveWarned = false;
+
+  // ---- the local player's state and the shared world state, as the simulation holds them ----
+  get inv(): Inventory { return this.me.inv; }
+  get stats(): PlayerStats { return this.me.stats; }
+  get flags(): Set<string> { return this.sim.flags; }
+  get fluids(): Fluids { return this.sim.realms[this.me.dim].fluids; }
+  get clock(): number { return this.sim.shared.clock; }
+  set clock(v: number) { this.sim.shared.clock = v; }
+  get dim(): number { return this.me.dim; }
+  set dim(v: number) { const p = this.me, a = this.sim.realms[p.dim].players, i = a.indexOf(p); if (i >= 0) a.splice(i, 1); p.dim = v as 0 | 1 | 2; this.sim.realms[p.dim].players.push(p); }
+  get creative(): boolean { return this.me.modes.creative; }
+  set creative(v: boolean) { this.me.modes.creative = v; }
+  get creativeHidden(): boolean { return this.me.modes.hidden; }
+  get god(): boolean { return this.me.modes.god; }
+  set god(v: boolean) { this.me.modes.god = v; }
+  get spawn(): [number, number, number] | null { return this.me.bed; }
+  set spawn(v: [number, number, number] | null) { this.me.bed = v; }
+  /** Recall stone cooldown in seconds; the HUD shades the stone's slot with it. */
+  get recallT(): number { return this.me.recallT; }
+  set recallT(v: number) { this.me.recallT = v; }
+  /** Where the player starts without a bed, as x and z. */
+  get worldSpawn(): [number, number] { return this.sim.shared.worldSpawn; }
+  /** Last death as [dimension, x, y, z], shown on the compass until the player walks back to it. */
+  get deathAt(): [number, number, number, number] | null { return this.me.deathAt; }
+  set deathAt(v: [number, number, number, number] | null) { this.me.deathAt = v; }
+  private get portalT(): number { return this.me.portalT; }
+  private set portalT(v: number) { this.me.portalT = v; }
+  private get portalArmed(): boolean { return this.me.portalArmed; }
+  private set portalArmed(v: boolean) { this.me.portalArmed = v; }
+  private get portalReturn(): Record<number, [number, number, number]> { return this.me.portalReturn; }
+  private get arriving(): number { return this.me.arriving; }
+  private set arriving(v: number) { this.me.arriving = v as -1 | 0 | 1 | 2; }
+  private get hazardT(): number { return this.me.hazardT; }
+  private set hazardT(v: number) { this.me.hazardT = v; }
+  private get fullT(): number { return this.me.fullT; }
+  private set fullT(v: number) { this.me.fullT = v; }
+  private get safe(): [number, number, number] { return this.me.safe; }
+  private get pendingBed(): boolean { return this.me.pendingBed; }
+  private set pendingBed(v: boolean) { this.me.pendingBed = v; }
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
     this.gfx = new Gfx(canvas);
     this.icons = new Icons(this.gfx.atlas); this.models = new ItemModels(this.gfx.atlas, this.icons);
     this.pool = new WorkerPool(Math.max(2, Math.min(6, (navigator.hardwareConcurrency || 4) - 2)));
-    this.dim = d?.dim ?? 0;
-    this.world = new World(this.pool, this.gfx.materials, meta.seed, this.dim);
-    this.world.hasSky = DIMS[this.dim].hasSky;
+    const dim0: number = d?.dim ?? 0;
+    this.world = new World(this.pool, this.gfx.materials, meta.seed, dim0);
+    this.world.hasSky = DIMS[dim0].hasSky;
     this.climate = new Climate(meta.seed);
+    const store = new WorldStore(this.world), rec = fromLegacy(meta, this.climate);
+    this.sim = new Sim(rec.world, { cheats: true, maxPlayers: 1, solo: true, manual: false }, { sink: this, store: (q) => store.of(q), log: (level, msg) => console[level](msg), requestSave: () => { void this.save(); } });
+    this.me = this.sim.join(LOCAL_ID, 'Player', rec.player, true, this.player);
     this.gfx.scene.add(this.world.group, this.boxes.mesh, this.particles.mesh);
     this.gfx.shadowCasters = this.world.group;
     this.gfx.boxCaster = this.boxes;
@@ -103,7 +143,8 @@ export class Game implements InteractHost {
     this.gfx.scene.add(this.drops.group);
     this.hud = new Hud(ui, this); this.win = new Windows(ui, this); this.menu = new GameMenu(ui, this);
     this.debug = new DebugOverlay(ui);
-    this.quests = new QuestSystem(this); this.events = new EventSystem(this); this.npcs = new NpcSystem(this); this.fluids = new Fluids(this.world);
+    this.quests = new QuestSystem(this); this.events = new EventSystem(this); this.npcs = new NpcSystem(this);
+    this.fx = new FxPlay(this);
 
     // held-item view model
     const mat = makeItemMaterial(true); mat.side = THREE.DoubleSide;
@@ -167,7 +208,7 @@ export class Game implements InteractHost {
     this.palettes = d?.palettes ?? [];
     if (!this.palettes.length || this.palettes[this.palettes.length - 1].join() !== keys.join()) this.palettes.push(keys);
     this.world.loader = async (cx, cz) => {
-      const c = await cfg.db.getChunk(meta.id, this.dim, cx, cz, CVOL);
+      const c = await cfg.db.getChunk(meta.id, this.world.dim, cx, cz, CVOL);
       const cur = this.palettes.length - 1;
       if (c && (c.pal ?? 0) !== cur) {
         const from = this.palettes[c.pal ?? 0] ?? keys, map = new Uint8Array(256);
@@ -177,26 +218,22 @@ export class Game implements InteractHost {
       return c;
     };
 
-    // restore
     if (d) {
-      this.inv.load(d.inv); this.stats.load(d.stats); this.clock = d.clock ?? 0.06; this.spawn = d.spawn ?? null; this.deathAt = d.deathAt ?? null;
-      for (const f of d.flags || []) this.flags.add(f);
-      this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs); this.portalReturn = d.portalReturn || {};
-      this.player.teleport(d.player.x, d.player.y, d.player.z); this.player.yaw = d.player.yaw; this.player.pitch = d.player.pitch;
-      this.worldSpawn = d.worldSpawn ?? rules.findSpawn(this.climate);
-      // a save taken mid-arrival (death screen quit, tab closed during a crossing) must finish landing after the reload
-      this.arriving = d.arriving ?? -1; this.pendingBed = !!d.pendingBed; this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
-      this.safe = Array.isArray(d.safe) ? [d.safe[0], d.safe[1], d.safe[2]] : [d.player.x, d.player.y, d.player.z];
-    } else {
-      this.worldSpawn = rules.findSpawn(this.climate);
-      this.player.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5);
-      this.arriving = 0;
+      this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs);
+      this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
     }
     this.player.frozen = true;
-    this.stats.recompute(this.inv);
     this.applySettings();
-    void cfg.db.chunkList(meta.id, this.dim).then((l) => { this.world.savedKeys = new Set(l.map((c) => chunkKey(c[0], c[1]))); this.keysReady = true; });
+    void cfg.db.chunkList(meta.id, dim0).then((l) => { this.world.savedKeys = new Set(l.map((c) => chunkKey(c[0], c[1]))); this.keysReady = true; });
   }
+
+  // ---- Sink: what the simulation sends out, played at once ----
+  emit(to: Scope, ev: Fx): void {
+    const p = this.me;
+    if ('all' in to || ('p' in to ? to.p === p.slot : to.dim === p.dim && to.not !== p.slot)) this.fx.play(ev);
+  }
+  send(_slot: number, _m: S2C): void {}
+  broadcast(_m: S2C): void {}
 
   applySettings(): void {
     const s = this.cfg.settings;
@@ -209,8 +246,8 @@ export class Game implements InteractHost {
   stop(): void { cancelAnimationFrame(this.raf); this.pool.dispose(); }
 
   // ---- small services used across systems ----------------------------------------------
-  isNight(): boolean { return isNight(this.clock); }
-  difficulty(): number { let n = 0; for (let i = 1; i <= 8; i++) if (this.flags.has('boss:' + i)) n++; return n; }
+  isNight(): boolean { return this.sim.isNight(); }
+  difficulty(): number { return this.sim.difficulty(); }
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
   floater(x: number, y: number, z: number, text: string, color: string, big = false): void { this.hud.floater(x, y, z, text, color, big); }
   dropItem(it: Item): void {
@@ -238,7 +275,7 @@ export class Game implements InteractHost {
   markEntDirty(e: BlockEnt): void { const c = this.world.chunkAt(e.x >> 4, e.z >> 4); if (c) c.modified = true; }
   markChestDirty(): void { if (this.chestOpen) this.chestOpen.modified = true; }
   private rollLoot(table: string): Item[] {
-    const { items, coins } = rules.rollLoot(table, Math.random);
+    const { items, coins } = rules.rollLoot(table, this.sim.rnd);
     if (coins) { this.inv.coins += coins; this.inv.touch(); this.toast(`+${coins} coins`, '#f2c14e'); }
     return items;
   }
@@ -715,6 +752,7 @@ export class Game implements InteractHost {
   private tick(dt: number): void {
     const p = this.player, inp = this.input, inv = this.inv, st = this.stats, w = this.world;
     if (!this.ready) return;
+    this.sim.tick++;
     for (let i = 0; i < 9; i++) if (inp.hit(DIGITS[i])) inv.sel = i;
     if (inp.wheel) inv.sel = (((inv.sel + inp.wheel) % 9) + 9) % 9;
     if (inp.hit('KeyH') && inp.locked) this.quickHeal();
@@ -987,7 +1025,7 @@ export class Game implements InteractHost {
   // ---- persistence -------------------------------------------------------------------------------------
   private saveChunk(c: Chunk): void {
     if (!c.blocks || !c.biomes) return;
-    this.cfg.db.putChunk(this.cfg.meta.id, this.dim, c.cx, c.cz, { blocks: c.blocks, biomes: c.biomes, hasEmit: c.hasEmit, ents: [...c.ents.values()], pal: this.palettes.length - 1 });
+    this.cfg.db.putChunk(this.cfg.meta.id, this.world.dim, c.cx, c.cz, { blocks: c.blocks, biomes: c.biomes, hasEmit: c.hasEmit, ents: [...c.ents.values()], pal: this.palettes.length - 1 });
     this.world.savedKeys.add(c.key); c.modified = false;
   }
   async save(): Promise<void> {
@@ -996,7 +1034,7 @@ export class Game implements InteractHost {
     m.played = Date.now();
     m.data = { player: { x: p.x, y: p.y, z: p.z, yaw: p.yaw, pitch: p.pitch }, dim: this.dim, clock: this.clock, inv: this.inv.serialize(), stats: this.stats.serialize(), flags: [...this.flags],
       spawn: this.spawn, deathAt: this.deathAt, quests: this.quests.index, events: this.events.serialize(), npcs: this.npcs.serialize(), portalReturn: this.portalReturn, worldSpawn: this.worldSpawn, palettes: this.palettes,
-      arriving: this.arriving, pendingBed: this.pendingBed, safe: this.safe };
+      arriving: this.arriving, pendingBed: this.pendingBed, safe: this.safe, rnd: this.sim.shared.rnd, tick: this.sim.shared.tick };
     for (const c of this.world.chunks.values()) if (c.modified && c.state === 2) this.saveChunk(c);
     try {
       await this.cfg.db.putWorld(m);
