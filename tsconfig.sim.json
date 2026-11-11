@@ -1,0 +1,9 @@
+{
+  "compilerOptions": { "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler",
+    "lib": ["ES2022"], "types": [], "strict": true, "noImplicitAny": true, "skipLibCheck": true,
+    "isolatedModules": true, "noEmit": true },
+  "include": ["src/sim", "src/core", "src/data", "src/world/gen",
+    "src/net/protocol.ts", "src/net/codec.ts", "src/net/snapshot.ts", "src/net/validate.ts", "src/net/clientvoxels.ts",
+    "src/net/interest.ts", "src/net/invsync.ts", "src/net/host.ts", "src/net/hostchunks.ts", "src/net/hostsnap.ts",
+    "src/net/loopback.ts"]
+}

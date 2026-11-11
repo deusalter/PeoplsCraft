@@ -1,6 +1,6 @@
 import { strSeed } from './core/noise';
-import { validateData } from './data/validate';
 import { installDevTools } from './dev';
+import { validateData } from './dev/validate';
 import { Game } from './game';
 import { SaveDB, WorldMeta } from './systems/save';
 import './style.css';

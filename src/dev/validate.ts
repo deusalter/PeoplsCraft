@@ -1,15 +1,15 @@
 // Cross-checks the data tables at startup (development builds only): every reference must
 // resolve, every texture needs a painter, and no two recipes may claim the same grid.
 import { PAINTERS } from '../render/textures';
-import { BLOCKS, TEXTURE_NAMES } from './blocks';
-import { ITEMS, TAGGED } from './items';
-import { LOOT } from './loot';
-import { MAX_PARTS, MOB_LIST, MOBS, PROJECTILES } from './mobs';
-import { BOSS_BARS } from './hudstyle';
-import { NPCS } from './npcs';
-import { QUESTS } from './quests';
-import { RECIPES, SMELTS, STATION_NAMES } from './recipes';
-import { sourceOf } from './sources';
+import { BLOCKS, TEXTURE_NAMES } from '../data/blocks';
+import { ITEMS, TAGGED } from '../data/items';
+import { LOOT } from '../data/loot';
+import { MAX_PARTS, MOB_LIST, MOBS, PROJECTILES } from '../data/mobs';
+import { BOSS_BARS } from '../data/hudstyle';
+import { NPCS } from '../data/npcs';
+import { QUESTS } from '../data/quests';
+import { RECIPES, SMELTS, STATION_NAMES } from '../data/recipes';
+import { sourceOf } from '../data/sources';
 import { matchRecipe, Slot } from '../systems/inventory';
 
 const STATIONS = Object.keys(STATION_NAMES);

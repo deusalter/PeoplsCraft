@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run check && vite build",
     "preview": "vite preview",
-    "check": "tsc --noEmit",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sim.json --noEmit && node scripts/lint-sim.mjs",
     "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
