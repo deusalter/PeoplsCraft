@@ -76,7 +76,7 @@ loose('heart_locket', 1, 'anvil', ['gold_bar', 2], ['salve', 2]);
 loose('delvers_charm', 1, 'anvil', ['gold_bar', 1], ['coal', 3], ['chitin', 2]);
 loose('magnet_shell', 1, 'anvil', ['iron_bar', 3], ['rust_core', 1]);
 loose('lucky_coin', 1, 'anvil', ['gold_bar', 4], ['bog_pearl', 1]);
-loose('reach_gauntlet', 1, 'anvil', ['cinder_bar', 3], ['hide', 2]);
+loose('reach_gauntlet', 1, 'anvil', ['cinder_bar', 4], ['hide', 2]);
 loose('warden_bell', 1, 'anvil', ['iron_bar', 2], ['lumenite', 1], ['shade_essence', 2], ['bone', 2]);
 loose('spore_censer', 1, 'anvil', ['umbrite_bar', 2], ['spore_sac', 3], ['glowshroom', 1]);
 loose('prism_lens', 1, 'anvil', ['aether_bar', 2], ['shard', 3], ['glass', 1]);

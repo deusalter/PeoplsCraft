@@ -8,8 +8,11 @@ import { MAX_PARTS, MOB_LIST, MOBS, PROJECTILES } from './mobs';
 import { BOSS_BARS } from './hudstyle';
 import { NPCS } from './npcs';
 import { QUESTS } from './quests';
-import { RECIPES, SMELTS } from './recipes';
+import { RECIPES, SMELTS, STATION_NAMES } from './recipes';
 import { sourceOf } from './sources';
+import { matchRecipe, Slot } from '../systems/inventory';
+
+const STATIONS = Object.keys(STATION_NAMES);
 
 export function validateData(): string[] {
   const bad: string[] = [];
@@ -56,6 +59,20 @@ export function validateData(): string[] {
   for (const n of NPCS) { if (!MOBS.has(n.mob)) bad.push(`npc ${n.key}: unknown mob`); for (const g of n.goods) { has(g[0], 'npc ' + n.key); if (g[2] && g[2] !== 'coins') has(g[2], 'npc ' + n.key); } }
   for (const q of QUESTS) if (q.have) has(q.have[0], 'quest ' + q.key);
   for (const r of RECIPES) for (const k of r.in ? r.in.map((i) => i[0]) : Object.values(r.key ?? {})) if (k[0] !== '#' && ITEMS.has(k) && !sourceOf(k)) bad.push(`recipe ${r.out}: no way to get "${k}"`);
+  // lay every recipe out on a 3x3 grid and make sure crafting resolves to that recipe, not to an earlier one that claims the same cells
+  for (const r of RECIPES) {
+    const grid: Slot[] = new Array(9).fill(null);
+    const one = (k: string): string | undefined => (k[0] === '#' ? TAGGED.get(k.slice(1))?.[0] : k);
+    let ok = true, n = 0;
+    if (r.shape) r.shape.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === ' ') return; const k = one(r.key?.[ch] ?? ''); if (k && x < 3 && y < 3) grid[y * 3 + x] = { k, n: 1 }; else ok = false; }));
+    else for (const [want, c] of r.in!) for (let i = 0; i < c; i++) { const k = one(want); if (k && n < 9) grid[n++] = { k, n: 1 }; else ok = false; }
+    if (!ok) continue;   // an unknown key or tag is already reported above
+    // hand recipes can be made at every station, so they must win there too
+    for (const st of r.station === 'hand' ? STATIONS : [r.station]) {
+      const m = matchRecipe(grid, 3, st);
+      if (m !== r) { bad.push(`recipe ${r.out} is shadowed by ${m ? m.out : 'nothing: its own grid does not match it'}`); break; }
+    }
+  }
   for (const k in BOSS_BARS) if (!MOBS.get(k)?.boss) bad.push(`boss bar colours for unknown boss ${k}`);
   return bad;
 }
