@@ -16,11 +16,20 @@ export interface BossState {
    *  rage: eased phase fraction. pitch, roll: body attitude. spin: integrated angle of orbiting pieces. openT: the jaw
    *  target `m.open` eases toward. foot, sndT: last footfall side, and when a footfall or cast sound last played. */
   kind: string; wind: number; strike: number; aim: number; rage: number; pitch: number; roll: number; lyaw: number; spin: number; openT: number; foot: number; sndT: number;
+  /** The same values one tick ago (and `segs` in psegs): the renderer blends from these, as it does for position. */
+  ppose: number; pwind: number; pstrike: number; paim: number; ppitch: number; proll: number; pspin: number; psegs: Float32Array | null;
 }
 export function newBossState(m: Mob): BossState {
-  const seg = m.def.boss!.segments ?? 0;
+  const seg = m.def.boss!.segments ?? 0, spin = Math.random() * 6.283;
   return { phase: -1, cd: 2.2, atk: null, t: 0, step: 0, last: -1, ax: 0, ay: 0, az: 1, altar: [m.x, m.y, m.z], pose: 0, segs: seg ? new Float32Array(seg * 3).fill(0) : null, orbit: Math.random() * 6.283, marks: [],
-    kind: '', wind: 0, strike: 0, aim: 0, rage: 0, pitch: 0, roll: 0, lyaw: m.yaw, spin: Math.random() * 6.283, openT: 0, foot: 1, sndT: 0 };
+    kind: '', wind: 0, strike: 0, aim: 0, rage: 0, pitch: 0, roll: 0, lyaw: m.yaw, spin, openT: 0, foot: 1, sndT: 0,
+    ppose: 0, pwind: 0, pstrike: 0, paim: 0, ppitch: 0, proll: 0, pspin: spin, psegs: seg ? new Float32Array(seg * 3) : null };
+}
+/** Remember the pose the renderer blends from. Called once a tick, before anything moves. */
+export function bossKeep(m: Mob): void {
+  const b = m.boss!;
+  b.ppose = b.pose; b.pwind = b.wind; b.pstrike = b.strike; b.paim = b.aim; b.ppitch = b.pitch; b.proll = b.roll; b.pspin = b.spin; m.popen = m.open;
+  if (b.segs && b.psegs) b.psegs.set(b.segs);
 }
 
 function groundY(g: Game, x: number, z: number, from: number): number {
@@ -146,6 +155,8 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
   // aimed shots are sighted from the point they leave (which may be a head or an eye well above the body's middle); flat
   // patterns keep one height above the feet whatever the model's size
   const cdy = p.y + 0.9 - cy, cd3 = Math.hypot(dist, cdy) || 1, flatY = Math.max(m.y + 1, p.y + 0.9);
+  // a boss off the ground tips its flat patterns into a shallow cone that meets the player's body at the player's distance
+  const flatDy = spec.move === 'walk' ? 0 : Math.max(-1, Math.min(0, (p.y + 0.9 - flatY) / Math.max(dist, 4)));
   const telegraph = (c: number): void => { if (Math.random() < dt * 40) { const an = Math.random() * 6.283, r = m.hw + 1.5; g.particles.spawn(cx + Math.cos(an) * r, m.y + Math.random() * m.h, cz + Math.sin(an) * r, -Math.cos(an) * 3, 0.5, -Math.sin(an) * 3, 0.4, 0.14, c, 1, 0); } };
 
   if (a) {
@@ -194,7 +205,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
           const n = Math.floor((b.t - 0.6) / 0.13);
           while (b.step <= n) {
             const base = b.step * 0.13 * a.spin;
-            for (let i = 0; i < a.arms; i++) { const an = base + (i / a.arms) * 6.283; g.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), 0, Math.cos(an), a.dmg * dmgMul, false, 9); }
+            for (let i = 0; i < a.arms; i++) { const an = base + (i / a.arms) * 6.283; g.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), flatDy, Math.cos(an), a.dmg * dmgMul, false, 9); }
             if (b.step % 3 === 0) g.audio.play('shoot', 0.4, 1.4, [m.x, m.y, m.z]);
             b.step++;
           }
@@ -215,7 +226,7 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
       }
       case 'ring': {
         if (b.t < 0.55) { wn = b.t / 0.55; telegraph(0xffe06a); }
-        else { b.strike = 1; g.audio.play('shoot', 1, 0.5, [m.x, m.y, m.z]); for (let i = 0; i < a.n; i++) { const an = (i / a.n) * 6.283 + b.orbit; g.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), 0, Math.cos(an), a.dmg * dmgMul, false, 11); } end(); }
+        else { b.strike = 1; g.audio.play('shoot', 1, 0.5, [m.x, m.y, m.z]); for (let i = 0; i < a.n; i++) { const an = (i / a.n) * 6.283 + b.orbit; g.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), flatDy, Math.cos(an), a.dmg * dmgMul, false, 11); } end(); }
         break;
       }
       case 'summon': {
@@ -328,11 +339,11 @@ export function bossTick(g: Game, m: Mob, dt: number): void {
   if (m.atkCd <= 0 && Math.abs(dx) < m.hw + 0.5 && Math.abs(dz) < m.hw + 0.5 && p.y < m.y + m.h && p.y + p.h > m.y) { m.atkCd = 0.9; g.hurtPlayer(m.def.dmg * dmgMul, m.x, m.z, m.def.name, m, 7); }
   // serpent body follows the head
   if (b.segs) {
-    const s = b.segs, n = s.length / 3;
+    const s = b.segs, ps = b.psegs, n = s.length / 3;
     let lx = m.x, ly = m.y, lz = m.z;
     for (let i = 0; i < n; i++) {
       const o = i * 3;
-      if (s[o] === 0 && s[o + 1] === 0 && s[o + 2] === 0) { s[o] = lx; s[o + 1] = ly; s[o + 2] = lz; }
+      if (s[o] === 0 && s[o + 1] === 0 && s[o + 2] === 0) { s[o] = lx; s[o + 1] = ly; s[o + 2] = lz; if (ps) { ps[o] = lx; ps[o + 1] = ly; ps[o + 2] = lz; } }
       const ex = s[o] - lx, ey = s[o + 1] - ly, ez = s[o + 2] - lz, el = Math.hypot(ex, ey, ez) || 1, gap = (i === 0 ? 1.45 : 1.1) * segK(i, n);
       if (el > gap) { s[o] = lx + (ex / el) * gap; s[o + 1] = ly + (ey / el) * gap; s[o + 2] = lz + (ez / el) * gap; }
       lx = s[o]; ly = s[o + 1]; lz = s[o + 2];

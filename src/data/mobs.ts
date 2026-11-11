@@ -62,10 +62,13 @@ export interface Phase { below: number; speed: number; cd: [number, number]; att
 /** A boss script. Optional model hooks: `seg` is the box list of one body segment (drawn `segments` times along the trail behind a
  *  burrower, tapering, each turned toward the link ahead; built round its own centre, facing +z); `cast` the height above the feet
  *  that shots leave from (default 0.6 of the height); `spin` the speed of 'halo' / 'seal' pieces as [base, extra at the last phase];
- *  `stomp` the camera shake of each footfall; `gallop` switches the legs to a bounding gait at speed; `castSound` plays at each cast. */
+ *  `stomp` the camera shake of each footfall; `gallop` switches the legs to a bounding gait at speed; `castSound` plays at each cast;
+ *  `head` is a second hit volume for a head carried outside the hw / h box: [distance ahead of the centre, bottom and top above the
+ *  feet, half-width]. It only takes hits; movement and contact damage keep to the main box. */
 export interface BossSpec {
   n: number; move: 'walk' | 'hover' | 'burrow' | 'fly'; phases: Phase[]; title: string; intro: string; segments?: number;
   seg?: Part[]; cast?: number; spin?: [number, number]; stomp?: number; gallop?: boolean; castSound?: string;
+  head?: [fwd: number, y0: number, y1: number, r: number];
 }
 
 export interface MobDef {
@@ -669,7 +672,7 @@ M.push(
         attacks: [{ t: 'rain', proj: 'prismray', n: 16, radius: 11, dmg: 42 }, { t: 'beam', proj: 'prismray', dmg: 48, windup: 0.5, dur: 2.2 }, { t: 'spiral', proj: 'prismray', arms: 6, dur: 3, dmg: 36, spin: -2.4 }, { t: 'teleport' }] },
     ] }),
   boss('b_hart', 'Moonbound Hart', 7200, 60, 26, 1.25, 3.9, 4000, hart, [['eclipse_ember', 1, 6, 9], ['eclipse_shard', 0.33, 1, 1], ['prism_bar', 1, 6, 12], ['moon_sliver', 1, 4, 8]], {
-    n: 7, move: 'walk', gallop: true, cast: 4.3, title: 'Herald of the Long Night', intro: 'Hoofbeats, and then no moon.', phases: [
+    n: 7, move: 'walk', gallop: true, cast: 4.3, head: [2.4, 2.2, 4.7, 0.9], title: 'Herald of the Long Night', intro: 'Hoofbeats, and then no moon.', phases: [
       { below: 1, speed: 7, cd: [1.3, 2], attacks: [{ t: 'charge', speed: 24, dmg: 58, windup: 0.6, dur: 1.1 }, { t: 'slam', radius: 7, dmg: 50, windup: 0.6, ring: ['moonblade', 12] }, { t: 'volley', proj: 'moonblade', n: 5, spread: 0.5, dmg: 44 }] },
       { below: 0.6, speed: 8.5, cd: [1, 1.6], say: 'Its antlers catch a light that is not there.', enter: { t: 'summon', mob: 'moonspawn', n: 3 },
         attacks: [{ t: 'teleport' }, { t: 'charge', speed: 28, dmg: 62, windup: 0.45, dur: 1 }, { t: 'ring', proj: 'moonblade', n: 20, dmg: 44 }, { t: 'rain', proj: 'moonblade', n: 12, radius: 9, dmg: 48 }] },

@@ -8,7 +8,7 @@ import { MAX_PARTS, MOB_LIST, MobDef, type Part, SpawnRule, mob as mobDef, rigOf
 import type { Game } from '../game';
 import { Body, boxFree, moveBody, newRayHit, rayBox, raycast } from '../player/physics';
 import { type BoxBatch, ShadowBatch } from '../render/batches';
-import { BossState, bossTick, newBossState, segK } from './boss';
+import { BossState, bossKeep, bossTick, newBossState, segK } from './boss';
 
 export class Mob implements Body {
   active = false; def!: MobDef; id = 0;
@@ -18,6 +18,8 @@ export class Mob implements Body {
   state = 0; timer = 0; tx = 0; tz = 0; age = 0; kbx = 0; kbz = 0; flee = 0; stuck = 0;
   target: Mob | null = null; noclip = false; scale = 1; dmgMul = 1; event = false; talk = 0;
   boss: BossState | null = null; home: [number, number, number] | null = null; minionDmg = 0; hop = 0; open = 0;
+  /** `open` one tick ago (the renderer blends from it), and on a corpse how far a dying flyer may fall before it reaches the floor. */
+  popen = 0; drop = 0;
   /** Eased world light (sky, block; ls < 0 = not sampled yet) and the drawn yaw, which turns toward `yaw` at a finite rate. */
   ls = -1; lb = 0; ry = 0; pry = 0;
   /** Landing squash of a hopper, 1 at touchdown, decaying. */
@@ -42,7 +44,7 @@ const POSE: Record<string, readonly number[]> = {
 };
 const POSE0: readonly number[] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 // pose of the creature being drawn, set once by draw() and read by boxes() for every box list of that creature
-let cAmp = 0, cMv = 0, cAtk = 0, cPose = 0, cLook = 0, cWind = 0, cStrike = 0, cRage = 0, cAim = 0, cJaw = 0, cSpin = 0, cGal = 0, cFq = 16, cFa = 0.75, cBob = 0, cSky = 1, cBlk = 0, cFlash = 0, cEmul = 1, cGlow = 0, cPhz = 0;
+let cAmp = 0, cMv = 0, cAtk = 0, cPose = 0, cLook = 0, cWind = 0, cStrike = 0, cRage = 0, cAim = 0, cJaw = 0, cOpen = 0, cSpin = 0, cGal = 0, cFq = 16, cFa = 0.75, cBob = 0, cSky = 1, cBlk = 0, cFlash = 0, cEmul = 1, cGlow = 0, cPhz = 0;
 let cP: readonly number[] = POSE0;
 /** World matrix of every box's joint in the model being drawn, so `par` children can ride on it. */
 const joints: THREE.Matrix4[] = [];
@@ -103,6 +105,13 @@ export class MobSystem {
       if (!m.active || (filter && !filter(m))) continue;
       const t = rayBox(ox, oy, oz, dx, dy, dz, m.x - m.hw - pad, m.y - pad, m.z - m.hw - pad, m.x + m.hw + pad, m.y + m.h + pad, m.z + m.hw + pad, bt);
       if (t >= 0 && t < bt) { bt = t; best = m; }
+      // a head carried out in front of the box, where it is drawn (the model faces +z turned by the drawn yaw)
+      const hb = m.def.boss ? m.def.boss.head : undefined;
+      if (hb) {
+        const hx = m.x + Math.sin(m.ry) * hb[0], hz = m.z + Math.cos(m.ry) * hb[0], hr = hb[3] + pad;
+        const th = rayBox(ox, oy, oz, dx, dy, dz, hx - hr, m.y + hb[1] - pad, hz - hr, hx + hr, m.y + hb[2] + pad, hz + hr, bt);
+        if (th >= 0 && th < bt) { bt = th; best = m; }
+      }
       // a serpent's body can be hit as well as its head
       const sg = m.boss ? m.boss.segs : null;
       if (sg) for (let i = 0, n = sg.length / 3; i < n; i++) {
@@ -149,6 +158,14 @@ export class MobSystem {
     for (let i = 0; i < CORPSES; i++) { if (this.corpseT[i] >= this.corpseDur[i]) { ci = i; break; } if (this.corpseT[i] > this.corpseT[ci]) ci = i; }
     const c = this.corpses[ci];
     Object.assign(c, m); c.active = false;
+    // frozen where it died: nothing left for the renderer to blend from
+    c.px = c.x; c.py = c.y; c.pz = c.z; c.pry = c.ry;
+    // a dying flyer falls no further than the floor under it
+    if (!m.boss && (m.noclip || m.def.ai === 'flyer' || m.def.ai === 'fish')) {
+      const w = this.g.world, bx = Math.floor(m.x), bz = Math.floor(m.z);
+      c.drop = 4;
+      for (let i = 0, by = Math.floor(m.y); i < 3; i++, by--) if (T_SOLID[w.getBlock(bx, by, bz)]) { c.drop = Math.max(0, m.y - (by + 1)); break; }
+    }
     this.corpseT[ci] = 0; this.corpseDur[ci] = m.boss ? 2.4 : 0.65; this.corpseTime[ci] = this.g.time;
   }
   /** Pieces that fly off a corpse: a few random part colours around its body. */
@@ -186,6 +203,7 @@ export class MobSystem {
     for (const m of this.list) {
       if (!m.active) continue;
       m.px = m.x; m.py = m.y; m.pz = m.z; m.age += dt;
+      if (m.boss) bossKeep(m);
       if (m.hurt > 0) m.hurt -= dt;
       if (m.atk > 0) m.atk -= dt;
       if (m.atkCd > 0) m.atkCd -= dt;
@@ -433,6 +451,11 @@ export class MobSystem {
     // a spawner may set yaw directly before the first tick (dev showcase, scripted spawns)
     if (m.age === 0) m.ry = m.pry = m.yaw;
     const yaw = m.pry + (m.ry - m.pry) * alpha;
+    // boss body language is blended between ticks like position; a corpse shares its boss state, which is never ticked again
+    const al = ci >= 0 ? 1 : alpha;
+    let bWind = 0, bStrike = 0, bPitch = 0, bRoll = 0;
+    if (b) { bWind = b.pwind + (b.wind - b.pwind) * al; bStrike = b.pstrike + (b.strike - b.pstrike) * al; bPitch = b.ppitch + (b.pitch - b.ppitch) * al; bRoll = b.proll + (b.roll - b.proll) * al; }
+    cOpen = m.popen + (m.open - m.popen) * al;
     const sky = m.ls < 0 ? 1 : m.ls, blk = m.ls < 0 ? 0 : m.lb;
     let flash = Math.min(1, Math.max(0, m.hurt / 0.22)), s = m.scale, emul = 1, glowAdd = 0, fall = 0, topple = 0, shake = 0, u = 0;
     // spawn: creatures scale up from their feet in 0.2 s, bosses grow in over 1.4 s (while paused, e.g. the dev showcase, at full size)
@@ -447,7 +470,7 @@ export class MobSystem {
         else { u = (k - 0.6) / 0.4; flash = 0; emul = 2; glowAdd = 0.12 * (1 - u); }
       } else {
         flash = 1 - k; s *= 1 - Math.max(0, k - 0.7) / 0.3;
-        if (m.noclip || d.ai === 'flyer' || d.ai === 'fish') fall = 4 * t * t; else topple = Math.min(1, k * 1.6) ** 2 * 1.5708;
+        if (m.noclip || d.ai === 'flyer' || d.ai === 'fish') fall = Math.min(4 * t * t, m.drop); else topple = Math.min(1, k * 1.6) ** 2 * 1.5708;
       }
     }
     if (s <= 0.001) return;
@@ -456,13 +479,13 @@ export class MobSystem {
     let q = 1, lift = 0;
     cGal = 0;
     if (b && spec) {
-      q = 1 + b.wind * 0.07 - b.strike * 0.13 + (spec.move === 'hover' ? Math.min(0.12, Math.abs(m.vy) * 0.005) : 0);
+      q = 1 + bWind * 0.07 - bStrike * 0.13 + (spec.move === 'hover' ? Math.min(0.12, Math.abs(m.vy) * 0.005) : 0);
       if (spec.gallop) { cGal = Math.max(0, Math.min(1, (m.moving - 11) / 5)); lift = cGal * Math.abs(Math.sin(m.anim * 0.6 + 1.1)) * 0.3; }
     }
-    if (b && (b.pitch || b.roll)) {
+    if (b && (bPitch || bRoll)) {
       // nose up or down and bank, turning about the middle of the body
       const c = m.noclip ? m.h * 0.5 * s : 0;
-      eulB.set(-b.pitch, yaw, b.roll); mBase.makeRotationFromEuler(eulB);
+      eulB.set(-bPitch, yaw, bRoll); mBase.makeRotationFromEuler(eulB);
       const e = mBase.elements;
       mBase.setPosition(x + shake - c * e[4], y - fall + c - c * e[5], z - c * e[6]);
     } else {
@@ -478,12 +501,12 @@ export class MobSystem {
     cAmp = amp; cMv = Math.min(0.35, m.moving * 0.05); cAtk = m.atk > 0 ? Math.sin((m.atk / 0.3) * Math.PI) : 0;
     cSky = sky; cBlk = blk; cFlash = flash; cGlow = glowAdd; cFq = 16 / (1 + m.hw); cFa = 0.75 / (1 + m.hw * 0.4);
     if (b) {
-      cPose = b.pose; cWind = b.wind; cStrike = b.strike; cRage = b.rage; cAim = b.aim; cSpin = b.spin; cPhz = Math.max(0, b.phase); cP = POSE[b.kind] ?? POSE0;
-      cJaw = Math.max(m.open, b.wind * 0.7, b.strike); cBob = 0;
+      cPose = b.ppose + (b.pose - b.ppose) * al; cWind = bWind; cStrike = bStrike; cRage = b.rage; cAim = b.paim + (b.aim - b.paim) * al; cSpin = b.pspin + (b.spin - b.pspin) * al; cPhz = Math.max(0, b.phase); cP = POSE[b.kind] ?? POSE0;
+      cJaw = Math.max(cOpen, bWind * 0.7, bStrike); cBob = 0;
       // the whole body flares as an attack gathers, and burns hotter in later phases
-      emul *= 1 + b.wind * 1.2 + b.strike * 0.5 + b.rage * 0.4;
+      emul *= 1 + bWind * 1.2 + bStrike * 0.5 + b.rage * 0.4;
     } else {
-      cPose = 0; cWind = 0; cStrike = 0; cRage = 0; cAim = 0; cSpin = time * 2.2; cPhz = 0; cP = POSE0; cJaw = m.open;
+      cPose = 0; cWind = 0; cStrike = 0; cRage = 0; cAim = 0; cSpin = time * 2.2; cPhz = 0; cP = POSE0; cJaw = cOpen;
       // walkers dip a little with every step
       cBob = d.ai === 'minion' || d.ai === 'flyer' || d.ai === 'fish' || d.ai === 'hopper' ? 0 : -Math.abs(Math.sin(m.anim)) * amp * 0.07 * Math.min(1, m.h);
     }
@@ -495,20 +518,21 @@ export class MobSystem {
       if (dist < 7) { let a = Math.atan2(dx, dz) - yaw; a -= Math.round(a / 6.2832) * 6.2832; cLook = Math.max(-0.8, Math.min(0.8, a)) * Math.min(1, (7 - dist) / 3); }
     }
     this.boxes(batch, m, parts, time, 0, 0);
-    const sg = b ? b.segs : null, sp = spec ? spec.seg : undefined;
-    if (sg && sp) {
-      // body segments: each is the `seg` box list, tapering, turned toward the link ahead of it
+    const sg = b ? b.segs : null, pg = b ? b.psegs : null, sp = spec ? spec.seg : undefined;
+    if (sg && pg && sp) {
+      // body segments: each is the `seg` box list, tapering, turned toward the link ahead of it, blended between ticks like the head
       const n = sg.length / 3, cyo = m.h * 0.5, ss = s < 1 ? s : 1;
-      let lx = m.x, ly = m.y, lz = m.z;
+      let lx = x, ly = y, lz = z;
       for (let i = 0; i < n; i++) {
         const o = i * 3, k = segK(i, n) * ss;
         if (sg[o] === 0 && sg[o + 1] === 0 && sg[o + 2] === 0) continue;
-        const ex = lx - sg[o], ey = ly - sg[o + 1], ez = lz - sg[o + 2];
+        const gx = pg[o] + (sg[o] - pg[o]) * al, gy = pg[o + 1] + (sg[o + 1] - pg[o + 1]) * al, gz = pg[o + 2] + (sg[o + 2] - pg[o + 2]) * al;
+        const ex = lx - gx, ey = ly - gy, ez = lz - gz;
         eulB.set(-Math.atan2(ey, Math.hypot(ex, ez)), Math.atan2(ex, ez), 0); mBase.makeRotationFromEuler(eulB);
-        mBase.setPosition(sg[o] + shake, sg[o + 1] + cyo * ss - fall, sg[o + 2]); mBase.scale(vS.set(k, k, k));
+        mBase.setPosition(gx + shake, gy + cyo * ss - fall, gz); mBase.scale(vS.set(k, k, k));
         this.boxes(batch, m, sp, time, i * 0.7, parts.length + i * sp.length);
-        if (u === 0) this.contact(sg[o], sg[o + 1] + 0.1, sg[o + 2], m.hw * 0.7 * k, sky, true);
-        lx = sg[o]; ly = sg[o + 1]; lz = sg[o + 2];
+        if (u === 0) this.contact(gx, gy + 0.1, gz, m.hw * 0.7 * k, sky, true);
+        lx = gx; ly = gy; lz = gz;
       }
     }
     // contact shadow: not for minions, small wisps or far-away creatures
@@ -520,7 +544,7 @@ export class MobSystem {
   /** Draw one box list on the base matrix in mBase, in the pose draw() has set up. `apAdd` shifts every oscillator (body segments
    *  ripple), `i0` numbers the boxes for the shatter. */
   private boxes(batch: BoxBatch, m: Mob, parts: Part[], time: number, apAdd: number, i0: number): void {
-    const rig = rigOf(parts), b = m.boss, id = m.id, amp = cAmp, P = cP, open = m.open;
+    const rig = rigOf(parts), b = m.boss, id = m.id, amp = cAmp, P = cP, open = cOpen;
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i], ap = (part.ap ?? 0) + apAdd, ph = time + id + ap, pp = part.p, par = rig ? rig[i] : -1;
       let rx = 0, ry = 0, rz = 0, ox = 0, oy = par < 0 ? cBob : 0, oz = 0, sy = 1, ps = 1, pe = 1, os = 1;
