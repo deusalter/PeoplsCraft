@@ -173,6 +173,9 @@ test('quick', () => {
   eq([inv.acc[0], inv.slots[21]], [stack(CHARM, 1), null]);
   inv.slots[21] = stack(CHARM, 1);
   assert.equal(refused(r, { o: 'quick', v: [0, 21], e: CHARM }).msg, 'Already wearing one: a second adds nothing');
+  inv.slots[22] = stack(CHARM2, 1);
+  ok(r, { o: 'quick', v: [0, 22], e: CHARM2 });
+  eq([inv.acc[1], inv.slots[22]], [stack(CHARM2, 1), null], 'a different trinket takes the next free place');
   ok(r, { o: 'quick', v: [1, 0], e: HELM });
   assert.equal(inv.armor[0], null, 'shift-click on worn armour takes it off');
   refused(r, { o: 'quick', v: [0, 30], e: '' });

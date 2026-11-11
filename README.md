@@ -12,6 +12,9 @@ Everything is generated at runtime. There are no image, model or audio files in 
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # type-check + production bundle in dist/
+npm run check      # the three type-checks (client, simulation, scripts) and the simulation lint
+npm test           # unit tests of the simulation under plain Node, no browser
+npm run smoke -- golden   # a scripted play-through in headless Chrome, compared with a recorded baseline
 ```
 
 Needs a WebGL2 browser. Worlds are saved to IndexedDB in that browser.
@@ -49,25 +52,47 @@ src/
   data/        every table: blocks, items, recipes, mobs + bosses, loot, npcs, quests, biomes, dims
   world/       chunk storage and scheduling (world.ts), worker entry, lighting, greedy mesher
     gen/       climate, overworld, the two dimensions, structures
-  render/      atlas + texture painters, shaders, renderer/sky/post (gfx.ts), instanced batches, icons, item models,
-               creatures, projectiles and drops as drawn (mobView, projView, dropView)
   sim/         the whole simulation, with no Three.js and no DOM: Sim (three realms, the players, shared state,
                one seeded random stream), creatures + AI, boss brain, spawning, projectiles, drops, loot,
                world events, townsfolk, the guide, player actions, gates, travel, block ticking, cheats;
                swept-AABB physics, the player body, inventory + crafting, stats, fluids, shared rules,
-               the chunk generation job
+               the chunk generation job;
+               invops.ts: every change to a pack, the cursor, the crafting grid, equipment, a shop or an
+               open chest or forge is one op, carried out by its applyOp and by nothing else
   net/         messages the simulation sends a client
   client/      what stands between the simulation and the screen: entity views, fx playback, the adapter that
                lets the simulation run on the loaded World, the save format bridge
+  render/      atlas + texture painters, shaders, renderer/sky/post (gfx.ts), instanced batches, icons, item models,
+               creatures, projectiles and drops as drawn (mobView, projView, dropView)
   player/      input, first-person camera, block interaction
-  systems/     save
-  ui/          HUD, windows (inventory / crafting / chest / forge / shop / guide), guide tracker, menus, debug overlay
+  systems/     save (IndexedDB)
+  ui/          HUD, windows (inventory / crafting / chest / forge / shop / guide: they draw the state and
+               send ops), guide tracker, menus, debug overlay
   audio/       synthesized effects and generative music
+  dev/         the data cross-check that runs at startup in development
   game.ts      the client: view, input, HUD and audio; steps the simulation and plays what it sends out
+  dev.ts       window.T
+scripts/
+  headless.mjs   the game in headless Chrome with the real GPU, for automated checks
+  smoke.mjs      smoke scenarios on top of it: golden/ (the scripted play-through and its baseline),
+                 fixtures/ (a save made by the build before the simulation was split out), perf.mjs
+  run.mjs        bundle a TypeScript entry and run it under Node
+  test.mjs       npm test: every tests/*.test.ts through run.mjs
+  lint-sim.mjs   keeps src/sim free of wall-clock time, unseeded randomness, logging and client imports
+docs/multiplayer/  the plan for co-op (ARCHITECTURE.md) and what was measured on the way (MEASUREMENTS.md)
 ```
 
 Design notes worth knowing before changing things:
 
+- **Simulation and client.** `src/sim` decides everything that happens in the world and never draws,
+  plays or reads input; it compiles on its own without the DOM (`tsconfig.sim.json`) and
+  `scripts/lint-sim.mjs` fails the check if it reaches for the clock, `Math.random`, the console or
+  a client file. `Game` owns the local player's body and camera, calls the simulation's actions,
+  steps it once per tick, and plays the sounds, particles, toasts and messages it sends out through
+  its sink. Today both run in one thread on the same `World`; the co-op plan puts a wire between them.
+- **Inventory ops.** A click in a window does not move an item. The window sends an op
+  (`click`, `quick`, `book`, `buy` ...) and `applyOp` in `sim/invops.ts` carries it out or refuses it,
+  returning the sound and the line to show. A refused op changes nothing.
 - **Chunks** are 16x256x16 `Uint8Array`s, column-major. Generation and lighting+meshing run in a
   worker pool; the main thread only schedules (nearest first) and uploads inside a time budget.
 - **Lighting** is recomputed per mesh job over the 3x3 chunk neighbourhood. Light travels at most
@@ -112,6 +137,9 @@ All content is data. Nothing below needs engine changes.
   Background tabs throttle `requestAnimationFrame`, so automated checks must use these.
 - `T.showcase(['b_colossus', 'woolback'])` lines creatures up, frozen, on a platform, and
   `T.orbit(angle)` walks the camera round them.
+- `npm run smoke -- golden` plays a fixed script (mine, build, craft, chest, forge, boss, gate, death,
+  save and reload) and compares what no random draw can change with `scripts/golden/baseline.json`;
+  `npm run smoke -- legacy` opens a save written by an older build; `npm run smoke -- perf` is a timed flight.
 - `?gallery` shows every block tile (as a 2x2 repeat, so seams show) and every item icon enlarged;
   `?gallery=tiles&scale=6` and `?gallery=icons` narrow it down.
 
