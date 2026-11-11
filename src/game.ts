@@ -21,6 +21,7 @@ import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
 import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
 import { ItemModels } from './render/itemModel';
+import { STEP, isNight } from './sim/clock';
 import { Fluids } from './sim/fluids';
 import { INV_SIZE, Inventory, Slot } from './sim/inventory';
 import { RayHit } from './sim/physics';
@@ -39,7 +40,6 @@ import { locate } from './world/gen/structures';
 import { WorkerPool } from './world/pool';
 import { Chunk, World } from './world/world';
 
-const STEP = 1 / 60;
 export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings; /** false when the browser blocks IndexedDB */ canSave?: boolean }
 const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
 const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
@@ -218,7 +218,7 @@ export class Game implements InteractHost {
   stop(): void { cancelAnimationFrame(this.raf); this.pool.dispose(); }
 
   // ---- small services used across systems ----------------------------------------------
-  isNight(): boolean { const t = this.clock % 1; return t > 0.52 && t < 0.98; }
+  isNight(): boolean { return isNight(this.clock); }
   difficulty(): number { let n = 0; for (let i = 1; i <= 8; i++) if (this.flags.has('boss:' + i)) n++; return n; }
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
   floater(x: number, y: number, z: number, text: string, color: string, big = false): void { this.hud.floater(x, y, z, text, color, big); }
