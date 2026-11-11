@@ -21,15 +21,15 @@ import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
 import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
 import { ItemModels } from './render/itemModel';
+import { INV_SIZE, Inventory, Slot } from './sim/inventory';
 import { RayHit } from './sim/physics';
+import { PlayerStats } from './sim/stats';
 import type { BlockEnt } from './sim/voxels';
 import { EventSystem } from './systems/events';
 import { Fluids } from './systems/fluids';
-import { INV_SIZE, Inventory, Slot } from './systems/inventory';
 import { NpcSystem } from './systems/npcs';
 import { QuestSystem } from './systems/quests';
 import type { SaveDB, WorldMeta } from './systems/save';
-import { PlayerStats } from './systems/stats';
 import { DebugOverlay } from './ui/debug';
 import { Hud, el } from './ui/hud';
 import { GameMenu, Settings } from './ui/menus';
@@ -263,7 +263,7 @@ export class Game implements InteractHost {
   hurtPlayer(dmg: number, fx: number, fz: number, cause: string, from: Mob | null = null, knock = 6): void {
     const p = this.player, st = this.stats;
     if (this.god || this.creative || st.dead) return;
-    const took = st.damage(dmg);
+    const took = st.damage(dmg, Math.random);
     if (took === 0) return;
     if (took < 0) { this.floater(p.x, p.y + 2, p.z, 'Dodged', '#9ad0ff'); return; }
     // where the blow came from, in view space: forward is (-sin yaw, -cos yaw), right is (cos yaw, -sin yaw)
@@ -784,7 +784,7 @@ export class Game implements InteractHost {
     if (p.landed > 0) {
       const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z));
       if (p.landed > 1.2) this.audio.play('step_' + (BLOCKS[below]?.sound ?? 'stone'), Math.min(1, p.landed * 0.25));
-      if (p.landed > 3.6 && !st.d.noFall && !this.creative) { st.hurtT = 0; const took = st.damage((p.landed - 3) * 5.5, true); if (took > 0) { this.hud.flashHurt(); this.audio.play('hurt'); p.shake(0.4); if (st.dead) this.onDeath('fall'); } }
+      if (p.landed > 3.6 && !st.d.noFall && !this.creative) { st.hurtT = 0; const took = st.damage((p.landed - 3) * 5.5, Math.random, true); if (took > 0) { this.hud.flashHurt(); this.audio.play('hurt'); p.shake(0.4); if (st.dead) this.onDeath('fall'); } }
     }
     if (p.onGround) { this.safe[0] = p.x; this.safe[1] = p.y; this.safe[2] = p.z; }
     // a footfall each time the stride phase passes the bottom of the view bob
@@ -793,17 +793,17 @@ export class Game implements InteractHost {
     this.hazardT -= dt;
     if (this.hazardT <= 0) {
       this.hazardT = 0.5;
-      if (p.inLava && !this.creative && !this.god) { st.hurtT = 0; if (st.damage(8, true) > 0) { this.hud.flashHurt(); this.audio.play('fizz'); if (st.dead) this.onDeath('lava'); } }
+      if (p.inLava && !this.creative && !this.god) { st.hurtT = 0; if (st.damage(8, Math.random, true) > 0) { this.hud.flashHurt(); this.audio.play('fizz'); if (st.dead) this.onDeath('lava'); } }
       else for (let dy = 0; dy < 2; dy++) for (const [dx, dz] of [[0.36, 0], [-0.36, 0], [0, 0.36], [0, -0.36], [0, 0]]) {
         const id = w.getBlock(Math.floor(p.x + dx), Math.floor(p.y + dy * 0.9 - (dx || dz ? 0 : 0.1)), Math.floor(p.z + dz));
         if (T_DAMAGE[id] && !T_LIQUID[id]) { this.hurtPlayer(T_DAMAGE[id] * 3, Math.floor(p.x + dx) + 0.5, Math.floor(p.z + dz) + 0.5, BLOCKS[id].name, null, 3); dy = 2; break; }
       }
       const da = this.deathAt;
       if (da && da[0] === this.dim && !st.dead && Math.abs(p.x - da[1]) < 6 && Math.abs(p.z - da[3]) < 6 && Math.abs(p.y - da[2]) < 8) this.deathAt = null;
-      if (st.hunger <= 0 && st.hp <= 5 && !st.dead && Math.random() < 0.1) { st.hurtT = 0; st.damage(6, true); if (st.dead) this.onDeath('hunger'); }
+      if (st.hunger <= 0 && st.hp <= 5 && !st.dead && Math.random() < 0.1) { st.hurtT = 0; st.damage(6, Math.random, true); if (st.dead) this.onDeath('hunger'); }
     }
     if (p.y < (this.dim === 2 ? 20 : -16) && !st.dead) {
-      if (this.dim === 2 && !this.creative) { st.hurtT = 0; st.damage(st.maxHp * 0.35, true); this.hud.flashHurt(); this.audio.play('teleport'); if (st.dead) this.onDeath('void'); else { p.teleport(this.safe[0], this.safe[1] + 0.2, this.safe[2]); this.toast('The Rift throws you back.', '#c8d0ff'); } }
+      if (this.dim === 2 && !this.creative) { st.hurtT = 0; st.damage(st.maxHp * 0.35, Math.random, true); this.hud.flashHurt(); this.audio.play('teleport'); if (st.dead) this.onDeath('void'); else { p.teleport(this.safe[0], this.safe[1] + 0.2, this.safe[2]); this.toast('The Rift throws you back.', '#c8d0ff'); } }
       else p.teleport(p.x, 220, p.z);
     }
 

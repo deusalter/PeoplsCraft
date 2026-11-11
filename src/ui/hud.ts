@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { RARITY, item, itemName, itemRarity } from '../data/items';
 import type { Game } from '../game';
 import { BOSS_BARS } from '../data/hudstyle';
-import { BUFFS } from '../systems/stats';
-import { HOTBAR } from '../systems/inventory';
+import { HOTBAR } from '../sim/inventory';
+import { BUFFS } from '../sim/stats';
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);

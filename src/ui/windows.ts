@@ -5,9 +5,9 @@ import { RECIPES, Recipe, SMELTS, STATION_NAMES } from '../data/recipes';
 import type { NpcDef } from '../data/npcs';
 import { sourceOf } from '../data/sources';
 import type { Game } from '../game';
-import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } from '../systems/inventory';
+import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } from '../sim/inventory';
+import { ATTR_DESC, Attr, STAT_NAMES } from '../sim/stats';
 import type { BlockEnt } from '../sim/voxels';
-import { ATTR_DESC, Attr, STAT_NAMES } from '../systems/stats';
 import { el } from './hud';
 import { uiScale } from './menus';
 

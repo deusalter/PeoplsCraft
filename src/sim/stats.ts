@@ -84,9 +84,9 @@ export class PlayerStats {
   }
 
   /** Apply incoming damage after defense. Returns the amount actually taken (0 if dodged or invulnerable). */
-  damage(raw: number, ignoreArmor = false): number {
+  damage(raw: number, rnd: () => number, ignoreArmor = false): number {
     if (this.dead || this.hurtT > 0) return 0;
-    if (!ignoreArmor && Math.random() < this.d.dodge) { this.hurtT = 0.4; return -1; }
+    if (!ignoreArmor && rnd() < this.d.dodge) { this.hurtT = 0.4; return -1; }
     const dmg = Math.max(1, Math.round(ignoreArmor ? raw : raw - this.d.def * 0.5));
     this.hp -= dmg; this.hurtT = 0.55; this.exhaustion += 0.2;
     if (this.hp <= 0) { this.hp = 0; this.dead = true; }

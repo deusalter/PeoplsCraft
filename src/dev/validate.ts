@@ -10,7 +10,7 @@ import { NPCS } from '../data/npcs';
 import { QUESTS } from '../data/quests';
 import { RECIPES, SMELTS, STATION_NAMES } from '../data/recipes';
 import { sourceOf } from '../data/sources';
-import { matchRecipe, Slot } from '../systems/inventory';
+import { matchRecipe, Slot } from '../sim/inventory';
 
 const STATIONS = Object.keys(STATION_NAMES);
 
