@@ -9,6 +9,7 @@ import { FOG_COMMON, SKY_COMMON } from './shaders';
 
 const LIGHT_GLSL = /* glsl */ `
 uniform vec3 uLightDir; uniform vec3 uLightColor; uniform vec3 uSkyLight; uniform vec3 uAmbient;
+uniform float uEmGain;   // scales every glow term: cancels eye adaptation, as on terrain
 ${SKY_COMMON}
 ${FOG_COMMON}
 float curve(float x) { return x * x * (0.35 + 0.65 * x); }
@@ -23,7 +24,7 @@ vec3 fogged(vec3 col, vec3 world) { return applyFog(col, world); }
 const worldUniforms = (): Record<string, THREE.IUniform> => ({
   uLightDir: U.uLightDir, uLightColor: U.uLightColor, uSkyLight: U.uSkyLight, uAmbient: U.uAmbient, uZenith: U.uZenith, uHorizon: U.uHorizon,
   uSunDir: U.uSunDir, uGlowColor: U.uGlowColor, uFogDensity: U.uFogDensity, uFogStart: U.uFogStart, uFogEnd: U.uFogEnd, uCave: U.uCave,
-  uUnderwater: U.uUnderwater, uWaterFog: U.uWaterFog, uMist: U.uMist,
+  uUnderwater: U.uUnderwater, uWaterFog: U.uWaterFog, uMist: U.uMist, uEmGain: U.uEmGain,
 });
 
 // ---- boxes ------------------------------------------------------------------------------
@@ -81,7 +82,7 @@ void main() {
   vec3 albedo = base * base;
   vec3 N = normalize(vN);
   float sun = smoothstep(0.5, 0.98, vFx.x) > 0.0 ? sunShadow() : 1.0;
-  vec3 col = lit(albedo, N, vFx.x, vFx.y, sun) + albedo * glow * 3.2;
+  vec3 col = lit(albedo, N, vFx.x, vFx.y, sun) + albedo * (glow * 3.2 * uEmGain);
   // rim light from whatever is lighting the creature, so silhouettes read against dark terrain
   float rim = pow(1.0 - max(dot(N, normalize(cameraPosition - vWorld)), 0.0), 3.0);
   col += albedo * (uSkyLight * curve(vFx.x) + curve(vFx.y) * vec3(1.75, 1.5, 1.2) + uAmbient) * rim * 0.6;
@@ -219,7 +220,7 @@ void main() {
   vec3 base = vCol;
   if (vUvl.z >= 0.0) { vec4 t = texture(uAtlas, vUvl); base *= t.rgb; }
   vec3 albedo = base * base;
-  vec3 col = lit(albedo, vec3(0.0, 1.0, 0.0), vLight.x, vLight.y, 1.0) * (1.0 - vGlow) + albedo * vGlow * 3.4;
+  vec3 col = lit(albedo, vec3(0.0, 1.0, 0.0), vLight.x, vLight.y, 1.0) * (1.0 - vGlow) + albedo * (vGlow * 3.4 * uEmGain);
   gl_FragColor = vec4(fogged(col, vWorld), 1.0);
 }`;
 
@@ -322,7 +323,7 @@ in vec3 vCol; in vec3 vN; in vec3 vWorld;
 ${LIGHT_GLSL}
 void main() {
   vec3 albedo = vCol * vCol;
-  vec3 col = lit(albedo, normalize(vN), uObj.x, uObj.y, 1.0) + albedo * uObj.w * 2.5;
+  vec3 col = lit(albedo, normalize(vN), uObj.x, uObj.y, 1.0) + albedo * (uObj.w * 2.5 * uEmGain);
   col = mix(col, vec3(2.0, 2.0, 2.0), uObj.z);
   gl_FragColor = vec4(uNoFog > 0.5 ? col : fogged(col, vWorld), 1.0);
 }`;

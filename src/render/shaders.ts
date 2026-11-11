@@ -84,6 +84,7 @@ flat out float vFol;    // 0 solid, 1 leaves, 2 cross plant
 flat out float vLava;
 flat out float vSub;    // face lies under water
 flat out float vVary;   // mirror the tile at random per block
+flat out vec2 vCellOrg; // chunk origin on the axes the uv runs along, so that hash differs from chunk to chunk
 const vec3 NORMALS[7] = vec3[7](vec3(1,0,0), vec3(-1,0,0), vec3(0,1,0), vec3(0,-1,0), vec3(0,0,1), vec3(0,0,-1), vec3(0,1,0));
 void main() {
   int flags = int(aPos.w);
@@ -114,6 +115,11 @@ void main() {
   vSub = float((flags >> 8) & 1);
   vVary = float((flags >> 6) & 1);
   vFol = (flags & 7) == 6 ? 2.0 : sway == 1 ? 1.0 : 0.0;
+  // uv is chunk-local: x faces carry z in uv.x, y faces x and z, z faces x (uv.y of a side is height, already global).
+  // The origin is a multiple of 16, so adding it to floor(uv) is exact, unlike flooring the interpolated position
+  int nrm = flags & 7;
+  vec2 org = mod(modelMatrix[3].xz, 1024.0);
+  vCellOrg = nrm < 2 ? vec2(org.y, 0.0) : (nrm < 4 || nrm == 6) ? org : vec2(org.x, 0.0);
   // shadow lookup from the unswayed position (the depth pass does not sway), pushed off the surface by an offset
   // that grows with the shadow texel and the grazing angle; back faces of leaves are pushed towards the light
   float nl = dot(vNormal, uLightDir), sn = sqrt(max(1.0 - nl * nl, 0.0));
@@ -139,6 +145,7 @@ uniform vec3 uSkyLight;
 uniform vec3 uAmbient;
 uniform vec3 uCloudLit;
 uniform vec3 uCloudDark;
+uniform float uEmGain;            // 1 / exposure: light sources keep their own brightness while the eye adapts
 in vec2 vUv;
 flat in float vLayer;
 in float vAux;
@@ -152,6 +159,7 @@ flat in float vFol;
 flat in float vLava;
 flat in float vSub;
 flat in float vVary;
+flat in vec2 vCellOrg;
 ${SKY_COMMON}
 ${FOG_COMMON}
 ${CLOUD_COMMON}
@@ -161,19 +169,19 @@ vec3 curve3(vec3 x) { return x * x * (0.35 + 0.65 * x); }
 // Block texture lookup that keeps hard texels up close (with their seams antialiased over one pixel) and is trilinear
 // and anisotropic at range. The position is clamped inside its tile so a face never picks up the tile's opposite edge.
 vec4 tileTex(vec2 uv, float layer) {
-  vec2 cell = floor(uv), f = (uv - cell) * 16.0;
+  vec2 cell = floor(uv), f = (uv - cell) * 16.0, gx = dFdx(uv), gy = dFdy(uv);
   if (vVary > 0.5) {
     // natural ground: mirror the tile at random per block so it does not repeat on a one-block grid. Sides only flip
-    // left to right, which keeps a grass fringe or strata the right way up
-    vec3 p = fract(vec3(cell, floor(dot(vWorld - vNormal * 0.5, abs(vNormal)))) * vec3(0.1031, 0.1030, 0.0973));
+    // left to right, which keeps a grass fringe or strata the right way up. The filter footprint is mirrored with it
+    vec3 p = fract(vec3(cell + vCellOrg, floor(dot(vWorld - vNormal * 0.5, abs(vNormal)))) * vec3(0.1031, 0.1030, 0.0973));
     p += dot(p, p.yxz + 33.33);
     float h = fract((p.x + p.y) * p.z);
-    if (h > 0.5) f.x = 16.0 - f.x;
-    if (abs(vNormal.y) > 0.5 && fract(h * 2.0) > 0.5) f.y = 16.0 - f.y;
+    if (h > 0.5) { f.x = 16.0 - f.x; gx.x = -gx.x; gy.x = -gy.x; }
+    if (abs(vNormal.y) > 0.5 && fract(h * 2.0) > 0.5) { f.y = 16.0 - f.y; gx.y = -gx.y; gy.y = -gy.y; }
   }
   vec2 seam = floor(f + 0.5);
   f = seam + clamp((f - seam) / clamp(fwidth(uv) * 16.0, 1e-5, 1.0), -0.5, 0.5);
-  return textureGrad(uAtlasF, vec3(clamp(f, 0.5, 15.5) / 16.0, layer), dFdx(uv), dFdy(uv));
+  return textureGrad(uAtlasF, vec3(clamp(f, 0.5, 15.5) / 16.0, layer), gx, gy);
 }
 
 float sunShadow() {
@@ -309,10 +317,10 @@ void main() {
       alpha = mix(alpha, 1.0, tir);
     }
   } else {
-    col += albedo * em * 3.0 * pulse;
+    col += albedo * (em * 3.0 * pulse * uEmGain);
   }
 #else
-  col += albedo * em * glow * 4.0 * pulse;
+  col += albedo * (em * glow * 4.0 * pulse * uEmGain);
 #endif
 
   gl_FragColor = vec4(applyFog(col, vWorld), alpha);
@@ -437,9 +445,14 @@ void main() {
 `;
 // The cloud layer is a slab of 12-block cells in two heights. It is drawn as the inside of a box (exactly one
 // fragment per view ray from below, inside or above) and each fragment walks the ray through the cells it crosses.
+// With FRAG_DEPTH the fragment is depth-tested where the ray meets the cloud instead of at the far side of the box, so
+// a peak or a build inside the layer no longer shows through a cloud in front of it. That costs early depth rejection.
 export const CLOUD_FRAG = /* glsl */ `
 precision highp float;
 in vec3 vWorld;
+#ifdef FRAG_DEPTH
+uniform mat4 projectionMatrix;
+#endif
 uniform float uTime;
 uniform vec3 uLightDir;
 uniform vec3 uCloudLit;
@@ -486,6 +499,10 @@ void main() {
     if (n > uCover) { hit = tEnd; dens = n; nrm = vec3(0.0, rd.y > 0.0 ? -1.0 : 1.0, 0.0); }
   }
   if (hit < 0.0) discard;
+#ifdef FRAG_DEPTH
+  vec4 cp = projectionMatrix * viewMatrix * vec4(ro + rd * hit, 1.0);
+  gl_FragDepth = clamp(cp.z / max(cp.w, 1e-6) * 0.5 + 0.5, 0.0, 1.0);
+#endif
   float hf = clamp((ro.y + rd.y * hit - y0) / uCloud.y, 0.0, 1.0);
   vec3 col;
   if (nrm.y > 0.5) col = mix(uCloudDark, uCloudLit, 0.82 + 0.18 * step(0.9, hf));

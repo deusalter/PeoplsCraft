@@ -35,6 +35,7 @@ export const U = {
   uCave: { value: 0 }, uUnderwater: { value: 0 }, uWaterFog: v3(0.02, 0.08, 0.16),
   uShadowMap: { value: null as THREE.Texture | null }, uShadowMatrix: { value: new THREE.Matrix4() },
   uShadowOn: { value: 0 }, uShadowTexel: { value: 1 / 2048 }, uShadowBias: { value: 144 / 2048 },
+  uEmGain: { value: 1 },   // 1 / exposure, applied to emissive terms so eye adaptation does not brighten light sources
   uMist: { value: new THREE.Vector2(0, 96) },
   uCloudMap: { value: null as THREE.Texture | null }, uCloud: { value: new THREE.Vector4(196, CLOUD_H, 0, 0) }, uCover: { value: 0.56 }, uCloudLit: v3(1, 1, 1), uCloudDark: v3(0.4, 0.47, 0.62),
 };
@@ -71,7 +72,7 @@ export class Gfx {
   /** Geometry drawn into the shadow map (the world's chunk group). */
   shadowCasters: THREE.Object3D | null = null;
   /** Creature boxes: drawn into the shadow map after the chunks, with their own depth material. */
-  boxCaster: { renderDepth(r: THREE.WebGLRenderer, cam: THREE.Camera): void } | null = null;
+  boxCaster: { count: number; renderDepth(r: THREE.WebGLRenderer, cam: THREE.Camera): void } | null = null;
   dayAmt = 1;
   sunElev = 1;
   readonly lightDir = new THREE.Vector3(0, 1, 0);
@@ -83,7 +84,7 @@ export class Gfx {
   readonly handLightDir = new THREE.Vector3(0, 1, 0);
 
   private sky: THREE.Mesh; private skyMat: THREE.ShaderMaterial;
-  private clouds: THREE.Mesh; private cloudMat: THREE.ShaderMaterial;
+  private clouds: THREE.Mesh; private cloudMat: THREE.ShaderMaterial; private cloudMatDepth: THREE.ShaderMaterial;
   private rt!: THREE.WebGLRenderTarget; private mips: THREE.WebGLRenderTarget[] = []; private ups: THREE.WebGLRenderTarget[] = [];
   private shadowRt!: THREE.WebGLRenderTarget;
   private shadowCam = new THREE.OrthographicCamera(-72, 72, 72, -72, 1, 420);
@@ -97,6 +98,7 @@ export class Gfx {
   private eyeSky = 1; private waterTint = new THREE.Vector3(1, 1, 1);
   // adaptive resolution (see tune)
   private dyn = 1; private dynPrev = 1; private ema = 16.7; private slow = 0; private probe = 0; private before = 0; private tuneOff = false;
+  private calm = 0; private upWait = 600; private probeUp = false; private sinceUp = 1e9;
   private black = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
 
   constructor(readonly canvas: HTMLCanvasElement) {
@@ -129,11 +131,14 @@ export class Gfx {
     this.sky.frustumCulled = false; this.sky.renderOrder = -10;
     this.scene.add(this.sky);
 
-    this.cloudMat = new THREE.ShaderMaterial({
+    const cloudOpts: THREE.ShaderMaterialParameters = {
       vertexShader: S.CLOUD_VERT, fragmentShader: S.CLOUD_FRAG, side: THREE.BackSide, transparent: true, depthWrite: false,
       uniforms: { uZenith: U.uZenith, uHorizon: U.uHorizon, uSunDir: U.uSunDir, uGlowColor: U.uGlowColor, uTime: U.uTime, uFogEnd: U.uFogEnd, uLightDir: U.uLightDir,
         uCloudLit: U.uCloudLit, uCloudDark: U.uCloudDark, uCloudMap: U.uCloudMap, uCloud: U.uCloud, uCover: U.uCover },
-    });
+    };
+    this.cloudMat = new THREE.ShaderMaterial(cloudOpts);
+    // the same shader testing depth at the cloud itself, for when the camera is near the layer (see update)
+    this.cloudMatDepth = new THREE.ShaderMaterial({ ...cloudOpts, defines: { FRAG_DEPTH: 1 } });
     // the inside of a box around the layer: one fragment per view ray, which the shader marches through the cloud cells.
     // 1900 wide keeps the far corners inside the camera's far plane; clouds have faded out long before that
     this.clouds = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), this.cloudMat);
@@ -184,19 +189,41 @@ export class Gfx {
   /** Effective resolution scale (the setting times the adaptive factor). */
   get renderScale(): number { return this.settings.scale * this.dyn; }
 
-  /** Lower the internal resolution when frames are slow and doing so measurably helps. It never steps back up by
-   *  itself: under vsync there is no way to see headroom. Call once per frame that had no chunk uploads. */
+  /** Lower the internal resolution when frames are slow and doing so measurably helps, and try a step back up after a
+   *  calm stretch. Under vsync there is no way to see headroom, so a step up is a trial: it is undone if frames turn
+   *  slow again, and each failure doubles the wait before the next one. Call once per frame that had no chunk uploads. */
   tune(dtMs: number, cpuMs: number): void {
-    if (!this.settings.autoScale || this.tuneOff || dtMs > 100 || cpuMs > 10) return;   // CPU-bound frames are not fixed by fewer pixels
+    if (!this.settings.autoScale || dtMs > 100 || cpuMs > 10) return;   // CPU-bound frames are not fixed by fewer pixels
     this.ema += (dtMs - this.ema) * 0.05;
+    this.sinceUp++;
     if (this.probe > 0) {
       if (--this.probe > 0) return;
+      if (this.probeUp) {
+        this.probeUp = false;
+        // the extra pixels cost frames: go back down and wait longer before the next try
+        if (this.ema > 18.5) { this.dyn = this.dynPrev; this.upWait = Math.min(this.upWait * 2, 14400); this.resize(true); }
+        else { this.sinceUp = 0; this.tuneOff = false; }   // the scene has changed, so stepping down may help again later
+      }
       // no real gain: the frame rate is capped (vsync, battery saver) or the scene is not fill-bound, so undo and stop trying
-      if (this.ema > this.before - 2) { this.dyn = this.dynPrev; this.tuneOff = true; this.resize(true); }
+      else if (this.ema > this.before - 2) { this.dyn = this.dynPrev; this.tuneOff = true; this.resize(true); }
       return;
     }
+    if (this.dyn < 1) {
+      this.calm = this.ema < 17.5 ? this.calm + 1 : 0;
+      if (this.calm >= this.upWait) {
+        this.dynPrev = this.dyn; this.dyn = Math.min(1, Math.round((this.dyn + 0.15) * 100) / 100);
+        this.calm = 0; this.slow = 0; this.probe = 120; this.probeUp = true; this.resize(true);
+        return;
+      }
+    }
+    if (this.tuneOff) return;
     this.slow = this.ema > 19.5 ? this.slow + 1 : 0;
-    if (this.slow >= 90 && this.dyn > 0.6) { this.before = this.ema; this.dynPrev = this.dyn; this.dyn -= 0.15; this.slow = 0; this.probe = 120; this.resize(true); }
+    if (this.slow >= 90 && this.dyn > 0.6) {
+      // a fresh slow stretch gets the short wait; one that follows a step up within a minute is the scene hovering at
+      // the limit, so wait longer each time instead of flipping the resolution back and forth
+      this.upWait = this.sinceUp < 3600 ? Math.min(this.upWait * 2, 14400) : 600;
+      this.before = this.ema; this.dynPrev = this.dyn; this.dyn -= 0.15; this.slow = 0; this.calm = 0; this.probe = 120; this.resize(true);
+    }
   }
 
   /** Light and biome water colour at the eye: drives eye adaptation and the colour of the murk under water. */
@@ -213,7 +240,7 @@ export class Gfx {
   }
 
   resize(keepTune = false): void {
-    if (!keepTune) { this.dyn = 1; this.tuneOff = false; this.probe = 0; this.slow = 0; this.ema = 16.7; }
+    if (!keepTune) { this.dyn = 1; this.tuneOff = false; this.probe = 0; this.slow = 0; this.ema = 16.7; this.calm = 0; this.upWait = 600; this.probeUp = false; this.sinceUp = 1e9; }
     const dpr = Math.min(window.devicePixelRatio || 1, 2) * this.settings.scale * this.dyn;
     const cw = this.canvas.clientWidth || window.innerWidth, ch = this.canvas.clientHeight || window.innerHeight;
     this.renderer.setPixelRatio(1);
@@ -311,6 +338,10 @@ export class Gfx {
     const cl = this.settings.clouds && dim.clouds;
     this.clouds.visible = cl && !env.underwater;   // the layer has no water fog of its own
     this.clouds.position.set(camPos.x, dim.cloudY + CLOUD_H / 2, camPos.z);
+    // Far from the layer a view ray crosses it steeply, so the far side of the box is close enough to the cloud to
+    // stand in for its depth. Near it the ray runs a long way inside, past peaks and builds, and the cloud has to be
+    // tested at its own depth; that turns off early depth rejection, so it is not used everywhere
+    this.clouds.material = Math.abs(camPos.y - (dim.cloudY + CLOUD_H / 2)) < 40 ? this.cloudMatDepth : this.cloudMat;
     U.uCloud.value.set(dim.cloudY, CLOUD_H, cl && dim.hasSky ? 0.5 * smoothstep(0, 0.08, Math.abs(elev)) : 0, cl ? 1 : 0);
     U.uCover.value = 0.57 - 0.07 * Math.min(1, env.haze);   // hazy biomes sit under heavier skies
     // shadows reach full strength before direct light is worth a tenth, so a low sun never shines through hills
@@ -322,9 +353,10 @@ export class Gfx {
   private renderShadows(): void {
     const casters = this.shadowCasters;
     if (!casters || U.uShadowOn.value <= 0) return;
-    // the sun crawls and the map is texel-snapped, so every other frame is enough unless a chunk mesh changed.
+    // the sun crawls and the map is texel-snapped, so every other frame is enough unless a chunk mesh changed or
+    // there are boxes to draw: those move every frame, and a stale map would leave their shadows a frame behind.
     // The matrix is only written below, so matrix and depth map always stay a matched pair
-    if ((this.shadowFrame++ & 1) && !this.shadowDirty) return;
+    if ((this.shadowFrame++ & 1) && !this.shadowDirty && !(this.boxCaster && this.boxCaster.count > 0)) return;
     this.shadowDirty = false;
     const cam = this.shadowCam, c = this.camera.position, size = this.shadowRt.width, span = 144;
     // snap the light frustum to shadow texels so edges do not crawl as the player moves
@@ -359,6 +391,7 @@ export class Gfx {
   render(drawHand: boolean): void {
     const r = this.renderer;
     r.info.reset();
+    U.uEmGain.value = 1 / this.exposure;
     this.sky.position.copy(this.camera.position);
     this.renderShadows();
     r.setRenderTarget(this.rt);
