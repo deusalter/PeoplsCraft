@@ -38,7 +38,8 @@ a stack, and 1-9 sends the hovered stack to that hotbar slot. In the recipe book
 recipe out, right-click crafts one and shift-click crafts as many as you can afford.
 
 Settings worth knowing about: interface scale, screen shake, auto-jump, automatic tool switching,
-edge smoothing (FXAA) on every preset, and sun shadows plus MSAA on the high preset.
+edge smoothing (FXAA) and eye adaptation on the medium and high presets, and sun shadows plus
+MSAA on the high preset.
 
 ## How it is put together
 
