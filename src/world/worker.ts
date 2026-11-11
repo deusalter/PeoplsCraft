@@ -1,25 +1,16 @@
 // Chunk worker: stateless generation and lighting + meshing jobs.
 import { CVOL } from '../core/constants';
-import type { Generator } from './gen/types';
-import { OverworldGen } from './gen/overworld';
-import { makeDimGen } from './gen/dims';
+import { genChunk } from '../sim/genjob';
 import { assembleRegion, computeLight, packCenterLight } from './light';
 import { meshCenter } from './mesher';
 
 const ctx = self as unknown as { postMessage(m: unknown, t?: Transferable[]): void; onmessage: ((e: MessageEvent) => void) | null };
-const gens = new Map<string, Generator>();
-function gen(seed: number, dim: number): Generator {
-  const k = seed + ':' + dim;
-  let g = gens.get(k);
-  if (!g) { g = dim === 0 ? new OverworldGen(seed) : makeDimGen(seed, dim); gens.set(k, g); }
-  return g;
-}
 
 ctx.onmessage = (e: MessageEvent) => {
   const m = e.data;
   if (m.t === 'gen') {
-    const out = gen(m.seed, m.dim).generate(m.cx, m.cz);
-    ctx.postMessage({ t: 'gen', id: m.id, cx: m.cx, cz: m.cz, blocks: out.blocks, biomes: out.biomes, hasEmit: out.hasEmit, ents: out.ents },
+    const out = genChunk(m.seed, m.dim, m.cx, m.cz);
+    ctx.postMessage({ t: 'gen', id: m.id, cx: m.cx, cz: m.cz, blocks: out.blocks, biomes: out.biomes, hasEmit: out.hasEmit, ents: out.ents, hash: out.hash },
       [out.blocks.buffer, out.biomes.buffer]);
   } else if (m.t === 'mesh') {
     const t0 = performance.now();
