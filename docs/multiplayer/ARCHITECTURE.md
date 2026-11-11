@@ -2668,6 +2668,28 @@ which sets blocks directly until the `fill` command of 10.1 exists; every later 
 cheat. `legacy-v1.json` carries, beside the two stores, an `expect` object written by the maker at the
 moment it saved, which the `legacy` scenario checks.
 
+D20. Stage 1a (2.1 and the file table of 2.2). Four small things.
+(a) `npm run check` runs the client compile, the pure compile and the lint. `tsconfig.server.json`
+compiles `server/**`, which does not exist before stage 4; its compile joins `check` with that folder.
+(b) `lint-sim.mjs` fails on more than 2.1 lists: also `new Date`, `clearTimeout`, `clearInterval`,
+`requestAnimationFrame`, any package import (not only `three`), and any relative import that resolves
+outside the `include` list of `tsconfig.sim.json`, which it reads so the two cannot drift apart. It
+matches text, comments included.
+(c) Signatures. The shared rules take what they read, not a player, because the client has an
+inventory and stats mirror but no `SimPlayer`: `reach(stats, modes)`, `canHarvest(id, inv)`,
+`breakTime(id, inv, stats, modes, body)`, `attackRate(inv, stats)` (written `attackRate(p)` in 7.3),
+`accepts(kind, i, item, acc, forgeLevel)`, `smeltable(key, forgeLevel)` (99 with no forge open),
+`refusal(kind, item)`. `PlayerStats.damage(raw, rnd, ignoreArmor = false)`: `rnd` comes second because
+`ignoreArmor` is optional. `PlayerBody` keeps the landing-dip spring state (`landDip`, `dipV`) and the
+rendered eye position (`ex`, `ey`, `ez`) as fields, since `teleport` and `tick` write them; the camera
+code that reads them stays in `Player`.
+(d) 1a moved code that exists. The members of 2.2 that are new arrive with their first caller:
+`rules.sortCompare` with the `sort` op (1c), `rules.maxSpeed` with `movement.ts`, `breakTimeMin` and
+`freeSpot` in 2.0 as listed, `assignWire` with 5.3, and the tick counters of `clock.ts` with `Sim.tick`
+(1b). `Gfx.update` keeps its own sun vector for the sky; `clock.ts dayAmount` repeats its arithmetic
+in the same order and was checked equal to `gfx.dayAmt` bit for bit over a full Overworld day and at
+the fixed times of the other two dimensions.
+
 ---
 
 ## 14. Review log

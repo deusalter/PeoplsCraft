@@ -50,9 +50,11 @@ src/
   world/       chunk storage and scheduling (world.ts), worker entry, lighting, greedy mesher
     gen/       climate, overworld, the two dimensions, structures
   render/      atlas + texture painters, shaders, renderer/sky/post (gfx.ts), instanced batches, icons, item models
-  player/      input, swept-AABB physics, controller, block interaction
+  sim/         no Three.js, no DOM: swept-AABB physics, the player body, inventory + crafting, stats, fluids,
+               shared rules, the chunk generation job
+  player/      input, first-person camera, block interaction
   entities/    creatures + AI, boss brain, projectiles, dropped items
-  systems/     inventory + crafting, stats, save, quests, events, townsfolk, fluids
+  systems/     save, quests, events, townsfolk
   ui/          HUD, windows (inventory / crafting / chest / forge / shop / guide), menus, debug overlay
   audio/       synthesized effects and generative music
   game.ts      owns the systems, fixed-step simulation, render loop
@@ -94,7 +96,7 @@ All content is data. Nothing below needs engine changes.
   `spiral`, `rain`, `ring`, `summon`, `teleport`, `beam`, `burrow`) with their own numbers.
 - **Structure**: `world/gen/structures.ts`: a grid cell size, a chance and a `build` function.
 
-`data/validate.ts` cross-checks every reference at startup in development and logs problems.
+`dev/validate.ts` cross-checks every reference at startup in development and logs problems.
 
 ## Testing hooks
 
