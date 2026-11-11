@@ -1,10 +1,12 @@
 // One player as the simulation holds it.
+import { BLOCKS, T_DAMAGE, T_LIQUID } from '../data/blocks';
 import type { Item } from '../data/items';
 import { PlayerBody } from './body';
 import { Inventory } from './inventory';
 import type { Mob } from './mobs';
 import { PlayerStats } from './stats';
 import type { Sim } from './sim';
+import { goHome, sendTp } from './travel';
 import type { PlayerRecord } from './storage';
 
 export const STALL_AFTER = 90, LINGER = 30;
@@ -28,8 +30,9 @@ export interface SimPlayer {
   /** The last place the player stood on the ground. */
   safe: [number, number, number];
   mail: Item[];
-  /** True from join or a loading teleport until the client says its area is ready. */
-  loading: boolean;
+  /** True from join or a loading teleport until the arrival is complete: the client has said its area is ready (`clientReady`),
+   *  the footing is found and the last position has been sent. */
+  loading: boolean; clientReady: boolean;
   /** Footing still to be found by land(): -1 none, else the kind of arrival (0 plain, 1 and 2 raise a return gate). */
   arriving: -1 | 0 | 1 | 2;
   /** Sent to a bed whose chunk was not loaded; the bed is checked on arrival. */
@@ -65,7 +68,7 @@ export function newPlayer(id: string, slot: number, name: string, local: boolean
     id, slot, name, local, online: true, epoch: 1, stalled: false, lingerT: 0, parked: false, unsaved: false,
     dim: 0, body, inv: new Inventory(), stats: new PlayerStats(), modes: { creative: false, hidden: false, god: false },
     bed: null, deathAt: null, portalReturn: {}, safe: [0, 0, 0], mail: [],
-    loading: true, arriving: -1, pendingBed: false, retCheck: false, tp: 0, sleeping: false, embedded: null,
+    loading: true, clientReady: false, arriving: -1, pendingBed: false, retCheck: false, tp: 0, sleeping: false, embedded: null,
     recallT: 0, hazardT: 0, fullT: 0, portalT: 0, portalArmed: true, actCredit: 0, useCredit: 0, digCredit: 0, dig: null,
     fallPeak: 0, grounded: false, speedBudget: 0, moveSeq: 0, lastMoveTick: 0, uiOpen: false, rtt: 0,
     ackSeq: 0, rngSeed: 0, invDirty: false, statsDirty: false, window: null, fresh: true, deadOnJoin: false, arriveMsg: '',
@@ -116,4 +119,46 @@ export function onDeath(sim: Sim, p: SimPlayer, cause: string): void {
   p.inv.coins -= lost; p.inv.touch(); p.window = null;
   for (const m of mobs.list) if (m.active && m.def.ai === 'minion' && m.owner === p.id) mobs.remove(m);
   sim.sink.send(p.slot, { t: 'dead', cause, lost, at: p.deathAt });
+}
+
+export function respawn(sim: Sim, p: SimPlayer): void {
+  if (!p.stats.dead) return;
+  p.stats.respawn(); goHome(sim, p);
+}
+/** The Recall Stone: home, then 30 s before it works again. False while it is still warm. */
+export function recall(sim: Sim, p: SimPlayer): boolean {
+  if (p.recallT > 0 || p.stats.dead) return false;
+  p.recallT = 30; sim.sink.emit({ p: p.slot }, ['s', 'teleport', 1, 1]);
+  goHome(sim, p);
+  return true;
+}
+
+const AROUND: readonly (readonly [number, number])[] = [[0.36, 0], [-0.36, 0], [0, 0.36], [0, -0.36], [0, 0]];
+/** One step of what the world does to an active player: fall damage, hazards underfoot, the void, hunger and regeneration. */
+export function tickPlayer(sim: Sim, p: SimPlayer, dt: number): void {
+  const b = p.body, st = p.stats, inv = p.inv, w = sim.realms[p.dim], rnd = sim.rnd;
+  const hit = (took: number, cause: string): void => sim.sink.send(p.slot, { t: 'hurt', dmg: took, fx: b.x, fz: b.z, knock: 0, cause });
+  st.sync(inv);
+  if (p.fullT > 0) p.fullT -= dt; if (p.recallT > 0) p.recallT -= dt;
+  if (b.landed > 3.6 && !st.d.noFall && !p.modes.creative) { st.hurtT = 0; const took = st.damage((b.landed - 3) * 5.5, rnd, true); if (took > 0) { hit(took, 'fall'); if (st.dead) onDeath(sim, p, 'fall'); } }
+  if (b.onGround) { p.safe[0] = b.x; p.safe[1] = b.y; p.safe[2] = b.z; }
+  p.hazardT -= dt;
+  if (p.hazardT <= 0) {
+    p.hazardT = 0.5;
+    if (b.inLava && !p.modes.creative && !p.modes.god) { st.hurtT = 0; const took = st.damage(8, rnd, true); if (took > 0) { hit(took, 'lava'); if (st.dead) onDeath(sim, p, 'lava'); } }
+    else for (let dy = 0; dy < 2; dy++) for (const [dx, dz] of AROUND) {
+      const id = w.getBlock(Math.floor(b.x + dx), Math.floor(b.y + dy * 0.9 - (dx || dz ? 0 : 0.1)), Math.floor(b.z + dz));
+      if (T_DAMAGE[id] && !T_LIQUID[id]) { hurtPlayer(sim, p, T_DAMAGE[id] * 3, Math.floor(b.x + dx) + 0.5, Math.floor(b.z + dz) + 0.5, BLOCKS[id].name, null, 3); dy = 2; break; }
+    }
+    const da = p.deathAt;
+    if (da && da[0] === p.dim && !st.dead && Math.abs(b.x - da[1]) < 6 && Math.abs(b.z - da[3]) < 6 && Math.abs(b.y - da[2]) < 8) p.deathAt = null;
+    if (st.hunger <= 0 && st.hp <= 5 && !st.dead && rnd() < 0.1) { st.hurtT = 0; st.damage(6, rnd, true); if (st.dead) onDeath(sim, p, 'hunger'); }
+  }
+  if (b.y < (p.dim === 2 ? 20 : -16) && !st.dead) {
+    if (p.dim === 2 && !p.modes.creative) {
+      st.hurtT = 0; hit(st.damage(st.maxHp * 0.35, rnd, true), 'void');
+      if (st.dead) onDeath(sim, p, 'void'); else { b.teleport(p.safe[0], p.safe[1] + 0.2, p.safe[2]); sendTp(sim, p, false); sim.sink.emit({ p: p.slot }, ['t', 'The Rift throws you back.', '#c8d0ff']); }
+    } else { b.teleport(b.x, 220, b.z); sendTp(sim, p, false); }
+  }
+  st.tick(dt, inv, b.sprinting);
 }

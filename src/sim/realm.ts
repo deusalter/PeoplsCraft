@@ -1,4 +1,5 @@
 // One dimension of the world: its blocks, block entities, light, and everything that lives in it.
+import { onBlockChange, tickBlocks } from './blocks';
 import { DropSim } from './drops';
 import { Fluids } from './fluids';
 import { BURST_R, FLOAT_R, SOUND_R } from './fx';
@@ -11,8 +12,10 @@ import type { BlockEnt, BlockEnts, VoxelWrite } from './voxels';
 
 /** The block data a realm runs on, owned by whoever holds the chunks. */
 export interface RealmStore extends VoxelWrite, BlockEnts, LightSource {
-  /** Every block entity in the chunks within `r` chunks of chunk (cx, cz), row by row. */
-  entsNear(cx: number, cz: number, r: number, fn: (e: BlockEnt) => void): void;
+  /** The block entities of one chunk, or null when it holds none or is not loaded. */
+  chunkEnts(cx: number, cz: number): Iterable<BlockEnt> | null;
+  /** True when every chunk within `r` chunks of the column is loaded and can be stood in. */
+  areaReady(x: number, z: number, r: number): boolean;
   /** The contents of this entity changed and must be saved. Timers do not count. */
   touch(e: BlockEnt): void;
   /** Called after every block change that was not silent. */
@@ -31,6 +34,7 @@ export class Realm implements VoxelWrite, BlockEnts {
 
   constructor(readonly sim: Sim, readonly dim: 0 | 1 | 2, readonly store: RealmStore) {
     this.light = store;
+    store.onChange = (x, y, z, old, now) => onBlockChange(this, x, y, z, old, now);
     this.mobs = new MobSim(this); this.proj = new ProjSim(this); this.drops = new DropSim(this);
     this.fluids = new Fluids(this);
   }
@@ -44,6 +48,14 @@ export class Realm implements VoxelWrite, BlockEnts {
   setEnt(x: number, y: number, z: number, kind: string, data: any): BlockEnt | null { return this.store.setEnt(x, y, z, kind, data); }
   removeEnt(x: number, y: number, z: number): void { this.store.removeEnt(x, y, z); }
   touchEnt(e: BlockEnt): void { this.store.touch(e); }
+
+  /** Creatures, shots, drops and block ticks. Fluids run after the portal timers of the step (see Sim.step). */
+  tick(dt: number): void {
+    this.mobs.tick(dt); this.proj.tick(dt); this.drops.tick(dt);
+    this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; tickBlocks(this, 0.25); }
+  }
+  /** Nobody is left here: what lived in this realm is gone. */
+  suspend(): void { this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); this.viewers.clear(); }
 
   // ---- effects at a place in this realm ----
   sound(name: string, vol: number, pitch: number, x: number, y: number, z: number): void { this.sim.sink.emit({ dim: this.dim, x, y, z, r: SOUND_R }, ['s', name, vol, pitch, x, y, z]); }

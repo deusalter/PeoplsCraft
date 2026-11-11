@@ -1,18 +1,19 @@
-// Game: owns every system and runs the fixed-step simulation plus the render loop.
+// Game: the client. Owns the view, the input, the HUD and the audio, runs the local player's body,
+// and drives the simulation one fixed step at a time.
 import * as THREE from 'three';
 import { GameAudio } from './audio/audio';
-import { BUILD_MAX, CVOL, DAY_LENGTH, SEA, chunkKey } from './core/constants';
+import { CVOL, chunkKey } from './core/constants';
 import { clamp } from './core/noise';
-import { B, BLOCKS, T_DAMAGE, T_LAYER, T_LIQUID, T_OPAQUE, T_REPLACE, T_SOLID, T_SUPPORT } from './data/blocks';
+import { B, BLOCKS, T_LAYER } from './data/blocks';
 import { BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
-import { Item, ITEMS, TIERS, item, RARITY, rollModifier, matches } from './data/items';
-import { BOSSES } from './data/mobs';
-import { SMELTS } from './data/recipes';
+import { Item, ITEMS, TIERS, item } from './data/items';
+import { NPCS } from './data/npcs';
 import { EntityStore } from './client/entities';
-import { FxPlay } from './client/fxplay';
+import { FxPlay, tintOf } from './client/fxplay';
 import { LOCAL_ID, fromLegacy, toLegacy } from './client/legacy';
 import { WorldStore } from './client/worldstore';
+import type { S2C } from './net/protocol';
 import { Input } from './player/input';
 import { Interact, InteractHost } from './player/interact';
 import { Player, STRIDE } from './player/player';
@@ -20,26 +21,22 @@ import { buildArm } from './player/viewmodel';
 import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
 import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
-import type { MobView } from './render/mobView';
 import { ItemModels } from './render/itemModel';
-import { dropItem } from './sim/actions';
-import { STEP } from './sim/clock';
-import type { DropSim } from './sim/drops';
-import type { Fluids } from './sim/fluids';
-import type { EventSim } from './sim/events';
+import type { MobView } from './render/mobView';
+import * as act from './sim/actions';
+import { cheat } from './sim/cheats';
+import { STEP, isNight } from './sim/clock';
 import { BURST, type Fx, type Scope, type Sink } from './sim/fx';
-import { INV_SIZE, Inventory, Slot } from './sim/inventory';
-import { RayHit } from './sim/physics';
-import * as rules from './sim/rules';
+import { gateFits, placeGate } from './sim/gates';
+import type { Inventory } from './sim/inventory';
 import { rayHitMobs } from './sim/mobhit';
-import type { MobSim } from './sim/mobs';
-import { type NpcSim, npcOf } from './sim/npcs';
-import { type SimPlayer, hurtPlayer, onDeath } from './sim/player';
-import type { ProjSim } from './sim/projectiles';
+import { npcOf } from './sim/npcs';
+import type { RayHit } from './sim/physics';
+import { type SimPlayer, recall, respawn } from './sim/player';
+import * as rules from './sim/rules';
 import { Sim } from './sim/sim';
 import type { PlayerStats } from './sim/stats';
 import type { BlockEnt } from './sim/voxels';
-import type { S2C } from './net/protocol';
 import type { SaveDB, WorldMeta } from './systems/save';
 import { DebugOverlay } from './ui/debug';
 import { Hud, el, moonTint } from './ui/hud';
@@ -47,13 +44,11 @@ import { GameMenu, Settings } from './ui/menus';
 import { QuestView } from './ui/questView';
 import { Windows } from './ui/windows';
 import { Climate } from './world/gen/climate';
-import { locate } from './world/gen/structures';
 import { WorkerPool } from './world/pool';
 import { Chunk, World } from './world/world';
 
 export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings; /** false when the browser blocks IndexedDB */ canSave?: boolean }
 const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
-const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
 // Interaction prompts, built once so the per-tick prompt check allocates nothing.
 const IS_NPC = (m: MobView): boolean => m.def.ai === 'npc';
 const NOT_FRIEND = (m: MobView): boolean => m.def.ai !== 'minion' && m.def.ai !== 'npc';
@@ -80,57 +75,27 @@ export class Game implements InteractHost, Sink {
   private armGeo: THREE.BufferGeometry;
   private swayX = 0; private swayY = 0; private fallY = 0; private lastYaw = 0; private lastPitch = 0;   // held-item inertia
   private stepN = 0; private wasWet = false; private wasUnder = false; private splashCd = 0;
-  private blockT = 0; private saveT = 0; private warnT = 0;
+  private saveT = 0; private warnT = 0; private portalA = 0; private portalGold = false;
   private console: HTMLInputElement; private v = new THREE.Vector3();
-  private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
-  private deadOnLoad = false; private arriveMsg = '';
+  private hudOn = true; private palettes: string[][] = [];
   private npcPromptT = 0; private npcPrompt: string | null = null; private conClosed = 0;
   /** Date.now() of the last successful save (0 = not yet). */
   lastSave = 0; private saveFailT = -1e9; private noSaveWarned = false;
 
-  // ---- the local player's state and the shared world state, as the simulation holds them ----
+  // ---- mirrors: the local player's state and the shared world state, as the simulation holds them ----
   get inv(): Inventory { return this.me.inv; }
   get stats(): PlayerStats { return this.me.stats; }
-  get flags(): Set<string> { return this.sim.flags; }
-  get fluids(): Fluids { return this.sim.realms[this.me.dim].fluids; }
-  get drops(): DropSim { return this.sim.realms[this.me.dim].drops; }
-  get mobs(): MobSim { return this.sim.realms[this.me.dim].mobs; }
-  get proj(): ProjSim { return this.sim.realms[this.me.dim].proj; }
-  get events(): EventSim { return this.sim.events; }
-  get npcs(): NpcSim { return this.sim.npcs; }
+  get flags(): ReadonlySet<string> { return this.sim.flags; }
   get clock(): number { return this.sim.shared.clock; }
-  set clock(v: number) { this.sim.shared.clock = v; }
   get dim(): number { return this.me.dim; }
-  set dim(v: number) { const p = this.me, a = this.sim.realms[p.dim].players, i = a.indexOf(p); if (i >= 0) a.splice(i, 1); p.dim = v as 0 | 1 | 2; this.sim.realms[p.dim].players.push(p); }
   get creative(): boolean { return this.me.modes.creative; }
-  set creative(v: boolean) { this.me.modes.creative = v; }
-  get creativeHidden(): boolean { return this.me.modes.hidden; }
-  get god(): boolean { return this.me.modes.god; }
-  set god(v: boolean) { this.me.modes.god = v; }
   get spawn(): [number, number, number] | null { return this.me.bed; }
-  set spawn(v: [number, number, number] | null) { this.me.bed = v; }
   /** Recall stone cooldown in seconds; the HUD shades the stone's slot with it. */
   get recallT(): number { return this.me.recallT; }
-  set recallT(v: number) { this.me.recallT = v; }
   /** Where the player starts without a bed, as x and z. */
   get worldSpawn(): [number, number] { return this.sim.shared.worldSpawn; }
   /** Last death as [dimension, x, y, z], shown on the compass until the player walks back to it. */
   get deathAt(): [number, number, number, number] | null { return this.me.deathAt; }
-  set deathAt(v: [number, number, number, number] | null) { this.me.deathAt = v; }
-  private get portalT(): number { return this.me.portalT; }
-  private set portalT(v: number) { this.me.portalT = v; }
-  private get portalArmed(): boolean { return this.me.portalArmed; }
-  private set portalArmed(v: boolean) { this.me.portalArmed = v; }
-  private get portalReturn(): Record<number, [number, number, number]> { return this.me.portalReturn; }
-  private get arriving(): number { return this.me.arriving; }
-  private set arriving(v: number) { this.me.arriving = v as -1 | 0 | 1 | 2; }
-  private get hazardT(): number { return this.me.hazardT; }
-  private set hazardT(v: number) { this.me.hazardT = v; }
-  private get fullT(): number { return this.me.fullT; }
-  private set fullT(v: number) { this.me.fullT = v; }
-  private get safe(): [number, number, number] { return this.me.safe; }
-  private get pendingBed(): boolean { return this.me.pendingBed; }
-  private set pendingBed(v: boolean) { this.me.pendingBed = v; }
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -199,18 +164,6 @@ export class Game implements InteractHost, Sink {
     });
     document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); });
 
-    this.world.onBlockChange = (x, y, z, _old, now) => {
-      if (!T_SOLID[now] || !T_OPAQUE[now]) { const up = this.world.getBlock(x, y + 1, z); if (T_SUPPORT[up]) this.breakNatural(x, y + 1, z); }
-      if (T_REPLACE[now] && !T_LIQUID[now]) this.fluids.poke(x, y, z);
-    };
-    this.world.onChunkReady = (_c, fresh, ents) => {
-      if (!fresh) return;
-      for (const e of ents) {
-        // a structure stamped later can overwrite the block (overlapping dungeon rooms): do not keep its entity
-        if (BLOCKS[this.world.getBlock(e.x, e.y, e.z)].use !== e.kind) continue;
-        this.world.setEnt(e.x, e.y, e.z, e.kind, e.kind === 'nest' ? { mob: e.data, t: 0 } : { loot: e.data, s: null });
-      }
-    };
     this.world.onUnload = (c) => this.saveChunk(c);
     // Saved chunks hold raw block ids. Each save records the id->key table it was written with, so a
     // later build with a different block table can translate old chunks as they load.
@@ -228,7 +181,6 @@ export class Game implements InteractHost, Sink {
       return c;
     };
 
-    if (d) this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
     this.player.frozen = true;
     this.applySettings();
     void cfg.db.chunkList(meta.id, dim0).then((l) => { this.world.savedKeys = new Set(l.map((c) => chunkKey(c[0], c[1]))); this.keysReady = true; });
@@ -242,6 +194,9 @@ export class Game implements InteractHost, Sink {
   send(_slot: number, m: S2C): void {
     const p = this.player, st = this.stats;
     if (m.t === 'hurt') {
+      if (m.cause === 'fall') { this.hud.flashHurt(); this.audio.play('hurt'); p.shake(0.4); return; }
+      if (m.cause === 'lava') { this.hud.flashHurt(); this.audio.play('fizz'); return; }
+      if (m.cause === 'void') { this.hud.flashHurt(); this.audio.play('teleport'); return; }
       // where the blow came from, in view space: forward is (-sin yaw, -cos yaw), right is (cos yaw, -sin yaw)
       const sx = m.fx - p.x, sz = m.fz - p.z, sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
       this.hud.flashHurt(Math.hypot(sx, sz) < 0.05 ? undefined : Math.atan2(cy * sx - sy * sz, -sy * sx - cy * sz));
@@ -251,9 +206,32 @@ export class Game implements InteractHost, Sink {
       if (p.onGround && kr > 0.3) p.vy = 5;
     } else if (m.t === 'dead') {
       const c = m.cause;
+      if (c === '') { this.menu.death('You did not get back up', 0); return; }
       this.audio.play('death'); this.win.close(true);
       this.menu.death((c === 'fall' ? 'The ground was farther than it looked' : c === 'lava' ? 'Lava does not negotiate' : c === 'void' ? 'There was nothing under you' : c === 'hunger' ? 'Starved' : `Slain by ${c}`) + `  ·  at ${m.at[1]}, ${m.at[2]}, ${m.at[3]}`, m.lost);
+    } else if (m.t === 'tp') this.onTp(m);
+    else if (m.t === 'open') {
+      const e = m.x !== undefined ? this.world.getEnt(m.x, m.y!, m.z!) : null, n = m.mode === 'shop' ? NPCS.find((q) => q.key === m.npc) : undefined;
+      if (m.mode === 'forge' && e) { this.audio.play('click'); this.win.show('forge', { forge: e }); }
+      else if (m.mode === 'chest' && e) { this.audio.play('chest'); this.win.show('chest', { chest: e.data.s }); }
+      else if (n) { this.audio.play('click'); this.win.show('shop', { shop: n }); }
     }
+  }
+  /** The simulation moved the player. A crossing swaps the world; `load` puts up the loading screen until the place is meshed. */
+  private onTp(m: Extract<S2C, { t: 'tp' }>): void {
+    const p = this.player, cfg = this.cfg;
+    if (m.dim !== this.world.dim) {
+      this.win.close(); this.keysReady = false; p.frozen = true;
+      this.world.setDim(m.dim, DIMS[m.dim].hasSky); this.world.setView(cfg.settings.gfx.renderDist, DIMS[m.dim].fogScale);
+      this.portalA = 0; this.portalGold = false; this.hud.setPortal(0, false);
+      void cfg.db.chunkList(cfg.meta.id, m.dim).then((l) => { this.world.savedKeys = new Set(l.map((c) => chunkKey(c[0], c[1]))); this.keysReady = true; });
+    }
+    if (m.load) { this.ready = false; this.showLoading(m.msg ?? this.loadMsg); return; }
+    if (this.ready) return;
+    p.frozen = false; this.ready = true;
+    if (cfg.canSave === false && !this.noSaveWarned) { this.noSaveWarned = true; this.hud.showBanner('Saving is unavailable', 'This browser is blocking storage. Progress is lost when the tab closes.', '#ff9a8a'); }
+    const l = this.loading; this.loading = null;
+    if (l) { const rm = (): void => l.remove(); l.classList.add('out'); l.addEventListener('transitionend', rm, { once: true }); setTimeout(rm, 700); }
   }
   broadcast(_m: S2C): void {}
 
@@ -267,52 +245,35 @@ export class Game implements InteractHost, Sink {
   start(): void { this.last = performance.now(); this.raf = requestAnimationFrame(this.frame); }
   stop(): void { cancelAnimationFrame(this.raf); this.pool.dispose(); }
 
-  // ---- small services used across systems ----------------------------------------------
-  isNight(): boolean { return this.sim.isNight(); }
-  difficulty(): number { return this.sim.difficulty(); }
+  // ---- small services the windows and the HUD call ----------------------------------------------
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
-  floater(x: number, y: number, z: number, text: string, color: string, big = false): void { this.hud.floater(x, y, z, text, color, big); }
-  dropItem(it: Item): void { dropItem(this.sim, this.me, it); }
-  onCrafted(key: string, _n: number): void { this.flags.add('craft:' + key); }
-  markEntDirty(e: BlockEnt): void { const c = this.world.chunkAt(e.x >> 4, e.z >> 4); if (c) c.modified = true; }
-  markChestDirty(): void { if (this.chestOpen) this.chestOpen.modified = true; }
-  private rollLoot(table: string): Item[] {
-    const { items, coins } = rules.rollLoot(table, this.sim.rnd);
-    if (coins) { this.inv.coins += coins; this.inv.touch(); this.toast(`+${coins} coins`, '#f2c14e'); }
-    return items;
+  dropItem(it: Item): void { act.dropItem(this.sim, this.me, it); }
+  onCrafted(key: string, _n: number): void { this.sim.addFlag('craft:' + key); }
+  markEntDirty(e: BlockEnt): void { this.sim.realms[this.me.dim].touchEnt(e); }
+  markChestDirty(): void { const w = this.me.window, r = this.sim.realms[this.me.dim], e = w && w.mode === 'chest' ? r.getEnt(w.x!, w.y!, w.z!) : null; if (e) r.touchEnt(e); }
+  respawn(): void { respawn(this.sim, this.me); }
+  /** Developer commands (also reachable from the T command line). */
+  cheat(cmd: string): string { return cheat(this.sim, this.me, cmd); }
+  /** A refusal the player should hear about, at most once per `gap` seconds. */
+  private warn(text: string, color: string, gap: number, sound: boolean): void {
+    if (this.warnT > 0) return;
+    this.toast(text, color); if (sound) this.audio.play('error', 0.5); this.warnT = gap;
   }
 
-  // ---- combat ---------------------------------------------------------------------------
-  private hurtPlayer(dmg: number, fx: number, fz: number, cause: string, knock = 6): void { hurtPlayer(this.sim, this.me, dmg, fx, fz, cause, null, knock); }
-  private onDeath(cause: string): void { onDeath(this.sim, this.me, cause); }
-  respawn(): void { this.stats.respawn(); this.goHome(); }
-  /** Send the player to their bed, or to the world spawn when there is none (death, Recall Stone). */
-  private goHome(): void {
-    const s = this.spawn, p = this.player;
-    if (this.dim !== 0) { this.travel(0, true); return; }
-    if (s && this.world.ready(s[0], s[2]) && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use !== 'bed') { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; }
-    else if (s) {
-      if (this.world.areaMeshed(s[0], s[2], 1)) { const q = rules.standSpot(this.world, s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); return; }
-      // the bed is out of the loaded area and cannot be checked (or stood beside) yet: go there, load, and let checkReady() decide
-      p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); this.pendingBed = true; this.ready = false; this.showLoading('Returning');
-      return;
-    }
-    p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning');
-  }
-  // ---- InteractHost -----------------------------------------------------------------------
-  reach(): number { return rules.reach(this.stats, this); }
-  breakTime(id: number): number { return rules.breakTime(id, this.inv, this.stats, this, this.player); }
+  // ---- InteractHost: what the hands do. The decision is made here; what it changes is the simulation's. ----
+  reach(): number { return rules.reach(this.stats, this.me.modes); }
+  breakTime(id: number): number { return rules.breakTime(id, this.inv, this.stats, this.me.modes, this.player); }
   onDigTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void {
     const b = BLOCKS[id], l = this.world.getLight(x + nx, y + ny, z + nz);
     this.swing = 1;
     this.audio.play('dig_' + b.sound, 0.7);
     for (let i = 0; i < 3; i++) this.particles.spawn(x + 0.5 + nx * 0.55 + (Math.random() - 0.5) * 0.5, y + 0.5 + ny * 0.55 + (Math.random() - 0.5) * 0.5, z + 0.5 + nz * 0.55 + (Math.random() - 0.5) * 0.5,
-      nx * 1.5 + (Math.random() - 0.5) * 2, ny * 1.5 + Math.random() * 2, nz * 1.5 + (Math.random() - 0.5) * 2, 0.5, 0.12, this.tintOf(id), 0, 14, T_LAYER[id * 6], true, (l >> 4) / 15, (l & 15) / 15);
+      nx * 1.5 + (Math.random() - 0.5) * 2, ny * 1.5 + Math.random() * 2, nz * 1.5 + (Math.random() - 0.5) * 2, 0.5, 0.12, tintOf(id), 0, 14, T_LAYER[id * 6], true, (l >> 4) / 15, (l & 15) / 15);
   }
   /** Auto-tool: when mining starts with a tool (or nothing) in hand, switch to the best hotbar tool for the block. */
   onDigStart(id: number): void {
     const b = BLOCKS[id], inv = this.inv, h = inv.held(), cur = h ? item(h.k).tool : undefined;
-    if (!this.cfg.settings.autoTool || this.creative || b.tool === 'none' || b.hard < 0 || (h && !cur)) return;
+    if (!this.cfg.settings.autoTool || this.me.modes.creative || b.tool === 'none' || b.hard < 0 || (h && !cur)) return;
     let best = -1, bestV = cur && cur.kind === b.tool ? (cur.power >= b.power ? 1000 : 0) + cur.speed : -1;
     for (let i = 0; i < 9; i++) {
       const s = inv.slots[i], t = s ? item(s.k).tool : undefined;
@@ -322,99 +283,29 @@ export class Game implements InteractHost, Sink {
     }
     if (best >= 0) inv.sel = best;
   }
-  /** Middle click: bring the targeted block's item to hand. */
-  private pickBlock(id: number): void {
-    const b = BLOCKS[id], inv = this.inv, key = ITEMS.has(b.key) ? b.key : b.drops[0]?.[0];
-    if (!key || !ITEMS.has(key)) return;
-    let at = -1, free = -1;
-    for (let i = 0; i < INV_SIZE && at < 0; i++) if (inv.slots[i]?.k === key) at = i;
-    for (let i = 8; i >= 0; i--) if (!inv.slots[i]) free = i;
-    if (at >= 0 && at < 9) inv.sel = at;
-    else if (at < 0 && !this.creative) return;
-    else {
-      // from the pack (or from nowhere, in creative) into an empty hotbar slot if there is one, else trade places with the held stack
-      const to = free >= 0 ? free : inv.sel, was = inv.slots[to];
-      inv.slots[to] = at >= 0 ? inv.slots[at] : { k: key, n: item(key).stack };
-      if (at >= 0) inv.slots[at] = was;
-      else if (was) { const left = inv.add(was); if (left) this.dropItem({ k: was.k, n: left, m: was.m }); }
-      inv.sel = to;
-    }
-    inv.touch(); this.audio.play('click', 0.4);
-  }
-  private tintOf(id: number): number { const t = BLOCKS[id].tint; return t === 1 ? 0x86c653 : t === 2 ? 0x6fb445 : t === 3 ? 0x3a84dc : 0xffffff; }
-  private burst(x: number, y: number, z: number, id: number): void {
-    const l = this.world.getLight(x, y, z), layer = T_LAYER[id * 6], tint = this.tintOf(id), glow = BLOCKS[id].emissive > 150 ? 0.7 : 0;
-    for (let i = 0; i < 18; i++) this.particles.spawn(x + Math.random(), y + Math.random(), z + Math.random(), (Math.random() - 0.5) * 3.4, Math.random() * 4, (Math.random() - 0.5) * 3.4,
-      0.5 + Math.random() * 0.4, 0.13, tint, glow, 16, layer, true, Math.max((l >> 4) / 15, 0.2), (l & 15) / 15);
-  }
-  /** Break a block as the world would (no tool check): pops plants, torches and the like. */
-  private breakNatural(x: number, y: number, z: number): void {
-    const id = this.world.getBlock(x, y, z);
-    if (!id) return;
-    this.world.setBlock(x, y, z, 0);
-    for (const [k, c, a, b] of BLOCKS[id].drops) if (Math.random() < c) this.drops.spawn(x + 0.5, y + 0.3, z + 0.5, { k, n: a + Math.floor(Math.random() * (b - a + 1)) });
-  }
   onBroken(x: number, y: number, z: number, id: number): void {
-    const w = this.world, b = BLOCKS[id], harvest = rules.canHarvest(id, this.inv) && !this.creative;
-    const e = w.getEnt(x, y, z);
-    if (e) {
-      const s: Slot[] = e.kind === 'crate' ? this.rollLoot(e.data.loot) : e.data.s || (e.data.loot ? this.rollLoot(e.data.loot) : []);
-      for (const it of s) if (it) this.drops.spawn(x + 0.5, y + 0.5, z + 0.5, it);
-      w.removeEnt(x, y, z);
-    }
-    if (b.use === 'guestbed' && this.dim === 0) this.npcs.removeBed(x, y, z);
-    if (b.door) { for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === id) w.setBlock(x, y + dy, z, 0); }
-    w.setBlock(x, y, z, 0);
-    if ((id === B.hollow_frame && this.dim !== 1) || (id === B.rift_frame && this.dim !== 2)) this.collapseGate(x, y, z, id === B.hollow_frame ? 1 : 2);
-    this.burst(x, y, z, id);
-    this.audio.play('break_' + b.sound, 0.9);
-    this.stats.exhaustion += 0.02;
-    this.flags.add('mine:' + b.key);
-    if (harvest) for (const [k, c, lo, hi] of b.drops) if (Math.random() < c) this.drops.spawn(x + 0.5, y + 0.4, z + 0.5, { k, n: lo + Math.floor(Math.random() * (hi - lo + 1)) }, undefined, undefined, undefined, 0.25);
+    if (!act.breakBlock(this.sim, this.me, x, y, z, id)) return;
+    this.fx.burst(BURST.block, x, y, z, id, 0); this.audio.play('break_' + BLOCKS[id].sound, 0.9);
   }
 
   primary(pressed: boolean, held: boolean): boolean {
     if (!held || this.stats.dead) return false;
     const inv = this.inv, st = this.stats, p = this.player, it = inv.held(), d = it ? item(it.k) : null, wpn = d?.weapon, style = wpn?.style ?? 'melee';
     const dir = p.dir(this.v), ex = p.x, ey = p.y + p.eye, ez = p.z;
-    const rate = rules.attackRate(inv, st), crit = Math.random() < st.d.crit;
+    const rate = rules.attackRate(inv, st);
     if (style !== 'melee' && wpn) {
       if (this.atkCd > 0) return true;
       this.atkCd = 1 / rate;
-      if (style === 'ranged') {
-        const slot = inv.findTagged('arrow');
-        if (slot < 0) { if (this.warnT <= 0) { this.toast('No arrows', '#ff9a8a'); this.audio.play('error', 0.5); this.warnT = 1.5; } return true; }
-        const a = inv.slots[slot]!, extra = item(a.k).ammoDmg ?? 0;
-        if (--a.n <= 0) inv.slots[slot] = null;
-        inv.touch();
-        this.proj.fire('arrow', ex + dir.x * 0.4, ey - 0.12 + dir.y * 0.4, ez + dir.z * 0.4, dir.x, dir.y + 0.02, dir.z, (wpn.dmg + extra) * st.dmgMult('ranged') * (crit ? 2 : 1), this.me, wpn.projSpeed, 'ranged', wpn.knock, crit);
-        this.audio.play('bow'); this.swing = 1;
-      } else {
-        const cost = wpn.mana ?? 0;
-        if (st.mana < cost) { if (this.warnT <= 0) { this.toast('Not enough mana', '#9ad0ff'); this.audio.play('error', 0.5); this.warnT = 1.5; } return true; }
-        st.mana -= cost; this.swing = 1;
-        if (style === 'magic') { this.proj.fire(wpn.proj!, ex + dir.x * 0.5, ey - 0.15 + dir.y * 0.5, ez + dir.z * 0.5, dir.x, dir.y, dir.z, wpn.dmg * st.dmgMult('magic') * (crit ? 2 : 1), this.me, wpn.projSpeed, 'magic', wpn.knock, crit); this.audio.play('magic'); }
-        else {
-          const mine = this.mobs.list.filter((m) => m.active && m.def.ai === 'minion' && m.owner === this.me.id);
-          if (mine.length >= st.d.minions) this.mobs.remove(mine.sort((a, b) => a.id - b.id)[0]);
-          const m = this.mobs.spawn(wpn.minion!, p.x + dir.x, p.y + 1.5, p.z + dir.z);
-          if (m) { m.minionDmg = wpn.dmg; m.owner = this.me.id; this.audio.play('summon'); this.fx.burst(BURST.puff, m.x, m.y + 0.3, m.z, 14, m.def.parts[0].c); }
-          this.atkCd = 0.6;
-        }
-      }
+      const r = act.fire(this.sim, this.me, ex, ey, ez, dir.x, dir.y, dir.z);
+      if (r === 2) this.warn('No arrows', '#ff9a8a', 1.5, true);
+      else if (r === 3) this.warn('Not enough mana', '#9ad0ff', 1.5, true);
+      else if (r === 1) { this.swing = 1; if (style === 'ranged') this.audio.play('bow'); else if (style === 'magic') this.audio.play('magic'); else this.atkCd = 0.6; }
       return true;
     }
     const reach = (wpn?.reach ?? 3.3) + st.d.reach * 0.5, h = this.interact.hit;
     const r = rayHitMobs(this.ents.mobs, ex, ey, ez, dir.x, dir.y, dir.z, reach, 0.18, NOT_FRIEND);
     if (r && (!h.hit || r.t <= h.dist + 0.2)) {
-      if (this.atkCd <= 0) {
-        this.atkCd = 1 / rate; this.swing = 1; this.audio.play('swing', 0.6);
-        const dmg = (wpn?.dmg ?? 2) * st.dmgMult('melee') * (crit ? 2 : 1) * (0.92 + Math.random() * 0.16);
-        const m = this.mobs.byId(r.m.id);
-        if (m) this.mobs.hurt(m, dmg, dir.x, dir.z, wpn?.knock ?? 3, crit, this.me);
-        this.hud.hitMark(crit);
-        p.shake(crit ? 0.22 : 0.12); st.exhaustion += 0.03;
-      }
+      if (this.atkCd <= 0) { this.atkCd = 1 / rate; this.swing = 1; this.audio.play('swing', 0.6); act.attack(this.sim, this.me, r.m.id, dir.x, dir.z); }
       return true;
     }
     if (pressed && this.atkCd <= 0) { this.swing = 1; this.atkCd = 0.25; if (!h.hit) this.audio.play('swing', 0.4); }
@@ -422,13 +313,13 @@ export class Game implements InteractHost, Sink {
   }
 
   secondary(hit: RayHit | null, pressed: boolean): boolean {
-    const p = this.player, w = this.world, inv = this.inv, st = this.stats;
+    const p = this.player, inv = this.inv, st = this.stats, me = this.me, sim = this.sim;
     if (st.dead) return false;
     const dir = p.dir(this.v);
     // talk to townsfolk
     if (pressed) {
       const r = rayHitMobs(this.ents.mobs, p.x, p.y + p.eye, p.z, dir.x, dir.y, dir.z, hit ? Math.min(4, hit.dist) : 4, 0.15, IS_NPC);
-      if (r) { const n = npcOf(r.m.def.key), m = this.mobs.byId(r.m.id); if (n && m) { m.talk = 6; this.audio.play('click'); this.win.show('shop', { shop: n }); return true; } }
+      if (r && npcOf(r.m.def.key) && act.talk(sim, me, r.m.id)) return true;
     }
     const it = inv.held(), d = it ? item(it.k) : null;
     if (hit && pressed && !p.sneaking) {
@@ -436,26 +327,25 @@ export class Game implements InteractHost, Sink {
       if (use && this.useBlock(hit, use)) return true;
     }
     if (!it || !d) return false;
-    if (d.block !== undefined && hit) return this.place(hit, d.block);
+    if (d.block !== undefined && hit) {
+      if (!act.place(sim, me, hit, d.block)) return false;
+      this.audio.play(act.placeSound(d.block), 0.8, 0.9); this.swing = 1;
+      return true;
+    }
     if (d.use && hit && pressed) {
-      if (d.use === 'door') return this.placeDoor(hit);
+      if (d.use === 'door') { if (!act.placeDoor(sim, me, hit)) return false; this.audio.play('door'); return true; }
       if (d.use === 'gate1' || d.use === 'gate2') {
-        const x = hit.x + hit.nx, y = hit.y + hit.ny, z = hit.z + hit.nz;
+        const x = hit.x + hit.nx, y = hit.y + hit.ny, z = hit.z + hit.nz, realm = sim.realms[me.dim];
         if (hit.ny !== 1) { this.toast('Place the gate on the ground.', '#ff9a8a'); return true; }
         const alongX = Math.abs(dir.z) > Math.abs(dir.x);
-        if (!this.gateFits(x, y, z, alongX)) { this.toast('The gate needs a clear space 4 wide and 5 tall.', '#ff9a8a'); this.audio.play('error', 0.5); return true; }
-        this.buildGate(d.use === 'gate1' ? 1 : 2, x, y, z, alongX);
-        inv.consumeHeld(); this.audio.play('portal'); return true;
+        if (!gateFits(realm, x, y, z, alongX)) { this.toast('The gate needs a clear space 4 wide and 5 tall.', '#ff9a8a'); this.audio.play('error', 0.5); return true; }
+        if (placeGate(realm, me, d.use === 'gate1' ? 1 : 2, x, y, z, alongX)) this.audio.play('portal');
+        return true;
       }
       if (d.use.startsWith('summon')) { this.toast('Use this at its altar. The guide points the way.', '#ffd9a0'); return true; }
     }
     if (!pressed || this.useCd > 0) return false;
-    if (d.use === 'recall') {
-      if (this.recallT > 0) { this.toast('The stone is still warm.', '#ff9a8a'); return true; }
-      this.recallT = 30; this.audio.play('teleport');
-      this.goHome();
-      return true;
-    }
+    if (d.use === 'recall') { if (!recall(sim, me)) this.toast('The stone is still warm.', '#ff9a8a'); return true; }
     if (d.food || d.heal || d.restoreMana || d.buff) {
       const r = this.consume(inv.sel);
       if (r === 2) this.swing = 1;
@@ -463,21 +353,21 @@ export class Game implements InteractHost, Sink {
     }
     return false;
   }
+  private useBlock(hit: RayHit, use: string): boolean {
+    if (!act.useBlock(this.sim, this.me, hit, use)) return false;
+    // a station opens here without waiting to be told; a crate is a block this player just broke
+    if (act.STATIONS[use]) { this.audio.play('click'); this.win.show('station', { station: act.STATIONS[use] }); }
+    else if (use === 'crate') { this.fx.burst(BURST.block, hit.x, hit.y, hit.z, hit.id, 0); this.audio.play('break_' + BLOCKS[hit.id].sound, 0.9); }
+    return true;
+  }
   /** Eat, drink or apply the consumable in `slot`. Returns 0 when nothing happened, 1 when refused with feedback, 2 when used. */
   private consume(slot: number): number {
-    const inv = this.inv, st = this.stats, p = this.player, it = inv.slots[slot], d = it ? item(it.k) : null;
-    if (!it || !d) return 0;
-    const dir = p.dir(this.v);
-    if (d.heal && !d.food) { if (st.salveCd > 0) { if (this.warnT <= 0) { this.toast(`Salves need ${Math.ceil(st.salveCd)}s more`, '#ff9a8a'); this.warnT = 1; } return 1; } st.salveCd = 9; }
-    else if (d.food && st.hunger >= 20 && !d.heal && !d.restoreMana) return 0;
-    if (d.food) { st.hunger = Math.min(20, st.hunger + d.food); if (d.food >= 8) st.buffs.set('fed', 120); }
-    if (d.heal) { st.heal(d.heal); this.floater(p.x + dir.x, p.y + 1.6, p.z + dir.z, '+' + d.heal, '#7fd66b'); }
-    if (d.restoreMana) st.mana = Math.min(st.maxMana, st.mana + d.restoreMana);
-    if (d.buff) st.buffs.set(d.buff[0], d.buff[1]);
-    if (--it.n <= 0) inv.slots[slot] = null;
-    inv.touch(); st.recompute(inv); this.useCd = 0.35;
-    this.audio.play(d.food ? 'eat' : 'drink');
-    return 2;
+    const it = this.inv.slots[slot], d = it ? item(it.k) : null;
+    if (!d) return 0;
+    const r = act.consume(this.sim, this.me, slot);
+    if (r === 1) this.warn(`Salves need ${Math.ceil(this.stats.salveCd)}s more`, '#ff9a8a', 1, false);
+    else if (r === 2) { this.useCd = 0.35; this.audio.play(d.food ? 'eat' : 'drink'); }
+    return r;
   }
   /** H: apply the salve that best covers missing health without scrolling to it. */
   private quickHeal(): void {
@@ -496,174 +386,12 @@ export class Game implements InteractHost, Sink {
     this.consume(best >= 0 ? best : big);
   }
 
-  private useBlock(hit: RayHit, use: string): boolean {
-    const w = this.world, { x, y, z } = hit, p = this.player;
-    if (STATIONS[use]) { this.audio.play('click'); this.win.show('station', { station: STATIONS[use] }); return true; }
-    if (use.startsWith('forge')) {
-      let e = w.getEnt(x, y, z);
-      if (!e) e = w.setEnt(x, y, z, 'forge', { s: [null, null, null], burn: 0, burnMax: 0, prog: 0, need: 0, level: +use.slice(5), rev: 0 });
-      if (e) { this.audio.play('click'); this.win.show('forge', { forge: e }); }
-      return true;
-    }
-    if (use === 'chest') {
-      let e = w.getEnt(x, y, z);
-      if (!e) e = w.setEnt(x, y, z, 'chest', { s: null, loot: null });
-      if (!e) return true;
-      if (!e.data.s) { e.data.s = new Array(27).fill(null); if (e.data.loot) this.rollLoot(e.data.loot).forEach((it, i) => (e!.data.s[(i * 5 + 3) % 27] = it)); e.data.loot = null; }
-      this.chestOpen = w.chunkAt(x >> 4, z >> 4); this.markChestDirty();
-      this.audio.play('chest'); this.win.show('chest', { chest: e.data.s });
-      return true;
-    }
-    if (use === 'crate') { this.onBroken(x, y, z, hit.id); return true; }
-    if (use === 'bed') {
-      if (this.dim !== 0) { this.toast('A bedroll only holds your spawn in the Overworld.', '#ff9a8a'); return true; }
-      this.spawn = [x, y, z];
-      if (this.isNight() && this.dim === 0) {
-        if (this.mobs.nearestHostile(p.x, p.y, p.z, 14) || this.events.active) this.toast('You cannot rest with enemies near.', '#ff9a8a');
-        else { this.clock = Math.floor(this.clock) + 1.02; this.stats.buffs.set('dawn', 180); this.stats.recompute(this.inv); this.hud.showBanner('Morning', 'You wake rested', '#ffe9a8'); }
-      } else this.toast('Spawn point set.', '#b8f070');
-      return true;
-    }
-    if (use === 'guestbed') { this.toast(this.npcs.status(x, y, z, this.dim), '#8fd0ff'); return true; }
-    if (use === 'door') {
-      const swap: Record<string, string> = { door_x: 'door_x_open', door_x_open: 'door_x', door_z: 'door_z_open', door_z_open: 'door_z' }, to = B[swap[BLOCKS[hit.id].key]];
-      for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === hit.id) w.setBlock(x, y + dy, z, to, true);
-      w.setBlock(x, y, z, to, true); this.audio.play('door');
-      return true;
-    }
-    if (use === 'berries') {
-      w.setBlock(x, y, z, B.berry_bush_empty); this.drops.spawn(x + 0.5, y + 0.6, z + 0.5, { k: 'berries', n: 1 + Math.floor(Math.random() * 3) }); this.audio.play('dig_leaf');
-      return true;
-    }
-    if (use.startsWith('altar')) { this.trySummon(+use.slice(5), x, y, z); return true; }
-    return false;
-  }
-  private trySummon(n: number, x: number, y: number, z: number): void {
-    const boss = BOSSES[n - 1], it = this.inv.held();
-    if (this.mobs.boss()) return;
-    if (!it || item(it.k).use !== 'summon' + n) { const need = [...ITEMS.values()].find((q) => q.use === 'summon' + n); this.toast(`The altar waits for a ${need?.name ?? 'summoning item'}.`, '#ffd9a0'); return; }
-    if (n === 7 && !this.isNight()) { this.toast('The Hart only answers at night.', '#ffd9a0'); return; }
-    if (this.events.active) this.events.end(false);
-    this.inv.consumeHeld();
-    const m = this.mobs.spawn(boss.key, x + 0.5, y + (boss.boss!.move === 'walk' ? 1.2 : 5), z + 6.5);
-    if (!m) return;
-    m.boss!.altar = [x, y, z];
-    this.hud.showBanner(boss.name, boss.boss!.intro, '#ffb86a');
-    this.audio.play('roar', 1, boss.voice ?? 0.3); this.audio.play('bell', 0.7); this.player.shake(0.5);
-    for (let i = 0; i < 60; i++) this.particles.spawn(x + 0.5, y + 1.2, z + 0.5, (Math.random() - 0.5) * 10, Math.random() * 12, (Math.random() - 0.5) * 10, 1.2, 0.2, boss.parts[0].c, 1, 5);
-  }
 
-  private place(hit: RayHit, id: number): boolean {
-    const w = this.world, p = this.player, b = BLOCKS[id];
-    let x = hit.x, y = hit.y, z = hit.z;
-    if (!T_REPLACE[hit.id]) { x += hit.nx; y += hit.ny; z += hit.nz; }
-    if (y < 1 || y > BUILD_MAX || !T_REPLACE[w.getBlock(x, y, z)]) return false;
-    if (b.solid && x + 1 > p.x - p.hw && x < p.x + p.hw && y + 1 > p.y && y < p.y + p.h && z + 1 > p.z - p.hw && z < p.z + p.hw) return false;
-    if (b.support && !(T_SOLID[w.getBlock(x, y - 1, z)] && T_OPAQUE[w.getBlock(x, y - 1, z)])) return false;
-    if (b.solid && this.mobs.list.some((m) => m.active && m.def.ai !== 'minion' && x + 1 > m.x - m.hw && x < m.x + m.hw && y + 1 > m.y && y < m.y + m.h && z + 1 > m.z - m.hw && z < m.z + m.hw)) return false;
-    if (!w.setBlock(x, y, z, id)) return false;
-    if (!this.creative) this.inv.consumeHeld();
-    if (b.use === 'guestbed') { if (this.dim === 0) this.npcs.addBed(x, y, z); else this.toast('Townsfolk only settle in the Overworld.', '#ff9a8a'); }
-    this.flags.add('place:' + b.key);
-    this.audio.play(b.sound === 'stone' || b.sound === 'metal' ? 'place' : 'dig_' + b.sound, 0.8, 0.9); this.swing = 1;
-    return true;
-  }
-  private placeDoor(hit: RayHit): boolean {
-    const w = this.world, d = this.player.dir(this.v), x = hit.x + hit.nx, y = hit.y + hit.ny, z = hit.z + hit.nz;
-    if (!T_REPLACE[w.getBlock(x, y, z)] || !T_REPLACE[w.getBlock(x, y + 1, z)] || !T_SOLID[w.getBlock(x, y - 1, z)]) return false;
-    const id = Math.abs(d.z) > Math.abs(d.x) ? B.door_x : B.door_z;
-    w.setBlock(x, y, z, id); w.setBlock(x, y + 1, z, id);
-    this.inv.consumeHeld(); this.audio.play('door'); this.flags.add('place:door');
-    return true;
-  }
-  /** True when all 20 cells of a gate are free: buildGate() would otherwise erase chests, forges or an altar. */
-  private gateFits(x: number, y: number, z: number, alongX: boolean): boolean {
-    const w = this.world, p = this.player;
-    if (y < 1 || y + 4 > BUILD_MAX) return false;
-    for (let a = -1; a <= 2; a++) for (let h = 0; h <= 4; h++) {
-      const bx = x + (alongX ? a : 0), by = y + h, bz = z + (alongX ? 0 : a);
-      if (!T_REPLACE[w.getBlock(bx, by, bz)] || !w.ready(bx, bz)) return false;
-      if (bx + 1 > p.x - p.hw && bx < p.x + p.hw && by + 1 > p.y && by < p.y + p.h && bz + 1 > p.z - p.hw && bz < p.z + p.hw) return false;
-    }
-    return true;
-  }
-  /** A gate placed outside its own dimension goes dark when its frame is broken, and gives the kit back.
-   *  Arrival gates (a Hollow Gate in the Hollows, a Rift Gate in the Skyrift) keep their sheet: they are the way home. */
-  private collapseGate(x: number, y: number, z: number, kind: number): void {
-    const w = this.world, portal = kind === 1 ? B.hollow_portal : B.rift_portal, st = [x, y, z], ret = this.portalReturn[this.dim];
-    let n = 0, first = true;
-    while (st.length && n < 16) {
-      const cz = st.pop()!, cy = st.pop()!, cx = st.pop()!;
-      // the broken block may be a corner of the frame, which touches the sheet only diagonally: seed from all 26 neighbours
-      for (let i = 0, cnt = first ? 27 : 6; i < cnt; i++) {
-        const ax = cx + (first ? (i % 3) - 1 : i === 0 ? 1 : i === 1 ? -1 : 0), ay = cy + (first ? ((i / 3) | 0) % 3 - 1 : i === 2 ? 1 : i === 3 ? -1 : 0), az = cz + (first ? ((i / 9) | 0) - 1 : i === 4 ? 1 : i === 5 ? -1 : 0);
-        if (w.getBlock(ax, ay, az) !== portal) continue;
-        w.setBlock(ax, ay, az, 0); st.push(ax, ay, az); n++;
-        // crossing back into this dimension must not aim at a gate that is no longer there
-        if (ret && ax === ret[0] && az === ret[2] && Math.abs(ay - ret[1]) <= 2) delete this.portalReturn[this.dim];
-      }
-      first = false;
-    }
-    if (!n) return;
-    this.drops.spawn(x + 0.5, y + 0.5, z + 0.5, { k: kind === 1 ? 'hollow_gate_kit' : 'rift_gate_kit', n: 1 });
-    this.audio.play('portal', 0.6, 0.7); this.toast('The gate goes dark.', '#c8d0ff');
-  }
-  /** Raise a 4x5 gate: frame around a 2x3 sheet of portal. */
-  private buildGate(kind: number, x: number, y: number, z: number, alongX: boolean): void {
-    const w = this.world, frame = kind === 1 ? B.hollow_frame : B.rift_frame, portal = kind === 1 ? B.hollow_portal : B.rift_portal;
-    for (let a = -1; a <= 2; a++) for (let h = 0; h <= 4; h++) {
-      const edge = a === -1 || a === 2 || h === 0 || h === 4;
-      w.setBlock(x + (alongX ? a : 0), y + h, z + (alongX ? 0 : a), edge ? frame : portal);
-    }
-  }
-
-  // ---- dimension travel ---------------------------------------------------------------------
+  // ---- loading ---------------------------------------------------------------------
   private showLoading(msg: string): void {
     this.loadMsg = msg;
     if (!this.loading) { this.loading = el('div', '#loading', this.ui); this.loading.innerHTML = '<h1>PEOPLS CRAFT</h1><div class="bar"><i></i></div><div class="msg"></div>'; }
   }
-  travel(to: number, home = false): void {
-    const p = this.player, cfg = this.cfg;
-    if (to === this.dim) { this.goHome(); return; }
-    this.win.close();
-    if (!home) this.portalReturn[this.dim] = [Math.floor(p.x), Math.floor(p.y), Math.floor(p.z)];
-    const px = Math.floor(p.x), pz = Math.floor(p.z);
-    this.ready = false; this.keysReady = false; p.frozen = true; this.showLoading(to === 0 ? 'Returning to the Overworld' : `Crossing into ${DIMS[to].name}`);
-    this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); if (this.events.active) this.events.end(false);
-    this.world.setDim(to, DIMS[to].hasSky);
-    this.dim = to; this.world.setView(cfg.settings.gfx.renderDist, DIMS[to].fogScale); this.portalT = 0; this.portalArmed = false; this.hud.setPortal(0, false);
-    const ret = home ? null : this.portalReturn[to];
-    if (home) { const s = this.spawn; if (s) { p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); this.pendingBed = true; } else { p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; } }
-    else if (ret) p.teleport(ret[0] + 0.5, ret[1] + 0.1, ret[2] + 0.5);
-    else { p.teleport(px + 0.5, 120, pz + 0.5); this.arriving = to; }
-    if (to !== 0) this.flags.add('dim:' + to);
-    void cfg.db.chunkList(cfg.meta.id, to).then((l) => { this.world.savedKeys = new Set(l.map((c) => chunkKey(c[0], c[1]))); this.keysReady = true; });
-  }
-  /** Find footing after arriving somewhere new, and raise a return gate if we came by portal. */
-  private land(): void {
-    const p = this.player, w = this.world, kind = this.arriving, x0 = Math.floor(p.x), z0 = Math.floor(p.z);
-    this.arriving = -1;
-    const free = (x: number, y: number, z: number): boolean => T_SOLID[w.getBlock(x, y - 1, z)] === 1 && T_OPAQUE[w.getBlock(x, y - 1, z)] === 1 && !w.getBlock(x, y, z) && !w.getBlock(x, y + 1, z) && !w.getBlock(x, y + 2, z) && !w.getBlock(x, y + 3, z);
-    let best: [number, number, number] | null = null;
-    // areaMeshed(…, 3) in checkReady() guarantees 48 loaded blocks each way; the gate and its apron need 2 of them
-    search: for (let r = 0; r <= 44; r += 2) for (let dz = -r; dz <= r; dz += 2) for (let dx = -r; dx <= r; dx += 2) {
-      if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
-      const x = x0 + dx, z = z0 + dz;
-      if (kind === 1) { for (let y = 60; y < 150; y++) if (free(x, y, z)) { best = [x, y, z]; break search; } }
-      else { let y = w.topY(x, z); while (y > 2 && !T_SOLID[w.getBlock(x, y, z)]) y--; if (y > 4 && free(x, y + 1, z) && !T_LIQUID[w.getBlock(x, y, z)] && w.getBlock(x, y, z) !== B.cloud) { best = [x, y + 1, z]; break search; } }
-    }
-    if (!best) { if (kind === 2) this.arriveMsg = 'No land within reach. Build outward from the gate.'; best = [x0, kind === 2 ? 130 : 100, z0]; for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 3; dx++) { w.setBlock(x0 + dx, best[1] - 1, z0 + dz, kind === 2 ? B.riftstone : B.gloomstone); for (let k = 0; k < 5; k++) w.setBlock(x0 + dx, best[1] + k, z0 + dz, 0); } }
-    if (kind > 0) {
-      for (let a = -1; a <= 2; a++) for (let k = 0; k < 5; k++) for (let dz = -1; dz <= 1; dz++) if (dz !== 0 || k > 0) { const id = w.getBlock(best[0] + a, best[1] + k, best[2] + dz); if (id && dz !== 0) w.setBlock(best[0] + a, best[1] + k, best[2] + dz, 0); }
-      this.buildGate(kind, best[0], best[1] - 1, best[2], true);
-      for (let a = -1; a <= 2; a++) w.setBlock(best[0] + a, best[1] - 1, best[2] + 1, kind === 1 ? B.gloomstone : B.riftstone);
-      p.teleport(best[0] + 0.5, best[1] + 0.05, best[2] + 1.5);
-      this.portalReturn[kind] = [best[0], best[1], best[2]];
-      this.hud.showBanner(DIMS[kind].name, kind === 1 ? 'No sky here. Bring light.' : 'Mind the edges', kind === 1 ? '#8af0d8' : '#c8d0ff');
-    } else p.teleport(best[0] + 0.5, best[1] + 0.05, best[2] + 0.5);
-    this.safe[0] = p.x; this.safe[1] = p.y; this.safe[2] = p.z;
-  }
-
   // ---- input ----------------------------------------------------------------------------------
   private onKey(code: string, e: KeyboardEvent): boolean {
     if (!this.ready || this.menu.dead) return false;
@@ -679,44 +407,17 @@ export class Game implements InteractHost, Sink {
   }
   private closeConsole(): void { if (this.console.style.display === 'none') return; this.console.style.display = 'none'; this.console.blur(); this.input.uiMode = false; this.input.lock(); }
 
-  /** Developer commands (also reachable from the T command line). */
-  cheat(cmd: string): string {
-    const a = cmd.trim().split(/\s+/), p = this.player;
-    switch (a[0]) {
-      case 'give': { if (!ITEMS.has(a[1])) return 'unknown item ' + a[1]; const left = this.inv.add({ k: a[1], n: +(a[2] ?? 1) }); return left ? 'inventory full' : `gave ${a[2] ?? 1} ${a[1]}`; }
-      case 'time': this.clock = Math.floor(this.clock) + (a[1] === 'day' ? 0.15 : a[1] === 'night' ? 0.6 : a[1] === 'dusk' ? 0.49 : +a[1] || 0); return 'time set';
-      case 'tp': p.teleport(+a[1], +a[2], +a[3]); return 'teleported';
-      case 'fly': p.flying = !p.flying; return 'fly ' + p.flying;
-      case 'creative': this.creative = !this.creative; p.flying = this.creative; return 'creative ' + this.creative;
-      case 'god': this.god = !this.god; return 'god ' + this.god;
-      case 'heal': this.stats.hp = this.stats.maxHp; this.stats.hunger = 20; this.stats.mana = this.stats.maxMana; return 'healed';
-      case 'level': this.stats.level = +a[1] || 1; this.stats.points += 2 * (+a[1] || 1); this.stats.recompute(this.inv); return 'level set';
-      case 'kill': for (const m of this.mobs.list) if (m.active && m.def.hostile) this.mobs.hurt(m, 1e6, 0, 0, 0, false, this.me); return 'cleared';
-      case 'spawn': return this.mobs.spawn(a[1], p.x + 3, p.y + 1, p.z) ? 'spawned' : 'failed';
-      case 'boss': { const b = BOSSES[(+a[1] || 1) - 1]; const m = this.mobs.spawn(b.key, p.x, p.y + 3, p.z + 8); if (m) m.boss!.altar = [p.x, p.y, p.z]; return b.name; }
-      case 'flag': this.flags.add(a[1]); return 'flag set';
-      case 'event': this.events.start(a[1] as 'raid'); return 'event started';
-      case 'dim': this.travel(+a[1] || 0); return 'travelling';
-      case 'gear': { const t = TIERS[+a[1] || 2]; for (const k of ['sword', 'pickaxe', 'axe', 'bow', 'staff', 'totem', 'melee_0', 'melee_1', 'melee_2']) if (ITEMS.has(`${t.key}_${k}`)) this.inv.add({ k: `${t.key}_${k}`, n: 1 }); this.inv.add({ k: 'arrow', n: 99 }); this.inv.add({ k: 'salve', n: 10 }); return t.name + ' kit'; }
-      case 'locate': { const o = locate(a[1], p.x, p.z, this.cfg.meta.seed, this.dim === 0 ? this.climate : null); return o ? `${a[1]} at ${o[0]} ${o[1]} ${o[2]}` : 'none found'; }
-      case 'seed': return String(this.cfg.meta.seed);
-      default: return 'commands: give time tp fly creative god heal level kill spawn boss flag event dim gear locate';
-    }
-  }
-
-  // ---- simulation ----------------------------------------------------------------------------------
+  // ---- the fixed step ----------------------------------------------------------------------------------
   private tick(dt: number): void {
-    const p = this.player, inp = this.input, inv = this.inv, st = this.stats, w = this.world;
+    const p = this.player, inp = this.input, inv = this.inv, st = this.stats, w = this.world, me = this.me, sim = this.sim;
     if (!this.ready) return;
-    this.sim.tick++;
     for (let i = 0; i < 9; i++) if (inp.hit(DIGITS[i])) inv.sel = i;
     if (inp.wheel) inv.sel = (((inv.sel + inp.wheel) % 9) + 9) % 9;
     if (inp.hit('KeyH') && inp.locked) this.quickHeal();
-    if (inp.hit('KeyQ')) { const h = inv.held(); if (h) { const n = inp.down('ControlLeft') || inp.down('ControlRight') ? h.n : 1; this.dropItem({ k: h.k, n, m: h.m }); inv.consumeHeld(n); } }
-    st.sync(inv);
+    if (inp.hit('KeyQ')) act.dropHeld(sim, me, inp.down('ControlLeft') || inp.down('ControlRight'));
     p.moveMult = (1 + st.d.speed) * (p.inWater ? 1 + st.d.swim : 1); p.jumpMult = Math.sqrt(1 + st.d.jump); p.extraJumps = st.d.extraJump;
-    p.autoJump = this.cfg.settings.autoJump; p.canFly = this.creative && this.cfg.settings.flyToggle;
-    p.frozen = st.dead || this.arriving >= 0;
+    p.autoJump = this.cfg.settings.autoJump; p.canFly = me.modes.creative && this.cfg.settings.flyToggle;
+    p.frozen = st.dead || me.arriving >= 0;
     p.tick(dt, inp, w, this.time);
     // water entry: a splash scaled by how hard we hit it, and a softer one as the head crosses the surface
     if (this.splashCd > 0) this.splashCd -= dt;
@@ -732,45 +433,24 @@ export class Game implements InteractHost, Sink {
       }
     }
     if (p.headInWater !== this.wasUnder) { this.wasUnder = p.headInWater; if (this.splashCd <= 0) { this.splashCd = 0.4; this.audio.play('splash', 0.3, p.headInWater ? 0.6 : 1.2); } }
-    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; this.fx.tick(dt); if (this.warnT > 0) this.warnT -= dt; if (this.fullT > 0) this.fullT -= dt; if (this.recallT > 0) this.recallT -= dt;
+    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; this.fx.tick(dt); if (this.warnT > 0) this.warnT -= dt;
 
-    // landing, footsteps, hazards
-    if (p.landed > 0) {
-      const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z));
-      if (p.landed > 1.2) this.audio.play('step_' + (BLOCKS[below]?.sound ?? 'stone'), Math.min(1, p.landed * 0.25));
-      if (p.landed > 3.6 && !st.d.noFall && !this.creative) { st.hurtT = 0; const took = st.damage((p.landed - 3) * 5.5, Math.random, true); if (took > 0) { this.hud.flashHurt(); this.audio.play('hurt'); p.shake(0.4); if (st.dead) this.onDeath('fall'); } }
-    }
-    if (p.onGround) { this.safe[0] = p.x; this.safe[1] = p.y; this.safe[2] = p.z; }
+    // landing and footsteps
+    if (p.landed > 1.2) { const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z)); this.audio.play('step_' + (BLOCKS[below]?.sound ?? 'stone'), Math.min(1, p.landed * 0.25)); }
     // a footfall each time the stride phase passes the bottom of the view bob
     const sn = Math.floor(p.walkDist / STRIDE + 0.5);
     if (sn !== this.stepN) { this.stepN = sn; if (p.onGround) { const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z)); if (below) this.audio.play('step_' + BLOCKS[below].sound, p.sneaking ? 0.25 : 0.6); } }
-    this.hazardT -= dt;
-    if (this.hazardT <= 0) {
-      this.hazardT = 0.5;
-      if (p.inLava && !this.creative && !this.god) { st.hurtT = 0; if (st.damage(8, Math.random, true) > 0) { this.hud.flashHurt(); this.audio.play('fizz'); if (st.dead) this.onDeath('lava'); } }
-      else for (let dy = 0; dy < 2; dy++) for (const [dx, dz] of [[0.36, 0], [-0.36, 0], [0, 0.36], [0, -0.36], [0, 0]]) {
-        const id = w.getBlock(Math.floor(p.x + dx), Math.floor(p.y + dy * 0.9 - (dx || dz ? 0 : 0.1)), Math.floor(p.z + dz));
-        if (T_DAMAGE[id] && !T_LIQUID[id]) { this.hurtPlayer(T_DAMAGE[id] * 3, Math.floor(p.x + dx) + 0.5, Math.floor(p.z + dz) + 0.5, BLOCKS[id].name, 3); dy = 2; break; }
-      }
-      const da = this.deathAt;
-      if (da && da[0] === this.dim && !st.dead && Math.abs(p.x - da[1]) < 6 && Math.abs(p.z - da[3]) < 6 && Math.abs(p.y - da[2]) < 8) this.deathAt = null;
-      if (st.hunger <= 0 && st.hp <= 5 && !st.dead && Math.random() < 0.1) { st.hurtT = 0; st.damage(6, Math.random, true); if (st.dead) this.onDeath('hunger'); }
-    }
-    if (p.y < (this.dim === 2 ? 20 : -16) && !st.dead) {
-      if (this.dim === 2 && !this.creative) { st.hurtT = 0; st.damage(st.maxHp * 0.35, Math.random, true); this.hud.flashHurt(); this.audio.play('teleport'); if (st.dead) this.onDeath('void'); else { p.teleport(this.safe[0], this.safe[1] + 0.2, this.safe[2]); this.toast('The Rift throws you back.', '#c8d0ff'); } }
-      else p.teleport(p.x, 220, p.z);
-    }
 
+    me.uiOpen = this.win.open; if (!this.win.open) me.window = null;
     this.interact.tick(dt, inp, this, inp.locked && !st.dead);
-    if (inp.clicks[1] && this.interact.hit.hit) this.pickBlock(this.interact.hit.id);
-    st.tick(dt, inv, p.sprinting);
-    this.ents.begin(this.sim.realms[this.dim], dt);
-    this.mobs.tick(dt); this.proj.tick(dt); this.drops.tick(dt);
-    this.ents.end(this.sim.realms[this.dim], dt);
-    this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; this.tickBlocks(0.25); }
-    this.tickPortal(dt); this.fluids.tick(dt);
-    this.sim.events.tick(dt); this.sim.npcs.tick(dt); this.sim.quests.tick(dt); this.quests.tick(dt);
-    this.clock += dt / DAY_LENGTH;
+    if (inp.clicks[1] && this.interact.hit.hit && act.pickBlock(sim, me, this.interact.hit.id)) this.audio.play('click', 0.4);
+
+    // the world: one step of the simulation, with the views told before and after
+    this.ents.begin(sim.realms[me.dim], dt);
+    sim.step();
+    this.ents.end(sim.realms[me.dim], dt);
+    this.quests.tick(dt);
+    this.portalHud();
     this.saveT += dt; if (this.saveT > 30) { this.saveT = 0; void this.save(); }
 
     // prompts
@@ -790,77 +470,20 @@ export class Game implements InteractHost, Sink {
     if (this.npcPrompt) prompt = this.npcPrompt;
     else if (h.hit && h.dist < this.reach()) {
       const u = BLOCKS[h.id].use;
-      if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.ents.boss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !this.isNight() ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
+      if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.ents.boss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !isNight(this.clock) ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
       else if (u) prompt = u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
       else if (!rules.canHarvest(h.id, inv) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
     }
     this.hud.setPrompt(this.win.open || this.menu.open ? null : !inp.locked && !inp.uiMode ? 'Click to take control' : prompt);
   }
 
-  private tickBlocks(dt: number): void {
-    const w = this.world, p = this.player, cx = Math.floor(p.x) >> 4, cz = Math.floor(p.z) >> 4;
-    for (let dz = -3; dz <= 3; dz++) for (let dx = -3; dx <= 3; dx++) {
-      const c = w.chunkAt(cx + dx, cz + dz);
-      if (!c || !c.ents.size) continue;
-      for (const e of c.ents.values()) {
-        if (e.kind === 'forge') {
-          // replay the time since this forge was last ticked, so it keeps working while its chunk is far away or unloaded
-          const d = e.data, now = this.clock * DAY_LENGTH;
-          let left = d.at === undefined ? dt : Math.min(900, Math.max(dt, now - d.at));
-          const quiet = left > 1;
-          d.at = now;
-          while (left > 0) { const st = Math.min(left, 0.5); this.tickForge(e, c, st, quiet); left -= st; if (d.burn <= 0 && d.prog <= 0) break; }
-        } else if (e.kind === 'nest') {
-          if (w.getBlock(e.x, e.y, e.z) !== B.brood_nest) { w.removeEnt(e.x, e.y, e.z); continue; }   // orphan from an older save
-          const d = e.data; d.t = (d.t ?? 0) - dt;
-          const dist = Math.hypot(e.x - p.x, e.y - p.y, e.z - p.z);
-          if (d.t <= 0 && dist < 18 && dist > 3) {
-            d.t = 7;
-            if (this.mobs.count((m) => m.def.key === d.mob && Math.hypot(m.x - e.x, m.z - e.z) < 14) < 3) {
-              const m = this.mobs.spawn(d.mob, e.x + 0.5 + (Math.random() - 0.5) * 3, e.y + 1.1, e.z + 0.5 + (Math.random() - 0.5) * 3);
-              if (m) for (let i = 0; i < 14; i++) this.particles.spawn(e.x + 0.5, e.y + 1, e.z + 0.5, (Math.random() - 0.5) * 3, Math.random() * 3, (Math.random() - 0.5) * 3, 0.6, 0.12, 0xff6a5a, 1, 0);
-            }
-          }
-        }
-      }
-    }
-    // random ticks: berry bushes regrow
-    for (let i = 0; i < 24; i++) {
-      const x = Math.floor(p.x + (Math.random() - 0.5) * 64), z = Math.floor(p.z + (Math.random() - 0.5) * 64), y = Math.floor(p.y + (Math.random() - 0.5) * 24);
-      if (w.getBlock(x, y, z) === B.berry_bush_empty && Math.random() < 0.02) w.setBlock(x, y, z, B.berry_bush);
-    }
-  }
-  private tickForge(e: BlockEnt, c: Chunk, dt: number, quiet = false): void {
-    const d = e.data, s = d.s as Slot[], w = this.world;
-    const inp = s[0], r = inp ? SMELTS.find((q) => matches(q.in, inp.k) && q.forge <= d.level) : undefined;
-    const out = s[2], room = !!r && (!out || (out.k === r.out && out.n + r.n <= item(r.out).stack));
-    const was = d.burn > 0;
-    if (d.burn > 0) d.burn -= dt;
-    if (r && room) {
-      if (d.burn <= 0 && s[1] && item(s[1].k).fuel) { d.burn = d.burnMax = item(s[1].k).fuel!; if (--s[1].n <= 0) s[1] = null; d.rev++; c.modified = true; }
-      if (d.burn > 0) {
-        d.need = r.time / (1 + (d.level - r.forge) * 0.6); d.prog += dt;
-        if (d.prog >= d.need) {
-          d.prog = 0;
-          if (--inp!.n <= 0) s[0] = null;
-          if (out) out.n += r.n; else s[2] = { k: r.out, n: r.n };
-          d.rev++; c.modified = true; this.flags.add('smelt:' + r.out);
-          if (!quiet && Math.hypot(e.x - this.player.x, e.z - this.player.z) < 12) this.audio.play('fizz', 0.4, 1, [e.x, e.y, e.z]);
-        }
-      } else d.prog = Math.max(0, d.prog - dt * 2);
-    } else { d.prog = 0; d.need = 0; }
-    const now = d.burn > 0, id = w.getBlock(e.x, e.y, e.z);
-    if (was !== now && (id === B.furnace || id === B.furnace_lit)) w.setBlock(e.x, e.y, e.z, now ? B.furnace_lit : B.furnace, true);
-    if (now && !quiet && Math.random() < 0.3) this.particles.spawn(e.x + 0.5 + (Math.random() - 0.5) * 0.4, e.y + 1.05, e.z + 0.5 + (Math.random() - 0.5) * 0.4, 0, 0.8, 0, 1.2, 0.1, 0x8a8a92, 0, -0.4);
-  }
-  private tickPortal(dt: number): void {
-    const p = this.player, id = this.world.getBlock(Math.floor(p.x), Math.floor(p.y + 0.5), Math.floor(p.z));
+  /** The portal overlay follows the crossing timer the simulation keeps for this player. */
+  private portalHud(): void {
+    const p = this.player, me = this.me, id = this.world.getBlock(Math.floor(p.x), Math.floor(p.y + 0.5), Math.floor(p.z));
     const kind = id === B.hollow_portal ? 1 : id === B.rift_portal ? 2 : 0;
-    if (!kind) { this.portalArmed = true; if (this.portalT > 0) { this.portalT = Math.max(0, this.portalT - dt * 2); this.hud.setPortal(this.portalT / 1.6, false); } return; }
-    if (!this.portalArmed || this.win.open) return;
-    if (this.portalT === 0) this.audio.play('portal');
-    this.portalT += dt; this.hud.setPortal(Math.min(1, this.portalT / 1.6), kind === 2);
-    if (this.portalT >= 1.6) this.travel(this.dim === kind ? 0 : kind);
+    let a = this.portalA, gold = this.portalGold;
+    if (!kind) { a = me.portalT / 1.6; gold = false; } else if (me.portalArmed && !this.win.open) { a = Math.min(1, me.portalT / 1.6); gold = kind === 2; }
+    if (a !== this.portalA || gold !== this.portalGold) { this.portalA = a; this.portalGold = gold; this.hud.setPortal(a, gold); }
   }
 
   // ---- frame ----------------------------------------------------------------------------------------
@@ -916,28 +539,12 @@ export class Game implements InteractHost, Sink {
     inp.endFrame();
   }
 
+  /** Behind the loading screen: when the place is meshed, tell the simulation; it lands the player and puts it in play. */
   private checkReady(): void {
     const p = this.player, w = this.world, c = w.counts();
     if (this.loading) { (this.loading.querySelector('i') as HTMLElement).style.width = Math.min(100, (c.meshed / 49) * 100) + '%'; (this.loading.querySelector('.msg') as HTMLElement).textContent = this.loadMsg; }
     if (!this.keysReady || !w.areaMeshed(p.x, p.z, 3)) return;
-    if (this.pendingBed) {
-      // we were sent to a bed whose chunk was not loaded: now that it is, make sure the bed is still there
-      const s = this.spawn;
-      this.pendingBed = false;
-      if (s && this.dim === 0 && BLOCKS[w.getBlock(s[0], s[1], s[2])].use === 'bed') { const q = rules.standSpot(w, s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); }
-      else { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; return; }
-    }
-    if (this.arriving >= 0) this.land();
-    p.frozen = false; this.ready = true; this.portalArmed = false;
-    if (this.cfg.canSave === false && !this.noSaveWarned) { this.noSaveWarned = true; this.hud.showBanner('Saving is unavailable', 'This browser is blocking storage. Progress is lost when the tab closes.', '#ff9a8a'); }
-    const l = this.loading; this.loading = null;
-    if (l) { const rm = (): void => l.remove(); l.classList.add('out'); l.addEventListener('transitionend', rm, { once: true }); setTimeout(rm, 700); }
-    if (this.arriveMsg) { this.toast(this.arriveMsg, '#ff9a8a'); this.arriveMsg = ''; }
-    if (this.deadOnLoad) { this.deadOnLoad = false; this.stats.hp = 0; this.stats.dead = true; this.menu.death('You did not get back up', 0); }
-    if (!this.cfg.meta.data && this.dim === 0 && !this.flags.has('started')) {
-      this.flags.add('started');
-      this.hud.showBanner(this.cfg.meta.name, 'Click to look around · E for inventory · G for the guide', '#ffe9a8');
-    }
+    this.me.clientReady = true; this.sim.prepare();
   }
 
   private updateEnv(dt: number): void {
@@ -953,7 +560,7 @@ export class Game implements InteractHost, Sink {
     e.underwater = p.headInWater; e.time = this.clock % 1; e.dim = this.dim;
     e.moonPhase = (Math.floor(this.clock) % 8) / 4 - 1; e.moonTint = moonTint(this.sim.shared.events);
     const boss = this.ents.boss();
-    this.audio.setMood(!this.ready ? 'none' : boss ? 'boss' : this.dim === 1 ? 'hollows' : this.dim === 2 ? 'rift' : e.cave > 0.5 ? 'cave' : this.isNight() ? 'night' : 'day');
+    this.audio.setMood(!this.ready ? 'none' : boss ? 'boss' : this.dim === 1 ? 'hollows' : this.dim === 2 ? 'rift' : e.cave > 0.5 ? 'cave' : isNight(this.clock) ? 'night' : 'day');
   }
 
   private updateHand(dt: number): void {
@@ -1013,8 +620,8 @@ export class Game implements InteractHost, Sink {
       `cpu     chunks ${this.prof.world.toFixed(1)} ms   sim ${this.prof.tick.toFixed(1)} ms   draw ${this.prof.render.toFixed(1)} ms (worst)`,
       `pos     ${p.x.toFixed(2)} ${p.y.toFixed(2)} ${p.z.toFixed(2)}   chunk ${x >> 4} ${z >> 4}   facing ${facing}`,
       `world   ${DIMS[this.dim].name}   ${BIOMES[w.biomeAt(x, z)]?.name ?? '?'}   light sky ${l >> 4} block ${l & 15}   day ${Math.floor(this.clock)} ${Math.floor(tod)}:${String(Math.floor((tod % 1) * 60)).padStart(2, '0')}`,
-      `ents    ${this.mobs.count(() => true)} creatures   ${this.proj.alive} projectiles   ${this.drops.alive} drops   ${this.particles.alive} particles   boxes ${this.boxes.count}`,
-      `view    ${w.renderDist} chunks   seed ${this.cfg.meta.seedText}   ${p.onGround ? 'ground' : p.inWater ? 'water' : 'air'}${p.flying ? ' fly' : ''}${this.events.active ? '   event ' + this.events.active : ''}`,
+      `ents    ${this.ents.mobCount} creatures   ${this.ents.projCount} projectiles   ${this.ents.dropCount} drops   ${this.particles.alive} particles   boxes ${this.boxes.count}`,
+      `view    ${w.renderDist} chunks   seed ${this.cfg.meta.seedText}   ${p.onGround ? 'ground' : p.inWater ? 'water' : 'air'}${p.flying ? ' fly' : ''}${this.sim.shared.events.a ? '   event ' + this.sim.shared.events.a : ''}`,
     ];
   }
 }

@@ -1,5 +1,7 @@
 // Lets the simulation run on the client's own World while both live in one thread: block reads and
-// writes, block entities, and light as the mesher computed it.
+// writes, block entities (created from what the generator placed, as chunks arrive), and light as the
+// mesher computed it.
+import { BLOCKS } from '../data/blocks';
 import type { RealmStore } from '../sim/realm';
 import type { BlockEnt } from '../sim/voxels';
 import type { World } from '../world/world';
@@ -18,14 +20,11 @@ class DimStore implements RealmStore {
   removeEnt(x: number, y: number, z: number): void { if (this.w.dim === this.dim) this.w.removeEnt(x, y, z); }
   sky(x: number, y: number, z: number): number { return this.w.getLight(x, y, z) >> 4; }
   block(x: number, y: number, z: number): number { return this.w.getLight(x, y, z) & 15; }
-  entsNear(cx: number, cz: number, r: number, fn: (e: BlockEnt) => void): void {
-    if (this.w.dim !== this.dim) return;
-    for (let dz = -r; dz <= r; dz++) for (let dx = -r; dx <= r; dx++) {
-      const c = this.w.chunkAt(cx + dx, cz + dz);
-      if (!c || !c.ents.size) continue;
-      for (const e of c.ents.values()) fn(e);
-    }
+  chunkEnts(cx: number, cz: number): Iterable<BlockEnt> | null {
+    const c = this.w.dim === this.dim ? this.w.chunkAt(cx, cz) : null;
+    return c && c.ents.size ? c.ents.values() : null;
   }
+  areaReady(x: number, z: number, r: number): boolean { return this.w.dim === this.dim && this.w.areaMeshed(x, z, r); }
   touch(e: BlockEnt): void { const c = this.w.dim === this.dim ? this.w.chunkAt(e.x >> 4, e.z >> 4) : null; if (c) c.modified = true; }
 }
 
@@ -34,6 +33,14 @@ export class WorldStore {
   constructor(w: World) {
     this.stores = [new DimStore(w, 0), new DimStore(w, 1), new DimStore(w, 2)];
     w.onBlockChange = (x, y, z, old, now) => { const f = this.stores[w.dim].onChange; if (f) f(x, y, z, old, now); };
+    w.onChunkReady = (_c, fresh, ents) => {
+      if (!fresh) return;
+      for (const e of ents) {
+        // a structure stamped later can overwrite the block (overlapping dungeon rooms): do not keep its entity
+        if (BLOCKS[w.getBlock(e.x, e.y, e.z)].use !== e.kind) continue;
+        w.setEnt(e.x, e.y, e.z, e.kind, e.kind === 'nest' ? { mob: e.data, t: 0 } : { loot: e.data, s: null });
+      }
+    };
   }
   of(dim: 0 | 1 | 2): RealmStore { return this.stores[dim]; }
 }

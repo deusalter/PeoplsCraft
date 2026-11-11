@@ -50,6 +50,8 @@ export class MobSim {
   /** Extra hostile spawn pressure from events (0 = none). */
   pressure = 0;
   safeZones: [number, number, number][] = [];
+  /** Creatures stand still and nothing spawns (a test scene). */
+  frozen = false;
   private found: Mob[] = [];
 
   constructor(private realm: Realm) { for (let i = 0; i < POOL; i++) this.list.push(new Mob()); }
@@ -117,6 +119,7 @@ export class MobSim {
   // ---- simulation ----
   tick(dt: number): void {
     const realm = this.realm, sim = realm.sim, w = realm, rnd = sim.rnd, time = sim.time;
+    if (this.frozen) return;
     for (const m of this.list) {
       if (!m.active) continue;
       // a minion deals with its owner, everything else with whoever is closest

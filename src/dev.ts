@@ -8,6 +8,8 @@ export function installDevTools(game: Game): void {
   const tick = (): Promise<void> => new Promise((r) => { ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
   const T = {
     game, B,
+    /** The simulation, which runs in this thread. */
+    sim: game.sim,
     /** Find the y of the first solid block at or below `y`. */
     floor(x: number, y: number, z: number): number { while (y > 1 && game.world.getBlock(x, y, z) === 0) y--; return y; },
     /** Run the game in real time for `ms` milliseconds. */
@@ -36,15 +38,15 @@ export function installDevTools(game: Game): void {
      *  `dist` is how far in front of the camera they stand, `gap` the spacing between them. */
     async showcase(keys: string[], dist = 12, gap = 9, clock = 0.2): Promise<string> {
       const g = game, p = g.player, w = g.world, X = 8, Z = -8, Y = 160;
-      g.paused = false; g.god = true; g.mobs.hostileCap = 0; g.mobs.passiveCap = 0; g.clock = Math.floor(g.clock) + clock; g.hud.setVisible(false); T.grab(true);
+      g.paused = false; T.cmd('god on'); T.cmd('caps 0 0'); T.cmd('time ' + clock); g.hud.setVisible(false); T.grab(true);
       if (w.getBlock(X, Y, Z) !== B.stone_bricks) {
         p.teleport(X + 0.5, Y + 1.01, Z + 0.5); await T.loaded();
-        for (let dx = -20; dx <= 20; dx++) for (let dz = -40; dz <= 8; dz++) w.setBlock(X + dx, Y, Z + dz, B.stone_bricks);
+        T.cmd(`fill ${X - 20} ${Y} ${Z - 40} ${X + 20} ${Y} ${Z + 8} stone_bricks`);
       }
       p.teleport(X + 0.5, Y + 1.01, Z + 0.5); p.yaw = 0; p.pitch = 0.1; p.flying = false;
       await T.run(900);
-      for (const m of g.mobs.list) m.active = false;
-      keys.forEach((k, i) => { const m = g.mobs.spawn(k, X + 0.5 + (i - (keys.length - 1) / 2) * gap, Y + 1.05, Z + 0.5 - dist); if (m) m.yaw = Math.PI; });
+      T.cmd('clearmobs');
+      keys.forEach((k, i) => T.cmd(`spawnat ${k} ${X + 0.5 + (i - (keys.length - 1) / 2) * gap} ${Y + 1.05} ${Z + 0.5 - dist} ${Math.PI}`));
       g.paused = true;       // simulation stops, rendering and idle animation continue
       await T.run(400);
       return `showing ${keys.join(', ')}; call T.run(300) again before a screenshot, and T.orbit(angle) to walk the camera around`;

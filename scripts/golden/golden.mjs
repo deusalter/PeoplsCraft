@@ -14,6 +14,7 @@ export async function installHelpers() {
   const { raycast, newRayHit } = await import('/src/sim/physics.ts');
   const hit = newRayHit();
   const P = () => g().player;
+  const mobs = () => T.sim.realms[g().dim].mobs;
   window.R = {
     id: (key) => T.B[key],
     key: (x, y, z) => KEYS[g().world.getBlock(x, y, z)] ?? String(g().world.getBlock(x, y, z)),
@@ -34,9 +35,9 @@ export async function installHelpers() {
     container: (x, y, z) => { const e = g().world.getEnt(x, y, z); return e && e.data.s ? e.data.s.map((s) => (s ? { k: s.k, n: s.n } : null)) : null; },
     ent: (x, y, z) => { const e = g().world.getEnt(x, y, z); return e ? { kind: e.kind, loot: e.data.loot ?? null, opened: !!e.data.s } : null; },
     forge: (x, y, z) => { const e = g().world.getEnt(x, y, z); if (!e || e.kind !== 'forge') return null; const d = e.data; return { s: d.s.map((s) => (s ? { k: s.k, n: s.n } : null)), burn: d.burn, prog: d.prog }; },
-    mobs: () => g().mobs.list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss })),
+    mobs: () => mobs().list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss })),
     spawnPoint: () => g().spawn,
-    homes: () => g().npcs.homes.map((h) => ({ x: h.x, y: h.y, z: h.z, npc: h.npc })),
+    homes: () => T.sim.npcs.homes.map((h) => ({ x: h.x, y: h.y, z: h.z, npc: h.npc })),
     winOpen: () => !document.querySelector('#win')?.classList.contains('hidden'),
     deathScreen: () => g().menu.dead,
     /** Highest block in a column and its key. */
@@ -65,8 +66,8 @@ export async function installHelpers() {
       }
       return false;
     },
-    caps: (h, p) => { g().mobs.hostileCap = h; g().mobs.passiveCap = p; },
-    clearMobs: () => { for (const m of g().mobs.list) m.active = false; },
+    caps: (h, p) => { mobs().hostileCap = h; mobs().passiveCap = p; },
+    clearMobs: () => { for (const m of mobs().list) m.active = false; },
     save: () => g().save(),
     /** Set every cell of a box to one block, as the `fill` command of section 10.1 will. */
     fill: (x0, y0, z0, x1, y1, z1, key) => { const w = g().world, id = T.B[key]; for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) w.setBlock(x, y, z, id); },
