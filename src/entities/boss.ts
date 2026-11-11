@@ -3,7 +3,7 @@
 import { T_SOLID } from '../data/blocks';
 import type { Attack } from '../data/mobs';
 import type { Game } from '../game';
-import { moveBody } from '../player/physics';
+import { moveBody } from '../sim/physics';
 import type { Mob } from './mobs';
 
 export interface BossState {

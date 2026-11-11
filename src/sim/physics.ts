@@ -1,7 +1,7 @@
 // Swept AABB collision against block boxes. Each axis is clipped to the nearest block
 // face before moving, so bodies slide along walls and never snag on seams between blocks.
 import { T_BOX, T_LIQUID, T_SOLID } from '../data/blocks';
-import type { World } from '../world/world';
+import type { VoxelRead } from './voxels';
 
 export interface Body {
   x: number; y: number; z: number; vx: number; vy: number; vz: number;
@@ -10,7 +10,7 @@ export interface Body {
 }
 const E = 1e-5;
 
-function clip(w: World, b: Body, axis: number, d: number): number {
+function clip(w: VoxelRead, b: Body, axis: number, d: number): number {
   if (d === 0) return 0;
   let x0 = b.x - b.hw, x1 = b.x + b.hw, y0 = b.y, y1 = b.y + b.h, z0 = b.z - b.hw, z1 = b.z + b.hw;
   // region swept by the move
@@ -38,7 +38,7 @@ function clip(w: World, b: Body, axis: number, d: number): number {
 }
 
 /** Move a body by (dx,dy,dz), resolving collisions. Zeroes velocity on the blocked axes. */
-export function moveBody(w: World, b: Body, dx: number, dy: number, dz: number): void {
+export function moveBody(w: VoxelRead, b: Body, dx: number, dy: number, dz: number): void {
   const n = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz)) / 0.45));
   dx /= n; dy /= n; dz /= n;
   // a velocity decaying towards rest must not register as a collision when clip() rounds it to zero
@@ -55,7 +55,7 @@ export function moveBody(w: World, b: Body, dx: number, dy: number, dz: number):
 }
 
 /** True if no solid block box intersects the given world-space box. */
-export function boxFree(w: World, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): boolean {
+export function boxFree(w: VoxelRead, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): boolean {
   const bx0 = Math.floor(x0 + E), bx1 = Math.floor(x1 - E), by0 = Math.floor(y0 + E), by1 = Math.floor(y1 - E), bz0 = Math.floor(z0 + E), bz1 = Math.floor(z1 - E);
   for (let by = by0; by <= by1; by++) for (let bz = bz0; bz <= bz1; bz++) for (let bx = bx0; bx <= bx1; bx++) {
     const id = w.getBlock(bx, by, bz);
@@ -68,14 +68,14 @@ export function boxFree(w: World, x0: number, y0: number, z0: number, x1: number
 }
 
 /** Liquid family (0 none, 1 water, 2 lava) at a point. */
-export const liquidAt = (w: World, x: number, y: number, z: number): number => T_LIQUID[w.getBlock(Math.floor(x), Math.floor(y), Math.floor(z))];
+export const liquidAt = (w: VoxelRead, x: number, y: number, z: number): number => T_LIQUID[w.getBlock(Math.floor(x), Math.floor(y), Math.floor(z))];
 
 export interface RayHit { hit: boolean; x: number; y: number; z: number; nx: number; ny: number; nz: number; id: number; dist: number }
 export const newRayHit = (): RayHit => ({ hit: false, x: 0, y: 0, z: 0, nx: 0, ny: 0, nz: 0, id: 0, dist: 0 });
 
 /** Voxel DDA. Non-cube shapes are tested against their own box so tall grass edges do not block clicks.
  *  With `solidOnly`, plants and other walk-through blocks are skipped (line of sight, projectiles). */
-export function raycast(w: World, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max: number, out: RayHit, hitLiquid = false, solidOnly = false): RayHit {
+export function raycast(w: VoxelRead, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max: number, out: RayHit, hitLiquid = false, solidOnly = false): RayHit {
   let x = Math.floor(ox), y = Math.floor(oy), z = Math.floor(oz);
   const sx = dx > 0 ? 1 : -1, sy = dy > 0 ? 1 : -1, sz = dz > 0 ? 1 : -1;
   const tdx = dx !== 0 ? Math.abs(1 / dx) : 1e30, tdy = dy !== 0 ? Math.abs(1 / dy) : 1e30, tdz = dz !== 0 ? Math.abs(1 / dz) : 1e30;

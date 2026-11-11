@@ -15,13 +15,14 @@ import { Mob, MobSystem } from './entities/mobs';
 import { ProjectileSystem } from './entities/projectiles';
 import { Input } from './player/input';
 import { Interact, InteractHost } from './player/interact';
-import { RayHit } from './player/physics';
 import { Player, STRIDE } from './player/player';
 import { buildArm } from './player/viewmodel';
 import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
 import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
 import { ItemModels } from './render/itemModel';
+import { RayHit } from './sim/physics';
+import type { BlockEnt } from './sim/voxels';
 import { EventSystem } from './systems/events';
 import { Fluids } from './systems/fluids';
 import { INV_SIZE, Inventory, Slot } from './systems/inventory';
@@ -36,7 +37,7 @@ import { Windows } from './ui/windows';
 import { Climate, newCol } from './world/gen/climate';
 import { locate } from './world/gen/structures';
 import { WorkerPool } from './world/pool';
-import { BlockEnt, Chunk, World } from './world/world';
+import { Chunk, World } from './world/world';
 
 const STEP = 1 / 60;
 export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings; /** false when the browser blocks IndexedDB */ canSave?: boolean }

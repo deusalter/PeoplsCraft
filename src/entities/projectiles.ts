@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import type { Style } from '../data/items';
 import { PROJECTILES, ProjDef } from '../data/mobs';
 import type { Game } from '../game';
-import { newRayHit, rayBox, raycast } from '../player/physics';
+import { newRayHit, rayBox, raycast } from '../sim/physics';
 import type { BoxBatch } from '../render/batches';
 
 class Proj {

@@ -4,11 +4,11 @@ import * as THREE from 'three';
 import { BUILD_MAX, CH, CVOL, chunkKey } from '../core/constants';
 import { T_ATTEN, T_EMITS, T_OPAQUE } from '../data/blocks';
 import { U } from '../render/gfx';
+import type { BlockEnt } from '../sim/voxels';
 import type { EntInit } from './gen/types';
 import type { MeshPart } from './mesher';
 import { WorkerPool } from './pool';
 
-export interface BlockEnt { x: number; y: number; z: number; kind: string; data: any }
 /** `pal` is the index of the block-id palette the chunk was written with (see Game.palettes). */
 export interface SavedChunk { blocks: Uint8Array; biomes: Uint8Array; hasEmit: boolean; ents: BlockEnt[]; pal?: number }
 

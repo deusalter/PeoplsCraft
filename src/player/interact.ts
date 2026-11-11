@@ -4,7 +4,7 @@ import { T_BOX, texLayer } from '../data/blocks';
 import { U } from '../render/gfx';
 import type { World } from '../world/world';
 import type { Input } from './input';
-import { RayHit, newRayHit, raycast } from './physics';
+import { RayHit, newRayHit, raycast } from '../sim/physics';
 import type { Player } from './player';
 
 export interface InteractHost {

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { Item, item } from '../data/items';
 import type { Game } from '../game';
-import { Body, moveBody } from '../player/physics';
+import { Body, moveBody } from '../sim/physics';
 import { makeItemMaterial } from '../render/batches';
 
 class Drop implements Body {

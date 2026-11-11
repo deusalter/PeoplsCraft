@@ -11,7 +11,7 @@ export async function installHelpers() {
   const g = () => T.game;
   // the dev server hands back the module instance the game itself loaded
   const KEYS = (await import('/src/data/blocks.ts')).BLOCKS.map((b) => b.key);
-  const { raycast, newRayHit } = await import('/src/player/physics.ts');
+  const { raycast, newRayHit } = await import('/src/sim/physics.ts');
   const hit = newRayHit();
   const P = () => g().player;
   window.R = {

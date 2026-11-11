@@ -4,7 +4,7 @@ import { T_LIQH, T_LIQUID } from '../data/blocks';
 import { clamp, hash01, lerp } from '../core/noise';
 import type { World } from '../world/world';
 import type { Input } from './input';
-import { Body, boxFree, liquidAt, moveBody } from './physics';
+import { Body, boxFree, liquidAt, moveBody } from '../sim/physics';
 
 export const WALK = 4.32, SPRINT = 5.75, SNEAK = 1.35, JUMP_V = 8.7, GRAVITY = 32;
 /** Blocks walked per footfall. View bob, hand bob and step sounds all read the same stride phase. */

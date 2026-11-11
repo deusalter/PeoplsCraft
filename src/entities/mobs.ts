@@ -6,7 +6,7 @@ import { BIOMES } from '../data/biomes';
 import { DIMS } from '../data/dims';
 import { MAX_PARTS, MOB_LIST, MobDef, type Part, SpawnRule, mob as mobDef, rigOf } from '../data/mobs';
 import type { Game } from '../game';
-import { Body, boxFree, moveBody, newRayHit, rayBox, raycast } from '../player/physics';
+import { Body, boxFree, moveBody, newRayHit, rayBox, raycast } from '../sim/physics';
 import { type BoxBatch, ShadowBatch } from '../render/batches';
 import { BossState, bossKeep, bossTick, newBossState, segK } from './boss';
 

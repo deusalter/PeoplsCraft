@@ -6,8 +6,8 @@ import type { NpcDef } from '../data/npcs';
 import { sourceOf } from '../data/sources';
 import type { Game } from '../game';
 import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } from '../systems/inventory';
+import type { BlockEnt } from '../sim/voxels';
 import { ATTR_DESC, Attr, STAT_NAMES } from '../systems/stats';
-import type { BlockEnt } from '../world/world';
 import { el } from './hud';
 import { uiScale } from './menus';
 
