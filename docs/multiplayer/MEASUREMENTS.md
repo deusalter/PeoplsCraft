@@ -78,7 +78,7 @@ still match. No step was impossible on the current build.
 ## 3. Stage 0 legacy fixture
 
 `scripts/fixtures/legacy-v1.json` (57 KB, 2 world records, 7 chunk records) was made by
-`npm run smoke -- legacy-make` on commit `fa71b5e`, whose `src/` is identical to `8187558`. World
+`npm run smoke -- legacy-make` on commit `4ff2b0d`, whose `src/` is identical to `8187558`. World
 `quick-legacyfix`: edits in all three dimensions, a chest with three stacks, an unopened ruin chest
 in a chunk edited one cell above it, a furnace saved with 8 ore, 2 bars and burning coal, a bedroll
 holding the spawn, the Wayfinder housed in a lit, closed room with a door, a Hollow Gate pair with
