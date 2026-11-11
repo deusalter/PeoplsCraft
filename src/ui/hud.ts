@@ -141,11 +141,11 @@ export class Hud {
       pk.n += n; pk.el.textContent = `+${pk.n} ${name}  (${total})`;
       if (this.toasts.firstElementChild !== pk.el) this.toasts.prepend(pk.el);
       pk.el.classList.remove('bump'); void pk.el.offsetWidth; pk.el.classList.add('bump');
+      clearTimeout(pk.timer);
     } else {
       pk.el = null; pk.key = key; pk.n = n;
       const t = this.toast(`+${n} ${name}  (${total})`, color); pk.el = t;
     }
-    clearTimeout(pk.timer);
     const t = pk.el!;
     pk.timer = setTimeout(() => { if (pk.el === t) pk.el = null; this.fadeToast(t); }, 5200);
   }
@@ -288,7 +288,7 @@ export class Hud {
     else if (this.bannerGap > 0) { this.bannerGap -= dt; if (this.bannerGap <= 0) { const q = this.bannerQ.shift(); if (q) this.showBanner(q[0], q[1], q[2]); } }
 
     const b = g.mobs.activeBoss();
-    if (!!b !== this.bossOn) { this.bossOn = !!b; this.boss.classList.toggle('show', !!b); this.root.classList.toggle('bossing', !!b); }
+    if (!!b !== this.bossOn) { this.bossOn = !!b; this.boss.classList.toggle('show', !!b); this.root.classList.toggle('bossing', !!b); if (!b) this.bossKey = ''; }
     if (b) {
       const spec = b.def.boss!;
       if (this.bossKey !== b.def.key) {

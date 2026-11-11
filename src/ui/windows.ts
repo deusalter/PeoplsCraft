@@ -14,7 +14,7 @@ import { uiScale } from './menus';
 type Kind = 'inv' | 'armor' | 'acc' | 'craft' | 'out' | 'chest' | 'fin' | 'ffuel' | 'fout';
 interface View { arr: Slot[]; i: number; kind: Kind; root: HTMLElement; ic: HTMLElement; n: HTMLElement; sig: string }
 export type WinMode = 'inv' | 'station' | 'chest' | 'forge' | 'shop' | 'guide';
-type WinOpts = { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef };
+type WinOpts = { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef; sold?: { it: Item; price: number }[] };
 
 const STAT_TEXT: Record<string, [string, boolean]> = {
   melee: ['melee damage', true], ranged: ['ranged damage', true], magic: ['magic damage', true], summon: ['summon damage', true], dmg: ['damage', true], crit: ['critical chance', true],
@@ -111,12 +111,12 @@ export class Windows {
   show(mode: WinMode, o: WinOpts = {}): void {
     const g = this.g;
     // remember the window the Guide was opened from so Back (or G) returns to it
-    const from = this.open && mode === 'guide' && this.mode !== 'guide' ? { mode: this.mode, o: { station: this.station, chest: this.chest ?? undefined, forge: this.forge ?? undefined, shop: this.shop ?? undefined } } : null;
+    const from = this.open && mode === 'guide' && this.mode !== 'guide' ? { mode: this.mode, o: { station: this.station, chest: this.chest ?? undefined, forge: this.forge ?? undefined, shop: this.shop ?? undefined, sold: this.mode === 'shop' ? this.sold : undefined } } : null;
     if (this.open) this.close(true);
     this.back = mode === 'guide' ? from : null;
     this.open = true; this.mode = mode;
     this.station = mode === 'station' ? o.station! : 'hand'; this.gridW = mode === 'station' ? 3 : 2;
-    if (o.shop && o.shop !== this.shop) this.sold = [];
+    if (o.sold) this.sold = o.sold;
     this.chest = o.chest ?? null; this.forge = o.forge ?? null; this.shop = o.shop ?? null;
     this.build();
     this.root.classList.remove('hidden');
@@ -370,12 +370,12 @@ export class Windows {
   /** Lay the recipe out and craft it straight into the pack, up to `max` times. */
   private craftFromBook(r: Recipe, max: number): void {
     const g = this.g, inv = g.inv, cells = this.gridW * this.gridW;
-    let made = 0, full = false;
+    let made = 0, full = false, shadowed = false;
     for (let t = 0; t < max; t++) {
       if (!canAfford(inv, r, inv.craft)) break;
       if (!fillGrid(inv, r, inv.craft, this.gridW)) break;
       // the laid-out grid must spell exactly this recipe (tag overlaps can leave a cell short)
-      if (matchRecipe(this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft, this.gridW, this.station) !== r) break;
+      if (matchRecipe(this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft, this.gridW, this.station) !== r) { if (!made) { shadowed = true; this.returnGrid(); } break; }
       if (inv.room(r.out) < r.n) { full = true; this.returnGrid(); break; }
       const out = takeCraft(r, inv.craft, Math.random, cells), left = inv.add(out);
       if (left) g.dropItem({ ...out, n: left });
@@ -384,6 +384,7 @@ export class Windows {
     if (made) { g.audio.play('craft'); if (max > 1) g.toast(`Made ${made} ${item(r.out).name}`, RARITY[item(r.out).rarity].color); }
     else g.audio.play('error', 0.5);
     if (full) g.toast('No room in your pack', '#ff9a8a');
+    if (shadowed) g.toast('That recipe cannot be laid out here', '#ff9a8a');
     inv.touch();
   }
   /** A small button that acts on mousedown without letting the root handler drop the cursor stack. */
