@@ -7,7 +7,7 @@
 // goes through installHelpers() below, so a refactor that moves those fields re-points them there.
 
 /** Runs inside the page. R reads state; D does the few things a player has no input for. */
-async function installHelpers() {
+export async function installHelpers() {
   const g = () => T.game;
   // the dev server hands back the module instance the game itself loaded
   const KEYS = (await import('/src/data/blocks.ts')).BLOCKS.map((b) => b.key);
@@ -73,11 +73,8 @@ async function installHelpers() {
   };
 }
 
-/** Probe cells and steps are laid out on an 11x11 pad levelled at the world spawn. */
-const R5 = 5;
-
-export async function run({ page, url, log }) {
-  const probes = {};
+/** Node-side actions, each built from window.T calls, real key presses and clicks, and R / D. */
+export function driver(page, log) {
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const step = async (name, fn) => {
     const t0 = Date.now();
@@ -112,7 +109,11 @@ export async function run({ page, url, log }) {
     const h = await ev(() => R.held());
     if (h !== k) throw new Error(`holding ${h}, wanted ${k}`);
   };
-  const tp = async (x, y, z) => { await cmd(`tp ${x} ${y} ${z}`); await until(() => R.ready(), null, 30000, 'the area to load'); await until(() => R.me().onGround, null, 5000, 'landing'); };
+  /** Teleport, then wait (a few frames at least, so onGround is fresh) until the area is meshed and the player stands. */
+  const tp = async (x, y, z) => {
+    await cmd(`tp ${x} ${y} ${z}`); await runMs(100);
+    await until(() => R.ready(), null, 30000, 'the area to load'); await until(() => R.me().onGround, null, 5000, 'landing');
+  };
   /** Hold the left button on a block until it is gone. */
   const breakAt = async (x, y, z) => {
     await hold('iron_pickaxe');
@@ -187,6 +188,16 @@ export async function run({ page, url, log }) {
       return false;
     }, [id], timeout, `creature ${id} to die`).finally(() => ev(() => { T.click(0, false); T.key('KeyW', false); }));
   };
+
+  return { ev, step, until, runMs, cmd, boot, grab, hold, tp, breakAt, placeOn, useAt, keyPress, invView, slotSel, clickSlot, winOpen, closeWin, bookCraft, enterGate, kill };
+}
+
+/** Probe cells and steps are laid out on an 11x11 pad levelled at the world spawn. */
+const R5 = 5;
+
+export async function run({ page, url, log }) {
+  const probes = {};
+  const { ev, step, until, runMs, cmd, boot, grab, hold, tp, breakAt, placeOn, useAt, keyPress, invView, clickSlot, winOpen, closeWin, bookCraft, enterGate, kill } = driver(page, log);
 
   let sx, sz, gy;
   const cell = (dx, dy, dz) => [sx + dx, gy + dy, sz + dz];
