@@ -26,7 +26,7 @@ export class PlayerStats {
   d: Record<StatKey, number> = {} as Record<StatKey, number>;
   sets: string[] = [];
   hurtT = 0; salveCd = 0; exhaustion = 0; dead = false;
-  private regenT = 0; private starveT = 0; private gearRev = -1;
+  private regenT = 0; private starveT = 0; private gearRev = -1; private gearSel = -1;
 
   xpNeeded(): number { return Math.floor(30 + this.level * 22 + this.level * this.level * 4); }
 
@@ -57,10 +57,10 @@ export class PlayerStats {
     this.maxMana = Math.round(40 + a.arc * 6 + d.mana);
     if (this.hp > this.maxHp) this.hp = this.maxHp;
     if (this.mana > this.maxMana) this.mana = this.maxMana;
-    this.gearRev = inv.rev;
+    this.gearRev = inv.rev; this.gearSel = inv.sel;
   }
-  /** Recompute only if the inventory changed since the last call. */
-  sync(inv: Inventory): void { if (inv.rev !== this.gearRev) this.recompute(inv); }
+  /** Recompute only if the inventory changed since the last call, or another slot is held: the held weapon's modifier counts. */
+  sync(inv: Inventory): void { if (inv.rev !== this.gearRev || inv.sel !== this.gearSel) this.recompute(inv); }
 
   dmgMult(style: Style): number { return 1 + this.d[style] + this.d.dmg; }
 

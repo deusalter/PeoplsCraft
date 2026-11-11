@@ -1,8 +1,10 @@
 // Gates between dimensions: a 4x5 frame around a 2x3 sheet of portal.
 import { BUILD_MAX } from '../core/constants';
-import { B, T_REPLACE } from '../data/blocks';
+import { B, T_LIQUID, T_REPLACE } from '../data/blocks';
+import { item } from '../data/items';
 import type { SimPlayer } from './player';
 import type { Realm } from './realm';
+import type { Sim } from './sim';
 
 /** True when all 20 cells of a gate are free: buildGate() would otherwise erase chests, forges or an altar. No body of the realm may stand in them. */
 export function gateFits(realm: Realm, x: number, y: number, z: number, alongX: boolean): boolean {
@@ -44,10 +46,17 @@ export function collapseGate(realm: Realm, by: SimPlayer, x: number, y: number, 
   realm.drops.spawn(x + 0.5, y + 0.5, z + 0.5, { k: kind === 1 ? 'hollow_gate_kit' : 'rift_gate_kit', n: 1 });
   sim.sink.emit({ p: by.slot }, ['s', 'portal', 0.6, 0.7]); sim.sink.emit({ p: by.slot }, ['t', 'The gate goes dark.', '#c8d0ff']);
 }
-/** Use the held gate kit on the ground cell (x, y, z). False when there is no room. */
-export function placeGate(realm: Realm, p: SimPlayer, kind: 1 | 2, x: number, y: number, z: number, alongX: boolean): boolean {
-  if (!gateFits(realm, x, y, z, alongX)) return false;
-  buildGate(realm, kind, x, y, z, alongX);
+/** Use the held gate kit with its foot in the cell (x, y, z). The player is told why when nothing is built. */
+export function placeGate(sim: Sim, p: SimPlayer, x: number, y: number, z: number, alongX: boolean): boolean {
+  const realm = sim.realms[p.dim], held = p.inv.held(), use = held ? item(held.k).use : undefined, own = { p: p.slot };
+  if (use !== 'gate1' && use !== 'gate2') return false;
+  // "on the ground" is asked of the cell, not of the face a client says it clicked: something a hand can touch lies under the foot
+  const under = realm.getBlock(x, y - 1, z);
+  if (!under || T_LIQUID[under]) { sim.sink.emit(own, ['t', 'Place the gate on the ground.', '#ff9a8a']); return false; }
+  if (!gateFits(realm, x, y, z, alongX)) { sim.sink.emit(own, ['t', 'The gate needs a clear space 4 wide and 5 tall.', '#ff9a8a']); sim.sink.emit(own, ['s', 'error', 0.5, 1]); return false; }
+  buildGate(realm, use === 'gate1' ? 1 : 2, x, y, z, alongX);
   p.inv.consumeHeld();
+  sim.sink.emit(own, ['s', 'portal', 1, 1]);
+  sim.sink.emit({ dim: p.dim, x, y, z, r: 40, not: p.slot }, ['s', 'portal', 1, 1, x + 0.5, y + 0.5, z + 0.5]);
   return true;
 }

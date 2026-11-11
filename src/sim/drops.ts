@@ -1,7 +1,7 @@
 // Dropped items: they fall, merge with identical stacks nearby, and fly to a player who has room.
 import { Item, item } from '../data/items';
 import { Body, moveBody } from './physics';
-import { warnFull } from './player';
+import { warnFull, type SimPlayer } from './player';
 import type { Realm } from './realm';
 
 export class Drop implements Body {
@@ -37,9 +37,12 @@ export class DropSim {
       d.age += dt;
       if (d.age > 300 || d.y < -20) { d.active = false; continue; }
       if (d.delay > 0) d.delay -= dt;
-      const pl = realm.closest(d.x, d.y, d.z);
+      // an owned drop answers to its owner alone, however many others stand closer
+      let pl: SimPlayer | null = null;
+      if (!d.owner) pl = realm.closest(d.x, d.y, d.z);
+      else for (const q of realm.players) if (q.id === d.owner) { pl = q; break; }
       let fits = false;
-      if (pl && (!d.owner || d.owner === pl.id)) {
+      if (pl) {
         const p = pl.body, reach = 1.7 + pl.stats.d.pickup;
         const dx = p.x - d.x, dy = p.y + 0.8 - d.y, dz = p.z - d.z, dist = Math.hypot(dx, dy, dz);
         // drops that cannot fit stay on the ground instead of twitching round the player forever

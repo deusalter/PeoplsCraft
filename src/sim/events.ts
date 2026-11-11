@@ -67,9 +67,11 @@ export class EventSim {
     if (ev.a !== 'raid' && ev.a !== 'ashen') return;
     this.spawnT -= dt;
     if (this.spawnT > 0 || mobs.count((m) => m.event) >= 8 + sim.difficulty()) return;
+    // the host gathers round one player: the first who is in play. With nobody in play the wave waits.
+    const pl = realm.players.find(active);
+    if (!pl) return;
     this.spawnT = 4.5;
-    // the host gathers round one player: the first who is in play
-    const pl = realm.players.find(active) ?? realm.players[0], p = pl.body, w = realm, diff = sim.difficulty();
+    const p = pl.body, w = realm, diff = sim.difficulty();
     const n = 2 + Math.floor(rnd() * 2);
     for (let i = 0; i < n; i++) {
       const a = rnd() * 6.283, r = 18 + rnd() * 10, x = Math.floor(p.x + Math.cos(a) * r), z = Math.floor(p.z + Math.sin(a) * r);

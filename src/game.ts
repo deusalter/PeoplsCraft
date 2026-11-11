@@ -27,7 +27,7 @@ import * as act from './sim/actions';
 import { cheat } from './sim/cheats';
 import { STEP, isNight } from './sim/clock';
 import { BURST, type Fx, type Scope, type Sink } from './sim/fx';
-import { gateFits, placeGate } from './sim/gates';
+import { placeGate } from './sim/gates';
 import type { Inventory } from './sim/inventory';
 import { rayHitMobs } from './sim/mobhit';
 import { npcOf } from './sim/npcs';
@@ -335,11 +335,7 @@ export class Game implements InteractHost, Sink {
     if (d.use && hit && pressed) {
       if (d.use === 'door') { if (!act.placeDoor(sim, me, hit)) return false; this.audio.play('door'); return true; }
       if (d.use === 'gate1' || d.use === 'gate2') {
-        const x = hit.x + hit.nx, y = hit.y + hit.ny, z = hit.z + hit.nz, realm = sim.realms[me.dim];
-        if (hit.ny !== 1) { this.toast('Place the gate on the ground.', '#ff9a8a'); return true; }
-        const alongX = Math.abs(dir.z) > Math.abs(dir.x);
-        if (!gateFits(realm, x, y, z, alongX)) { this.toast('The gate needs a clear space 4 wide and 5 tall.', '#ff9a8a'); this.audio.play('error', 0.5); return true; }
-        if (placeGate(realm, me, d.use === 'gate1' ? 1 : 2, x, y, z, alongX)) this.audio.play('portal');
+        placeGate(sim, me, hit.x + hit.nx, hit.y + hit.ny, hit.z + hit.nz, Math.abs(dir.z) > Math.abs(dir.x));
         return true;
       }
       if (d.use.startsWith('summon')) { this.toast('Use this at its altar. The guide points the way.', '#ffd9a0'); return true; }
@@ -566,7 +562,7 @@ export class Game implements InteractHost, Sink {
 
   private updateHand(dt: number): void {
     const inv = this.inv, h = inv.held(), key = h ? h.k : '', p = this.player, hand = this.hand;
-    if (key !== this.handKey) { this.handKey = key; this.equip = 1; hand.geometry = key ? this.models.get(key) : this.armGeo; this.stats.recompute(inv); }
+    if (key !== this.handKey) { this.handKey = key; this.equip = 1; hand.geometry = key ? this.models.get(key) : this.armGeo; }
     this.equip = Math.max(0, this.equip - dt * 5); this.swing = Math.max(0, this.swing - dt * 4.2);
     // bob on the camera's own stride phase (advanced per frame), so hand and view stay in step at any refresh rate
     const s = Math.sin((1 - this.swing) * Math.PI) * (this.swing > 0 ? 1 : 0), bob = p.stride, sb = Math.sin(p.bobPhase);

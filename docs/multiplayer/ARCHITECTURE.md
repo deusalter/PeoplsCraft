@@ -2761,6 +2761,23 @@ station; the client clears it each tick its own window is closed, and reports an
 `uiOpen`. `closeViewers` only forgets viewers. The window code still mutates containers and calls
 `Game.markEntDirty` / `markChestDirty`, which now end in `Realm.touchEnt`.
 
+D22. Stage 1b (2.3, 4.3, 7.4, 7.5). Rules that sat in `Game`, or only worked for one player, and how the
+sim holds them now.
+(a) Gate kits. `gates.placeGate(sim, p, x, y, z, alongX)` takes what the `item` message will carry (`at`,
+`ax`). It reads the kind from the held kit, refuses a foot cell with air or liquid under it, then runs
+`gateFits` and `buildGate`, and it sends the refusal toasts and the sounds itself. 4.3 names only
+`gateFits`: "place the gate on the ground" was a test of the clicked face (`ny === 1`) in `Game`, and
+the message has no face, so the rule is asked of the cell. A solo player can notice one thing: a kit
+used on the side of a block raises the gate when the cell beside that block has ground under it, where
+it used to be refused.
+(b) Derived stats follow the held slot. `PlayerStats.sync` recomputes when `inv.sel` changed as well as
+when `inv.rev` did (the held weapon's modifier counts), so the player's step does it. `Game.updateHand`
+did it from the draw, and only when the item key changed: of two weapons of one kind with different
+modifiers, the first one's bonus stayed. That is gone.
+(c) With no active player in the Overworld a wave waits (its timer stays due) instead of gathering round
+`players[0]`. An owned drop is offered to its owner wherever the others stand, and to nobody while the
+owner is not in that realm; an unowned drop still goes to the closest player (D21 (i)).
+
 ---
 
 ## 14. Review log
