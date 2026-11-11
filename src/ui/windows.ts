@@ -5,8 +5,9 @@ import { RECIPES, Recipe, SMELTS, STATION_NAMES } from '../data/recipes';
 import type { NpcDef } from '../data/npcs';
 import { sourceOf } from '../data/sources';
 import type { Game } from '../game';
-import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor } from '../sim/inventory';
-import { SlotKind, accepts, goods, refusal, sellPrice, smeltable } from '../sim/rules';
+import { Slot, canAfford, matchRecipe, needs, recipesFor } from '../sim/inventory';
+import type { InvOp, OpResult, SlotRef } from '../sim/invops';
+import { SlotKind, accepts, goods, sellPrice, smeltable } from '../sim/rules';
 import { ATTR_DESC, Attr, STAT_NAMES } from '../sim/stats';
 import type { BlockEnt } from '../sim/voxels';
 import { QUESTS } from '../data/quests';
@@ -16,7 +17,7 @@ import { uiScale } from './menus';
 type Kind = SlotKind;
 interface View { arr: Slot[]; i: number; kind: Kind; root: HTMLElement; ic: HTMLElement; n: HTMLElement; sig: string }
 export type WinMode = 'inv' | 'station' | 'chest' | 'forge' | 'shop' | 'guide';
-type WinOpts = { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef; sold?: { it: Item; price: number }[] };
+type WinOpts = { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef };
 
 const STAT_TEXT: Record<string, [string, boolean]> = {
   melee: ['melee damage', true], ranged: ['ranged damage', true], magic: ['magic damage', true], summon: ['summon damage', true], dmg: ['damage', true], crit: ['critical chance', true],
@@ -37,8 +38,7 @@ function statLines(s: Stats | undefined, cls = 'gd'): string {
 }
 const BOOK_CATS = ['All', 'Tools', 'Weapons', 'Armour', 'Trinkets', 'Blocks', 'Other'];
 function bookCat(k: string): number { const d = item(k); return d.tool ? 1 : d.weapon ? 2 : d.armor ? 3 : d.acc ? 4 : d.block !== undefined ? 5 : 6; }
-const EMPTY_GRID: Slot[] = [];
-function sortRank(k: string): number { const d = item(k); return d.weapon && !d.tool ? 0 : d.tool ? 1 : d.armor ? 2 : d.acc ? 3 : d.food || d.heal || d.restoreMana || d.buff || d.use ? 4 : d.block !== undefined ? 5 : 6; }
+const EMPTY_GRID: Slot[] = [], REFUSED = '#ff9a8a';
 const SA: Record<string, number> = {}, SB: Record<string, number> = {};
 /** Sum an item's own stats and its modifier's into `out` (cleared first). */
 function gearStats(it: Item, out: Record<string, number>): void {
@@ -60,7 +60,7 @@ export class Windows {
   private bookEls: HTMLElement[] = []; private bookCats: number[] = []; private bookNames: string[] = []; private bookEmpty: HTMLElement | null = null;
   private bookTab = 'hand'; private bookChips: HTMLElement[] = []; private makeChip: HTMLElement | null = null; private search: HTMLInputElement | null = null;
   private coinEl: HTMLElement | null = null; private coinShown = -1;
-  private sold: { it: Item; price: number }[] = []; private sellConfirm: { v: View; t: number } | null = null; private shopHead: HTMLElement | null = null;
+  private sellConfirm: { v: View; t: number } | null = null; private shopHead: HTMLElement | null = null;
   private back: { mode: WinMode; o: WinOpts } | null = null;
   private lastV: View | null = null; private lastT = 0; private dragSet: Set<View> | null = null;
   private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
@@ -70,7 +70,7 @@ export class Windows {
     this.cursor = el('div', '#cursor', ui); this.cursorN = el('div', 'n', this.cursor); this.cursor.style.display = 'none';
     this.tip = el('div', '#tip', ui); this.tip.style.display = 'none';
     const r = this.root;
-    r.addEventListener('mousedown', (e) => { if (this.search && e.target !== this.search) this.search.blur(); const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) this.dropCursor(); });
+    r.addEventListener('mousedown', (e) => { if (this.search && e.target !== this.search) this.search.blur(); const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) g.op({ o: 'dropCur' }); });
     r.addEventListener('mouseup', (e) => { const v = this.viewOf(e.target); if (v && e.button === 0 && this.dragFrom && v !== this.dragFrom && g.inv.cursor) this.place(v, false); this.dragFrom = null; this.dragSet = null; });
     window.addEventListener('mouseup', () => { this.dragSet = null; });
     r.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -105,12 +105,12 @@ export class Windows {
   show(mode: WinMode, o: WinOpts = {}): void {
     const g = this.g;
     // remember the window the Guide was opened from so Back (or G) returns to it
-    const from = this.open && mode === 'guide' && this.mode !== 'guide' ? { mode: this.mode, o: { station: this.station, chest: this.chest ?? undefined, forge: this.forge ?? undefined, shop: this.shop ?? undefined, sold: this.mode === 'shop' ? this.sold : undefined } } : null;
-    if (this.open) this.close(true);
+    const from = this.open && mode === 'guide' && this.mode !== 'guide' ? { mode: this.mode, o: { station: this.station, chest: this.chest ?? undefined, forge: this.forge ?? undefined, shop: this.shop ?? undefined } } : null;
+    // one window gives way to another without ending for the simulation: under the Guide it is only covered
+    if (this.open) this.shut({ o: 'tidy', cover: mode === 'guide' });
     this.back = mode === 'guide' ? from : null;
     this.open = true; this.mode = mode;
     this.station = mode === 'station' ? o.station! : 'hand'; this.gridW = mode === 'station' ? 3 : 2;
-    if (o.sold) this.sold = o.sold;
     this.chest = o.chest ?? null; this.forge = o.forge ?? null; this.shop = o.shop ?? null;
     this.build();
     this.root.classList.remove('hidden');
@@ -127,24 +127,20 @@ export class Windows {
   leaveGuide(): void { const b = this.back; this.back = null; if (b) this.show(b.mode, b.o); else this.show('inv'); }
   close(silent = false): void {
     if (!this.open) return;
-    const g = this.g, inv = g.inv;
-    this.open = false; this.root.classList.add('hidden'); this.hideTip();
-    this.hover = null; this.dragFrom = null; this.dragSet = null; this.lastV = null; this.hoverR = null;
-    this.markContainer();
-    this.returnGrid();
-    this.dropCursor(true);
-    this.cursor.style.display = 'none';
-    this.chest = null; this.forge = null; this.shop = null; this.sold = []; this.sellConfirm = null;
-    inv.touch();
+    const g = this.g;
+    this.shut({ o: 'close' });
     if (!silent) { g.input.uiMode = false; g.input.lock(); }
   }
-  private dropCursor(toInv = false): void {
-    const g = this.g, c = g.inv.cursor;
-    if (!c) return;
-    const left = toInv ? g.inv.add(c) : c.n;
-    if (left) g.dropItem({ ...c, n: left });
-    g.inv.cursor = null; g.inv.touch();
+  /** Take the window down. `op` puts the grid and the cursor back in the pack, and says whether the window ends. */
+  private shut(op: InvOp): void {
+    this.open = false; this.root.classList.add('hidden'); this.hideTip();
+    this.hover = null; this.dragFrom = null; this.dragSet = null; this.lastV = null; this.hoverR = null;
+    this.g.op(op);
+    this.cursor.style.display = 'none';
+    this.chest = null; this.forge = null; this.shop = null; this.sellConfirm = null;
   }
+  /** Where a view's slot lives, as an op names it. The crafting output has no address. */
+  private ref(v: View): SlotRef { return [v.kind === 'inv' ? 0 : v.kind === 'armor' ? 1 : v.kind === 'acc' ? 2 : v.kind === 'craft' ? 3 : 4, v.i]; }
 
   // ---- layout ----
   private slot(parent: HTMLElement, arr: Slot[], i: number, kind: Kind, label = ''): View {
@@ -224,9 +220,9 @@ export class Windows {
       const hd = el('div', 'wrow', mid); hd.style.cssText = 'justify-content:space-between;align-items:center;gap:6px';
       el('div', 'ttl', hd, 'Chest');
       const bs = el('div', 'wrow', hd); bs.style.gap = '4px';
-      this.button(bs, 'Take all', 'Move everything into your pack', () => this.takeAll());
-      this.button(bs, 'Stash', 'Move stacks the chest already holds out of your backpack (not the hotbar)', () => this.stashMatching());
-      this.button(bs, 'Sort', 'Merge stacks and sort the chest', () => { this.sortRange(this.chest!, 0, 27); return true; });
+      this.button(bs, 'Take all', 'Move everything into your pack', { o: 'takeAll' });
+      this.button(bs, 'Stash', 'Move stacks the chest already holds out of your backpack (not the hotbar)', { o: 'stash' });
+      this.button(bs, 'Sort', 'Merge stacks and sort the chest', { o: 'sort', w: 1 });
       const grid = el('div', 'grid', mid); grid.style.gridTemplateColumns = 'repeat(9, 44px)';
       for (let i = 0; i < 27; i++) this.slot(grid, this.chest!, i, 'chest');
     } else if (this.mode === 'forge') {
@@ -263,7 +259,7 @@ export class Windows {
 
     const ih = el('div', 'wrow', panel); ih.style.cssText = 'align-items:center;gap:8px';
     el('div', 'ttl', ih, 'Inventory');
-    this.button(ih, 'Sort', 'Merge stacks and sort the backpack (the hotbar stays as it is)', () => { this.sortRange(inv.slots, 9, 36); return true; });
+    this.button(ih, 'Sort', 'Merge stacks and sort the backpack (the hotbar stays as it is)', { o: 'sort', w: 0 });
     this.coinEl = el('div', 'coins', ih);
     const main = el('div', 'grid', panel); main.style.gridTemplateColumns = 'repeat(9, 44px)';
     for (let i = 9; i < 36; i++) this.slot(main, inv.slots, i, 'inv');
@@ -354,82 +350,29 @@ export class Windows {
     this.bookEmpty!.classList.toggle('hidden', shown > 0);
   }
   private bookClick(r: Recipe, e: MouseEvent): void {
-    const g = this.g, inv = g.inv;
-    if (this.bookTab !== this.station) { g.toast('Made at the ' + STATION_NAMES[r.station], '#ff9a8a'); g.audio.play('error', 0.5); return; }
-    const grid = this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft;
-    if (!canAfford(inv, r, grid)) { g.audio.play('error', 0.5); return; }
-    if (e.button === 2 || e.shiftKey) { this.craftFromBook(r, e.shiftKey ? 64 : 1); return; }
-    if (fillGrid(inv, r, inv.craft, this.gridW)) g.audio.play('click'); else g.audio.play('error', 0.6);
-  }
-  /** Lay the recipe out and craft it straight into the pack, up to `max` times. */
-  private craftFromBook(r: Recipe, max: number): void {
-    const g = this.g, inv = g.inv, cells = this.gridW * this.gridW;
-    let made = 0, full = false, shadowed = false;
-    for (let t = 0; t < max; t++) {
-      if (!canAfford(inv, r, inv.craft)) break;
-      if (!fillGrid(inv, r, inv.craft, this.gridW)) break;
-      // the laid-out grid must spell exactly this recipe (tag overlaps can leave a cell short)
-      if (matchRecipe(this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft, this.gridW, this.station) !== r) { if (!made) { shadowed = true; this.returnGrid(); } break; }
-      if (inv.room(r.out) < r.n) { full = true; this.returnGrid(); break; }
-      const out = g.craft(r, cells), left = inv.add(out);
-      if (left) g.dropItem({ ...out, n: left });
-      made += out.n;
+    const g = this.g, i = RECIPES.indexOf(r);
+    if (this.bookTab !== this.station) { g.toast('Made at the ' + STATION_NAMES[r.station], REFUSED); g.audio.play('error', 0.5); return; }
+    if (e.button === 2 || e.shiftKey) {
+      // lay the recipe out and craft it straight into the pack: once, or as often as the pack allows
+      const max = e.shiftKey ? 64 : 1, q = g.op({ o: 'book', r: i, max });
+      if (q.ok && q.n) { g.audio.play('craft'); if (max > 1) g.toast(`Made ${q.n} ${item(r.out).name}`, RARITY[item(r.out).rarity].color); }
+      else g.audio.play('error', 0.5);
+      if (q.msg) g.toast(q.msg, REFUSED);
+      return;
     }
-    if (made) { g.audio.play('craft'); if (max > 1) g.toast(`Made ${made} ${item(r.out).name}`, RARITY[item(r.out).rarity].color); }
-    else g.audio.play('error', 0.5);
-    if (full) g.toast('No room in your pack', '#ff9a8a');
-    if (shadowed) g.toast('That recipe cannot be laid out here', '#ff9a8a');
-    inv.touch();
+    const q = g.op({ o: 'lay', r: i });
+    if (q.ok && q.snd === 'click') g.audio.play('click'); else g.audio.play('error', q.ok ? 0.6 : 0.5);
   }
-  /** A small button that acts on mousedown without letting the root handler drop the cursor stack. */
-  private button(parent: HTMLElement, label: string, tip: string, act: () => boolean): HTMLElement {
+  /** A small button that sends one op on mousedown without letting the root handler drop the cursor stack. */
+  private button(parent: HTMLElement, label: string, tip: string, op: InvOp): HTMLElement {
     const b = el('button', 'btn sm', parent, label); b.dataset.tip = tip;
-    b.onmousedown = (e) => { e.stopPropagation(); if (e.button !== 0) return; if (act()) { this.g.audio.play('click', 0.5); this.afterEdit(); } else this.g.audio.play('error', 0.4); };
+    b.onmousedown = (e) => {
+      e.stopPropagation(); if (e.button !== 0) return;
+      const g = this.g, r = g.op(op);
+      if (r.msg) g.toast(r.msg, REFUSED);
+      if (r.ok) g.audio.play('click', 0.5); else g.audio.play('error', 0.4);
+    };
     return b;
-  }
-  private takeAll(): boolean {
-    const inv = this.g.inv, c = this.chest!;
-    let moved = false;
-    for (let i = 0; i < c.length; i++) { const s = c[i]; if (!s) continue; const left = inv.add(s); if (left !== s.n) moved = true; if (left) s.n = left; else c[i] = null; }
-    if (!moved && c.some((s) => s)) this.g.toast('No room in your pack', '#ff9a8a');
-    return moved;
-  }
-  private stashMatching(): boolean {
-    const inv = this.g.inv, c = this.chest!;
-    let moved = false;
-    for (let i = 9; i < 36; i++) {
-      const s = inv.slots[i];
-      if (!s || s.m) continue;
-      let found = false;
-      for (let j = 0; j < c.length; j++) { const t = c[j]; if (t && t.k === s.k && !t.m) { found = true; break; } }
-      if (found) { const n = s.n; this.moveInto(inv.slots, i, c, 0, c.length); if ((inv.slots[i]?.n ?? 0) !== n) moved = true; }
-    }
-    return moved;
-  }
-  /** Move the stack at src[i] into dst[from..to): top up matching stacks first, then fill empty slots. */
-  private moveInto(src: Slot[], i: number, dst: Slot[], from: number, to: number): void {
-    const s = src[i]!, d = item(s.k);
-    let n = s.n;
-    if (d.stack > 1 && !s.m) for (let j = from; j < to && n > 0; j++) { const t = dst[j]; if (t && t !== s && t.k === s.k && !t.m && t.n < d.stack) { const mv = Math.min(n, d.stack - t.n); t.n += mv; n -= mv; } }
-    for (let j = from; j < to && n > 0; j++) if (!dst[j]) { const mv = Math.min(n, d.stack); dst[j] = { k: s.k, n: mv, m: s.m }; n -= mv; }
-    if (n === 0) src[i] = null; else s.n = n;
-  }
-  /** Merge partial stacks and order arr[from..to) by kind, rarity and name. */
-  private sortRange(arr: Slot[], from: number, to: number): void {
-    const merged = new Map<string, number>(), loose: Item[] = [];
-    for (let i = from; i < to; i++) {
-      const s = arr[i]; if (!s) continue;
-      if (s.m || item(s.k).stack === 1) loose.push(s); else merged.set(s.k, (merged.get(s.k) ?? 0) + s.n);
-      arr[i] = null;
-    }
-    const list = loose;
-    for (const [k, total] of merged) { const st = item(k).stack; for (let n = total; n > 0; n -= st) list.push({ k, n: Math.min(st, n) }); }
-    list.sort((a, b) => sortRank(a.k) - sortRank(b.k) || itemRarity(b) - itemRarity(a) || itemName(a).localeCompare(itemName(b)) || b.n - a.n);
-    for (let i = 0; i < list.length; i++) arr[from + i] = list[i];
-  }
-  private returnGrid(): void {
-    const g = this.g, inv = g.inv;
-    for (let i = 0; i < inv.craft.length; i++) { const s = inv.craft[i]; if (s) { const left = inv.add(s); if (left) g.dropItem({ ...s, n: left }); inv.craft[i] = null; } }
   }
   private buildStats(): void {
     const g = this.g, st = g.stats, d = st.d, e = this.statsEl!;
@@ -442,7 +385,7 @@ export class Windows {
     for (const a of Object.keys(STAT_NAMES) as Attr[]) h += `<div class="stat" data-tip="${esc(ATTR_DESC[a])}"><span>${STAT_NAMES[a]}</span><b>${st.attr[a]} ${st.points > 0 ? `<button class="btn sm gold" data-a="${a}">+</button>` : ''}</b></div>`;
     if (st.sets.length) h += `<div class="stat" style="margin-top:4px"><span style="color:#8fd0ff">${st.sets.map((s) => setBonus(s)!.text).join('; ')}</span></div>`;
     e.innerHTML = h;
-    e.querySelectorAll('button[data-a]').forEach((b) => ((b as HTMLElement).onmousedown = (ev) => { ev.stopPropagation(); if (st.spend((b as HTMLElement).dataset.a as Attr, g.inv)) { g.audio.play('click'); g.inv.touch(); } }));
+    e.querySelectorAll('button[data-a]').forEach((b) => ((b as HTMLElement).onmousedown = (ev) => { ev.stopPropagation(); if (g.op({ o: 'spend', a: (b as HTMLElement).dataset.a as Attr }).ok) g.audio.play('click'); }));
   }
   private buildShop(): void {
     const g = this.g, inv = g.inv, e = this.shopEl!, n = this.shop!, top = e.scrollTop, stock = goods(n, g.flags);
@@ -461,49 +404,34 @@ export class Windows {
       if (have < cost) b.setAttribute('disabled', '');
       b.onmousedown = (ev) => { ev.stopPropagation(); if (ev.button === 0) buy(ev); };
     };
-    if (this.sold.length) {
+    const sold = g.sold;
+    if (sold.length) {
       el('div', 'ttl', e, 'Buy back').style.marginTop = '2px';
-      for (let i = this.sold.length - 1; i >= 0; i--) {
-        const x = this.sold[i];
-        row(x.it.k, itemName(x.it) + (x.it.n > 1 ? ' x' + x.it.n : ''), x.price + ' c', inv.coins, x.price, '', () => this.buyBack(x));
+      for (let i = sold.length - 1; i >= 0; i--) {
+        const x = sold[i];
+        row(x.it.k, itemName(x.it) + (x.it.n > 1 ? ' x' + x.it.n : ''), x.price + ' c', inv.coins, x.price, '', () => this.trade({ o: 'buyBack', id: x.id }));
       }
       el('div', 'ttl', e, 'For sale').style.marginTop = '6px';
     }
     for (const [k, price, cur] of stock) {
       const have = cur === 'coins' ? inv.coins : inv.count(cur);
-      row(k, item(k).name, `${price} ${cur === 'coins' ? 'c' : 'tokens'}`, have, price, '', (ev) => this.buy(k, price, cur, ev.shiftKey));
+      row(k, item(k).name, `${price} ${cur === 'coins' ? 'c' : 'tokens'}`, have, price, '', (ev) => this.trade({ o: 'buy', k, bulk: ev.shiftKey }));
     }
     e.scrollTop = top;
   }
-  private buy(k: string, price: number, cur: string, bulk: boolean): void {
-    const g = this.g, inv = g.inv, d = item(k);
-    const funds = cur === 'coins' ? inv.coins : inv.count(cur);
-    const n = Math.min(bulk ? Math.min(10, d.stack) : 1, Math.floor(funds / price), inv.room(k));
-    if (n <= 0) { g.toast(funds < price ? 'Not enough ' + (cur === 'coins' ? 'coins' : item(cur).name) : 'No room in your pack', '#ff9a8a'); g.audio.play('error', 0.5); return; }
-    if (cur === 'coins') inv.coins -= price * n; else if (!inv.remove(cur, price * n)) return;
-    const left = inv.add({ k, n }); if (left) g.dropItem({ k, n: left });
-    g.audio.play('coin'); inv.touch();
+  private trade(op: InvOp): void {
+    const g = this.g, r = g.op(op);
+    if (r.msg) g.toast(r.msg, REFUSED);
+    if (r.ok) g.audio.play('coin'); else if (r.snd) g.audio.play('error', 0.5);
   }
-  private buyBack(x: { it: Item; price: number }): void {
-    const g = this.g, inv = g.inv, i = this.sold.indexOf(x);
-    if (i < 0 || inv.coins < x.price) { g.audio.play('error', 0.5); return; }
-    if (x.it.m ? !inv.slots.includes(null) : inv.room(x.it.k) < x.it.n) { g.toast('No room in your pack', '#ff9a8a'); g.audio.play('error', 0.5); return; }
-    inv.coins -= x.price; this.sold.splice(i, 1);
-    const left = inv.add(x.it); if (left) g.dropItem({ ...x.it, n: left });
-    g.audio.play('coin'); inv.touch();
-  }
-  /** Sell a stack from the pack. Rare and boss-summoning items ask for a second shift-click first. */
-  private sell(v: View): boolean {
-    const g = this.g, inv = g.inv, s = v.arr[v.i]!, d = item(s.k);
+  /** Rare and boss-summoning items ask for a second shift-click before they are sold. */
+  private confirmSale(v: View, s: Item): boolean {
+    const g = this.g, d = item(s.k);
     const precious = itemRarity(s) >= 4 || !!d.use?.startsWith('summon') || d.use === 'recall';
     if (precious && !(this.sellConfirm && this.sellConfirm.v === v && performance.now() - this.sellConfirm.t < 2500)) {
       this.sellConfirm = { v, t: performance.now() }; g.toast('Shift-click again to sell ' + itemName(s), '#ffd9a0'); g.audio.play('click', 0.4); return false;
     }
     this.sellConfirm = null;
-    const val = sellPrice(s.k) * s.n;
-    inv.coins += val; v.arr[v.i] = null; g.audio.play('coin');
-    this.sold.push({ it: { ...s }, price: val }); if (this.sold.length > 8) this.sold.shift();
-    g.toast(`Sold ${itemName(s)}${s.n > 1 ? ' x' + s.n : ''} for ${val} coins`, '#f2c14e');
     return true;
   }
 
@@ -512,69 +440,31 @@ export class Windows {
   private forgeLevel(): number { return this.forge ? (this.forge.data.level as number) : 99; }
   private accepts(v: View, it: Item): boolean { return accepts(v.kind, v.i, it, this.g.inv.acc, this.forgeLevel()); }
   /** Put the cursor stack (or one item of it) into a view. Returns false when nothing changed. */
-  private place(v: View, right: boolean): boolean {
-    const inv = this.g.inv, c = inv.cursor;
-    if (!c || !this.accepts(v, c)) return false;
-    const s = v.arr[v.i], d = item(c.k), single = v.kind === 'armor' || v.kind === 'acc';
-    if (!s) {
-      if (right || (single && c.n > 1)) { v.arr[v.i] = { k: c.k, n: 1, m: c.m }; c.n--; } else { v.arr[v.i] = c; inv.cursor = null; }
-    } else if (s.k === c.k && !s.m && !c.m && d.stack > 1 && !single) {
-      const mv = Math.min(right ? 1 : c.n, d.stack - s.n);
-      if (mv <= 0) return false;
-      s.n += mv; c.n -= mv;
-    } else if (!right && !(single && c.n > 1) && this.acceptsBack(v, s)) { v.arr[v.i] = c; inv.cursor = s; }
-    else return false;
-    if (inv.cursor && inv.cursor.n <= 0) inv.cursor = null;
-    if (single) this.g.audio.play('dig_cloth', 0.6);
-    this.afterEdit(v);
-    return true;
-  }
-  private acceptsBack(_v: View, _s: Item): boolean { return true; }
-  /** Any edit made while a container is open may have moved items into it (shift-click from the
-   *  inventory passes the inventory view), so always flag the container's chunk for saving. */
-  private afterEdit(_v?: View): void {
-    this.markContainer();
-    this.g.inv.touch();
-  }
-  private markContainer(): void {
-    const g = this.g;
-    if (this.forge) { this.forge.data.rev++; g.markEntDirty(this.forge); }
-    if (this.chest) g.markChestDirty();
+  private place(v: View, one: boolean): boolean {
+    if (v.kind === 'out') return false;
+    const r = this.g.op({ o: 'place', v: this.ref(v), one });
+    if (r.ok && r.snd) this.g.audio.play(r.snd, 0.6);
+    return r.ok;
   }
   private down(v: View, e: MouseEvent): void {
     const g = this.g, inv = g.inv, right = e.button === 2;
-    if (v.kind === 'out') { this.takeOutput(e.shiftKey); return; }
+    if (v.kind === 'out') { this.feedback(g.op({ o: 'out', all: e.shiftKey }), 'craft', 1, 0.5); return; }
     const s = v.arr[v.i];
-    if (e.shiftKey && s) { this.quickMove(v); return; }
+    if (e.shiftKey && s) { this.quickMove(v, s); return; }
     // second click of a double-click on the slot just emptied: gather matching items into the cursor
     const dbl = !right && this.lastV === v && performance.now() - this.lastT < 320;
     this.lastV = v; this.lastT = performance.now();
-    if (dbl && inv.cursor && !s && this.gather()) { this.lastV = null; g.audio.play('click', 0.5); inv.touch(); return; }
-    if (!inv.cursor) {
-      if (!s) return;
-      if (right && s.n > 1 && v.kind !== 'fout') { const half = Math.ceil(s.n / 2); inv.cursor = { k: s.k, n: half, m: s.m }; s.n -= half; }
-      else { inv.cursor = s; v.arr[v.i] = null; }
-      this.dragFrom = v; g.audio.play('click', 0.5);
-      this.afterEdit(v);
-    } else if (this.place(v, right)) { g.audio.play('click', 0.5); if (right) this.dragSet = new Set([v]); }
-    else { const why = refusal(v.kind, inv.cursor); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); }
+    if (dbl && inv.cursor && !s && g.op({ o: 'gather' }).ok) { this.lastV = null; g.audio.play('click', 0.5); return; }
+    const carrying = !!inv.cursor, r = g.op({ o: 'click', v: this.ref(v), r: right, e: s ? s.k : '' });
+    if (!carrying) { if (r.ok) { this.dragFrom = v; g.audio.play('click', 0.5); } }
+    else if (r.ok) { if (r.snd) g.audio.play(r.snd, 0.6); g.audio.play('click', 0.5); if (right) this.dragSet = new Set([v]); }
+    else this.feedback(r, '', 0, 0.4);
   }
-  /** Pull matching unmodified items from the pack (and open chest) into the cursor, partial stacks first. */
-  private gather(): boolean {
-    const c = this.g.inv.cursor!, d = item(c.k);
-    if (c.m || d.stack <= 1 || c.n >= d.stack) return false;
-    const before = c.n;
-    for (let pass = 0; pass < 2; pass++) for (let a = 0; a < 2; a++) {
-      const arr = a === 0 ? this.g.inv.slots : this.chest;
-      if (!arr) continue;
-      for (let i = 0; i < arr.length && c.n < d.stack; i++) {
-        const t = arr[i];
-        if (!t || t.k !== c.k || t.m || (pass === 0 && t.n >= d.stack)) continue;
-        const mv = Math.min(t.n, d.stack - c.n); c.n += mv; t.n -= mv; if (t.n <= 0) arr[i] = null;
-      }
-    }
-    if (c.n !== before) this.markContainer();
-    return c.n !== before;
+  /** The refusal toast, then the sound: `good` when the op went through, else the error sound if the op asks for one. */
+  private feedback(r: OpResult, good: string, vol: number, bad: number): void {
+    const g = this.g;
+    if (r.msg) g.toast(r.msg, REFUSED);
+    if (r.ok) g.audio.play(good, vol); else if (r.snd) g.audio.play('error', bad);
   }
   /** Keys while a window is open: 1-9 swap the hovered slot with that hotbar slot, Q drops from it. */
   key(code: string, e: KeyboardEvent): boolean {
@@ -583,74 +473,27 @@ export class Windows {
     return false;
   }
   private hotkey(i: number): void {
-    const g = this.g, inv = g.inv, v = this.hover;
-    if (!v || v.kind === 'out' || (v.arr === inv.slots && v.i === i)) return;
-    const a = v.arr[v.i], b = inv.slots[i];
-    if (!a && !b) return;
-    const single = v.kind === 'armor' || v.kind === 'acc';
-    if (b && (!this.accepts(v, b) || v.kind === 'fout' || (single && b.n > 1))) { const why = refusal(v.kind, b); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); return; }
-    v.arr[v.i] = b; inv.slots[i] = a;
-    g.audio.play(single ? 'dig_cloth' : 'click', 0.5);
-    this.afterEdit(v);
+    const g = this.g, v = this.hover;
+    if (!v || v.kind === 'out') return;
+    const s = v.arr[v.i], r = g.op({ o: 'hotkey', v: this.ref(v), i, e: s ? s.k : '' });
+    if (r.ok) g.audio.play(r.snd ?? 'click', 0.5); else this.feedback(r, '', 0, 0.4);
   }
   private dropHover(all: boolean): void {
     const g = this.g, v = this.hover;
-    if (g.inv.cursor) { this.dropCursor(); g.audio.play('click', 0.4); return; }
+    if (g.inv.cursor) { g.op({ o: 'dropCur' }); g.audio.play('click', 0.4); return; }
     if (!v || v.kind === 'out') return;
     const s = v.arr[v.i];
-    if (!s) return;
-    const n = all ? s.n : 1;
-    g.dropItem({ k: s.k, n, m: s.m });
-    s.n -= n; if (s.n <= 0) v.arr[v.i] = null;
-    g.audio.play('click', 0.4);
-    this.afterEdit(v);
+    if (s && g.op({ o: 'dropSlot', v: this.ref(v), all, e: s.k }).ok) g.audio.play('click', 0.4);
   }
-  private takeOutput(all: boolean): void {
-    const g = this.g, inv = g.inv;
-    let made = 0;
-    for (let guard = 0; guard < 99; guard++) {
-      const grid = this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft;
-      const r = matchRecipe(grid, this.gridW, this.station);
-      if (!r) break;
-      const d = item(r.out);
-      if (!all) {
-        const c = inv.cursor;
-        if (c && (c.k !== r.out || c.m || d.stack === 1 || c.n + r.n > d.stack)) break;
-        const out = g.craft(r, this.gridW * this.gridW);
-        if (c) c.n += out.n; else inv.cursor = out;
-        made += out.n;
-        break;
-      }
-      if (inv.room(r.out) < r.n) { if (!made) g.toast('No room in your pack', '#ff9a8a'); break; }
-      const out = g.craft(r, this.gridW * this.gridW), left = inv.add(out);
-      if (left) g.dropItem({ ...out, n: left });
-      made += out.n;
-    }
-    if (made) g.audio.play('craft'); else g.audio.play('error', 0.5);
-    inv.touch();
-  }
-  private quickMove(v: View): void {
-    const g = this.g, inv = g.inv, s = v.arr[v.i]!, d = item(s.k);
-    const into = (arr: Slot[], from: number, to: number): void => this.moveInto(v.arr, v.i, arr, from, to);
-    if (v.kind === 'inv') {
-      if (this.shop) { if (!this.sell(v)) return; }
-      else if (this.chest) into(this.chest, 0, 27);
-      else if (this.forge) {
-        const fs = this.forge.data.s as Slot[];
-        if (smeltable(s.k, this.forgeLevel())) into(fs, 0, 1);
-        else if (d.fuel) into(fs, 1, 2);
-        else { g.toast(refusal('fin', s), '#ff9a8a'); g.audio.play('error', 0.4); return; }
-      }
-      else if (d.armor) { const cur = inv.armor[d.armor.slot]; inv.armor[d.armor.slot] = s; v.arr[v.i] = cur; g.audio.play('dig_cloth', 0.6); }
-      else if (d.acc && inv.acc.some((a) => a && a.k === s.k)) { g.toast('Already wearing one: a second adds nothing', '#ff9a8a'); g.audio.play('error', 0.4); return; }
-      else if (d.acc && inv.acc.includes(null)) { inv.acc[inv.acc.indexOf(null)] = s; v.arr[v.i] = null; g.audio.play('dig_cloth', 0.6); }
-      else if (v.i < 9) into(inv.slots, 9, 36); else into(inv.slots, 0, 9);
-    } else {
-      const left = inv.add(s);
-      if (left) s.n = left; else v.arr[v.i] = null;
-    }
+  /** Shift-click: sell to an open shop, load an open chest or forge, equip, or move between hotbar and backpack. */
+  private quickMove(v: View, s: Item): void {
+    const g = this.g;
+    if (this.shop && v.kind === 'inv' && !this.confirmSale(v, s)) return;
+    const r = g.op({ o: 'quick', v: this.ref(v), e: s.k });
+    if (!r.ok) { this.feedback(r, '', 0, 0.4); return; }
+    if (r.snd === 'coin') g.audio.play('coin'); else if (r.snd) g.audio.play(r.snd, 0.6);
+    if (r.msg) g.toast(r.msg, '#f2c14e');
     g.audio.play('click', 0.5);
-    this.afterEdit(v);
   }
 
   // ---- tooltips ----

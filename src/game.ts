@@ -7,9 +7,8 @@ import { clamp } from './core/noise';
 import { B, BLOCKS, T_LAYER } from './data/blocks';
 import { BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
-import { Item, ITEMS, TIERS, item } from './data/items';
+import { type Item, ITEMS, TIERS, item } from './data/items';
 import { NPCS } from './data/npcs';
-import type { Recipe } from './data/recipes';
 import { EntityStore } from './client/entities';
 import { FxPlay, tintOf } from './client/fxplay';
 import { LOCAL_ID, fromLegacy, toLegacy } from './client/legacy';
@@ -30,6 +29,7 @@ import { STEP, isNight } from './sim/clock';
 import { BURST, type Fx, type Scope, type Sink } from './sim/fx';
 import { placeGate } from './sim/gates';
 import type { Inventory } from './sim/inventory';
+import type { InvOp, OpResult } from './sim/invops';
 import { rayHitMobs } from './sim/mobhit';
 import { npcOf } from './sim/npcs';
 import type { RayHit } from './sim/physics';
@@ -37,7 +37,6 @@ import { type SimPlayer, recall, respawn } from './sim/player';
 import * as rules from './sim/rules';
 import { Sim } from './sim/sim';
 import type { PlayerStats } from './sim/stats';
-import type { BlockEnt } from './sim/voxels';
 import type { SaveDB, WorldMeta } from './systems/save';
 import { DebugOverlay } from './ui/debug';
 import { Hud, el, moonTint } from './ui/hud';
@@ -49,6 +48,7 @@ import { WorkerPool } from './world/pool';
 import { Chunk, World } from './world/world';
 
 export interface GameConfig { meta: WorldMeta; db: SaveDB; settings: Settings; /** false when the browser blocks IndexedDB */ canSave?: boolean }
+const NOTHING_SOLD: { id: number; it: Item; price: number }[] = [];
 const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
 // Interaction prompts, built once so the per-tick prompt check allocates nothing.
 const IS_NPC = (m: MobView): boolean => m.def.ai === 'npc';
@@ -82,6 +82,8 @@ export class Game implements InteractHost, Sink {
   private npcPromptT = 0; private npcPrompt: string | null = null; private conClosed = 0;
   /** Date.now() of the last successful save (0 = not yet). */
   lastSave = 0; private saveFailT = -1e9; private noSaveWarned = false;
+  /** Sequence number of the last inventory op this client sent. */
+  private opSeq = 0;
 
   // ---- mirrors: the local player's state and the shared world state, as the simulation holds them ----
   get inv(): Inventory { return this.me.inv; }
@@ -97,6 +99,8 @@ export class Game implements InteractHost, Sink {
   get worldSpawn(): [number, number] { return this.sim.shared.worldSpawn; }
   /** Last death as [dimension, x, y, z], shown on the compass until the player walks back to it. */
   get deathAt(): [number, number, number, number] | null { return this.me.deathAt; }
+  /** What the open shop bought from the player and still offers back, oldest first. */
+  get sold(): readonly { id: number; it: Item; price: number }[] { return this.me.window?.sold ?? NOTHING_SOLD; }
 
   constructor(canvas: HTMLCanvasElement, readonly ui: HTMLElement, readonly cfg: GameConfig) {
     const meta = cfg.meta, d = meta.data;
@@ -216,6 +220,8 @@ export class Game implements InteractHost, Sink {
       if (m.mode === 'forge' && e) { this.audio.play('click'); this.win.show('forge', { forge: e }); }
       else if (m.mode === 'chest' && e) { this.audio.play('chest'); this.win.show('chest', { chest: e.data.s }); }
       else if (n) { this.audio.play('click'); this.win.show('shop', { shop: n }); }
+      // nothing to show for it: the simulation must not go on holding a window this client never opened
+      else this.op({ o: 'close' });
     }
   }
   /** The simulation moved the player. A crossing swaps the world; `load` puts up the loading screen until the place is meshed. */
@@ -248,10 +254,8 @@ export class Game implements InteractHost, Sink {
 
   // ---- small services the windows and the HUD call ----------------------------------------------
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
-  dropItem(it: Item): void { act.dropItem(this.sim, this.me, it); }
-  craft(r: Recipe, cells: number): Item { return act.craft(this.sim, this.me, r, cells); }
-  markEntDirty(e: BlockEnt): void { this.sim.realms[this.me.dim].touchEnt(e); }
-  markChestDirty(): void { const w = this.me.window, r = this.sim.realms[this.me.dim], e = w && w.mode === 'chest' ? r.getEnt(w.x!, w.y!, w.z!) : null; if (e) r.touchEnt(e); }
+  /** One inventory or container op. The simulation carries it out at once; the result says what to play and toast. */
+  op(o: InvOp): OpResult { return act.invOp(this.sim, this.me, ++this.opSeq, o); }
   respawn(): void { respawn(this.sim, this.me); }
   /** Developer commands (also reachable from the T command line). */
   cheat(cmd: string): string { return cheat(this.sim, this.me, cmd); }
@@ -282,7 +286,7 @@ export class Game implements InteractHost, Sink {
       const v = (t.power >= b.power ? 1000 : 0) + t.speed;   // able to harvest first, then fastest
       if (v > bestV) { bestV = v; best = i; }
     }
-    if (best >= 0) inv.sel = best;
+    if (best >= 0) this.op({ o: 'sel', i: best });
   }
   onBroken(x: number, y: number, z: number, id: number): void {
     if (!act.breakBlock(this.sim, this.me, x, y, z, id)) return;
@@ -408,10 +412,12 @@ export class Game implements InteractHost, Sink {
   private tick(dt: number): void {
     const p = this.player, inp = this.input, inv = this.inv, st = this.stats, w = this.world, me = this.me, sim = this.sim;
     if (!this.ready) return;
-    for (let i = 0; i < 9; i++) if (inp.hit(DIGITS[i])) inv.sel = i;
-    if (inp.wheel) inv.sel = (((inv.sel + inp.wheel) % 9) + 9) % 9;
+    let sel = inv.sel;
+    for (let i = 0; i < 9; i++) if (inp.hit(DIGITS[i])) sel = i;
+    if (inp.wheel) sel = (((sel + inp.wheel) % 9) + 9) % 9;
+    if (sel !== inv.sel) this.op({ o: 'sel', i: sel });
     if (inp.hit('KeyH') && inp.locked) this.quickHeal();
-    if (inp.hit('KeyQ')) act.dropHeld(sim, me, inp.down('ControlLeft') || inp.down('ControlRight'));
+    if (inp.hit('KeyQ')) this.op({ o: 'dropHeld', all: inp.down('ControlLeft') || inp.down('ControlRight') });
     p.moveMult = (1 + st.d.speed) * (p.inWater ? 1 + st.d.swim : 1); p.jumpMult = Math.sqrt(1 + st.d.jump); p.extraJumps = st.d.extraJump;
     p.autoJump = this.cfg.settings.autoJump; p.canFly = me.modes.creative && this.cfg.settings.flyToggle;
     p.frozen = st.dead || me.arriving >= 0;
@@ -438,9 +444,9 @@ export class Game implements InteractHost, Sink {
     const sn = Math.floor(p.walkDist / STRIDE + 0.5);
     if (sn !== this.stepN) { this.stepN = sn; if (p.onGround) { const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z)); if (below) this.audio.play('step_' + BLOCKS[below].sound, p.sneaking ? 0.25 : 0.6); } }
 
-    me.uiOpen = this.win.open; if (!this.win.open) me.window = null;
+    me.uiOpen = this.win.open;
     this.interact.tick(dt, inp, this, inp.locked && !st.dead);
-    if (inp.clicks[1] && this.interact.hit.hit && act.pickBlock(sim, me, this.interact.hit.id)) this.audio.play('click', 0.4);
+    if (inp.clicks[1] && this.interact.hit.hit && this.op({ o: 'pick', id: this.interact.hit.id }).ok) this.audio.play('click', 0.4);
 
     // the world: one step of the simulation, with the views told before and after
     this.ents.begin(sim.realms[me.dim], dt);

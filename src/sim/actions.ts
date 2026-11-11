@@ -3,12 +3,13 @@
 // sound, its bow) go to everyone else: they are emitted with `not` set to the actor's slot.
 import { BUILD_MAX } from '../core/constants';
 import { B, BLOCKS, T_OPAQUE, T_REPLACE, T_SOLID } from '../data/blocks';
-import { INV_SIZE, type Slot, takeCraft } from './inventory';
+import { hashInt, mulberry32 } from '../core/noise';
+import type { Slot } from './inventory';
 import { ITEMS, type Item, item } from '../data/items';
 import { BOSSES } from '../data/mobs';
-import type { Recipe } from '../data/recipes';
 import { BURST } from './fx';
 import { collapseGate } from './gates';
+import { type InvOp, type OpResult, type OpState, applyOp } from './invops';
 import { defIndex } from './mobs';
 import { npcOf } from './npcs';
 import type { SimPlayer } from './player';
@@ -30,45 +31,34 @@ export function dropItem(sim: Sim, p: SimPlayer, it: Item): void {
   const b = p.body, [dx, dy, dz] = dirOf(p);
   sim.realms[p.dim].drops.spawn(b.x + dx * 0.4, b.y + b.eye - 0.3, b.z + dz * 0.4, it, dx * 5, dy * 5 + 1.5, dz * 5, 1.2);
 }
-/** Take one batch of `r` off the player's crafting grid (its first `cells` cells). Having made a thing is world knowledge: the guide and the townsfolk read `craft:<key>`. */
-export function craft(sim: Sim, p: SimPlayer, r: Recipe, cells: number): Item {
-  const out = takeCraft(r, p.inv.craft, sim.rnd, cells);
-  sim.addFlag('craft:' + r.out);
-  return out;
-}
-/** Q: throw one of the held stack, or all of it. */
-export function dropHeld(sim: Sim, p: SimPlayer, all: boolean): void {
-  const h = p.inv.held();
-  if (!h) return;
-  const n = all ? h.n : 1;
-  dropItem(sim, p, { k: h.k, n, m: h.m }); p.inv.consumeHeld(n);
+/** One inventory or container op of this player, carried out on the state the simulation holds.
+ *  `seq` is the op's place in the player's stream; it seeds the op's own random draws. */
+export function invOp(sim: Sim, p: SimPlayer, seq: number, op: InvOp): OpResult {
+  const w = p.window, realm = sim.realms[p.dim], wire = op !== null && typeof op === 'object' && typeof op.o === 'string' && op.o[0] !== '_';
+  // a container is named by its cell and looked up again for every op
+  let ent = w && !w.covered && (w.mode === 'chest' || w.mode === 'forge') ? realm.getEnt(w.x!, w.y!, w.z!) : null;
+  if (ent && (ent.kind !== w!.mode || !ent.data.s)) ent = null;
+  let rnd: (() => number) | null = null;
+  const st: OpState = { inv: p.inv, stats: p.stats, window: w, box: ent ? { kind: ent.kind as 'chest' | 'forge', s: ent.data.s, level: ent.data.level } : null };
+  const r = wire ? applyOp(st, op, {
+    seq, flags: sim.flags, creative: p.modes.creative,
+    rnd: () => (rnd ??= mulberry32(hashInt(p.rngSeed, seq, 40503, 0)))(),
+    drop: (it) => dropItem(sim, p, it), flag: (f) => sim.addFlag(f),
+  }) : { ok: false as const };
+  p.ackSeq = seq; p.invDirty = true;
+  if (w && !st.window) {
+    p.window = null;
+    if (w.x !== undefined) { const k = `${w.x},${w.y},${w.z}`, v = realm.viewers.get(k); if (v && v.delete(p) && !v.size) realm.viewers.delete(k); }
+  }
+  // anything done with a container open may have moved items into it: its chunk is saved, and a forge window redraws
+  if (r.ok && ent) { if (ent.kind === 'forge') ent.data.rev++; realm.touchEnt(ent); }
+  return r;
 }
 /** Roll a loot table for the player who opened or broke its container; the coins are theirs. */
 function rollLoot(sim: Sim, p: SimPlayer, table: string): Item[] {
   const { items, coins } = rules.rollLoot(table, sim.rnd);
   if (coins) { p.inv.coins += coins; p.inv.touch(); tell(sim, p, `+${coins} coins`, '#f2c14e'); }
   return items;
-}
-
-/** Middle click: bring the targeted block's item to hand. */
-export function pickBlock(sim: Sim, p: SimPlayer, id: number): boolean {
-  const b = BLOCKS[id], inv = p.inv, key = ITEMS.has(b.key) ? b.key : b.drops[0]?.[0];
-  if (!key || !ITEMS.has(key)) return false;
-  let at = -1, free = -1;
-  for (let i = 0; i < INV_SIZE && at < 0; i++) if (inv.slots[i]?.k === key) at = i;
-  for (let i = 8; i >= 0; i--) if (!inv.slots[i]) free = i;
-  if (at >= 0 && at < 9) inv.sel = at;
-  else if (at < 0 && !p.modes.creative) return false;
-  else {
-    // from the pack (or from nowhere, in creative) into an empty hotbar slot if there is one, else trade places with the held stack
-    const to = free >= 0 ? free : inv.sel, was = inv.slots[to];
-    inv.slots[to] = at >= 0 ? inv.slots[at] : { k: key, n: item(key).stack };
-    if (at >= 0) inv.slots[at] = was;
-    else if (was) { const left = inv.add(was); if (left) dropItem(sim, p, { k: was.k, n: left, m: was.m }); }
-    inv.sel = to;
-  }
-  inv.touch();
-  return true;
 }
 
 /** Break a block as the world would (no tool check): pops plants, torches and the like. */

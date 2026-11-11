@@ -51,6 +51,8 @@ export interface SimPlayer {
   ackSeq: number; rngSeed: number; invDirty: boolean; statsDirty: boolean;
   /** Open window. Containers are named by cell only. */
   window: null | { mode: 'station' | 'chest' | 'forge' | 'shop'; station?: string; x?: number; y?: number; z?: number; npc?: string; mob?: number;
+                   /** The Guide lies over it: it is kept, and ops act as with no window. */
+                   covered?: boolean;
                    sold: { id: number; it: Item; price: number }[] };
   /** Joined without a record: this is the player's first visit. */
   fresh: boolean;

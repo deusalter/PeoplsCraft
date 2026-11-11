@@ -81,6 +81,7 @@ export class Sim {
     let slot = 1;
     for (const q of this.players.values()) if (!q.parked && q.slot >= slot) slot = q.slot + 1;
     const p = newPlayer(id, slot, name, local, body), ws = this.shared.worldSpawn;
+    p.rngSeed = Math.floor(this.rnd() * 4294967296);
     if (rec) {
       p.fresh = false; p.dim = (rec.dim as 0 | 1 | 2) ?? 0;
       p.inv.load(rec.inv); p.stats.load(rec.stats);

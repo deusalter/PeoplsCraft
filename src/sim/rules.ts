@@ -67,6 +67,9 @@ export function refusal(kind: SlotKind, it: Item): string {
   return '';
 }
 
+/** Orders two item names by code unit, so a sort comes out the same on every machine. */
+export const sortCompare = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
 // ---- trade and loot --------------------------------------------------------------------------
 /** Coins an item is worth to a trader. */
 export function itemValue(k: string): number {

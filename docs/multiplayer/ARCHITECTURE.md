@@ -2800,6 +2800,55 @@ optimised it again, about 1 ms on the worst one, which is the number 6.6 item 2 
 (`MEASUREMENTS.md` section 4). What walks `list` from outside the pools still walks all of it: the ray
 test of a player's shot, and the event, town and harness scans.
 
+D25. Stage 1c (5.1, 5.2, 5.3). `sim/invops.ts` is built as section 5 tabulates it, with these differences.
+(a) The Guide over another window. 5.2 keeps the sim's `window` under the Guide and has Back send
+nothing. Two things in the window code do not allow that. A shift-click or a double-click made in the
+Guide acts on the plain inventory today (equip, hotbar to backpack, gather from the pack); with the
+window still in force on the sim the same click would load the hidden chest or forge, or sell to the
+hidden shop. And leaving the Guide by Back puts a stack that was picked up in the Guide back in the
+pack, as every change of window does. So `tidy` carries one field, `cover`, and `window` (in `OpState`
+and `SimPlayer`) has `covered?: boolean`: a covered window is kept, with its `sold` list, and every op
+acts as if there were none (2 x 2 grid by hand, no container, no shop). Opening the Guide over a window
+sends `tidy {cover: true}`; Back sends `tidy {cover: false}`; any other window shown over an open one
+sends `tidy {cover: false}`; `close` ends a covered window like any other.
+(b) `OpCtx` has `creative`: `pick` needs it and `OpState` holds nothing of the player's modes.
+(c) `OpResult` has `n` on success: the number of items an `out` or a `book` made, which the window puts
+in its "Made 12 torch" line. `ok: false` always means nothing changed. A `lay` or a `book` that was
+carried out and made nothing (the grid went back to the pack, then the recipe could not be laid out, or
+the pack had no room for the result) has moved items, so it returns `ok: true` with `snd: 'error'`.
+(d) Feedback. `snd` and `msg` name what the outcome calls for (`dig_cloth` when an equipment slot took
+the item, `coin`, `craft`, `click`, `error`; a refusal line or the sale line). The window keeps today's
+volumes and colours, which differ from one click path to the next, and adds the plain click of a
+pointer action itself. The 2.5 s confirmation of a precious sale stays in the window, as 5.2 says.
+(e) Addressing is as strict as the windows are. A `[3, i]` ref is valid for the cells the open window
+shows: 4 by hand, 9 at a station, none beside a chest, forge or shop; `out`, `lay` and `book` are
+refused there too. `lay` and `book` take only a recipe that fits the grid (`inventory.recipeFits`, the
+test `recipesFor` makes), since a shaped recipe wider than the grid would be written over other cells.
+(f) The sim's side for this stage is `actions.invOp(sim, p, seq, op)`, which `Sim.handle` will call for
+`op`. It looks the container up at the window's cell and takes it when an entity of the window's kind
+is there; the rest of the re-resolution of 5.2 (the block's `use`, reach, the townsperson's distance,
+the once-a-second check, `st {box: null}`) comes with the messages. It builds the context (`rnd` is
+`mulberry32(hashInt(rngSeed, seq, 40503, 0))`, made on the first draw; `drop` is `actions.dropItem`;
+`flag` is `Sim.addFlag`), sets `ackSeq` and `invDirty`, refuses `_held` and `_slot`, takes the player
+out of `realm.viewers` on `close`, and after every accepted op with a container open marks that
+container's chunk for saving and bumps a forge's `rev`. The window code did the last for most edits and
+not for a cursor drop or an attribute point; the sim does it for all, which only saves a chunk once more.
+`rngSeed` is drawn from `sim.rnd` in `join`. This ends the stopgap of D23 and D21 (j): a crafting
+modifier is rolled from the op's own stream, and `actions.craft`, `dropHeld` and `pickBlock` are gone.
+(g) The client. `Game.op(op)` counts `seq` (ops only: `edit`, `use`, `item` and `fire` are still calls
+without one) and applies the op at once through `actions.invOp`; there is no `base`, `pending` or
+`pendingSel` yet, so a tick in which the hotbar selection changed sends one `sel`. `Game.sold` mirrors
+the open shop's list for the window. The client no longer clears `p.window` each tick (D21 (m)): every
+way a window closes sends `close`, and an `open` the client finds nothing to show for is answered with
+`close`. The sim's own actions (a placed block, a consumable, an arrow, a pickup, a forge tick, the
+coins lost in death) still change a pack or a container directly: they are the authority, and `_held`
+and `_slot` exist for the client that will predict them.
+(h) `sort` orders equal ranks with `rules.sortCompare`, as 5.2 and D18 say. Nothing else a click,
+shift-click, drag, split, craft, equip, drop or trade does has changed: the same 58,000 seeded window
+events (clicks, drags, keys, book and shop buttons, the Guide over every kind of window) were played on
+the tree before this step and on this one, with the Sort buttons left out, and every sound, toast,
+thrown stack and the whole inventory, container, shop and attribute state agreed after each.
+
 ---
 
 ## 14. Review log

@@ -92,14 +92,14 @@ export class Inventory {
 const shapeDims = (r: Recipe): [number, number] => (r.shape ? [Math.max(...r.shape.map((s) => s.length)), r.shape.length] : [0, 0]);
 const units = (r: Recipe): number => (r.in ? r.in.reduce((s, i) => s + i[1], 0) : 0);
 
-/** Recipes usable at a station through a w x w grid. */
-export function recipesFor(station: string, w: number): Recipe[] {
-  return RECIPES.filter((r) => {
-    if (r.station !== 'hand' && r.station !== station) return false;
-    if (r.shape) { const [sw, shh] = shapeDims(r); return sw <= w && shh <= w; }
-    return units(r) <= w * w;
-  });
+/** Can the recipe be made at this station through a w x w grid? */
+export function recipeFits(r: Recipe, station: string, w: number): boolean {
+  if (r.station !== 'hand' && r.station !== station) return false;
+  if (r.shape) { const [sw, shh] = shapeDims(r); return sw <= w && shh <= w; }
+  return units(r) <= w * w;
 }
+/** Recipes usable at a station through a w x w grid. */
+export function recipesFor(station: string, w: number): Recipe[] { return RECIPES.filter((r) => recipeFits(r, station, w)); }
 
 function matchShape(r: Recipe, grid: Slot[], w: number, x0: number, y0: number, bw: number, bh: number, mirror: boolean): boolean {
   const [sw, shh] = shapeDims(r);
