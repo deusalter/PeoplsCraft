@@ -18,6 +18,8 @@ const hit = newRayHit();
 
 export class ProjSim {
   readonly list: Proj[] = [];
+  /** Every slot from here up is free. Raised by `fire`, lowered only at the end of `tick`. */
+  hi = 0;
   private nextId = 1;
   private cur: Proj | null = null;
   private canHit = (m: Mob): boolean => m.def.ai !== 'npc' && m.def.ai !== 'minion' && !this.cur!.hit.has(m.id);
@@ -27,16 +29,21 @@ export class ProjSim {
 
   /** `by`: the player who shot it, or null for a creature's shot (which only players can be hit by). */
   fire(kind: string, x: number, y: number, z: number, dx: number, dy: number, dz: number, dmg: number, by: SimPlayer | null, speed?: number, style: Style = 'ranged', knock = 3, crit = false): void {
-    const p = this.list.find((o) => !o.active);
-    if (!p) return;
+    const list = this.list;
+    let i = 0;
+    while (i < this.hi && list[i].active) i++;
+    if (i >= list.length) return;
+    const p = list[i];
+    if (i >= this.hi) this.hi = i + 1;
     const d = PROJECTILES[kind] ?? PROJECTILES.arrow, sp = speed ?? d.speed, l = Math.hypot(dx, dy, dz) || 1;
     p.active = true; p.id = this.nextId++; p.def = d; p.x = x; p.y = y; p.z = z; p.vx = (dx / l) * sp; p.vy = (dy / l) * sp; p.vz = (dz / l) * sp;
     p.life = d.life; p.dmg = dmg; p.player = !!by; p.by = by ? by.id : null; p.style = style; p.knock = knock; p.crit = crit; p.hit.clear();
   }
 
   tick(dt: number): void {
-    const realm = this.realm, sim = realm.sim;
-    for (const p of this.list) {
+    const realm = this.realm, sim = realm.sim, list = this.list;
+    for (let i = 0; i < this.hi; i++) {
+      const p = list[i];
       if (!p.active) continue;
       p.life -= dt;
       if (p.life <= 0) { p.active = false; continue; }
@@ -65,5 +72,6 @@ export class ProjSim {
       p.x += dx * stop; p.y += dy * stop; p.z += dz * stop;
       if (dead) { p.active = false; sim.sink.emit({ dim: realm.dim }, ['pe', p.id, p.x, p.y, p.z, how]); }
     }
+    while (this.hi > 0 && !list[this.hi - 1].active) this.hi--;
   }
 }

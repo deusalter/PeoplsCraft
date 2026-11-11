@@ -75,17 +75,19 @@ export class EntityStore {
   sync(realm: Realm): void {
     if (realm !== this.realm) { this.realm = realm; this.marks.length = 0; this.mobRender.clearCorpses(); for (const v of this.mobs) v.active = false; for (const v of this.projs) v.active = false; for (const v of this.drops) this.dropRender.hide(v); }
     const ml = realm.mobs.list, pl = realm.proj.list, dl = realm.drops.list;
-    while (this.mobs.length < ml.length) this.mobs.push(new MobView());
-    for (let i = 0; i < ml.length; i++) { const m = ml[i]; if (m.active) this.copyMob(m, this.mobs[i]); else this.mobs[i].active = false; }
-    while (this.projs.length < pl.length) this.projs.push(new ProjView());
-    for (let i = 0; i < pl.length; i++) {
+    // a view for every slot the pools have reached, not for every slot they own: each pass below, and every
+    // loop over the views, then costs what is alive
+    while (this.mobs.length < realm.mobs.hi) this.mobs.push(new MobView());
+    for (let i = 0; i < this.mobs.length; i++) { const m = ml[i]; if (m.active) this.copyMob(m, this.mobs[i]); else this.mobs[i].active = false; }
+    while (this.projs.length < realm.proj.hi) this.projs.push(new ProjView());
+    for (let i = 0; i < this.projs.length; i++) {
       const p = pl[i], v = this.projs[i];
       if (!p.active) { v.active = false; continue; }
       if (!v.active || v.id !== p.id) { v.active = true; v.id = p.id; v.def = p.def; v.px = p.x; v.py = p.y; v.pz = p.z; }
       v.x = p.x; v.y = p.y; v.z = p.z; v.vx = p.vx; v.vy = p.vy; v.vz = p.vz;
     }
-    while (this.drops.length < dl.length) this.drops.push(new DropView());
-    for (let i = 0; i < dl.length; i++) {
+    while (this.drops.length < realm.drops.hi) this.drops.push(new DropView());
+    for (let i = 0; i < this.drops.length; i++) {
       const d = dl[i], v = this.drops[i];
       if (!d.active) { if (v.active) this.dropRender.hide(v); continue; }
       if (!v.active || v.id !== d.id) {
@@ -139,7 +141,10 @@ export class EntityStore {
     const realm = this.realm, ps = this.g.particles, R = Math.random;
     if (!realm) return;
     if (ev[0] === 'md') {
-      const i = realm.mobs.list.findIndex((m) => m.id === ev[1]);
+      // its slot is still under the pool's bound: that only drops at the end of a tick
+      const ml = realm.mobs.list;
+      let i = realm.mobs.hi - 1;
+      while (i >= 0 && ml[i].id !== ev[1]) i--;
       this.marks = this.marks.filter((k) => k.id !== ev[1]);
       if (i < 0 || ev[2] !== 1) return;
       // the creature as it was when it died, not as the last frame showed it

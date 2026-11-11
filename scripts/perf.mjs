@@ -6,18 +6,23 @@
 // Reported: game.prof worst values over the flight (world = chunk scheduling and uploads,
 // tick = the fixed-step simulation, render = everything after it), and per frame the CPU time of
 // Game.runFrame, its sim portion, the frame-to-frame interval, how many frames took over 16.7 ms of
-// CPU and how many display refreshes were missed.
+// CPU and how many display refreshes were missed. The worst values are single frames, so anything
+// else that wants the CPU during the flight raises them: each run also reports the machine's 1-minute
+// load average before and after, and with --repeat the median of the sums so far.
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { loadavg } from 'node:os';
 import { resolve } from 'node:path';
 
 export const query = 'quick=perf&fresh';
 const FLIGHT_MS = 20000, VIEW = 12;
+const sums = [];
 
 export async function run({ page, url, log }) {
   // settings live in localStorage: set the view, then load the world again so it starts with it
   await page.evaluate((v) => localStorage.setItem('cairnlight.settings', JSON.stringify({ gfx: { renderDist: v } })), VIEW);
   await page.goto(url, { waitUntil: 'load' });
   await page.waitForFunction(() => window.T, null, { timeout: 60000 });
+  const load0 = loadavg()[0];
   const r = await page.evaluate(async ([ms, view]) => {
     const g = T.game;
     if (!(await T.loaded())) throw new Error('the world did not load');
@@ -60,10 +65,13 @@ export async function run({ page, url, log }) {
     cpuOver16_7: +(r.cpu.filter((v) => v > 1000 / 60).length / r.cpu.length).toFixed(4),
     // a frame interval past 25 ms is a missed display refresh at 60 Hz
     intervalOver25: +(r.gap.filter((v) => v > 25).length / r.gap.length).toFixed(4),
+    loadAverage: [+load0.toFixed(1), +loadavg()[0].toFixed(1)],
   };
   const dir = resolve('out/perf');
   mkdirSync(dir, { recursive: true });
   writeFileSync(resolve(dir, out.when.replace(/[:.]/g, '-') + '.json'), JSON.stringify(out, null, 1));
   log(JSON.stringify(out, null, 1));
+  sums.push(out.profWorst.sum);
+  if (sums.length > 1) log(`prof sum, median of ${sums.length} runs: ${q(sums, 0.5)} ms (${sums.join(', ')})`);
   return undefined;
 }

@@ -88,3 +88,51 @@ modified chunks are in it, as the game saves them; nothing was trimmed by hand.
 Command: `npm run smoke -- legacy`. It opens a fresh profile, writes the dump into IndexedDB
 "cairnlight" at version 1 from a page of the same origin that runs no game code, opens both worlds in
 the current build and checks 61 probes. Passed 3 times in a row on `main`.
+
+## 4. Stage 1b performance (6.6 item 2)
+
+Build: stage 1b with the pool bounds of ARCHITECTURE.md D24 (the commit that adds this section).
+Machine, browser and command as in section 1.
+
+What the first measurement of stage 1b found (commit `6dd3790`): sums of 6.9 to 7.0 on a quiet
+machine, and anything from 7.1 to 18 with other work running. Per frame, `world` and `render` were
+where stage 0 has them (the code under both is unchanged) and the whole rise was in the tick: mean
+0.14 to 0.15 ms against 0.10 with the page served cross-origin isolated, which gives it a 5
+microsecond clock (0.12 against 0.08 on the 0.1 ms clock of section 1), worst 1.1 to 1.5 ms against
+0.4 to 0.7. `EntityStore.begin`, `sync` and `end` each walked every slot of the three pools on every
+tick (320 creatures, 600 shots, 160 drops) for about ten live creatures, and `MobSim.boss` and `count`
+walked the creature pool on every spawn attempt. Compiled, those loops cost 0.03 ms a tick. In single ticks, a few per flight, one of them
+took far longer: `sync` 0.6 to 0.7 ms (once 1.1 ms for the whole of `end`), `boss()` 0.9 ms. Most
+likely the engine was running the loop unoptimised just then; that was not confirmed. Those ticks are
+what the sum picked up. The loops now stop at the highest slot in use: `begin` and `end` each stay near
+0.1 ms on their worst tick, and the mean tick is 0.09 to 0.12 ms on the 5 microsecond clock.
+
+Runs of the build with the bounds, 2026-11-11. The machine was never idle that day, so each row has
+the 1-minute load average before and after the run, which `scripts/perf.mjs` now prints:
+
+| Run | load | prof world | prof tick | prof render | prof sum | frame CPU mean / p95 / max | sim mean / p95 / max | over 16.7 ms | missed refreshes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 2.4, 2.7 | 1.8 | 0.4 | 5.1 | 7.3 | 1.98 / 3.3 / 5.1 | 0.09 / 0.2 / 0.4 | 0 | 0 |
+| 2 | 2.7, 3.4 | 1.6 | 1.2 | 4.7 | 7.5 | 2.17 / 3.6 / 4.8 | 0.10 / 0.2 / 1.2 | 0 | 2 |
+| 3 | 3.6, 3.8 | 1.6 | 0.6 | 5.4 | 7.6 | 1.95 / 3.1 / 5.6 | 0.10 / 0.2 / 0.6 | 0 | 0 |
+| 4 | 2.8, 3.2 | 2.1 | 1.0 | 4.1 | 7.2 | 2.00 / 3.6 / 4.5 | 0.09 / 0.2 / 1.0 | 0 | 0 |
+| 5 | 3.2, 3.0 | 1.7 | 0.9 | 5.0 | 7.6 | 2.01 / 3.5 / 5.2 | 0.09 / 0.2 / 0.9 | 0 | 0 |
+| 6 | 3.0, 4.3 | 2.0 | 0.5 | 4.4 | 6.9 | 1.94 / 3.3 / 4.6 | 0.10 / 0.2 / 0.5 | 0 | 0 |
+
+Runs 1 to 3 are one `--repeat 3` (median 7.5), runs 4 to 6 another (median 7.2). Against the stage 0
+median of 6.6 that is +0.9 and +0.6. Mean frame CPU is 1.94 to 2.17 ms (stage 0: 1.90 to 1.98) and
+p95 3.1 to 3.6 ms (3.5 to 3.8).
+
+The stage 0 tree itself, run the same way between those two sets with the load at about 5
+(`git archive 4ff2b0d | tar -x -C <dir>`, link this checkout's `node_modules` into it, then
+`node scripts/smoke.mjs perf --repeat 3` there): 7.2, 8.2 and 7.1, median 7.2, with frame CPU of
+1.96 to 2.17 ms mean and 3.4 to 3.6 ms p95. So on that afternoon's machine the two builds read the
+same, and stage 0 read 0.6 above its own record.
+
+Reading the sum on a busy machine. Each of the three values is one frame, and a frame that loses the
+CPU for a few milliseconds counts in full. With the load average at 6 to 9 the stage 0 tree gave
+14.4, 10.3 and 5.5 (median 10.3) and later 10.7, 44.3 and 13.0 (median 13.0); this build, at loads
+of 4 to 8, gave medians of 7.2, 7.7, 7.8 and 11.4, with single runs from 5.8 to 57.7. A sum taken with the
+load above about 3 says more about the machine than about the build. What still holds then: the mean
+frame CPU and its p95, which did not leave the ranges above in any run, and the stage 0 tree run in
+the same minutes.

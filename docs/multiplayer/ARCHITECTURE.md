@@ -2785,6 +2785,21 @@ item. `Game.craft(r, cells)` passes through to it for the window, as `Game.dropI
 `Game.onCrafted` is gone. The window still decides where the item goes (cursor, pack, or thrown out),
 which is the container code of D21 (m). The `out` and `book` ops replace the call.
 
+D24. Stage 1b (2.3, 6.6). The pools keep a bound. `MobSim`, `ProjSim` and `DropSim` each have `hi`: every
+slot of `list` from `hi` up is free. `spawn` and `fire` still take the first free slot, so slots fill in
+the order they always did, and raise `hi` when that slot is the one at the bound; the pool's `tick` lowers
+it past the free slots at the top after its loop. The three tick loops, the merge scan of `DropSim.spawn`
+and `MobSim.count`, `boss`, `bosses`, `byId` and `nearestHostile` stop at `hi`, and read it again on every
+pass so that something spawned inside the loop still gets that tick. `EntityStore` makes a view when the
+bound first reaches a slot, not one for every slot a pool owns, and looks for the creature of an `md`
+under the bound (it is still there: the bound only drops at the end of a tick). Why: with the creature
+pool at 320 (D21 (i)) beside 600 shots and 160 drops, `begin`, `sync` and `end` each walked 1,080 slots
+every tick for the ten or so creatures of a quiet world, and `boss()` walked 320 on every spawn attempt.
+That was 0.03 ms on the mean tick and, on the ticks where one of those loops ran before the engine had
+optimised it again, about 1 ms on the worst one, which is the number 6.6 item 2 sums
+(`MEASUREMENTS.md` section 4). What walks `list` from outside the pools still walks all of it: the ray
+test of a player's shot, and the event, town and harness scans.
+
 ---
 
 ## 14. Review log

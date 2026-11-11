@@ -14,6 +14,8 @@ export class Drop implements Body {
 
 export class DropSim {
   readonly list: Drop[] = [];
+  /** Every slot from here up is free. Raised by `spawn`, lowered only at the end of `tick`. */
+  hi = 0;
   private nextId = 1;
   constructor(private realm: Realm, cap = 160) { for (let i = 0; i < cap; i++) this.list.push(new Drop()); }
   get alive(): number { let n = 0; for (const d of this.list) if (d.active) n++; return n; }
@@ -22,17 +24,24 @@ export class DropSim {
   spawn(x: number, y: number, z: number, it: Item, vx = (this.realm.sim.rnd() - 0.5) * 2.4, vy = 3 + this.realm.sim.rnd() * 1.5, vz = (this.realm.sim.rnd() - 0.5) * 2.4, delay = 0.35, owner: string | null = null): void {
     if (it.n <= 0) return;
     // fold into an identical stack lying nearby
-    if (!it.m) for (const o of this.list) {
+    const list = this.list;
+    if (!it.m) for (let i = 0; i < this.hi; i++) {
+      const o = list[i];
       if (o.active && o.owner === owner && o.it.k === it.k && !o.it.m && Math.abs(o.x - x) < 1.2 && Math.abs(o.y - y) < 1.2 && Math.abs(o.z - z) < 1.2 && o.it.n + it.n <= item(it.k).stack) { o.it.n += it.n; o.age = Math.min(o.age, 2); return; }
     }
-    let d = this.list.find((o) => !o.active);
-    if (!d) d = this.list.reduce((a, b) => (a.age > b.age ? a : b));
+    let i = 0;
+    while (i < this.hi && list[i].active) i++;
+    // a full pool gives up its oldest drop
+    if (i >= list.length) { i = 0; for (let j = 1; j < list.length; j++) if (list[j].age >= list[i].age) i = j; }
+    const d = list[i];
+    if (i >= this.hi) this.hi = i + 1;
     d.active = true; d.id = this.nextId++; d.owner = owner; d.it = { ...it }; d.x = x; d.y = y; d.z = z; d.vx = vx; d.vy = vy; d.vz = vz; d.age = 0; d.delay = delay;
   }
 
   tick(dt: number): void {
-    const realm = this.realm, sim = realm.sim;
-    for (const d of this.list) {
+    const realm = this.realm, sim = realm.sim, list = this.list;
+    for (let i = 0; i < this.hi; i++) {
+      const d = list[i];
       if (!d.active) continue;
       d.age += dt;
       if (d.age > 300 || d.y < -20) { d.active = false; continue; }
@@ -66,5 +75,6 @@ export class DropSim {
         if (d.onGround) { d.vx *= Math.max(0, 1 - 10 * dt); d.vz *= Math.max(0, 1 - 10 * dt); }
       }
     }
+    while (this.hi > 0 && !list[this.hi - 1].active) this.hi--;
   }
 }

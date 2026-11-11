@@ -45,6 +45,8 @@ export const defIndex = (d: MobDef): number => DEF_INDEX.get(d) ?? 0;
 
 export class MobSim {
   readonly list: Mob[] = [];
+  /** Every slot from here up is free. Raised by `spawn`, lowered only at the end of `tick`. */
+  hi = 0;
   private spawnT = 0;
   hostileCap = 14; passiveCap = 9;
   /** Extra hostile spawn pressure from events (0 = none). */
@@ -57,9 +59,12 @@ export class MobSim {
   constructor(private realm: Realm) { for (let i = 0; i < POOL; i++) this.list.push(new Mob()); }
 
   spawn(key: string, x: number, y: number, z: number): Mob | null {
-    const m = this.list.find((q) => !q.active), rnd = this.realm.sim.rnd;
-    if (!m) return null;
-    const d = mobDef(key);
+    const l = this.list, rnd = this.realm.sim.rnd;
+    let i = 0;
+    while (i < this.hi && l[i].active) i++;
+    if (i >= l.length) return null;
+    const m = l[i], d = mobDef(key);
+    if (i >= this.hi) this.hi = i + 1;
     Object.assign(m, new Mob());
     m.active = true; m.def = d; m.id = this.realm.sim.mobId++;
     m.x = x; m.y = y; m.z = z; m.hw = d.hw; m.h = d.h; m.hp = m.maxHp = d.hp;
@@ -72,16 +77,17 @@ export class MobSim {
   /** Take a creature out of the world without a death: how 0 despawned, 2 a boss withdrew. */
   remove(m: Mob, how = 0): void { if (!m.active) return; m.active = false; this.realm.sim.sink.emit({ dim: this.realm.dim }, ['md', m.id, how]); }
   clear(keepMinions = false): void { for (const m of this.list) if (m.active && !(keepMinions && m.def.ai === 'minion')) m.active = false; }
-  count(pred: (m: Mob) => boolean): number { let n = 0; for (const m of this.list) if (m.active && pred(m)) n++; return n; }
-  bosses(): Mob[] { const l = this.found; l.length = 0; for (const m of this.list) if (m.active && m.boss) l.push(m); return l; }
+  count(pred: (m: Mob) => boolean): number { let n = 0; for (let i = 0, l = this.list; i < this.hi; i++) if (l[i].active && pred(l[i])) n++; return n; }
+  bosses(): Mob[] { const l = this.found; l.length = 0; for (let i = 0; i < this.hi; i++) { const m = this.list[i]; if (m.active && m.boss) l.push(m); } return l; }
   /** The first live boss, or null. */
-  boss(): Mob | null { for (const m of this.list) if (m.active && m.boss) return m; return null; }
-  byId(id: number): Mob | null { for (const m of this.list) if (m.active && m.id === id) return m; return null; }
+  boss(): Mob | null { for (let i = 0; i < this.hi; i++) { const m = this.list[i]; if (m.active && m.boss) return m; } return null; }
+  byId(id: number): Mob | null { for (let i = 0; i < this.hi; i++) { const m = this.list[i]; if (m.active && m.id === id) return m; } return null; }
 
   /** Nearest hostile within `r` of a point. */
   nearestHostile(x: number, y: number, z: number, r: number): Mob | null {
     let best: Mob | null = null, bd = r * r;
-    for (const m of this.list) {
+    for (let i = 0; i < this.hi; i++) {
+      const m = this.list[i];
       if (!m.active || !m.def.hostile) continue;
       const d = (m.x - x) ** 2 + (m.y + m.h / 2 - y) ** 2 + (m.z - z) ** 2;
       if (d < bd) { bd = d; best = m; }
@@ -120,7 +126,9 @@ export class MobSim {
   tick(dt: number): void {
     const realm = this.realm, sim = realm.sim, w = realm, rnd = sim.rnd, time = sim.time;
     if (this.frozen) return;
-    for (const m of this.list) {
+    // `hi` is read again on every pass: a creature called up during the loop still gets this tick
+    for (let i = 0, l = this.list; i < this.hi; i++) {
+      const m = l[i];
       if (!m.active) continue;
       // a minion deals with its owner, everything else with whoever is closest
       const pl = m.def.ai === 'minion' ? (m.owner ? sim.players.get(m.owner) ?? null : null) : realm.closest(m.x, m.y, m.z);
@@ -285,6 +293,7 @@ export class MobSim {
     }
     this.spawnT -= dt;
     if (this.spawnT <= 0) { this.spawnT = 0.35; for (const pl of realm.players) trySpawn(realm, pl); }
+    while (this.hi > 0 && !this.list[this.hi - 1].active) this.hi--;
   }
   canSee(m: Mob, pl: SimPlayer): boolean {
     const p = pl.body, ox = m.x, oy = m.y + m.h * 0.8, oz = m.z, dx = p.x - ox, dy = p.y + p.eye - oy, dz = p.z - oz, l = Math.hypot(dx, dy, dz) || 1;
