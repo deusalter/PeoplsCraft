@@ -1,4 +1,5 @@
 // One dimension of the world: its blocks, block entities, light, and everything that lives in it.
+import { DropSim } from './drops';
 import { Fluids } from './fluids';
 import type { LightSource } from './light';
 import { active, type SimPlayer } from './player';
@@ -18,7 +19,7 @@ export interface RealmStore extends VoxelWrite, BlockEnts, LightSource {
 export class Realm implements VoxelWrite, BlockEnts {
   /** Every in-memory player of this realm that is not parked, in join order. */
   readonly players: SimPlayer[] = [];
-  readonly fluids: Fluids;
+  readonly drops: DropSim; readonly fluids: Fluids;
   readonly light: LightSource;
   blockT = 0;
   /** Players with a station, chest or forge window open, by cell key `x,y,z`. Not saved. */
@@ -27,6 +28,7 @@ export class Realm implements VoxelWrite, BlockEnts {
 
   constructor(readonly sim: Sim, readonly dim: 0 | 1 | 2, readonly store: RealmStore) {
     this.light = store;
+    this.drops = new DropSim(this);
     this.fluids = new Fluids(this);
   }
 

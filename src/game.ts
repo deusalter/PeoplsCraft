@@ -9,10 +9,10 @@ import { DIMS } from './data/dims';
 import { Item, ITEMS, TIERS, item, RARITY, rollModifier, matches } from './data/items';
 import { BOSSES } from './data/mobs';
 import { SMELTS } from './data/recipes';
+import { EntityStore } from './client/entities';
 import { FxPlay } from './client/fxplay';
 import { LOCAL_ID, fromLegacy } from './client/legacy';
 import { WorldStore } from './client/worldstore';
-import { DropSystem } from './entities/drops';
 import { Mob, MobSystem } from './entities/mobs';
 import { ProjectileSystem } from './entities/projectiles';
 import { Input } from './player/input';
@@ -24,6 +24,7 @@ import { Env, Gfx } from './render/gfx';
 import { Icons } from './render/icons';
 import { ItemModels } from './render/itemModel';
 import { STEP } from './sim/clock';
+import type { DropSim } from './sim/drops';
 import type { Fluids } from './sim/fluids';
 import type { Fx, Scope, Sink } from './sim/fx';
 import { INV_SIZE, Inventory, Slot } from './sim/inventory';
@@ -63,7 +64,7 @@ export class Game implements InteractHost, Sink {
   readonly player = new Player(); readonly interact: Interact; readonly debug: DebugOverlay; readonly climate: Climate;
   readonly sim: Sim; readonly me: SimPlayer; readonly fx: FxPlay;
   readonly particles = new Particles(); readonly boxes = new BoxBatch(); readonly audio = new GameAudio();
-  readonly mobs: MobSystem; readonly proj: ProjectileSystem; readonly drops: DropSystem;
+  readonly mobs: MobSystem; readonly proj: ProjectileSystem; readonly ents: EntityStore;
   readonly icons: Icons; readonly models: ItemModels; readonly hud: Hud; readonly win: Windows; readonly menu: GameMenu;
   readonly quests: QuestSystem; readonly events: EventSystem; readonly npcs: NpcSystem;
   time = 0; ready = false; paused = false;
@@ -75,7 +76,7 @@ export class Game implements InteractHost, Sink {
   private armGeo: THREE.BufferGeometry;
   private swayX = 0; private swayY = 0; private fallY = 0; private lastYaw = 0; private lastPitch = 0;   // held-item inertia
   private stepN = 0; private wasWet = false; private wasUnder = false; private splashCd = 0;
-  private blockT = 0; private saveT = 0; private popT = 0; private warnT = 0;
+  private blockT = 0; private saveT = 0; private warnT = 0;
   private console: HTMLInputElement; private v = new THREE.Vector3();
   private chestOpen: Chunk | null = null; private hudOn = true; private palettes: string[][] = [];
   private deadOnLoad = false; private arriveMsg = '';
@@ -88,6 +89,7 @@ export class Game implements InteractHost, Sink {
   get stats(): PlayerStats { return this.me.stats; }
   get flags(): Set<string> { return this.sim.flags; }
   get fluids(): Fluids { return this.sim.realms[this.me.dim].fluids; }
+  get drops(): DropSim { return this.sim.realms[this.me.dim].drops; }
   get clock(): number { return this.sim.shared.clock; }
   set clock(v: number) { this.sim.shared.clock = v; }
   get dim(): number { return this.me.dim; }
@@ -139,8 +141,9 @@ export class Game implements InteractHost, Sink {
     this.gfx.boxCaster = this.boxes;
     this.input = new Input(canvas);
     this.interact = new Interact(this.gfx.scene, this.world, this.player);
-    this.mobs = new MobSystem(this); this.proj = new ProjectileSystem(this); this.drops = new DropSystem(this);
-    this.gfx.scene.add(this.drops.group);
+    this.mobs = new MobSystem(this); this.proj = new ProjectileSystem(this);
+    this.ents = new EntityStore(this.world, this.models);
+    this.gfx.scene.add(this.ents.dropRender.group);
     this.hud = new Hud(ui, this); this.win = new Windows(ui, this); this.menu = new GameMenu(ui, this);
     this.debug = new DebugOverlay(ui);
     this.quests = new QuestSystem(this); this.events = new EventSystem(this); this.npcs = new NpcSystem(this);
@@ -260,16 +263,6 @@ export class Game implements InteractHost, Sink {
     this.stats.recompute(this.inv); this.stats.hp = this.stats.maxHp;
     this.hud.showBanner(`Level ${this.stats.level}`, '+2 attribute points · press E to spend', '#c8f58a');
     this.audio.play('levelup');
-  }
-  onPickup(key: string, n: number): void {
-    const d = item(key);
-    this.hud.pickup(key, n, d.name, RARITY[d.rarity].color, this.inv.count(key));
-    if (this.popT <= 0) { this.audio.play('pop', 0.7, 0.9 + Math.random() * 0.3); this.popT = 0.06; }
-  }
-  /** A drop is under the player but the pack has no room for it. Throttled on its own timer so it never nags. */
-  warnFull(): void {
-    if (this.fullT > 0) return;
-    this.fullT = 8; this.toast('Inventory full', '#ff9a8a'); this.audio.play('error', 0.4);
   }
   onCrafted(key: string, _n: number): void { this.flags.add('craft:' + key); }
   markEntDirty(e: BlockEnt): void { const c = this.world.chunkAt(e.x >> 4, e.z >> 4); if (c) c.modified = true; }
@@ -776,7 +769,7 @@ export class Game implements InteractHost, Sink {
       }
     }
     if (p.headInWater !== this.wasUnder) { this.wasUnder = p.headInWater; if (this.splashCd <= 0) { this.splashCd = 0.4; this.audio.play('splash', 0.3, p.headInWater ? 0.6 : 1.2); } }
-    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; if (this.popT > 0) this.popT -= dt; if (this.warnT > 0) this.warnT -= dt; if (this.fullT > 0) this.fullT -= dt; if (this.recallT > 0) this.recallT -= dt;
+    if (this.atkCd > 0) this.atkCd -= dt; if (this.useCd > 0) this.useCd -= dt; this.fx.tick(dt); if (this.warnT > 0) this.warnT -= dt; if (this.fullT > 0) this.fullT -= dt; if (this.recallT > 0) this.recallT -= dt;
 
     // landing, footsteps, hazards
     if (p.landed > 0) {
@@ -808,7 +801,9 @@ export class Game implements InteractHost, Sink {
     this.interact.tick(dt, inp, this, inp.locked && !st.dead);
     if (inp.clicks[1] && this.interact.hit.hit) this.pickBlock(this.interact.hit.id);
     st.tick(dt, inv, p.sprinting);
+    this.ents.begin(this.sim.realms[this.dim]);
     this.mobs.tick(dt); this.proj.tick(dt); this.drops.tick(dt);
+    this.ents.end(this.sim.realms[this.dim], dt);
     this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; this.tickBlocks(0.25); }
     this.tickPortal(dt); this.fluids.tick(dt);
     this.events.tick(dt); this.npcs.tick(dt); this.quests.tick(dt);
@@ -943,7 +938,7 @@ export class Game implements InteractHost, Sink {
     this.world.setCull(this.gfx.camera.position.x, this.gfx.camera.position.z);
     if (!this.paused) this.particles.update(dt, this.world);
     this.boxes.begin(); this.mobs.render(this.boxes, a, this.time); this.proj.render(this.boxes, a); this.boxes.end();
-    this.drops.render(a);
+    this.ents.sync(this.sim.realms[this.dim]); this.ents.renderDrops(a);
     this.updateHand(dt);
     this.gfx.flash = 0;
     this.gfx.render(this.ready && !this.stats.dead && this.hudOn);

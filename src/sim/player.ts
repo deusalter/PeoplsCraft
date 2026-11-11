@@ -3,6 +3,7 @@ import type { Item } from '../data/items';
 import { PlayerBody } from './body';
 import { Inventory } from './inventory';
 import { PlayerStats } from './stats';
+import type { Sim } from './sim';
 import type { PlayerRecord } from './storage';
 
 export const STALL_AFTER = 90, LINGER = 30;
@@ -79,4 +80,11 @@ export function toRecord(p: SimPlayer, seen: number): PlayerRecord {
     safe: [p.safe[0], p.safe[1], p.safe[2]], arriving: p.arriving, pendingBed: p.pendingBed, recallT: p.recallT,
     modes: { ...p.modes }, mail: p.mail.map((it) => ({ ...it })),
   };
+}
+
+/** A drop is under the player but the pack has no room for it. Throttled on its own timer so it never nags. */
+export function warnFull(sim: Sim, p: SimPlayer): void {
+  if (p.fullT > 0) return;
+  p.fullT = 8;
+  sim.sink.emit({ p: p.slot }, ['t', 'Inventory full', '#ff9a8a']); sim.sink.emit({ p: p.slot }, ['s', 'error', 0.4, 1]);
 }
