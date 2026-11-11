@@ -8,7 +8,7 @@ import { el } from './hud';
 
 export interface Settings { preset: string; gfx: GfxSettings; sens: number; sfx: number; music: number; bob: boolean;
   shake: number; autoJump: boolean; autoTool: boolean; flyToggle: boolean; rawMouse: boolean; /** 0 = automatic */ uiScale: number }
-const KEY = 'cairnlight.settings';
+const KEY = 'cairnlight.settings' /* working name kept so saved settings survive the rename */;
 export function loadSettings(): Settings {
   const def: Settings = { preset: 'medium', gfx: { ...PRESETS.medium }, sens: 1, sfx: 0.8, music: 0.45, bob: true,
     shake: 1, autoJump: false, autoTool: true, flyToggle: true, rawMouse: false, uiScale: 0 };
@@ -137,14 +137,14 @@ export class TitleMenu {
   private create(): void {
     this.head('new world');
     const col = el('div', 'col', this.root);
-    const name = el('input', '', col); name.type = 'text'; name.placeholder = 'World name'; name.maxLength = 28; name.value = 'New Cairn';
+    const name = el('input', '', col); name.type = 'text'; name.placeholder = 'World name'; name.maxLength = 28; name.value = 'New World';
     const seed = el('input', '', col); seed.type = 'text'; seed.placeholder = 'Seed (leave blank for a random one)'; seed.maxLength = 32;
     const go = el('button', 'btn gold', col, 'Create world');
     name.onkeydown = seed.onkeydown = (e) => { if (e.key === 'Enter') go.click(); };
     go.onclick = () => {
       const seedText = seed.value.trim() || String(Math.floor(Math.random() * 1e9));
       const n = /^-?\d+$/.test(seedText) ? Number(seedText) | 0 : strSeed(seedText);
-      this.play({ id: 'w' + Date.now().toString(36), name: name.value.trim() || 'New Cairn', seed: n, seedText, created: Date.now(), played: Date.now(), data: null });
+      this.play({ id: 'w' + Date.now().toString(36), name: name.value.trim() || 'New World', seed: n, seedText, created: Date.now(), played: Date.now(), data: null });
     };
     this.back = () => void this.home();
     el('button', 'btn', col, 'Back').onclick = this.back;

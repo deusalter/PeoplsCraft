@@ -113,7 +113,7 @@ export class Game implements InteractHost {
     this.gfx.handScene.add(this.hand);
 
     this.loading = el('div', '#loading', ui);
-    this.loading.innerHTML = '<h1>CAIRNLIGHT</h1><div class="bar"><i></i></div><div class="msg"></div>';
+    this.loading.innerHTML = '<h1>PEOPLS CRAFT</h1><div class="bar"><i></i></div><div class="msg"></div>';
     this.console = el('input', '', ui); this.console.type = 'text';
     this.console.style.cssText = 'position:absolute;left:12px;bottom:150px;width:420px;display:none;pointer-events:auto;background:rgba(8,10,14,.85);color:#e9e4d6;border:1px solid #3b4254;padding:6px 8px;font:13px ui-monospace,monospace;outline:none;z-index:25';
     this.console.onkeydown = (e) => {
@@ -666,7 +666,7 @@ export class Game implements InteractHost {
   // ---- dimension travel ---------------------------------------------------------------------
   private showLoading(msg: string): void {
     this.loadMsg = msg;
-    if (!this.loading) { this.loading = el('div', '#loading', this.ui); this.loading.innerHTML = '<h1>CAIRNLIGHT</h1><div class="bar"><i></i></div><div class="msg"></div>'; }
+    if (!this.loading) { this.loading = el('div', '#loading', this.ui); this.loading.innerHTML = '<h1>PEOPLS CRAFT</h1><div class="bar"><i></i></div><div class="msg"></div>'; }
   }
   travel(to: number, home = false): void {
     const p = this.player, cfg = this.cfg;

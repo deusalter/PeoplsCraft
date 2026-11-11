@@ -2,6 +2,7 @@
 import type { SavedChunk } from '../world/world';
 
 export interface WorldMeta { id: string; name: string; seed: number; seedText: string; created: number; played: number; data: any }
+// The database keeps the project's working name so worlds saved before the rename still load.
 const DB = 'cairnlight', VER = 1;
 
 let scratch = new Uint8Array(0);   // worst case is two bytes per cell

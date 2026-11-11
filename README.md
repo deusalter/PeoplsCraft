@@ -1,4 +1,4 @@
-# Cairnlight
+# Peopls Craft
 
 A first-person voxel sandbox RPG for the browser. Mine, build and survive in a procedurally
 generated world, then keep going: ten material tiers, eight summoned bosses, two extra
