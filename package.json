@@ -7,8 +7,10 @@
     "dev": "vite",
     "build": "npm run check && vite build",
     "preview": "vite preview",
-    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sim.json --noEmit && node scripts/lint-sim.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sim.json --noEmit && tsc -p tsconfig.server.json --noEmit && node scripts/lint-sim.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "node": "node scripts/run.mjs",
+    "test": "node scripts/test.mjs"
   },
   "dependencies": {
     "three": "^0.187.0"

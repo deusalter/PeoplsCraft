@@ -2848,6 +2848,10 @@ shift-click, drag, split, craft, equip, drop or trade does has changed: the same
 events (clicks, drags, keys, book and shop buttons, the Guide over every kind of window) were played on
 the tree before this step and on this one, with the Sort buttons left out, and every sound, toast,
 thrown stack and the whole inventory, container, shop and attribute state agreed after each.
+(i) Tests. `npm test` is `node scripts/test.mjs`, which runs every `scripts/tests/*.test.ts` through
+`scripts/run.mjs` (also `npm run node -- <entry.ts>`), one Node process per file. `tsconfig.server.json`
+exists from this step and is the third compile of `npm run check` (D20 (a) expected it with stage 4):
+it includes `server` and `scripts`, of which only the tests exist yet.
 
 ---
 
