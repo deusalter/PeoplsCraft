@@ -2749,8 +2749,8 @@ distance, no boss scaling, hold or refunds, no gate registry upkeep; `shared.gat
 (j) Random draws. One `mulberry32` stream, `shared.rnd`, seeded from the world seed and saved in the
 legacy record as `data.rnd` (with `data.tick`). Every draw sits where its `Math.random` sat, except the
 critical-hit roll, which is drawn when a blow lands or a shot leaves instead of on every tick the
-button is held. Particle draws stay `Math.random` on the client. The crafting modifier roll in
-`ui/windows.ts` draws from `sim.rnd` until the ops of 1c give it its own stream.
+button is held. Particle draws stay `Math.random` on the client. The crafting modifier roll draws
+from `sim.rnd` (D23) until the ops of 1c give it its own stream.
 (k) Per realm now, where `Game` had one: the block-tick timer, the spawn timer, the caps. The harness
 commands `caps` and `freeze` set all three realms.
 (l) Harness. `T.sim` is there; `T.cmd` still returns a string; `showcase` runs on commands. Of the
@@ -2777,6 +2777,13 @@ modifiers, the first one's bonus stayed. That is gone.
 (c) With no active player in the Overworld a wave waits (its timer stays due) instead of gathering round
 `players[0]`. An owned drop is offered to its owner wherever the others stand, and to nobody while the
 owner is not in that realm; an unowned drop still goes to the closest player (D21 (i)).
+
+D23. Stage 1b (2.3, 5.2). `onCrafted` becomes an effect of `applyOp`, and `applyOp` is stage 1c. Until
+then `actions.craft(sim, p, r, cells)` is the one place a craft happens: it takes a batch off the first
+`cells` cells of `p.inv.craft` (`takeCraft`, modifier from `sim.rnd`), sets `craft:<key>` and returns the
+item. `Game.craft(r, cells)` passes through to it for the window, as `Game.dropItem` does, and
+`Game.onCrafted` is gone. The window still decides where the item goes (cursor, pack, or thrown out),
+which is the container code of D21 (m). The `out` and `book` ops replace the call.
 
 ---
 

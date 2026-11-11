@@ -3,9 +3,10 @@
 // sound, its bow) go to everyone else: they are emitted with `not` set to the actor's slot.
 import { BUILD_MAX } from '../core/constants';
 import { B, BLOCKS, T_OPAQUE, T_REPLACE, T_SOLID } from '../data/blocks';
-import { INV_SIZE, type Slot } from './inventory';
+import { INV_SIZE, type Slot, takeCraft } from './inventory';
 import { ITEMS, type Item, item } from '../data/items';
 import { BOSSES } from '../data/mobs';
+import type { Recipe } from '../data/recipes';
 import { BURST } from './fx';
 import { collapseGate } from './gates';
 import { defIndex } from './mobs';
@@ -28,6 +29,12 @@ const tell = (sim: Sim, p: SimPlayer, text: string, color: string): void => sim.
 export function dropItem(sim: Sim, p: SimPlayer, it: Item): void {
   const b = p.body, [dx, dy, dz] = dirOf(p);
   sim.realms[p.dim].drops.spawn(b.x + dx * 0.4, b.y + b.eye - 0.3, b.z + dz * 0.4, it, dx * 5, dy * 5 + 1.5, dz * 5, 1.2);
+}
+/** Take one batch of `r` off the player's crafting grid (its first `cells` cells). Having made a thing is world knowledge: the guide and the townsfolk read `craft:<key>`. */
+export function craft(sim: Sim, p: SimPlayer, r: Recipe, cells: number): Item {
+  const out = takeCraft(r, p.inv.craft, sim.rnd, cells);
+  sim.addFlag('craft:' + r.out);
+  return out;
 }
 /** Q: throw one of the held stack, or all of it. */
 export function dropHeld(sim: Sim, p: SimPlayer, all: boolean): void {

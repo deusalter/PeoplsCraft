@@ -9,6 +9,7 @@ import { BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
 import { Item, ITEMS, TIERS, item } from './data/items';
 import { NPCS } from './data/npcs';
+import type { Recipe } from './data/recipes';
 import { EntityStore } from './client/entities';
 import { FxPlay, tintOf } from './client/fxplay';
 import { LOCAL_ID, fromLegacy, toLegacy } from './client/legacy';
@@ -248,7 +249,7 @@ export class Game implements InteractHost, Sink {
   // ---- small services the windows and the HUD call ----------------------------------------------
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
   dropItem(it: Item): void { act.dropItem(this.sim, this.me, it); }
-  onCrafted(key: string, _n: number): void { this.sim.addFlag('craft:' + key); }
+  craft(r: Recipe, cells: number): Item { return act.craft(this.sim, this.me, r, cells); }
   markEntDirty(e: BlockEnt): void { this.sim.realms[this.me.dim].touchEnt(e); }
   markChestDirty(): void { const w = this.me.window, r = this.sim.realms[this.me.dim], e = w && w.mode === 'chest' ? r.getEnt(w.x!, w.y!, w.z!) : null; if (e) r.touchEnt(e); }
   respawn(): void { respawn(this.sim, this.me); }

@@ -5,7 +5,7 @@ import { RECIPES, Recipe, SMELTS, STATION_NAMES } from '../data/recipes';
 import type { NpcDef } from '../data/npcs';
 import { sourceOf } from '../data/sources';
 import type { Game } from '../game';
-import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } from '../sim/inventory';
+import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor } from '../sim/inventory';
 import { SlotKind, accepts, goods, refusal, sellPrice, smeltable } from '../sim/rules';
 import { ATTR_DESC, Attr, STAT_NAMES } from '../sim/stats';
 import type { BlockEnt } from '../sim/voxels';
@@ -371,9 +371,9 @@ export class Windows {
       // the laid-out grid must spell exactly this recipe (tag overlaps can leave a cell short)
       if (matchRecipe(this.gridW === 2 ? inv.craft.slice(0, 4) : inv.craft, this.gridW, this.station) !== r) { if (!made) { shadowed = true; this.returnGrid(); } break; }
       if (inv.room(r.out) < r.n) { full = true; this.returnGrid(); break; }
-      const out = takeCraft(r, inv.craft, g.sim.rnd, cells), left = inv.add(out);
+      const out = g.craft(r, cells), left = inv.add(out);
       if (left) g.dropItem({ ...out, n: left });
-      made += out.n; g.onCrafted(r.out, out.n);
+      made += out.n;
     }
     if (made) { g.audio.play('craft'); if (max > 1) g.toast(`Made ${made} ${item(r.out).name}`, RARITY[item(r.out).rarity].color); }
     else g.audio.play('error', 0.5);
@@ -616,15 +616,15 @@ export class Windows {
       if (!all) {
         const c = inv.cursor;
         if (c && (c.k !== r.out || c.m || d.stack === 1 || c.n + r.n > d.stack)) break;
-        const out = takeCraft(r, inv.craft, g.sim.rnd, this.gridW * this.gridW);
+        const out = g.craft(r, this.gridW * this.gridW);
         if (c) c.n += out.n; else inv.cursor = out;
-        made += out.n; g.onCrafted(r.out, out.n);
+        made += out.n;
         break;
       }
       if (inv.room(r.out) < r.n) { if (!made) g.toast('No room in your pack', '#ff9a8a'); break; }
-      const out = takeCraft(r, inv.craft, g.sim.rnd, this.gridW * this.gridW), left = inv.add(out);
+      const out = g.craft(r, this.gridW * this.gridW), left = inv.add(out);
       if (left) g.dropItem({ ...out, n: left });
-      made += out.n; g.onCrafted(r.out, out.n);
+      made += out.n;
     }
     if (made) g.audio.play('craft'); else g.audio.play('error', 0.5);
     inv.touch();
