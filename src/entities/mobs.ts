@@ -7,6 +7,7 @@ import { DIMS } from '../data/dims';
 import { MAX_PARTS, MOB_LIST, MobDef, type Part, SpawnRule, mob as mobDef, rigOf } from '../data/mobs';
 import type { Game } from '../game';
 import { Body, boxFree, moveBody, newRayHit, rayBox, raycast } from '../sim/physics';
+import { standSpot } from '../sim/rules';
 import { type BoxBatch, ShadowBatch } from '../render/batches';
 import { BossState, bossKeep, bossTick, newBossState, segK } from './boss';
 
@@ -241,7 +242,7 @@ export class MobSystem {
           if (m.timer <= 0) { m.timer = 4 + Math.random() * 7; const a = Math.random() * 6.283, r = night ? Math.random() * 1.5 : 1 + Math.random() * 7; m.tx = hx + Math.cos(a) * r; m.tz = hz + Math.sin(a) * r; }
           wx = m.tx - m.x; wz = m.tz - m.z; speed *= 0.7;
           if (Math.hypot(wx, wz) < 0.6) { wx = 0; wz = 0; }
-          if (m.home && Math.hypot(m.x - hx, m.z - hz) > 40) { const q = g.standSpot(m.home[0], m.home[1], m.home[2]); m.x = q[0]; m.y = q[1]; m.z = q[2]; }
+          if (m.home && Math.hypot(m.x - hx, m.z - hz) > 40) { const q = standSpot(w, m.home[0], m.home[1], m.home[2]); m.x = q[0]; m.y = q[1]; m.z = q[2]; }
           break;
         }
         case 'melee': case 'hopper': {

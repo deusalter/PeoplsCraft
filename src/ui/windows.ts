@@ -6,12 +6,13 @@ import type { NpcDef } from '../data/npcs';
 import { sourceOf } from '../data/sources';
 import type { Game } from '../game';
 import { Slot, canAfford, fillGrid, matchRecipe, needs, recipesFor, takeCraft } from '../sim/inventory';
+import { SlotKind, accepts, goods, refusal, sellPrice, smeltable } from '../sim/rules';
 import { ATTR_DESC, Attr, STAT_NAMES } from '../sim/stats';
 import type { BlockEnt } from '../sim/voxels';
 import { el } from './hud';
 import { uiScale } from './menus';
 
-type Kind = 'inv' | 'armor' | 'acc' | 'craft' | 'out' | 'chest' | 'fin' | 'ffuel' | 'fout';
+type Kind = SlotKind;
 interface View { arr: Slot[]; i: number; kind: Kind; root: HTMLElement; ic: HTMLElement; n: HTMLElement; sig: string }
 export type WinMode = 'inv' | 'station' | 'chest' | 'forge' | 'shop' | 'guide';
 type WinOpts = { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef; sold?: { it: Item; price: number }[] };
@@ -33,13 +34,6 @@ function statLines(s: Stats | undefined, cls = 'gd'): string {
   }
   return h;
 }
-/** Coins an item is worth to a trader. */
-export function itemValue(k: string): number {
-  const d = item(k);
-  if (d.block !== undefined) { const b = BLOCKS[d.block]; return b.power >= 3 ? 6 + b.power * 4 : b.light ? 3 : 1; }
-  const base = [2, 8, 25, 70, 160, 380, 900][d.rarity];
-  return Math.round(base * (d.weapon || d.armor || d.acc ? 3 : 1));
-}
 const BOOK_CATS = ['All', 'Tools', 'Weapons', 'Armour', 'Trinkets', 'Blocks', 'Other'];
 function bookCat(k: string): number { const d = item(k); return d.tool ? 1 : d.weapon ? 2 : d.armor ? 3 : d.acc ? 4 : d.block !== undefined ? 5 : 6; }
 const EMPTY_GRID: Slot[] = [];
@@ -51,7 +45,6 @@ function gearStats(it: Item, out: Record<string, number>): void {
   const add = (st?: Stats): void => { if (st) for (const k in st) out[k] = (out[k] ?? 0) + (st as Record<string, number>)[k]; };
   add(item(it.k).stats); if (it.m) add(MOD_BY_KEY.get(it.m)?.stats);
 }
-const sellPrice = (k: string): number => Math.max(1, Math.floor(itemValue(k) * 0.3));
 const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 export class Windows {
@@ -451,9 +444,9 @@ export class Windows {
     e.querySelectorAll('button[data-a]').forEach((b) => ((b as HTMLElement).onmousedown = (ev) => { ev.stopPropagation(); if (st.spend((b as HTMLElement).dataset.a as Attr, g.inv)) { g.audio.play('click'); g.inv.touch(); } }));
   }
   private buildShop(): void {
-    const g = this.g, inv = g.inv, e = this.shopEl!, n = this.shop!, top = e.scrollTop, goods = g.npcs.goods(n);
+    const g = this.g, inv = g.inv, e = this.shopEl!, n = this.shop!, top = e.scrollTop, stock = goods(n, g.flags);
     let hd = `Your coins: <b>${inv.coins}</b>`;
-    const tok = goods.find((x) => x[2] !== 'coins')?.[2];
+    const tok = stock.find((x) => x[2] !== 'coins')?.[2];
     if (tok) hd += ` · ${esc(item(tok).name)}: <b>${inv.count(tok)}</b>`;
     this.shopHead!.innerHTML = hd;
     e.innerHTML = '';
@@ -475,7 +468,7 @@ export class Windows {
       }
       el('div', 'ttl', e, 'For sale').style.marginTop = '6px';
     }
-    for (const [k, price, cur] of goods) {
+    for (const [k, price, cur] of stock) {
       const have = cur === 'coins' ? inv.coins : inv.count(cur);
       row(k, item(k).name, `${price} ${cur === 'coins' ? 'c' : 'tokens'}`, have, price, '', (ev) => this.buy(k, price, cur, ev.shiftKey));
     }
@@ -514,34 +507,9 @@ export class Windows {
   }
 
   // ---- interaction ----
-  private accepts(v: View, it: Item): boolean {
-    const d = item(it.k);
-    switch (v.kind) {
-      case 'armor': return !!d.armor && d.armor.slot === v.i;
-      case 'acc': if (!d.acc) return false; for (let i = 0; i < 5; i++) { const a = this.g.inv.acc[i]; if (a && i !== v.i && a.k === it.k) return false; } return true;
-      case 'fin': return this.smeltable(it.k);
-      case 'ffuel': return !!d.fuel;
-      case 'out': case 'fout': return false;
-      default: return true;
-    }
-  }
-  /** Can this forge smelt the item (at its own level)? */
-  private smeltable(k: string): boolean {
-    const lv = this.forge ? (this.forge.data.level as number) : 99;
-    for (const q of SMELTS) if (q.forge <= lv && matches(q.in, k)) return true;
-    return false;
-  }
-  /** Why `accepts(v, it)` said no, for a toast; '' when there is nothing useful to say. */
-  private refusal(kind: Kind, it: Item): string {
-    if (kind === 'acc' && item(it.k).acc) return 'Already wearing one: a second adds nothing';
-    if (kind === 'ffuel') return 'That does not burn';
-    if (kind === 'fin') {
-      const q = SMELTS.find((q) => matches(q.in, it.k));
-      if (!q) return 'That cannot be smelted';
-      return 'Needs a ' + (BLOCKS.find((b) => b.use === 'forge' + q.forge)?.name ?? 'hotter forge');
-    }
-    return '';
-  }
+  /** Level of the open forge; 99 without one, so anything that smelts at all is accepted. */
+  private forgeLevel(): number { return this.forge ? (this.forge.data.level as number) : 99; }
+  private accepts(v: View, it: Item): boolean { return accepts(v.kind, v.i, it, this.g.inv.acc, this.forgeLevel()); }
   /** Put the cursor stack (or one item of it) into a view. Returns false when nothing changed. */
   private place(v: View, right: boolean): boolean {
     const inv = this.g.inv, c = inv.cursor;
@@ -588,7 +556,7 @@ export class Windows {
       this.dragFrom = v; g.audio.play('click', 0.5);
       this.afterEdit(v);
     } else if (this.place(v, right)) { g.audio.play('click', 0.5); if (right) this.dragSet = new Set([v]); }
-    else { const why = this.refusal(v.kind, inv.cursor); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); }
+    else { const why = refusal(v.kind, inv.cursor); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); }
   }
   /** Pull matching unmodified items from the pack (and open chest) into the cursor, partial stacks first. */
   private gather(): boolean {
@@ -619,7 +587,7 @@ export class Windows {
     const a = v.arr[v.i], b = inv.slots[i];
     if (!a && !b) return;
     const single = v.kind === 'armor' || v.kind === 'acc';
-    if (b && (!this.accepts(v, b) || v.kind === 'fout' || (single && b.n > 1))) { const why = this.refusal(v.kind, b); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); return; }
+    if (b && (!this.accepts(v, b) || v.kind === 'fout' || (single && b.n > 1))) { const why = refusal(v.kind, b); if (why) g.toast(why, '#ff9a8a'); g.audio.play('error', 0.4); return; }
     v.arr[v.i] = b; inv.slots[i] = a;
     g.audio.play(single ? 'dig_cloth' : 'click', 0.5);
     this.afterEdit(v);
@@ -668,9 +636,9 @@ export class Windows {
       else if (this.chest) into(this.chest, 0, 27);
       else if (this.forge) {
         const fs = this.forge.data.s as Slot[];
-        if (this.smeltable(s.k)) into(fs, 0, 1);
+        if (smeltable(s.k, this.forgeLevel())) into(fs, 0, 1);
         else if (d.fuel) into(fs, 1, 2);
-        else { g.toast(this.refusal('fin', s), '#ff9a8a'); g.audio.play('error', 0.4); return; }
+        else { g.toast(refusal('fin', s), '#ff9a8a'); g.audio.play('error', 0.4); return; }
       }
       else if (d.armor) { const cur = inv.armor[d.armor.slot]; inv.armor[d.armor.slot] = s; v.arr[v.i] = cur; g.audio.play('dig_cloth', 0.6); }
       else if (d.acc && inv.acc.some((a) => a && a.k === s.k)) { g.toast('Already wearing one: a second adds nothing', '#ff9a8a'); g.audio.play('error', 0.4); return; }
@@ -749,7 +717,7 @@ export class Windows {
     if (v.kind === 'inv') {
       if (this.shop) sh = `sell stack for ${sellPrice(s.k) * s.n} coins`;
       else if (this.chest) sh = 'move to chest';
-      else if (this.forge) sh = this.smeltable(s.k) || d.fuel ? 'load into forge' : '';
+      else if (this.forge) sh = smeltable(s.k, this.forgeLevel()) || d.fuel ? 'load into forge' : '';
       else if (d.armor || d.acc) sh = 'equip';
       else sh = v.i < 9 ? 'move to backpack' : 'move to hotbar';
     } else if (v.kind !== 'out') sh = 'take';

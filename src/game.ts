@@ -4,10 +4,9 @@ import { GameAudio } from './audio/audio';
 import { BUILD_MAX, CVOL, DAY_LENGTH, SEA, chunkKey } from './core/constants';
 import { clamp } from './core/noise';
 import { B, BLOCKS, T_DAMAGE, T_LAYER, T_LIQUID, T_OPAQUE, T_REPLACE, T_SOLID, T_SUPPORT } from './data/blocks';
-import { BIOME, BIOMES } from './data/biomes';
+import { BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
 import { Item, ITEMS, TIERS, item, RARITY, rollModifier, matches } from './data/items';
-import { LOOT } from './data/loot';
 import { BOSSES } from './data/mobs';
 import { SMELTS } from './data/recipes';
 import { DropSystem } from './entities/drops';
@@ -25,6 +24,7 @@ import { STEP, isNight } from './sim/clock';
 import { Fluids } from './sim/fluids';
 import { INV_SIZE, Inventory, Slot } from './sim/inventory';
 import { RayHit } from './sim/physics';
+import * as rules from './sim/rules';
 import { PlayerStats } from './sim/stats';
 import type { BlockEnt } from './sim/voxels';
 import { EventSystem } from './systems/events';
@@ -35,7 +35,7 @@ import { DebugOverlay } from './ui/debug';
 import { Hud, el } from './ui/hud';
 import { GameMenu, Settings } from './ui/menus';
 import { Windows } from './ui/windows';
-import { Climate, newCol } from './world/gen/climate';
+import { Climate } from './world/gen/climate';
 import { locate } from './world/gen/structures';
 import { WorkerPool } from './world/pool';
 import { Chunk, World } from './world/world';
@@ -183,12 +183,12 @@ export class Game implements InteractHost {
       for (const f of d.flags || []) this.flags.add(f);
       this.quests.index = d.quests ?? 0; this.events.load(d.events); this.npcs.load(d.npcs); this.portalReturn = d.portalReturn || {};
       this.player.teleport(d.player.x, d.player.y, d.player.z); this.player.yaw = d.player.yaw; this.player.pitch = d.player.pitch;
-      this.worldSpawn = d.worldSpawn ?? this.findSpawn();
+      this.worldSpawn = d.worldSpawn ?? rules.findSpawn(this.climate);
       // a save taken mid-arrival (death screen quit, tab closed during a crossing) must finish landing after the reload
       this.arriving = d.arriving ?? -1; this.pendingBed = !!d.pendingBed; this.deadOnLoad = (d.stats?.hp ?? 1) <= 0;
       this.safe = Array.isArray(d.safe) ? [d.safe[0], d.safe[1], d.safe[2]] : [d.player.x, d.player.y, d.player.z];
     } else {
-      this.worldSpawn = this.findSpawn();
+      this.worldSpawn = rules.findSpawn(this.climate);
       this.player.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5);
       this.arriving = 0;
     }
@@ -198,15 +198,6 @@ export class Game implements InteractHost {
     void cfg.db.chunkList(meta.id, this.dim).then((l) => { this.world.savedKeys = new Set(l.map((c) => chunkKey(c[0], c[1]))); this.keysReady = true; });
   }
 
-  private findSpawn(): [number, number] {
-    const c = newCol();
-    for (let r = 0; r < 3000; r += 12) for (let a = 0; a < 8; a++) {
-      const x = Math.round(Math.cos(a * 0.785 + r) * r), z = Math.round(Math.sin(a * 0.785 + r) * r);
-      this.climate.sample(x, z, c);
-      if (c.biome !== BIOME.ocean && c.biome !== BIOME.beach && c.h > SEA + 2 && c.h < SEA + 40 && c.mount < 0.25) return [x, z];
-    }
-    return [0, 0];
-  }
   applySettings(): void {
     const s = this.cfg.settings;
     this.gfx.applySettings(s.gfx);
@@ -246,17 +237,10 @@ export class Game implements InteractHost {
   onCrafted(key: string, _n: number): void { this.flags.add('craft:' + key); }
   markEntDirty(e: BlockEnt): void { const c = this.world.chunkAt(e.x >> 4, e.z >> 4); if (c) c.modified = true; }
   markChestDirty(): void { if (this.chestOpen) this.chestOpen.modified = true; }
-  private rollLoot(table: string, rnd: () => number = Math.random): Item[] {
-    const t = LOOT[table];
-    if (!t) return [];
-    const out: Item[] = [], total = t.entries.reduce((s, e) => s + e[1], 0), rolls = t.rolls[0] + Math.floor(rnd() * (t.rolls[1] - t.rolls[0] + 1));
-    for (let i = 0; i < rolls; i++) {
-      let r = rnd() * total;
-      for (const e of t.entries) { r -= e[1]; if (r <= 0) { if (ITEMS.has(e[0])) out.push({ k: e[0], n: e[2] + Math.floor(rnd() * (e[3] - e[2] + 1)), m: rollModifier(e[0], rnd, t.mod) }); break; } }
-    }
-    const coins = t.coins[0] + Math.floor(rnd() * (t.coins[1] - t.coins[0] + 1));
+  private rollLoot(table: string): Item[] {
+    const { items, coins } = rules.rollLoot(table, Math.random);
     if (coins) { this.inv.coins += coins; this.inv.touch(); this.toast(`+${coins} coins`, '#f2c14e'); }
-    return out;
+    return items;
   }
 
   // ---- combat ---------------------------------------------------------------------------
@@ -291,22 +275,12 @@ export class Game implements InteractHost {
     if (this.dim !== 0) { this.travel(0, true); return; }
     if (s && this.world.ready(s[0], s[2]) && BLOCKS[this.world.getBlock(s[0], s[1], s[2])].use !== 'bed') { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; }
     else if (s) {
-      if (this.world.areaMeshed(s[0], s[2], 1)) { const q = this.standSpot(s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); return; }
+      if (this.world.areaMeshed(s[0], s[2], 1)) { const q = rules.standSpot(this.world, s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); return; }
       // the bed is out of the loaded area and cannot be checked (or stood beside) yet: go there, load, and let checkReady() decide
       p.teleport(s[0] + 0.5, s[1] + 0.6, s[2] + 0.5); this.pendingBed = true; this.ready = false; this.showLoading('Returning');
       return;
     }
     p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; this.ready = false; this.showLoading('Returning');
-  }
-  /** Somewhere to stand next to a bed: on it, a 1.8-tall body can wedge under a two-high ceiling. */
-  standSpot(x: number, y: number, z: number): [number, number, number] {
-    const w = this.world;
-    for (let i = 0; i < 8; i++) {
-      const cx = x + (i < 4 ? (i === 0 ? 1 : i === 1 ? -1 : 0) : i & 1 ? 1 : -1), cz = z + (i < 4 ? (i === 2 ? 1 : i === 3 ? -1 : 0) : i & 2 ? 1 : -1);
-      const below = w.getBlock(cx, y - 1, cz), a = w.getBlock(cx, y, cz), b = w.getBlock(cx, y + 1, cz);
-      if (T_SOLID[below] && !T_DAMAGE[below] && !T_SOLID[a] && !T_LIQUID[a] && !T_DAMAGE[a] && !T_SOLID[b] && !T_LIQUID[b]) return [cx + 0.5, y + 0.05, cz + 0.5];
-    }
-    return [x + 0.5, y + 0.6, z + 0.5];
   }
   onMobKilled(m: Mob): void {
     const d = m.def, luck = 1 + this.stats.d.luck;
@@ -335,22 +309,8 @@ export class Game implements InteractHost {
   onBossGone(_m: Mob, _won: boolean): void { for (const q of this.mobs.list) if (q.active && q.event && !q.boss && this.events.active === null) q.active = false; this.proj.clear(); }
 
   // ---- InteractHost -----------------------------------------------------------------------
-  reach(): number { return (this.creative ? 7 : 5) + this.stats.d.reach * 0.5; }
-  private canHarvest(id: number): boolean {
-    const b = BLOCKS[id], h = this.inv.held(), t = h ? item(h.k).tool : undefined;
-    return b.power === 0 || (!!t && t.kind === b.tool && t.power >= b.power);
-  }
-  breakTime(id: number): number {
-    const b = BLOCKS[id];
-    if (this.creative) return 0;
-    if (b.hard < 0) return Infinity;
-    const h = this.inv.held(), t = h ? item(h.k).tool : undefined, p = this.player;
-    let speed = t && t.kind === b.tool ? t.speed : 1;
-    speed *= 1 + this.stats.d.mining;
-    if (p.headInWater) speed /= 4;
-    if (!p.onGround && !p.inWater) speed /= 2.5;
-    return (b.hard * (this.canHarvest(id) ? 1.5 : 5)) / speed;
-  }
+  reach(): number { return rules.reach(this.stats, this); }
+  breakTime(id: number): number { return rules.breakTime(id, this.inv, this.stats, this, this.player); }
   onDigTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void {
     const b = BLOCKS[id], l = this.world.getLight(x + nx, y + ny, z + nz);
     this.swing = 1;
@@ -404,7 +364,7 @@ export class Game implements InteractHost {
     for (const [k, c, a, b] of BLOCKS[id].drops) if (Math.random() < c) this.drops.spawn(x + 0.5, y + 0.3, z + 0.5, { k, n: a + Math.floor(Math.random() * (b - a + 1)) });
   }
   onBroken(x: number, y: number, z: number, id: number): void {
-    const w = this.world, b = BLOCKS[id], harvest = this.canHarvest(id) && !this.creative;
+    const w = this.world, b = BLOCKS[id], harvest = rules.canHarvest(id, this.inv) && !this.creative;
     const e = w.getEnt(x, y, z);
     if (e) {
       const s: Slot[] = e.kind === 'crate' ? this.rollLoot(e.data.loot) : e.data.s || (e.data.loot ? this.rollLoot(e.data.loot) : []);
@@ -426,7 +386,7 @@ export class Game implements InteractHost {
     if (!held || this.stats.dead) return false;
     const inv = this.inv, st = this.stats, p = this.player, it = inv.held(), d = it ? item(it.k) : null, wpn = d?.weapon, style = wpn?.style ?? 'melee';
     const dir = p.dir(this.v), ex = p.x, ey = p.y + p.eye, ez = p.z;
-    const rate = (wpn?.rate ?? 2.2) * (1 + st.d.atkSpeed), crit = Math.random() < st.d.crit;
+    const rate = rules.attackRate(inv, st), crit = Math.random() < st.d.crit;
     if (style !== 'melee' && wpn) {
       if (this.atkCd > 0) return true;
       this.atkCd = 1 / rate;
@@ -836,7 +796,7 @@ export class Game implements InteractHost {
       const u = BLOCKS[h.id].use;
       if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.mobs.activeBoss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !this.isNight() ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
       else if (u) prompt = u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
-      else if (!this.canHarvest(h.id) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
+      else if (!rules.canHarvest(h.id, inv) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
     }
     this.hud.setPrompt(this.win.open || this.menu.open ? null : !inp.locked && !inp.uiMode ? 'Click to take control' : prompt);
   }
@@ -967,7 +927,7 @@ export class Game implements InteractHost {
       // we were sent to a bed whose chunk was not loaded: now that it is, make sure the bed is still there
       const s = this.spawn;
       this.pendingBed = false;
-      if (s && this.dim === 0 && BLOCKS[w.getBlock(s[0], s[1], s[2])].use === 'bed') { const q = this.standSpot(s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); }
+      if (s && this.dim === 0 && BLOCKS[w.getBlock(s[0], s[1], s[2])].use === 'bed') { const q = rules.standSpot(w, s[0], s[1], s[2]); p.teleport(q[0], q[1], q[2]); }
       else { this.spawn = null; this.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; p.teleport(this.worldSpawn[0] + 0.5, SEA + 60, this.worldSpawn[1] + 0.5); this.arriving = 0; return; }
     }
     if (this.arriving >= 0) this.land();

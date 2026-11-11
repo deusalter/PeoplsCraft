@@ -4,6 +4,7 @@ import { BLOCKS, B, T_OPAQUE, T_SHAPE } from '../data/blocks';
 import { NPCS, NpcDef } from '../data/npcs';
 import { QUESTS } from '../data/quests';
 import type { Game } from '../game';
+import { standSpot } from '../sim/rules';
 
 interface Home { x: number; y: number; z: number; npc: string | null }
 
@@ -79,7 +80,7 @@ export class NpcSystem {
       const d = NPCS.find((n) => n.key === h.npc)!;
       if (!g.world.ready(h.x, h.z) || Math.hypot(h.x - g.player.x, h.z - g.player.z) > 90) continue;
       if (g.mobs.list.some((m) => m.active && m.def.key === d.mob)) continue;
-      const q = g.standSpot(h.x, h.y, h.z), m = g.mobs.spawn(d.mob, q[0], q[1], q[2]);
+      const q = standSpot(g.world, h.x, h.y, h.z), m = g.mobs.spawn(d.mob, q[0], q[1], q[2]);
       if (m) m.home = [h.x, h.y, h.z];
     }
   }
@@ -90,9 +91,6 @@ export class NpcSystem {
       if (r < 0.6) return 'Next: ' + QUESTS[this.g.quests.index].hint;
     }
     return n.lines[(Math.random() * n.lines.length) | 0];
-  }
-  goods(n: NpcDef): [string, number, string][] {
-    return n.goods.filter((x) => !x[3] || this.g.flags.has(x[3])).map((x) => [x[0], x[1], x[2] ?? 'coins']);
   }
   /** One-line status for a bed, shown when the player right-clicks it. */
   status(x: number, y: number, z: number): string {
