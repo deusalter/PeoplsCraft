@@ -2659,6 +2659,15 @@ blocks of a loaded home (7.7); a boss that has nobody to fight holds for 10 s be
 instead of leaving at once (7.9); closing the tab without the prompt can lose the last 3 s of changes
 (8.2). The portal timer still pauses with the Inventory or Guide open (4.5, bit 9).
 
+D19. Stage 0 (smoke "a scenario in `scripts/smoke.mjs`"). `scripts/smoke.mjs` is the runner and
+registry; the scenarios live beside the data they own: `scripts/golden/golden.mjs` (with the shared
+page helpers `R` and `D` and the node-side driver), `scripts/fixtures/legacy.mjs` (fixture loader,
+scenario `legacy` and a scenario `legacy-make` that rebuilds the fixture from a build) and
+`scripts/perf.mjs`. The golden levels an 11x11 pad at the spawn before it starts, through `D.fill`,
+which sets blocks directly until the `fill` command of 10.1 exists; every later step is input or a
+cheat. `legacy-v1.json` carries, beside the two stores, an `expect` object written by the maker at the
+moment it saved, which the `legacy` scenario checks.
+
 ---
 
 ## 14. Review log

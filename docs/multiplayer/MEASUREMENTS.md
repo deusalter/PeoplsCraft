@@ -45,3 +45,46 @@ should compare the median of three runs of the prof sum (baseline median 6.6 ms)
 check, the mean frame CPU (baseline 1.90 to 1.98 ms) and its p95 (3.5 to 3.8 ms). The sim portion is
 small enough here (mean 0.08 ms, worst 0.7 ms) that the 6.6 tick budget is the number to watch once
 the sim leaves the main thread, not this one.
+
+## 2. Stage 0 golden run
+
+Command: `npm run smoke -- golden` (compare) or `npm run smoke -- golden --record` (rewrite
+`scripts/golden/baseline.json`). One run takes about 40 s. Passed 5 times in a row on `main`
+(commit `fa71b5e`), and 3 more times run three at once on the same machine, so it does not depend on
+having the CPU to itself.
+
+The run, on a fresh `?quick=golden` world (seed 386248004): level an 11x11 pad at the spawn; give
+and `gear 2`; break three blocks and place two by held and clicked buttons; a pillar jump (Space and
+the right button held, looking down; the player must rise at least 4 blocks); a back-fill (walk out of
+a cell, place into it); craft by hand in the inventory grid and from the recipe book (planks, sticks,
+a workbench, torches); a chest filled by a shift-click and a carried stack; smelt three iron ore;
+place a bedroll and set the spawn; spawn and kill a Thornling and a Burrowhog with melee; place the
+Rootbound Altar, summon the Mossback Colossus with the Verdant Idol and kill it; place a Hollow Gate,
+walk into it, walk back out of the return gate; fall to death, press "Rise again", respawn at the
+bed; save, reload without `&fresh`, read everything again. 174 probes.
+
+Left out of the baseline on purpose, because a random draw or the length of the run changes them:
+coins, experience and level; anything that can be picked up from a drop (cobble from mined stone,
+the Colossus's iron bars and salves); whether the furnace is still lit at the end (its coal outlasts
+the smelt by a time that depends on the run, so the probe reads `furnace` for both); how far above 4
+blocks the pillar went; absolute player positions (only "same before and after the reload"); where
+the return gate stands in the Hollows (it depends on where in the sheet the player stood).
+
+For later stages: in headless Chrome both `requestAnimationFrame` and `T.run` call `Game.runFrame`, so
+the game advances about twice as fast as the wall clock while a scenario runs. The golden waits on
+conditions, never on a fixed time, so a stage that changes the pacing (the manual clock of 10.1) should
+still match. No step was impossible on the current build.
+
+## 3. Stage 0 legacy fixture
+
+`scripts/fixtures/legacy-v1.json` (57 KB, 2 world records, 7 chunk records) was made by
+`npm run smoke -- legacy-make` on commit `fa71b5e`, whose `src/` is identical to `8187558`. World
+`quick-legacyfix`: edits in all three dimensions, a chest with three stacks, an unopened ruin chest
+in a chunk edited one cell above it, a furnace saved with 8 ore, 2 bars and burning coal, a bedroll
+holding the spawn, the Wayfinder housed in a lit, closed room with a door, a Hollow Gate pair with
+saved return points for both sides. World `quick-legacydead`: saved on the death screen, hp 0. Only
+modified chunks are in it, as the game saves them; nothing was trimmed by hand.
+
+Command: `npm run smoke -- legacy`. It opens a fresh profile, writes the dump into IndexedDB
+"cairnlight" at version 1 from a page of the same origin that runs no game code, opens both worlds in
+the current build and checks 61 probes. Passed 3 times in a row on `main`.
