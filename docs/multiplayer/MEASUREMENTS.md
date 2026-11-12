@@ -168,13 +168,13 @@ and 5.6, against 8.1, 6.0, 7.2 and 9.3, 11.4, 5.5. Section 4 says how to read a 
 machine; nothing here shows a cost of this step.
 
 The other checks of "Done when" for stage 1. `npm run smoke -- golden`: all 174 probes match the
-stage 0 baseline (eight runs in the course of the step). `npm run smoke -- legacy`: all 61 probes, so
+stage 0 baseline (every run made in the course of the step). `npm run smoke -- legacy`: all 61 probes, so
 a save written before the stage loads after it. `git grep -nE "from '\.\./(game|render|ui|audio|player)" src/sim`
 prints nothing. `npm run check` (three compiles and `lint-sim`) and `npm run build` pass.
 
 Inventory ops. `npm test` runs `scripts/tests/invops.test.ts`: 18 cases, one or more per op, each with
-an accepted and a refused form, and a seeded run of 20,000 ops (about 6,000 accepted, 13,000 refused,
-235 that are not ops at all) that checks after every one that a refused op changed nothing and that
+an accepted and a refused form, and a seeded run of 20,000 ops (about 7,100 accepted and 12,900
+refused, 235 of those not ops at all) that checks after every one that a refused op changed nothing and that
 items and coins appeared or vanished only as a craft, a purchase, a sale, a buy-back, a creative
 pick or a used-up stack says. Twelve faults put into a copy of `applyOp` one at a time (a source
 stack not reduced, a doubled sale price, a missing slot rule, and so on) each made the tests fail.
@@ -184,5 +184,5 @@ either button and shift, drags, right-drags, number keys and Q over a slot, the 
 chest and shop buttons, attribute points, G, Back, Esc, E) on windows of every kind, and records
 every sound with its volume, every toast with its colour, every thrown stack, and the inventory,
 both containers, the shop's buy-back list, attributes and `craft:` flags after each event. 77,757
-events on ten and then six seeds, the Sort buttons left out, and 12,919 more with them: the records
-of the two trees are identical.
+events over 24 seeds with the Sort buttons left out, and 12,919 more over 4 seeds with them: the
+records of the two trees are identical.
