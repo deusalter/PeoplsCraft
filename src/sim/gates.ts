@@ -16,6 +16,12 @@ export function gateFits(realm: Realm, x: number, y: number, z: number, alongX: 
   }
   return true;
 }
+/** True when the cell is one of the 20 of a gate that buildGate raised from (g.x, g.y, g.z): its frame or its sheet.
+ *  `g` is an entry of `shared.gates`, which holds those arguments. */
+export function gateHas(g: { x: number; y: number; z: number; alongX: boolean }, x: number, y: number, z: number): boolean {
+  const a = g.alongX ? x - g.x : z - g.z;
+  return a >= -1 && a <= 2 && y >= g.y && y <= g.y + 4 && (g.alongX ? z === g.z : x === g.x);
+}
 /** Raise a 4x5 gate: frame around a 2x3 sheet of portal. */
 export function buildGate(realm: Realm, kind: number, x: number, y: number, z: number, alongX: boolean): void {
   const frame = kind === 1 ? B.hollow_frame : B.rift_frame, portal = kind === 1 ? B.hollow_portal : B.rift_portal;

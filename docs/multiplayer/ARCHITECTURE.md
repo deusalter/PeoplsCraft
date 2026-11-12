@@ -188,7 +188,7 @@ Ownership summary
 | `player.ts` | `SimPlayer`, per-player tick (credits, hazards, fall damage, hunger, stall detection, linger), `hurtPlayer`, `onDeath`, `respawn`, `goHome`, `gainXp`, sleeping, parking. |
 | `movement.ts` | Validation of the movement stream, the embedded rule, position checks before activation (4.5). |
 | `actions.ts` | World actions of a player: `breakBlock`, `breakNatural`, `place`, `placeDoor`, `useBlock`, `trySummon`, `consume`, `attack`, `fire`, `dropItem`; the dig and action credits (4.7, 7.3). |
-| `gates.ts` | `gateFits` (tests every body of the realm), `buildGate`, `collapseGate` (clears the matching `portalReturn` of every player in memory), the gate registry and its upkeep (9). |
+| `gates.ts` | `gateFits` (tests every body of the realm), `buildGate`, `collapseGate` (clears the matching `portalReturn` of every player in memory), the gate registry and its upkeep (9), `gateHas(entry, x, y, z)` (is this cell one of the gate's 20: what `Realm.setBlock` asks, 3.2). |
 | `travel.ts` | `travel`, `land`, the return check, portal timers (`tickPortal`), realm entry and exit, realm suspension. |
 | `mobs.ts` | `Mob` (sim fields only), `MobSim`: pool, `spawn`, `hurt`, `kill`, `tick`, `canSee`, targeting. |
 | `mobhit.ts` | `rayHitMobs(list, ...)`: the box / head / segment ray test of today's `MobSystem.rayHit`, generic over `{ x, y, z, hw, h, yaw, def, segs }`. Used by `ProjSim` on sim mobs and by the client on views. `mobDist(m, x, y, z)`: the distance from a point to the nearest of those volumes, which the reach test of a melee blow asks (7.3). `segK`, `followSegs` (the serpent-body loop at the end of `bossTick`). |
@@ -529,7 +529,8 @@ When an in-memory generator entity becomes a stored one, and when a chunk is dir
 (entries are never pruned, even when the id equals generated terrain), `edits.rev++`, and unless
 `silent`: `closeViewers(x, y, z)` (5.2), then deletes the cell's entity. It updates `top` / `sky`,
 touches the chunk, queues the change for the chunk's subscribers, drops any `shared.gates` entry that
-has this cell in its frame or sheet (9), then calls `onBlockChange` unless `silent`.
+has this cell in its frame or sheet (9; `gateHas` of `sim/gates.ts` says so for an entry of this realm),
+then calls `onBlockChange` unless `silent`.
 
 ### 3.3 Sim, Realm, SimPlayer
 
@@ -551,6 +552,7 @@ export interface SharedState {
   events: { a: 'raid' | 'moon' | 'ashen' | null; k: number; g: number; l: number };
   homes: { x: number; y: number; z: number; npc: string | null }[];
   worldSpawn: [number, number];
+  /** Gates raised by an arrival. `x, y, z, alongX` are what `buildGate` was called with: the gate is the 4 x 5 cells from there. */
   gates: { kind: 1 | 2; dim: number; x: number; y: number; z: number; alongX: boolean }[];
   /** Offerings spent on bosses that are still alive (`by` is a record id). Cleared on death or withdrawal; refunded at boot. */
   summons: { n: number; item: string; by: string; dim: number; altar: [number, number, number] }[];
@@ -2668,9 +2670,11 @@ and then frozen; for the rest of stage 2 these files change only through the int
   `SimPlayer` the state the movement check keeps between two moves (`moveOkTick`, `riseY`, `riseTick`,
   `airJumps`), started again by `sendTp` together with `fallPeak` and `embedded` (3.3, 4.5); `PlayerBody.jumps`,
   from which a client sets the `jumped` bit; `mobhit.ts mobDist` for the reach test of a melee blow (7.3); and
-  on `Game` the mirrors `quest` and `event`, the two things the HUD and the tracker still read from the sim.
+  on `Game` the mirrors `quest` and `event`, the two things the HUD and the tracker still read from the sim;
+  `gates.ts gateHas`, which `Realm.setBlock` asks before it keeps an entry of the gate registry (3.2).
 - Beside the two test files named above, `scripts/tests/hooks.test.ts` (the entity sims' events and wire ids,
-  `InlineSource`, `MemStorage`, the three rules, what `sendTp` starts again, `PlayerBody.jumps`, `mobDist`) and
+  `InlineSource`, `MemStorage`, the three rules, what `sendTp` starts again, `PlayerBody.jumps`, `mobDist`,
+  `gateHas`, a window closed from outside) and
   `scripts/tests/session.test.ts` (`pump`, `act`, `move`).
 - A lane builds beside what runs: until integration, `Game` still constructs the `Sim` on `WorldStore`, and the
   tree must pass `npm run check` and both smokes after every lane. So a lane does not change a signature that
@@ -3222,7 +3226,7 @@ chunks whose `ce` the connection has been sent. A chunk whose `ce` is still to c
 it, and it was only in `SimHost`'s `opt`: `SimOptions` has `cheats`, `maxPlayers`, `solo` and `manual`,
 and `sim/sim.ts` is not lane A's to change. The `Sim` still has no use for it.
 
-D30. Stage 2.0 (2.2, 2.3, 3.3, 4.5, 5.2, 7.3, 7.8, 11). What a lane needs in a file it may not edit, found
+D30. Stage 2.0 (2.2, 2.3, 3.2, 3.3, 4.5, 5.2, 7.3, 7.8, 11). What a lane needs in a file it may not edit, found
 by walking every item of the four lanes' deliverables against the frozen files and the files integration
 owns, after D27 to D29.
 (a) The clock of the speed budget. 4.5 step 3 refills "since the last accepted move", and the only tick on
@@ -3240,10 +3244,11 @@ describes the stored position, but teleports are made in `travel.ts`, `player.ts
 movement code cannot see them. All of them end in `sendTp`, so the resets are there and bind, resume,
 respawn and realm change need none of their own. `speedBudget` is left as it is: it cannot pass its cap.
 The correction of step 5 calls `sendTp` without having moved the body, so it puts `embedded` back.
-(d) The fall and the second jump. `PlayerBody` resets its peak when it jumps in the air (`d.extraJump`), so today a fall broken by that jump costs only what comes after it. Step 7 as it stood would have
-charged the whole fall on the host. `PlayerBody.jumps` counts jumps of both kinds, the `jumped` bit of a
-move means either, and the host resets `fallPeak` on a jump in the air at most `d.extraJump` times between
-two landings (`SimPlayer.airJumps`), which is all an honest body can do. Nothing reads `jumps` on the one body.
+(d) The fall and the second jump. `PlayerBody` resets its peak when it jumps in the air (`d.extraJump`), so
+today a fall broken by that jump costs only what comes after it. Step 7 as it stood would have charged the
+whole fall on the host. `PlayerBody.jumps` counts jumps of both kinds, the `jumped` bit of a move means
+either, and the host resets `fallPeak` on a jump in the air at most `d.extraJump` times between two landings
+(`SimPlayer.airJumps`), which is all an honest body can do. Nothing reads `jumps` on the one body.
 (e) `mobhit.ts mobDist`. 7.3 asks for the distance from the eye to a creature's nearest hit volume, and the
 file had only the ray test. The volumes (a head placed with `ry`, tapered segments) are that file's;
 `actions.attack` asks it instead of building them a second time in lane D's file.
@@ -3260,8 +3265,12 @@ for (3.3): whoever changes a container marks its viewers with it.
 `movement.test.ts`, `snap.test.ts`. Lane D: `invsync.test.ts`, `actions.test.ts`, and `invops.test.ts`, which
 exists and tests a file of theirs.
 (j) `net/interest.ts` (2.2) does not hold chunk subscriptions: the chunk service keeps its own, in lane A's file.
-(k) What a solo player can notice: nothing. No rule reads the new fields, `sendTp` writes to state nothing
-reads, and the two mirrors return what the HUD read before.
+(k) The gate registry. 3.2 has `Realm.setBlock` drop an entry of `shared.gates` when one of its cells
+changes, and neither the shape of a gate nor what an entry's coordinates mean was anywhere lane A can
+write. An entry holds the arguments `buildGate` was called with, and `gates.ts gateHas(entry, x, y, z)`
+says whether a cell is one of its 20. The registry is still empty until stage 5 fills it (D21 (i)).
+(l) What a solo player can notice: nothing. No rule reads the new fields, `sendTp` writes to state nothing
+reads, the two mirrors return what the HUD read before, and nothing calls `mobDist` or `gateHas`.
 
 ---
 

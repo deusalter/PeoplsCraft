@@ -9,10 +9,12 @@ import { item } from '../../src/data/items';
 import { MOB_LIST, type MobDef, PROJECTILES } from '../../src/data/mobs';
 import { ID_MAX, PS_PLAYER } from '../../src/net/protocol';
 import { JUMP_V, PlayerBody } from '../../src/sim/body';
+import { invOp } from '../../src/sim/actions';
 import { cheat } from '../../src/sim/cheats';
 import { InlineSource } from '../../src/sim/chunksource';
 import { daOf } from '../../src/sim/drops';
 import type { Fx, Scope, Sink } from '../../src/sim/fx';
+import { buildGate, gateHas } from '../../src/sim/gates';
 import { genChunk, hashBlocks } from '../../src/sim/genjob';
 import { Inventory } from '../../src/sim/inventory';
 import { type RayMob, mobDist, rayHitMobs } from '../../src/sim/mobhit';
@@ -515,4 +517,46 @@ test('mobDist is the distance to the boxes the ray test hits: body, a boss\'s he
     assert.ok(mobDist(m, ox + dx * hit.t, oy + dy * hit.t, oz + dz * hit.t) < 1e-6);
   }
   assert.ok(hits > 2000, `only ${hits} rays landed`);
+});
+
+test('a window ended from outside: op close under the sequence the player is at, and the viewer is gone', () => {
+  const r = rig(), sim = r.sim, realm = sim.realms[0], p = sim.join('a', 'A', null, false), key = '4,64,4';
+  const chest = realm.setEnt(4, 64, 4, 'chest', { s: new Array(27).fill(null), loot: null })!;
+  chest.data.s[0] = { k: 'stick', n: 5 };
+  p.window = { mode: 'chest', x: 4, y: 64, z: 4, sold: [] }; realm.viewers.set(key, new Set([p]));
+  p.ackSeq = 41; p.invDirty = false;
+  // something in the hand and something in the grid: both go back to the pack, as when the player closes it
+  p.inv.cursor = { k: 'stick', n: 3 }; p.inv.craft[0] = { k: 'dirt', n: 2 };
+  const res = invOp(sim, p, p.ackSeq, { o: 'close' });
+  assert.equal(res.ok, true);
+  assert.equal(p.window, null); assert.equal(realm.viewers.has(key), false);
+  assert.equal(p.ackSeq, 41, 'the sequence stays where it was'); assert.equal(p.invDirty, true);
+  assert.equal(p.inv.cursor, null); assert.equal(p.inv.craft[0], null);
+  assert.equal(p.inv.count('stick'), 3); assert.equal(p.inv.count('dirt'), 2);
+  assert.deepEqual(chest.data.s[0], { k: 'stick', n: 5 }, 'the container keeps what it held');
+  // with two viewers the map keeps the other one
+  const q = sim.join('b', 'B', null, false);
+  for (const v of [p, q]) v.window = { mode: 'chest', x: 4, y: 64, z: 4, sold: [] };
+  realm.viewers.set(key, new Set([p, q]));
+  invOp(sim, p, p.ackSeq, { o: 'close' });
+  assert.deepEqual([...realm.viewers.get(key)!], [q]); assert.notEqual(q.window, null);
+});
+
+test('gateHas names the twenty cells buildGate writes, and no other', () => {
+  for (const alongX of [true, false]) for (const [x, y, z] of [[10, 70, -6], [-33, 5, 0]]) {
+    const r = rig(), realm = r.sim.realms[0], g = { kind: 1 as const, dim: 0, x, y, z, alongX };
+    buildGate(realm, 1, x, y, z, alongX);
+    assert.equal(r.store.cells.size, 20);
+    let n = 0;
+    for (let dx = -5; dx <= 5; dx++) for (let dy = -3; dy <= 8; dy++) for (let dz = -5; dz <= 5; dz++) {
+      const has = gateHas(g, x + dx, y + dy, z + dz);
+      assert.equal(has, r.store.cells.has(`${x + dx},${y + dy},${z + dz}`), `${alongX} ${dx},${dy},${dz}`);
+      if (has) n++;
+    }
+    assert.equal(n, 20);
+    // the frame is the fourteen cells round the sheet
+    let frame = 0;
+    for (const [k, id] of r.store.cells) { const [cx, cy, cz] = k.split(',').map(Number); assert.ok(gateHas(g, cx, cy, cz)); if (id === B.hollow_frame) frame++; }
+    assert.equal(frame, 14);
+  }
 });

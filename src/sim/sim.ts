@@ -34,6 +34,7 @@ export interface SharedState {
   events: { a: 'raid' | 'moon' | 'ashen' | null; k: number; g: number; l: number };
   homes: { x: number; y: number; z: number; npc: string | null }[];
   worldSpawn: [number, number];
+  /** Gates raised by an arrival: the kind, the realm, and the cell and direction buildGate was given (gates.ts gateHas). */
   gates: { kind: 1 | 2; dim: number; x: number; y: number; z: number; alongX: boolean }[];
   summons: { n: number; item: string; by: string; dim: number; altar: [number, number, number] }[];
   owed: Record<string, { xp: number; coins: number; items: Item[] }>;
