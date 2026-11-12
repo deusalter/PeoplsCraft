@@ -131,7 +131,11 @@ export class SimHost {
     if (!m) { this.kick(l, 'proto', 'malformed message'); return; }
     if (m.t === 'step') { if (this.opt.clock === 'manual') void this.stepManual(m.n).then(() => { if (!l.closed) l.c.send({ t: 'stepped', tick: this.sim.tick }); }); }
     else if (m.t === 'pause') { this.paused = m.on; if (m.on) this.requestSave(); else this.due = this.env.now() + STEP_MS; }
-    else if (m.t === 'save') void this.save();
+    else if (m.t === 'save') {
+      // "save now" means with everything this client has said so far, whether or not a step has come to take it
+      this.take(l);
+      void this.save();
+    }
   }
   /** The other end went away. */
   private gone(l: Link): void {
@@ -300,19 +304,23 @@ export class SimHost {
       default: sim.handle(p, m);
     }
   }
+  /** Apply what one connection has queued, in arrival order, each message inside its own try / catch. */
+  private take(l: Link): void {
+    const q = l.inbox;
+    if (!q.length) return;
+    l.inbox = [];
+    for (const raw of q) {
+      if (l.closed) break;
+      try { this.one(l, raw); } catch (e) {
+        this.env.log('error', `message from ${l.p?.name ?? l.c.addr} failed: ${e instanceof Error ? e.stack ?? e.message : String(e)}`);
+        this.kick(l, 'proto', 'The host could not handle a message.');
+      }
+    }
+  }
   private drain(): void {
     for (const l of [...this.links]) {
       if (!l.c.local) this.refill(l);
-      const q = l.inbox;
-      if (!q.length) continue;
-      l.inbox = [];
-      for (const raw of q) {
-        if (l.closed) break;
-        try { this.one(l, raw); } catch (e) {
-          this.env.log('error', `message from ${l.p?.name ?? l.c.addr} failed: ${e instanceof Error ? e.stack ?? e.message : String(e)}`);
-          this.kick(l, 'proto', 'The host could not handle a message.');
-        }
-      }
+      this.take(l);
     }
   }
   /** What each connection is due, in the order of the protocol: state, live block changes, fx, edit sets, snapshot. */

@@ -3449,11 +3449,13 @@ join lock of 4.2 cannot be built or tested without a record id per token.
 while the game is paused or draws no frames, since the host it steps stood still as well.
 (k) Saving (8.2). The host saves every 30 s when the tick has moved, on `save`, and when asked
 (`requestSave`, at least 1 s apart, from a timer and never inside a step); each commit is answered with `saved`
-to the local connections. The 3 s timer after a change and `closetab` are stage 3's. In the page the commit that
+to the local connections. A `save` first applies what its connection has sent and no step has taken yet, so
+that "respawn, save, leave" from the death screen saves the player risen, as it always did. The 3 s timer after a change and `closetab` are stage 3's. In the page the commit that
 `beforeunload` asks for is still issued before the page goes, as today's was.
 (l) `?clone` takes every loopback message through `JSON.parse(JSON.stringify())` as 3.7 says, and copies a
-binary message. `open` lost its cell (4.3). `WorkerPool`, `World` and the entity store lost the paths that fed
-them from a simulation in the same thread.
+binary message. `open` lost its cell (4.3). `World` and the entity store lost the paths that fed them from a
+simulation in the same thread; `World` sends the mesh jobs of a block edit inside the frame (`pumpEdits`) and
+those of chunks whose edit set arrived in a frame right after it.
 (m) Harness. `T.loaded()` runs frames paced by the wall clock and tests after each. `T.cmd` gives up after 600
 frames without a reply (a paused game steps nothing). `T.showcase` and `T.orbit` move the body with `tp` and
 `fly`, since the body is the client's and a move the host did not allow is corrected. `npm run smoke -- golden

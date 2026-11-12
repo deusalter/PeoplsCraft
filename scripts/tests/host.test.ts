@@ -251,6 +251,12 @@ test('a save is one commit of world, player and edits, and tells the client; a f
   const ch = r.storage.chunks.get(`0,${x >> 4},${z >> 4}`)!;
   assert.equal(ch.rev, 1);
 
+  // "save now" takes what the client has already said, though no step has come for it
+  c.s.send({ t: 'cmd', id: 2, text: 'give cobble 3' });
+  c.s.send({ t: 'save' });
+  await new Promise((res) => setTimeout(res, 5));
+  assert.equal(JSON.stringify(r.storage.players.get('local')!.inv).includes('cobble'), true);
+
   // the same storage opened by a new host: the world goes on from the save, the player stands where it stood
   const r2 = await rig(true, r.storage), c2 = client(r2.host);
   assert.equal(r2.host.sim.tick, sim.tick);

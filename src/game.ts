@@ -327,10 +327,10 @@ export class Game {
     const id = ++this.cmdId;
     return new Promise((res) => { this.cmds.set(id, res); this.session.send({ t: 'cmd', id, text }); });
   }
-  /** Ask the host to save now. Settles when it says how that went. */
+  /** Ask the host to save now. Settles when it says how that went, or after 5 s without a word from it. */
   save(): Promise<void> {
     if (!this.everReady) return Promise.resolve();
-    return new Promise((res) => { this.saveWaiters.push(res); this.session.send({ t: 'save' }); });
+    return new Promise((res) => { this.saveWaiters.push(res); setTimeout(res, 5000); this.session.send({ t: 'save' }); });
   }
   /** One tick of mining: the swing, the dig sound, three chips off the face. */
   private digTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void {
