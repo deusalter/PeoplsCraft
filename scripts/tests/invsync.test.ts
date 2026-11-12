@@ -21,6 +21,15 @@ import { goods } from '../../src/sim/rules';
 import { Sim } from '../../src/sim/sim';
 import { PlayerStats } from '../../src/sim/stats';
 import type { WorldRecord } from '../../src/sim/storage';
+import type { EditHost, Ghosts } from '../../src/client/api';
+import { Combat, type CombatView, type HandMob } from '../../src/client/combat';
+import { InvClient } from '../../src/client/invclient';
+import { Session } from '../../src/client/session';
+import type { Transport } from '../../src/net/transport';
+import { encodeSnapshot } from '../../src/net/snapshot';
+import { SELF_DEAD } from '../../src/net/protocol';
+import { Player } from '../../src/player/player';
+import { newRayHit } from '../../src/sim/physics';
 import type { BlockEnt } from '../../src/sim/voxels';
 
 const GROUND = 64;
@@ -490,4 +499,110 @@ test('a prediction-only op never travels, and what an action uses up stays used 
   p.ackSeq = seq; p.invDirty = true; r.serve(); r.deliver();
   assert.equal(v.inv.slots[0]?.n, 10);
   same(r, 'after the refusal');
+});
+
+// ---- the client over a session ---------------------------------------------------------------------
+
+function fakeLink(): { tr: Transport; out: C2S[]; push(m: S2C | ArrayBuffer): void } {
+  const out: C2S[] = [];
+  const tr: Transport = { kind: 'loopback', state: 'open', send: (m) => { out.push(m); }, sendBin: () => {}, onOpen: null, onMessage: null, onBinary: null, onClose: null, close: () => {} };
+  return { tr, out, push: (m) => { if (m instanceof ArrayBuffer) tr.onBinary!(m); else tr.onMessage!(m); } };
+}
+const welcome = (): S2C => ({ t: 'welcome', proto: 1, boot: 1, you: { slot: 1, id: 'a' }, world: { name: 'w', seed: 1, seedText: '1' }, dim: 0, pos: [0, 64, 0, 0, 0], tp: 0, tick: 0, clock: 0.2,
+  flags: [], quest: 0, event: { a: null, k: 0, g: 0 }, spawn: [0, 0], cfg: { cheats: true, simRadius: 5, viewMax: 16, maxPlayers: 8 }, players: [] });
+
+test('the inventory client keeps the mirrors: st reconciles, stats and the snapshot header fill the stats, open and an ended window reach their hooks', () => {
+  const r = rig(), link = fakeLink(), session = new Session(link.tr), c = new InvClient(session, () => r.sim.flags);
+  assert.equal(session.inv, c);
+  let flight: boolean[] = [], opened: string[] = [], ended = 0;
+  c.onFlight = (on) => flight.push(on); c.onOpen = (m, box) => opened.push(m.mode + ':' + (box?.kind ?? '')); c.onEnded = () => { ended++; };
+  link.push(welcome()); link.push(stOf(r.sim, r.p, true)!);
+  r.p.inv.slots[0] = { k: 'stick', n: 5 }; r.p.inv.coins = 12;
+  link.push(stOf(r.sim, r.p)!);
+  session.pump();
+  assert.deepEqual([c.inv.slots[0], c.inv.coins], [{ k: 'stick', n: 5 }, 12]);
+  // ops leave as `op` under one counter, a waiting selection first
+  c.setSel(4);
+  c.send({ o: 'click', v: [0, 0], r: false, e: 'stick' });
+  assert.deepEqual(link.out, [{ t: 'op', seq: 1, o: 'sel', i: 4 }, { t: 'op', seq: 2, o: 'click', v: [0, 0], r: false, e: 'stick' }]);
+  assert.equal(c.inv.cursor?.k, 'stick');
+  // stats: level, buffs, modes; a grant of flight is passed on once
+  const stats = (creative: boolean): S2C => ({ t: 'stats', level: 3, xp: 7, buffs: [['fed', 60]], salveCd: 2, recallT: 12, modes: { creative, hidden: false, god: false, fly: false }, bed: [1, 2, 3], deathAt: null, sleeping: false });
+  link.push(stats(true)); link.push(stats(true)); link.push(stats(false));
+  session.pump();
+  assert.deepEqual(flight, [true, false]);
+  assert.deepEqual([c.stats.level, c.stats.xp, c.stats.buffs.get('fed'), c.recallT, c.bed], [3, 7, 60, 12, [1, 2, 3]]);
+  c.tick(5); assert.equal(c.recallT, 7);
+  // the snapshot header: health, mana, hunger, death
+  link.push(encodeSnapshot({ flags: SELF_DEAD, tick: 9, ackMove: 0, tp: 0, hunger: 11, ox: 0, oz: 0, hp: 42.5, mana: 17.2, players: [], mobs: [] }));
+  session.pump();
+  assert.deepEqual([c.stats.hp, Math.round(c.stats.mana * 10), c.stats.hunger, c.dead, c.stats.dead], [42.5, 172, 11, true, true]);
+  // a chest the host opened: its state, then `open`; then the host ends it
+  r.down.length = 0; r.up.length = 0;
+  onUse(r.sim, r.p, { t: 'use', seq: 3, x: CHEST[0], y: CHEST[1], z: CHEST[2], id: B.chest });
+  for (const m of r.down) link.push(m);
+  session.pump();
+  assert.deepEqual(opened, ['chest:chest']); assert.equal(c.window?.mode, 'chest');
+  endWindow(r.sim, r.p);
+  link.push(stOf(r.sim, r.p)!); session.pump();
+  assert.equal(ended, 1); assert.equal(c.window, null);
+  // a new connection starts everything again
+  link.push(welcome()); session.pump();
+  assert.equal(c.nextSeq(), 1); assert.equal(c.recallT, 0);
+});
+
+test('the hands: a shot, a swing, a station, a meal and a gate kit each leave as their message, with what they use up taken at once', () => {
+  const link = fakeLink(), session = new Session(link.tr), flags = new Set<string>(), c = new InvClient(session, () => flags);
+  const player = new Player(); player.teleport(0.5, 64, 0.5); player.yaw = Math.PI; player.pitch = 0;   // looking along +z
+  const hit = newRayHit();
+  const shown: string[] = [], ghosts: unknown[][] = [], edits: string[] = [];
+  const mobs: HandMob[] = [];
+  const view: CombatView = {
+    player, interact: { hit }, ents: { mobs }, audio: { play: () => {} }, win: { show: (_m, o) => shown.push(o.station) },
+    toast: () => {}, swing: () => {}, burst: () => {},
+  };
+  const edit: EditHost = { place: () => { edits.push('place'); return true; }, placeDoor: () => { edits.push('door'); return true; }, toggleDoor: () => { edits.push('toggle'); return true; } };
+  const ghost: Ghosts = { ghost: (...a) => { ghosts.push(a); } };
+  const hands = new Combat(view, session, c, edit, ghost);
+  const inv = c.inv, bow = [...ITEMS.values()].find((d) => d.weapon?.style === 'ranged')!.key;
+  inv.slots[0] = { k: bow, n: 1 }; inv.slots[9] = { k: 'arrow', n: 4 }; inv.slots[1] = { k: 'apple', n: 3 }; inv.slots[2] = { k: 'hollow_gate_kit', n: 1 };
+  c.stats.recompute(inv); c.stats.hunger = 5;
+  const sent = (): string[] => link.out.map((m) => m.t + (m.t === 'op' ? ':' + m.o : '') + ('seq' in m ? '#' + (m as { seq: number }).seq : ''));
+  // a shot: the arrow leaves the pack now, a ghost flies under the shot's seq
+  c.setSel(0);
+  assert.equal(hands.primary(true, true), true);
+  assert.deepEqual(sent(), ['op:sel#1', 'fire#2']);
+  assert.equal(inv.slots[9]?.n, 3); assert.equal(ghosts.length, 1); assert.equal(ghosts[0][0], 2); assert.equal(ghosts[0][1], 'arrow');
+  const f = link.out[1] as Extract<C2S, { t: 'fire' }>;
+  assert.ok(Math.abs(f.d[2] - 1) < 1e-9 && Math.abs(f.o[1] - (64 + player.eye)) < 1e-9);
+  // the client's own cadence: a held button does not fire again before the cooldown
+  assert.equal(hands.primary(false, true), true); assert.equal(link.out.length, 2);
+  hands.tick(1); hands.primary(false, true); assert.equal(link.out.length, 3);
+  // a swing at a creature the ray meets
+  inv.slots[0] = null; inv.touch(); hands.tick(1);
+  mobs.push({ x: 0.5, y: 64, z: 2.5, hw: 0.3, h: 1.8, yaw: 0, ry: 0, def: { ai: 'melee', boss: undefined }, segs: null, active: true, id: 77 } as unknown as HandMob);
+  assert.equal(hands.primary(true, true), true);
+  const atk = link.out.at(-1) as Extract<C2S, { t: 'atk' }>;
+  assert.deepEqual([atk.t, atk.id], ['atk', 77]); assert.ok(Math.abs(atk.d[2] - 1) < 1e-9);
+  mobs.length = 0;
+  // a station: shown at once, its use under the next seq
+  Object.assign(hit, { hit: true, x: 0, y: 64, z: 2, nx: 0, ny: 0, nz: -1, id: B.workbench, dist: 1.5 });
+  assert.equal(hands.secondary(hit, true), true);
+  assert.equal(link.out.at(-1)!.t, 'use'); assert.deepEqual(shown, ['workbench']); assert.equal(c.window?.mode, 'station');
+  // a block in hand against stone: lane B's placement is asked
+  Object.assign(hit, { id: B.stone });
+  inv.slots[0] = { k: 'cobble', n: 9 }; inv.touch();
+  assert.equal(hands.secondary(hit, true), true); assert.deepEqual(edits, ['place']);
+  // a meal: one apple leaves the hand at once
+  c.setSel(1);
+  assert.equal(hands.secondary(null, true), true);
+  const meal = link.out.at(-1) as Extract<C2S, { t: 'item' }>;
+  assert.deepEqual([meal.t, meal.slot], ['item', 1]); assert.equal(inv.slots[1]?.n, 2);
+  assert.equal(hands.secondary(null, true), false, 'the use cooldown');
+  // a gate kit on the ground it points at
+  c.setSel(2);
+  Object.assign(hit, { ny: 1, nz: 0, y: 63, id: B.stone });
+  assert.equal(hands.secondary(hit, true), true);
+  const kit = link.out.at(-1) as Extract<C2S, { t: 'item' }>;
+  assert.deepEqual([kit.slot, kit.at], [2, [0, 64, 2]]); assert.equal(inv.slots[2], null);
 });

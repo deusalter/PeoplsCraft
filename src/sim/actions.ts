@@ -243,8 +243,9 @@ export function placeDoor(sim: Sim, p: SimPlayer, hit: BlockHit): boolean {
   return true;
 }
 
-/** Right-click on a block that does something. False when this block does nothing. */
-export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string): boolean {
+/** Right-click on a block that does something. False when this block does nothing. `predicted`: the client has already
+ *  toggled the door and played its sound, so only the others hear it. */
+export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string, predicted = false): boolean {
   const w = sim.realms[p.dim], { x, y, z } = hit, b = p.body, own = { p: p.slot };
   if (STATIONS[use]) { setWindow(sim, p, { mode: 'station', station: STATIONS[use], x, y, z, sold: [] }); return true; }
   if (use.startsWith('forge')) {
@@ -276,7 +277,8 @@ export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string): bo
   if (use === 'door') {
     const swap: Record<string, string> = { door_x: 'door_x_open', door_x_open: 'door_x', door_z: 'door_z_open', door_z_open: 'door_z' }, to = B[swap[BLOCKS[hit.id].key]];
     for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === hit.id) w.setBlock(x, y + dy, z, to, true);
-    w.setBlock(x, y, z, to, true); sim.sink.emit(own, ['s', 'door', 1, 1]);
+    w.setBlock(x, y, z, to, true);
+    if (predicted) sim.sink.emit({ dim: p.dim, x, y, z, r: 40, not: p.slot }, ['s', 'door', 1, 1, x + 0.5, y + 0.5, z + 0.5]); else sim.sink.emit(own, ['s', 'door', 1, 1]);
     return true;
   }
   if (use === 'berries') {
@@ -479,7 +481,7 @@ export function onUse(sim: Sim, p: SimPlayer, m: C2SOf<'use'>): boolean {
   if (!live(p) || !realm.ready(x, z)) return refuse([]);
   const cur = realm.getBlock(x, y, z), use = BLOCKS[cur]?.use;
   const cells: [number, number, number][] = BLOCKS[m.id]?.door ? [[x, y - 1, z], [x, y, z], [x, y + 1, z]] : [[x, y, z]];
-  if (cur !== m.id || !use || !inReach(p, x, y, z, 1.5) || !useBlock(sim, p, { x, y, z, nx: 0, ny: 0, nz: 0, id: cur }, use)) return refuse(truth(realm, cells));
+  if (cur !== m.id || !use || !inReach(p, x, y, z, 1.5) || !useBlock(sim, p, { x, y, z, nx: 0, ny: 0, nz: 0, id: cur }, use, true)) return refuse(truth(realm, cells));
   return true;
 }
 /** `talk`: open the shop of a townsperson within reach of the eye. */

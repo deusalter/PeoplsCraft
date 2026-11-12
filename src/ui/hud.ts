@@ -4,7 +4,7 @@ import { RARITY, item, itemName, itemRarity } from '../data/items';
 import type { Game } from '../game';
 import { BOSS_BARS } from '../data/hudstyle';
 import { HOTBAR } from '../sim/inventory';
-import type { SharedState } from '../sim/sim';
+import type { EventWire } from '../net/protocol';
 import { BUFFS } from '../sim/stats';
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
@@ -322,7 +322,7 @@ export class Hud {
     if (this.questT > 0) { this.questT -= dt; if (this.questT <= 0) this.quest.classList.remove('new'); }
     const regen = st.hunger >= 14 && st.hp < st.maxHp && !st.dead;
     if (regen !== this.regenOn) { this.regenOn = regen; this.hp.root.classList.toggle('regen', regen); }
-    const ev = g.sim.shared.events;
+    const ev = g.event;
     if ((ev.a !== null) !== this.eventOn) { this.eventOn = ev.a !== null; this.event.classList.toggle('hidden', !this.eventOn); }
     if (ev.a) {
       const pr = eventProgress(ev, g.clock);
@@ -362,8 +362,7 @@ export class Hud {
 }
 
 // ---- the world event, read from its replicated state ----
-type EventState = SharedState['events'];
-export function eventLabel(ev: EventState): string {
+export function eventLabel(ev: EventWire): string {
   switch (ev.a) {
     case 'raid': return `Night raid  ${ev.k} / ${ev.g}`;
     case 'ashen': return `Sand March  ${ev.k} / ${ev.g}`;
@@ -371,10 +370,10 @@ export function eventLabel(ev: EventState): string {
     default: return '';
   }
 }
-export function eventProgress(ev: EventState, clock: number): number {
+export function eventProgress(ev: EventWire, clock: number): number {
   if (ev.a === 'moon') { const t = clock % 1; return 1 - Math.max(0, Math.min(1, (t - 0.5) / 0.5)); }
   return ev.g ? ev.k / ev.g : 0;
 }
-export function moonTint(ev: EventState): [number, number, number] | null { return ev.a === 'moon' ? [1.0, 0.42, 0.78] : null; }
+export function moonTint(ev: EventWire): [number, number, number] | null { return ev.a === 'moon' ? [1.0, 0.42, 0.78] : null; }
 /** Nights until the Hollow Moon (0 = tonight), or -1 before the Pale Warden has fallen. */
 export function moonIn(flags: ReadonlySet<string>, clock: number): number { return flags.has('boss:3') ? 7 - (Math.floor(clock) % 8) : -1; }
