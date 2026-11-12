@@ -331,8 +331,9 @@ export class SimHost {
     const env = this.env, sim = this.sim, t0 = env.now();
     this.steps++;
     this.drain();
-    for (const l of this.links) {
-      const p = l.p;
+    // from the newest back: a connection closed here leaves the list
+    for (let i = this.links.length - 1; i >= 0; i--) {
+      const l = this.links[i], p = l.p;
       if (!p || l.closed) continue;
       this.chunks.tick(l.c, p);
       if (!p.local && !p.loading && sim.tick - p.lastMoveTick >= IDLE_CLOSE * 60) { this.bound.delete(p); sim.leave(p, 'bye'); this.kick(l, 'idle', 'No movement for 30 seconds.'); }

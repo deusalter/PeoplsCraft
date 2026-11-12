@@ -485,7 +485,7 @@ export class Game {
     if (!this.paused) {
       this.acc += dt;
       const wait = this.runTicks();
-      if (wait) return (this.busy = wait.then(() => { this.busy = null; this.endFrame(dt, t0, t1); }));
+      if (wait) return (this.busy = wait.then(() => { this.busy = null; this.endFrame(dt, t0, t1); }, (e) => { this.busy = null; console.error('a step failed', e); }));
     } else inp.endTick();   // no tick runs while paused, so presses made in the menu must not fire on resume
     this.endFrame(dt, t0, t1);
   }
