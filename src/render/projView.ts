@@ -7,6 +7,8 @@ import type { BoxBatch } from './batches';
 export class ProjView {
   active = false; id = 0; def!: ProjDef; x = 0; y = 0; z = 0; vx = 0; vy = 0; vz = 0;
   px = 0; py = 0; pz = 0;   // previous tick position, for interpolation
+  /** Flown by the client itself: seconds of life left, and for a shooter's stand-in the `seq` of its `fire` (0 for a real one). */
+  life = 0; ghost = 0;
 }
 const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v1 = new THREE.Vector3(), v2 = new THREE.Vector3(), up = new THREE.Vector3(0, 0, 1);
 

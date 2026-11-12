@@ -9,8 +9,12 @@ import type { Particles } from '../render/batches';
 import { BURST, type Fx } from '../sim/fx';
 import type { Hud } from '../ui/hud';
 import type { World } from '../world/world';
+import type { Session } from './session';
 
 export interface FxHost { audio: GameAudio; particles: Particles; hud: Hud; player: Player; world: World }
+
+/** The codes the entity store plays itself once connected: projectiles, drops, creature removals, boss marks. */
+export const ENTITY_FX: ReadonlySet<string> = new Set(['ps', 'pe', 'da', 'dn', 'dd', 'md', 'mk']);
 
 export const tintOf = (id: number): number => { const t = BLOCKS[id].tint; return t === 1 ? 0x86c653 : t === 2 ? 0x6fb445 : t === 3 ? 0x3a84dc : 0xffffff; };
 
@@ -21,6 +25,9 @@ export class FxPlay {
   constructor(private g: FxHost) {}
 
   tick(dt: number): void { if (this.popT > 0) this.popT -= dt; }
+
+  /** Play the `fx` of a connection, in the order the host sent them; the entity codes are left to the entity store. */
+  connect(s: Session): void { s.on('fx', (m) => { for (const ev of m.l) if (!ENTITY_FX.has(ev[0])) this.play(ev); }); }
 
   play(ev: Fx): void {
     const g = this.g;
