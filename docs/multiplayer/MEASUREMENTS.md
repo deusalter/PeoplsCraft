@@ -136,3 +136,53 @@ of 4 to 8, gave medians of 7.2, 7.7, 7.8 and 11.4, with single runs from 5.8 to 
 load above about 3 says more about the machine than about the build. What still holds then: the mean
 frame CPU and its p95, which did not leave the ranges above in any run, and the stage 0 tree run in
 the same minutes.
+
+## 5. Stage 1c: the end of stage 1 (6.6 item 2, and the checks of section 11)
+
+Build: the commit that adds this section. Machine, browser and commands as in section 1. 2026-11-11,
+with other work on the machine throughout (1-minute load average 3 to 9).
+
+Performance. Step 1c changes nothing a flight runs: the tick compares the hotbar selection where it
+used to assign it, and the ops run on a click or a key. The gate command, started when the load had
+dropped to 3.0:
+
+| Run | load | prof sum | frame CPU mean | sim mean |
+| --- | --- | --- | --- | --- |
+| 1 | 3.0, 5.0 | 6.7 | 1.85 | 0.09 |
+| 2 | 5.0, 7.6 | 6.7 | 1.73 | 0.09 |
+| 3 | 7.6, 6.6 | 12.0 | 1.89 | 0.10 |
+
+Median 6.7 against the stage 0 median of 6.6. The same command a few minutes earlier, with the load
+going from 2.9 to 7.9 as it ran, gave 9.4, 15.7 and 7.8. To tell the build from the machine, single
+flights of this tree and of the stage 1b tree (`git archive 23a143a`) were run turn about, seven
+pairs, each started under a load of 3 to 6:
+
+| | prof sums | median | frame CPU mean | sim mean |
+| --- | --- | --- | --- | --- |
+| this tree | 11.6, 6.5, 4.7, 16.6, 6.9, 5.9, 19.7 | 6.9 | 1.22 to 2.10 | 0.07 to 0.11 |
+| stage 1b | 8.3, 4.4, 5.0, 16.4, 6.4, 14.4, 6.3 | 6.4 | 1.31 to 2.08 | 0.07 to 0.10 |
+
+Both trees have the same spread, the same outliers (two of seven runs above 14 in each) and the same
+means. And the stage 0 tree, three flights between two sets of this one at loads of 4 to 8: 6.1, 7.4
+and 5.6, against 8.1, 6.0, 7.2 and 9.3, 11.4, 5.5. Section 4 says how to read a sum taken on a busy
+machine; nothing here shows a cost of this step.
+
+The other checks of "Done when" for stage 1. `npm run smoke -- golden`: all 174 probes match the
+stage 0 baseline (eight runs in the course of the step). `npm run smoke -- legacy`: all 61 probes, so
+a save written before the stage loads after it. `git grep -nE "from '\.\./(game|render|ui|audio|player)" src/sim`
+prints nothing. `npm run check` (three compiles and `lint-sim`) and `npm run build` pass.
+
+Inventory ops. `npm test` runs `scripts/tests/invops.test.ts`: 18 cases, one or more per op, each with
+an accepted and a refused form, and a seeded run of 20,000 ops (about 6,000 accepted, 13,000 refused,
+235 that are not ops at all) that checks after every one that a refused op changed nothing and that
+items and coins appeared or vanished only as a craft, a purchase, a sale, a buy-back, a creative
+pick or a used-up stack says. Twelve faults put into a copy of `applyOp` one at a time (a source
+stack not reduced, a doubled sale price, a missing slot rule, and so on) each made the tests fail.
+
+The window code against the tree before the step: a page script plays seeded DOM events (clicks with
+either button and shift, drags, right-drags, number keys and Q over a slot, the recipe book, the
+chest and shop buttons, attribute points, G, Back, Esc, E) on windows of every kind, and records
+every sound with its volume, every toast with its colour, every thrown stack, and the inventory,
+both containers, the shop's buy-back list, attributes and `craft:` flags after each event. 77,757
+events on ten and then six seeds, the Sort buttons left out, and 12,919 more with them: the records
+of the two trees are identical.

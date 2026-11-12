@@ -2844,10 +2844,11 @@ way a window closes sends `close`, and an `open` the client finds nothing to sho
 coins lost in death) still change a pack or a container directly: they are the authority, and `_held`
 and `_slot` exist for the client that will predict them.
 (h) `sort` orders equal ranks with `rules.sortCompare`, as 5.2 and D18 say. Nothing else a click,
-shift-click, drag, split, craft, equip, drop or trade does has changed: the same 58,000 seeded window
+shift-click, drag, split, craft, equip, drop or trade does has changed: the same 77,000 seeded window
 events (clicks, drags, keys, book and shop buttons, the Guide over every kind of window) were played on
 the tree before this step and on this one, with the Sort buttons left out, and every sound, toast,
-thrown stack and the whole inventory, container, shop and attribute state agreed after each.
+thrown stack and the whole inventory, container, shop and attribute state agreed after each. So did
+12,900 more with the Sort buttons in: for the item names that came up the two orders are the same.
 (i) Tests. `npm test` is `node scripts/test.mjs`, which runs every `scripts/tests/*.test.ts` through
 `scripts/run.mjs` (also `npm run node -- <entry.ts>`), one Node process per file. `tsconfig.server.json`
 exists from this step and is the third compile of `npm run check` (D20 (a) expected it with stage 4):
