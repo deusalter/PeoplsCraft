@@ -92,7 +92,7 @@ export class World {
     this.clear(false);
     const v = new ClientVoxels<Chunk>((cx, cz, key) => new Chunk(cx, cz, key), this.chunks);
     v.dim = this.dim;
-    v.onCellChange = (c, x, _y, z, old, id) => this.cellChanged(c, x & 15, z & 15, old, id);
+    v.onCellChange = (x, _y, z, old, id) => { const c = this.chunkAt(x >> 4, z >> 4); if (c) this.cellChanged(c, x & 15, z & 15, old, id); };
     v.onReady = (c) => {
       // after a resync the neighbours still hold meshes made against the old blocks
       c.fails = 0; this.markDirty(c); this.markAround(c); this.scan = 0; this.pump();

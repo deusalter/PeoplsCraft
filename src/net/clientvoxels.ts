@@ -50,7 +50,7 @@ export class ClientVoxels<C extends VoxChunk = VoxChunk> implements VoxelRead {
   /** From `welcome.cfg`: the host's sim radius (where it can answer `full`) and its view limit. */
   cfg = { simRadius: 5, viewMax: 16 };
   /** A cell changed after generation: an edit set, a full array, a live change, a prediction or a `rej`. */
-  onCellChange: ((c: C, x: number, y: number, z: number, old: number, id: number) => void) | null = null;
+  onCellChange: ((x: number, y: number, z: number, old: number, id: number) => void) | null = null;
   /** The whole block array of a ready record was replaced (the answer to `full`). */
   onReplace: ((c: C) => void) | null = null;
   /** The record became ready: it may be meshed and stood on. */
@@ -255,7 +255,7 @@ export class ClientVoxels<C extends VoxChunk = VoxChunk> implements VoxelRead {
     const old = b[i];
     if (old === id) return false;
     b[i] = id;
-    if (this.onCellChange) this.onCellChange(c, c.cx * 16 + ((i >> 8) & 15), i & 255, c.cz * 16 + (i >> 12), old, id);
+    if (this.onCellChange) this.onCellChange(c.cx * 16 + ((i >> 8) & 15), i & 255, c.cz * 16 + (i >> 12), old, id);
     return true;
   }
   /** Replace a record's whole block array; `hasEmit` is found again by scanning it. */

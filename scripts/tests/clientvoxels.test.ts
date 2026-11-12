@@ -24,7 +24,7 @@ function terrain(): Uint8Array { const a = new Uint8Array(CVOL); for (let i = 0;
 function setup() {
   const cv = new ClientVoxels((cx, cz, key) => new VoxChunk(cx, cz, key)), sent: Chunks[] = [], changes: number[][] = [], ready: string[] = [], regen: string[] = [];
   cv.sendTo((m) => sent.push(m as Chunks));
-  cv.onCellChange = (_c, x, y, z, old, id) => changes.push([x, y, z, old, id]);
+  cv.onCellChange = (x, y, z, old, id) => changes.push([x, y, z, old, id]);
   cv.onReady = (c) => ready.push(`${c.cx},${c.cz}`);
   cv.onRegen = (c) => regen.push(`${c.cx},${c.cz}`);
   let now = 1000;
@@ -347,6 +347,14 @@ test('a break writes air at once, plays its own burst and sound, and sends edit 
   // a cell that no longer holds the block is not sent
   bc.onBroken(3, 9, 3, B.stone);
   assert.equal(acts.length, 1);
+});
+
+test('two players breaking one block (section 9): the loser keeps the air its rej carries, and nothing is resynced', () => {
+  const { bc, cv, b } = hands();
+  bc.onBroken(6, 9, 6, B.stone);
+  b(6, 9, 6, 0, 1);   // the other player's break, which this client hears first
+  cv.reject(1, [6, 9, 6, 0]);
+  assert.equal(cv.getBlock(6, 9, 6), 0); assert.equal(cv.predicted(), 0); assert.equal(cv.resyncs, 0);
 });
 
 test('breaking one half of a door predicts both', () => {
