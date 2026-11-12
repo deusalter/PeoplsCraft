@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { EntityStore, type EntityHost } from '../../src/client/entities';
+import { ENTITY_FX, FxPlay, type FxHost } from '../../src/client/fxplay';
 import { Session } from '../../src/client/session';
 import { B } from '../../src/data/blocks';
 import { MOB_LIST, PROJECTILES } from '../../src/data/mobs';
@@ -51,15 +52,16 @@ const worldRecord = (): WorldRecord => ({
 });
 
 /** The client end of one connection: a transport the host's Conn writes into, a session, and an entity store on stubs. */
-interface Client { tr: Transport; s: Session; ents: EntityStore; now: number; fx: Fx[]; bins: ArrayBuffer[]; msgs: S2C[] }
+interface Client { tr: Transport; s: Session; ents: EntityStore; now: number; fx: Fx[]; bins: ArrayBuffer[]; msgs: S2C[]; spawns: number[][] }
 function client(kind: Transport['kind'], store: Flat | null, me?: { x: number; y: number; z: number }): Client {
   const tr: Transport = { kind, state: 'open', send() {}, sendBin() {}, onOpen: null, onMessage: null, onBinary: null, onClose: null, close() {} };
   const s = new Session(tr);
   const world = { getBlock: (x: number, y: number, z: number) => (store ? store.getBlock(x, y, z) : 0), ready: () => true, getLight: () => 0xf0, topY: () => GROUND - 1, biomeAt: () => 0 };
-  const host = { world, particles: { spawn() {} }, audio: { play() {} }, player: me ?? { x: 0, y: 0, z: 0, shake() {} }, gfx: { dayAmt: 1 }, paused: false, time: 0, dim: 0 } as unknown as EntityHost;
+  const spawns: number[][] = [];
+  const host = { world, particles: { spawn: (...a: number[]) => { spawns.push(a); } }, audio: { play() {} }, player: me ?? { x: 0, y: 0, z: 0, shake() {} }, gfx: { dayAmt: 1 }, paused: false, time: 0, dim: 0 } as unknown as EntityHost;
   const models = { isCube: () => true, get: () => new THREE.BufferGeometry() } as unknown as ItemModels;
   const ents = new EntityStore(host, models);
-  const c: Client = { tr, s, ents, now: 0, fx: [], bins: [], msgs: [] };
+  const c: Client = { tr, s, ents, now: 0, fx: [], bins: [], msgs: [], spawns };
   ents.clock = () => c.now;
   ents.connect(s);
   s.on('fx', (m) => { c.fx.push(...m.l); });
@@ -471,4 +473,53 @@ test('another realm, or a new welcome, starts the store again', () => {
   assert.equal(f.mob(), null);
   assert.ok(f.c.ents.serverTick() >= 500);
   void BOSS_KINDS;
+});
+
+test('fx playback on a connection: every code but the entity store\'s is played once, in the order sent, and the entity codes are not', () => {
+  const c = client('loopback', null);
+  deliver(c, welcome(1, 0)); c.s.pump();
+  const did: string[] = [];
+  const g = {
+    audio: { play: (name: string) => { did.push(`s:${name}`); } },
+    particles: { spawn: () => { did.push('p'); } },
+    hud: { floater: (_x: number, _y: number, _z: number, text: string) => { did.push(`f:${text}`); }, toast: (text: string) => { did.push(`t:${text}`); },
+      showBanner: (title: string) => { did.push(`n:${title}`); }, hitMark: (crit: boolean) => { did.push(`h:${crit}`); },
+      pickup: (key: string, n: number) => { did.push(`u:${key}:${n}`); } },
+    player: { shake: (k: number) => { did.push(`k:${k}`); } },
+    world: { getLight: () => 0xf0 },
+  } as unknown as FxHost;
+  const fx = new FxPlay(g), handed: string[] = [];
+  fx.onEntity = (ev) => { handed.push(ev[0]); };
+  fx.connect(c.s);
+  const entity: Fx[] = [['ps', 9, 0, 0, 70, 0, 1, 0, 0, 2, 0, 0], ['pe', 9, 0, 70, 0, 1], ['da', 4, 'stone', 1, '', 0, 70, 0, 0, 0, 0, 0], ['dn', 4, 2], ['dd', 4, 0],
+    ['md', 3, 1], ['mk', 3, 10, 20, 1]];
+  assert.deepEqual(entity.map((e) => e[0]).sort(), [...ENTITY_FX].sort(), 'one event of each entity code');
+  const played: Fx[] = [['s', 'hit', 1, 1], ['p', 3, 0, 70, 0, 2, 0xffffff], ['f', 0, 70, 0, '12', '#fff', false], ['t', 'hello', ''], ['n', 'Title', 'sub', '#fff'],
+    ['k', 0.5], ['h', true], ['u', 'stone', 3, 7]];
+  deliver(c, { t: 'fx', l: [entity[0], played[0], entity[1], played[1], entity[2], entity[3], played[2], played[3], entity[4], played[4], entity[5], played[5], entity[6], played[6], played[7]] });
+  c.s.pump();
+  assert.deepEqual(did, ['s:hit', 'p', 'p', 'f:12', 't:hello', 'n:Title', 'k:0.5', 'h:true', 'u:stone:3', 's:pop']);
+  assert.deepEqual(handed, [], 'no entity code reaches the player\'s own fallback');
+});
+
+test('a boss\'s rain marks flicker on the client from the tick after they arrive until their strike falls, and its removal clears them', () => {
+  const f = fed('loopback'), R = Math.random;
+  Math.random = () => 0;
+  try {
+    const at = (x: number, z: number): number => f.c.spawns.filter((a) => Math.abs(a[0] - (x - 0.6)) < 1e-9 && Math.abs(a[2] - (z - 0.6)) < 1e-9).length;
+    deliver(f.c, { t: 'fx', l: [['mk', 7, 10, 20, 0.1, 30, 40, 1], ['mk', 8, -50, -60, 1]] }); f.c.s.pump();
+    f.c.spawns.length = 0;
+    f.frame(0);
+    assert.equal(f.c.spawns.length, 0, 'nothing on the tick they arrive');
+    for (let i = 0; i < 4; i++) f.frame(0);
+    assert.equal(at(10, 20), 4); assert.equal(at(30, 40), 4); assert.equal(at(-50, -60), 4);
+    for (let i = 0; i < 10; i++) f.frame(0);
+    assert.ok(at(10, 20) < 9, 'the mark with a tenth of a second left is gone');
+    assert.equal(at(30, 40), 14); assert.equal(at(-50, -60), 14);
+    deliver(f.c, { t: 'fx', l: [['md', 7, 1]] }); f.c.s.pump();
+    f.c.spawns.length = 0;
+    f.frame(0);
+    assert.equal(at(30, 40), 0, 'its boss removed, its marks go with it');
+    assert.equal(at(-50, -60), 1, 'another boss\'s marks stay');
+  } finally { Math.random = R; }
 });
