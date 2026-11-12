@@ -64,13 +64,15 @@ export class Windows {
   private back: { mode: WinMode; o: WinOpts } | null = null;
   private lastV: View | null = null; private lastT = 0; private dragSet: Set<View> | null = null;
   private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
+  /** Where ops go: the inventory channel once there is one (client/invclient.ts), else the game, which applies them at once. */
+  channel: { send(op: InvOp): OpResult } | null = null;
 
   constructor(ui: HTMLElement, private g: Game) {
     this.root = el('div', '#win', ui); this.root.classList.add('hidden');
     this.cursor = el('div', '#cursor', ui); this.cursorN = el('div', 'n', this.cursor); this.cursor.style.display = 'none';
     this.tip = el('div', '#tip', ui); this.tip.style.display = 'none';
     const r = this.root;
-    r.addEventListener('mousedown', (e) => { if (this.search && e.target !== this.search) this.search.blur(); const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) g.op({ o: 'dropCur' }); });
+    r.addEventListener('mousedown', (e) => { if (this.search && e.target !== this.search) this.search.blur(); const v = this.viewOf(e.target); if (v) { this.down(v, e); e.preventDefault(); } else if (e.target === r) this.op({ o: 'dropCur' }); });
     r.addEventListener('mouseup', (e) => { const v = this.viewOf(e.target); if (v && e.button === 0 && this.dragFrom && v !== this.dragFrom && g.inv.cursor) this.place(v, false); this.dragFrom = null; this.dragSet = null; });
     window.addEventListener('mouseup', () => { this.dragSet = null; });
     r.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -96,6 +98,7 @@ export class Windows {
       if (sk) this.showTip(this.itemTip({ k: sk.dataset.k!, n: 1, m: sk.dataset.m }, 'buy') + (sk.dataset.need ? `<div class="bd" style="margin-top:4px">${esc(sk.dataset.need)}</div>` : ''));
     });
   }
+  private op(o: InvOp): OpResult { return this.channel ? this.channel.send(o) : this.g.op(o); }
   private viewOf(t: EventTarget | null): View | null {
     const s = (t as HTMLElement)?.closest?.('[data-v]') as HTMLElement | null;
     return s ? this.views[+s.dataset.v!] : null;
@@ -131,11 +134,21 @@ export class Windows {
     this.shut({ o: 'close' });
     if (!silent) { g.input.uiMode = false; g.input.lock(); }
   }
+  /** The host ended the window (5.2: its container went away, the player walked off, a station was refused). Under the
+   *  Guide the remembered window is forgotten and Back leads to the inventory; otherwise the window comes down. Nothing is
+   *  sent: the host has already put the grid and the cursor back in the pack. */
+  ended(): void {
+    if (!this.open) return;
+    if (this.mode === 'guide') { this.back = null; return; }
+    const g = this.g;
+    this.shut(null);
+    g.input.uiMode = false; g.input.lock();
+  }
   /** Take the window down. `op` puts the grid and the cursor back in the pack, and says whether the window ends. */
-  private shut(op: InvOp): void {
+  private shut(op: InvOp | null): void {
     this.open = false; this.root.classList.add('hidden'); this.hideTip();
     this.hover = null; this.dragFrom = null; this.dragSet = null; this.lastV = null; this.hoverR = null;
-    this.g.op(op);
+    if (op) this.op(op);
     this.cursor.style.display = 'none';
     this.chest = null; this.forge = null; this.shop = null; this.sellConfirm = null;
   }
@@ -354,13 +367,13 @@ export class Windows {
     if (this.bookTab !== this.station) { g.toast('Made at the ' + STATION_NAMES[r.station], REFUSED); g.audio.play('error', 0.5); return; }
     if (e.button === 2 || e.shiftKey) {
       // lay the recipe out and craft it straight into the pack: once, or as often as the pack allows
-      const max = e.shiftKey ? 64 : 1, q = g.op({ o: 'book', r: i, max });
+      const max = e.shiftKey ? 64 : 1, q = this.op({ o: 'book', r: i, max });
       if (q.ok && q.n) { g.audio.play('craft'); if (max > 1) g.toast(`Made ${q.n} ${item(r.out).name}`, RARITY[item(r.out).rarity].color); }
       else g.audio.play('error', 0.5);
       if (q.msg) g.toast(q.msg, REFUSED);
       return;
     }
-    const q = g.op({ o: 'lay', r: i });
+    const q = this.op({ o: 'lay', r: i });
     if (q.ok && q.snd === 'click') g.audio.play('click'); else g.audio.play('error', q.ok ? 0.6 : 0.5);
   }
   /** A small button that sends one op on mousedown without letting the root handler drop the cursor stack. */
@@ -368,7 +381,7 @@ export class Windows {
     const b = el('button', 'btn sm', parent, label); b.dataset.tip = tip;
     b.onmousedown = (e) => {
       e.stopPropagation(); if (e.button !== 0) return;
-      const g = this.g, r = g.op(op);
+      const g = this.g, r = this.op(op);
       if (r.msg) g.toast(r.msg, REFUSED);
       if (r.ok) g.audio.play('click', 0.5); else g.audio.play('error', 0.4);
     };
@@ -385,7 +398,7 @@ export class Windows {
     for (const a of Object.keys(STAT_NAMES) as Attr[]) h += `<div class="stat" data-tip="${esc(ATTR_DESC[a])}"><span>${STAT_NAMES[a]}</span><b>${st.attr[a]} ${st.points > 0 ? `<button class="btn sm gold" data-a="${a}">+</button>` : ''}</b></div>`;
     if (st.sets.length) h += `<div class="stat" style="margin-top:4px"><span style="color:#8fd0ff">${st.sets.map((s) => setBonus(s)!.text).join('; ')}</span></div>`;
     e.innerHTML = h;
-    e.querySelectorAll('button[data-a]').forEach((b) => ((b as HTMLElement).onmousedown = (ev) => { ev.stopPropagation(); if (g.op({ o: 'spend', a: (b as HTMLElement).dataset.a as Attr }).ok) g.audio.play('click'); }));
+    e.querySelectorAll('button[data-a]').forEach((b) => ((b as HTMLElement).onmousedown = (ev) => { ev.stopPropagation(); if (this.op({ o: 'spend', a: (b as HTMLElement).dataset.a as Attr }).ok) g.audio.play('click'); }));
   }
   private buildShop(): void {
     const g = this.g, inv = g.inv, e = this.shopEl!, n = this.shop!, top = e.scrollTop, stock = goods(n, g.flags);
@@ -420,7 +433,7 @@ export class Windows {
     e.scrollTop = top;
   }
   private trade(op: InvOp): void {
-    const g = this.g, r = g.op(op);
+    const g = this.g, r = this.op(op);
     if (r.msg) g.toast(r.msg, REFUSED);
     if (r.ok) g.audio.play('coin'); else if (r.snd) g.audio.play('error', 0.5);
   }
@@ -442,20 +455,20 @@ export class Windows {
   /** Put the cursor stack (or one item of it) into a view. Returns false when nothing changed. */
   private place(v: View, one: boolean): boolean {
     if (v.kind === 'out') return false;
-    const r = this.g.op({ o: 'place', v: this.ref(v), one });
+    const r = this.op({ o: 'place', v: this.ref(v), one });
     if (r.ok && r.snd) this.g.audio.play(r.snd, 0.6);
     return r.ok;
   }
   private down(v: View, e: MouseEvent): void {
     const g = this.g, inv = g.inv, right = e.button === 2;
-    if (v.kind === 'out') { this.feedback(g.op({ o: 'out', all: e.shiftKey }), 'craft', 1, 0.5); return; }
+    if (v.kind === 'out') { this.feedback(this.op({ o: 'out', all: e.shiftKey }), 'craft', 1, 0.5); return; }
     const s = v.arr[v.i];
     if (e.shiftKey && s) { this.quickMove(v, s); return; }
     // second click of a double-click on the slot just emptied: gather matching items into the cursor
     const dbl = !right && this.lastV === v && performance.now() - this.lastT < 320;
     this.lastV = v; this.lastT = performance.now();
-    if (dbl && inv.cursor && !s && g.op({ o: 'gather' }).ok) { this.lastV = null; g.audio.play('click', 0.5); return; }
-    const carrying = !!inv.cursor, r = g.op({ o: 'click', v: this.ref(v), r: right, e: s ? s.k : '' });
+    if (dbl && inv.cursor && !s && this.op({ o: 'gather' }).ok) { this.lastV = null; g.audio.play('click', 0.5); return; }
+    const carrying = !!inv.cursor, r = this.op({ o: 'click', v: this.ref(v), r: right, e: s ? s.k : '' });
     if (!carrying) { if (r.ok) { this.dragFrom = v; g.audio.play('click', 0.5); } }
     else if (r.ok) { if (r.snd) g.audio.play(r.snd, 0.6); g.audio.play('click', 0.5); if (right) this.dragSet = new Set([v]); }
     else this.feedback(r, '', 0, 0.4);
@@ -475,21 +488,21 @@ export class Windows {
   private hotkey(i: number): void {
     const g = this.g, v = this.hover;
     if (!v || v.kind === 'out') return;
-    const s = v.arr[v.i], r = g.op({ o: 'hotkey', v: this.ref(v), i, e: s ? s.k : '' });
+    const s = v.arr[v.i], r = this.op({ o: 'hotkey', v: this.ref(v), i, e: s ? s.k : '' });
     if (r.ok) g.audio.play(r.snd ?? 'click', 0.5); else this.feedback(r, '', 0, 0.4);
   }
   private dropHover(all: boolean): void {
     const g = this.g, v = this.hover;
-    if (g.inv.cursor) { g.op({ o: 'dropCur' }); g.audio.play('click', 0.4); return; }
+    if (g.inv.cursor) { this.op({ o: 'dropCur' }); g.audio.play('click', 0.4); return; }
     if (!v || v.kind === 'out') return;
     const s = v.arr[v.i];
-    if (s && g.op({ o: 'dropSlot', v: this.ref(v), all, e: s.k }).ok) g.audio.play('click', 0.4);
+    if (s && this.op({ o: 'dropSlot', v: this.ref(v), all, e: s.k }).ok) g.audio.play('click', 0.4);
   }
   /** Shift-click: sell to an open shop, load an open chest or forge, equip, or move between hotbar and backpack. */
   private quickMove(v: View, s: Item): void {
     const g = this.g;
     if (this.shop && v.kind === 'inv' && !this.confirmSale(v, s)) return;
-    const r = g.op({ o: 'quick', v: this.ref(v), e: s.k });
+    const r = this.op({ o: 'quick', v: this.ref(v), e: s.k });
     if (!r.ok) { this.feedback(r, '', 0, 0.4); return; }
     if (r.snd === 'coin') g.audio.play('coin'); else if (r.snd) g.audio.play(r.snd, 0.6);
     if (r.msg) g.toast(r.msg, '#f2c14e');

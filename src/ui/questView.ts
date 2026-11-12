@@ -13,7 +13,7 @@ export class QuestView {
   constructor(private g: Game) {}
 
   /** The step the world is on. */
-  get index(): number { return this.g.sim.shared.quest; }
+  get index(): number { return this.g.quest; }
 
   tick(dt: number): void {
     this.t -= dt; this.whereT -= dt;
