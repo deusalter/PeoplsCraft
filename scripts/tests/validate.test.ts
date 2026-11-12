@@ -61,6 +61,8 @@ const SAMPLES: Sample[] = [
 ];
 
 const LONG = 'x'.repeat(20000), OTHER: unknown[] = [null, {}, [], () => 0];
+/** Each component of a direction, just past what rounding can give a unit vector, on either side. */
+const BEYOND_UNIT = [0, 1, 2].flatMap((i) => [1.011, -1.011].map((v) => [0, 0, 0].map((_, j) => (j === i ? v : 0))));
 /** Values no field of this kind may hold. */
 function breakers(kind: Kind, v: unknown): unknown[] {
   switch (kind) {
@@ -70,12 +72,12 @@ function breakers(kind: Kind, v: unknown): unknown[] {
     case 'str+': return [1, true, LONG, '', ['a'], ...OTHER];
     case 'bool': return [0, 1, 'true', ...OTHER];
     case 'enum': return ['nope', 99, true, ...OTHER];
-    case 'cell': return [[1, 2], [1, 2, 3, 4], [1.5, 2, 3], [1, 256, 3], [1, -1, 3], [500001, 2, 3], [1, 2, '3'], [1, NaN, 3], 'abc', 5, { 0: 1, 1: 2, 2: 3, length: 3 }, ...OTHER];
-    case 'dir': return [[0, 1], [0, 1, 0, 0], [0, 2, 0], [0, -1.5, 0], ['0', 1, 0], [NaN, 0, 1], [0, Infinity, 0], 'abc', 5, { 0: 0, 1: 1, 2: 0, length: 3 }, ...OTHER];
-    case 'point': return [[0, 1], [0, 1, 0, 0], [0, 500, 0], [0, -100, 0], [600000, 70, 0], [0, 70, -600000], ['0', 70, 0], [NaN, 70, 1], [0, Infinity, 0], 'abc', 5, ...OTHER];
+    case 'cell': return [[1, 2], [1, 2, 3, 4], [1.5, 2, 3], [1, 256, 3], [1, -1, 3], [500001, 2, 3], [-500001, 2, 3], [1, 2, 500001], [1, 2, -500001], [1, 2, '3'], [1, NaN, 3], 'abc', 5, { 0: 1, 1: 2, 2: 3, length: 3 }, ...OTHER];
+    case 'dir': return [[0, 1], [0, 1, 0, 0], [0, 2, 0], [0, -1.5, 0], ...BEYOND_UNIT, ['0', 1, 0], [NaN, 0, 1], [0, Infinity, 0], 'abc', 5, { 0: 0, 1: 1, 2: 0, length: 3 }, ...OTHER];
+    case 'point': return [[0, 1], [0, 1, 0, 0], [0, 500, 0], [0, -100, 0], [600000, 70, 0], [-600000, 70, 0], [0, 70, 600000], [0, 70, -600000], ['0', 70, 0], [NaN, 70, 1], [0, Infinity, 0], 'abc', 5, ...OTHER];
     case 'ref': return [[0], [0, 1, 2], [5, 0], [-1, 0], [0, 36], [0, -1], [1, 3], [2, 5], [3, 9], [4, 27], [0.5, 0], [0, 1.5], ['0', 0], [0, NaN], 'ab', 5, ...OTHER];
-    case 'chunks2': return [[1], [1, 2, 3], [1.5, 2], [31251, 0], [0, -31251], ['1', 2], [NaN, 0], 'ab', 5, null, {}, () => 0];
-    case 'chunks3': return [[1], [1, 2], [1, 2, 3, 4], [1.5, 2, 3], [31251, 0, 1], [0, -31251, 1], [0, 0, 65536], [0, 0, -1], [0, 0, 1.5], ['1', 2, 3], [NaN, 0, 0], 'abc', 5, null, {}, () => 0];
+    case 'chunks2': return [[1], [1, 2, 3], [1.5, 2], [31251, 0], [-31251, 0], [0, 31251], [0, -31251], [3, 4, 0, 31251], ['1', 2], [NaN, 0], 'ab', 5, null, {}, () => 0];
+    case 'chunks3': return [[1], [1, 2], [1, 2, 3, 4], [1.5, 2, 3], [31251, 0, 1], [-31251, 0, 1], [0, 31251, 1], [0, -31251, 1], [0, 0, 1, -31251, 0, 1], [0, 0, 65536], [0, 0, -1], [0, 0, 1.5], ['1', 2, 3], [NaN, 0, 0], 'abc', 5, null, {}, () => 0];
   }
 }
 const show = (v: unknown): string => (typeof v === 'function' ? 'function' : typeof v === 'string' && v.length > 40 ? `string of ${v.length}` : typeof v === 'number' ? String(v) : JSON.stringify(v));
@@ -129,7 +131,10 @@ test('the edges of the ranges', () => {
 
   pass({ ...base('hello'), view: 4 }); pass({ ...base('hello'), view: 16 }); fail({ ...base('hello'), view: 3 }); fail({ ...base('hello'), view: 17 });
   pass({ ...base('hello'), name: '', token: '', build: '' }); fail({ ...base('hello'), name: 'n'.repeat(65) }); fail({ ...base('hello'), password: 'p'.repeat(129) });
+  pass({ ...base('hello'), name: 'n'.repeat(64), token: 't'.repeat(64), build: 'b'.repeat(64), password: 'p'.repeat(128) });
+  fail({ ...base('hello'), token: 't'.repeat(65) }); fail({ ...base('hello'), build: 'b'.repeat(65) });
   pass({ ...base('hello'), data: 0xffffffff }); fail({ ...base('hello'), data: 0x100000000 }); fail({ ...base('hello'), data: -1 });
+  pass({ ...base('hello'), proto: 0 }); pass({ ...base('hello'), proto: 65535 }); fail({ ...base('hello'), proto: 65536 }); fail({ ...base('hello'), proto: -1 });
   pass({ ...base('ready'), tp: 0 }); pass({ ...base('ready'), tp: 255 }); fail({ ...base('ready'), tp: 256 }); fail({ ...base('ready'), tp: -1 });
 
   fail({ ...base('chunks'), dim: 3 }); fail({ ...base('chunks'), dim: -1 });
@@ -139,9 +144,19 @@ test('the edges of the ranges', () => {
   pass({ ...base('chunks'), sub: triples(1024) }); fail({ ...base('chunks'), sub: triples(1025) });
   pass({ ...base('chunks'), unsub: pairs(1024) }); fail({ ...base('chunks'), unsub: pairs(1025) });
   pass({ ...base('chunks'), full: pairs(16) }); fail({ ...base('chunks'), full: pairs(17) });
+  // each chunk coordinate at each end of its range, and one past it, in all three lists
+  for (const [cx, cz] of [[31250, 31250], [-31250, -31250], [31250, -31250], [-31250, 31250]]) {
+    pass({ ...base('chunks'), sub: [cx, cz, 0] }); pass({ ...base('chunks'), unsub: [cx, cz] }); pass({ ...base('chunks'), full: [cx, cz] });
+  }
+  for (const [cx, cz] of [[31251, 0], [-31251, 0], [0, 31251], [0, -31251]]) {
+    fail({ ...base('chunks'), sub: [cx, cz, 0] }); fail({ ...base('chunks'), unsub: [cx, cz] }); fail({ ...base('chunks'), full: [cx, cz] });
+    fail({ ...base('chunks'), sub: [0, 0, 0, cx, cz, 0] }); fail({ ...base('chunks'), unsub: [0, 0, cx, cz] }); fail({ ...base('chunks'), full: [0, 0, cx, cz] });
+  }
+  pass({ ...base('chunks'), sub: [0, 0, 0] }); pass({ ...base('chunks'), sub: [0, 0, 65535] });
 
   for (const t of ['dig', 'edit', 'use']) {
-    pass({ ...base(t), x: -500000, y: 0, z: 500000 }); fail({ ...base(t), x: 500001 }); fail({ ...base(t), z: -500001 }); fail({ ...base(t), y: 256 }); fail({ ...base(t), y: -1 });
+    pass({ ...base(t), x: -500000, y: 0, z: 500000 }); pass({ ...base(t), x: 500000, y: 255, z: -500000 });
+    fail({ ...base(t), x: 500001 }); fail({ ...base(t), x: -500001 }); fail({ ...base(t), z: 500001 }); fail({ ...base(t), z: -500001 }); fail({ ...base(t), y: 256 }); fail({ ...base(t), y: -1 });
   }
   for (const t of ['edit', 'use']) {
     pass({ ...base(t), id: 0 }); pass({ ...base(t), id: BLOCKS.length - 1 }); fail({ ...base(t), id: BLOCKS.length }); fail({ ...base(t), id: -1 });
@@ -150,24 +165,32 @@ test('the edges of the ranges', () => {
   pass({ ...base('edit'), k: 0 }); pass({ ...base('edit'), k: 2 }); fail({ ...base('edit'), k: 3 }); fail({ ...base('edit'), k: -1 });
   fail({ ...base('talk'), id: 0 }); pass({ ...base('talk'), id: 1 }); fail({ ...base('talk'), id: 65536 });
   fail({ ...base('atk'), id: 0 }); pass({ ...base('atk'), d: [1, 0, 0] }); pass({ ...base('atk'), d: [-1, 0, 0] });
+  for (const t of ['atk', 'fire']) {
+    pass({ ...base(t), d: [1.01, -1.01, 1.01] }); pass({ ...base(t), d: [-1.01, 1.01, -1.01] });
+    for (const d of BEYOND_UNIT) fail({ ...base(t), d });
+  }
   pass({ ...base('item'), slot: 0 }); fail({ ...base('item'), slot: 36 }); fail({ ...base('item'), slot: -1 });
-  pass({ ...base('fire'), o: [500001, 402, -500001] }); fail({ ...base('fire'), o: [500003, 70, 0] }); fail({ ...base('fire'), o: [0, 403, 0] }); fail({ ...base('fire'), o: [0, -67, 0] });
-  pass({ ...base('ping'), y: 432 }); fail({ ...base('ping'), y: 433 }); pass({ ...base('ping'), y: -96 }); fail({ ...base('ping'), x: 500033 });
+  pass({ ...base('fire'), o: [500002, 402, -500002] }); pass({ ...base('fire'), o: [-500002, -66, 500002] });
+  for (const o of [[500003, 70, 0], [-500003, 70, 0], [0, 70, 500003], [0, 70, -500003], [0, 403, 0], [0, -67, 0]]) fail({ ...base('fire'), o });
+  pass({ ...base('ping'), x: 500032, y: 432, z: -500032 }); pass({ ...base('ping'), x: -500032, y: -96, z: 500032 });
+  fail({ ...base('ping'), y: 433 }); fail({ ...base('ping'), y: -97 });
+  fail({ ...base('ping'), x: 500033 }); fail({ ...base('ping'), x: -500033 }); fail({ ...base('ping'), z: 500033 }); fail({ ...base('ping'), z: -500033 });
   pass({ ...base('chat'), text: 'c'.repeat(200) }); fail({ ...base('chat'), text: 'c'.repeat(201) });
-  pass({ ...base('cmd'), text: 'c'.repeat(200) }); fail({ ...base('cmd'), text: 'c'.repeat(201) }); fail({ ...base('cmd'), id: -1 });
-  pass({ ...base('rtt'), c: 0, last: 0 }); fail({ ...base('rtt'), c: -1 }); fail({ ...base('rtt'), last: -1 }); fail({ ...base('rtt'), last: 600001 });
+  pass({ ...base('cmd'), text: 'c'.repeat(200) }); fail({ ...base('cmd'), text: 'c'.repeat(201) });
+  pass({ ...base('cmd'), id: 0x7fffffff }); fail({ ...base('cmd'), id: 0x80000000 }); fail({ ...base('cmd'), id: -1 });
+  pass({ ...base('rtt'), c: 0, last: 0 }); pass({ ...base('rtt'), c: 1e15, last: 600000 }); fail({ ...base('rtt'), c: 1e15 + 1 }); fail({ ...base('rtt'), c: -1 }); fail({ ...base('rtt'), last: -1 }); fail({ ...base('rtt'), last: 600001 });
   fail({ ...base('step'), n: 0 }); pass({ ...base('step'), n: 600 }); fail({ ...base('step'), n: 601 });
 
   pass({ ...op('sel'), i: 0 }); fail({ ...op('sel'), i: 9 }); fail({ ...op('sel'), i: -1 });
   for (const [c, last] of [[0, 35], [1, 2], [2, 4], [3, 8], [4, 26]]) { pass({ ...op('click'), v: [c, 0] }); pass({ ...op('click'), v: [c, last] }); fail({ ...op('click'), v: [c, last + 1] }); }
   pass({ ...op('click'), e: 'k'.repeat(48) }); fail({ ...op('click'), e: 'k'.repeat(49) });
-  fail({ ...op('lay'), r: RECIPES.length }); fail({ ...op('lay'), r: -1 }); fail({ ...op('book'), r: RECIPES.length });
+  fail({ ...op('lay'), r: RECIPES.length }); fail({ ...op('lay'), r: -1 }); fail({ ...op('book'), r: RECIPES.length }); fail({ ...op('book'), r: -1 }); pass({ ...op('book'), r: 0 });
   pass({ ...op('book'), max: 1 }); fail({ ...op('book'), max: 2 }); fail({ ...op('book'), max: 0 });
-  pass({ ...op('hotkey'), i: 8 }); fail({ ...op('hotkey'), i: 9 });
+  pass({ ...op('hotkey'), i: 8 }); fail({ ...op('hotkey'), i: 9 }); fail({ ...op('hotkey'), i: -1 });
   pass({ ...op('sort'), w: 0 }); fail({ ...op('sort'), w: 2 });
   for (const a of ['str', 'agi', 'vit', 'arc']) pass({ ...op('spend'), a });
   fail({ ...op('spend'), a: 'luck' }); fail({ ...op('spend'), a: 'constructor' });
-  fail({ ...op('pick'), id: BLOCKS.length }); fail({ ...op('buyBack'), id: 0 }); fail({ ...op('buy'), k: 'k'.repeat(49) });
+  fail({ ...op('pick'), id: BLOCKS.length }); fail({ ...op('buyBack'), id: 0 }); pass({ ...op('buyBack'), id: 0x7fffffff }); fail({ ...op('buyBack'), id: 0x80000000 }); fail({ ...op('buy'), k: 'k'.repeat(49) });
   // the two ops that exist for prediction never travel
   fail({ t: 'op', seq: 1, o: '_held', n: 1 }); fail({ t: 'op', seq: 1, o: '_slot', i: 0, n: 1 });
   fail({ t: 'op', seq: 1 }); fail({ t: 'op', seq: 1, o: 'toString' }); fail({ t: 'op', o: 'gather' }); fail({ t: 'op', seq: 0, o: 'gather' });
