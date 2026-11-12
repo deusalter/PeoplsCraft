@@ -1,17 +1,19 @@
 // What the entity sims say about themselves for replication (wire ids, and the events a projectile, a
 // drop and a creature begin and end with), and the small pieces the contracts step added beside
-// them: the inline chunk source, the in-memory store, breakTimeMin, maxSpeed and freeSpot.
+// them: the inline chunk source, the in-memory store, breakTimeMin, maxSpeed, the flight grant and freeSpot.
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { B } from '../../src/data/blocks';
 import { item } from '../../src/data/items';
 import { MOB_LIST, PROJECTILES } from '../../src/data/mobs';
 import { ID_MAX, PS_PLAYER } from '../../src/net/protocol';
+import { cheat } from '../../src/sim/cheats';
 import { InlineSource } from '../../src/sim/chunksource';
 import { daOf } from '../../src/sim/drops';
 import type { Fx, Scope, Sink } from '../../src/sim/fx';
 import { genChunk, hashBlocks } from '../../src/sim/genjob';
 import { Inventory } from '../../src/sim/inventory';
+import { flightAllowed, toRecord } from '../../src/sim/player';
 import { PROJ_KEYS, psOf } from '../../src/sim/projectiles';
 import type { RealmStore } from '../../src/sim/realm';
 import { bodyFree, breakTime, breakTimeMin, freeSpot, maxSpeed } from '../../src/sim/rules';
@@ -274,7 +276,7 @@ test('MemStorage: a commit is all there or not at all, and nothing handed out is
   const st = new MemStorage();
   assert.equal(await st.open(), null); assert.equal(await st.loadPlayer('a'), null); assert.equal(await st.loadChunk(0, 1, 2), null);
   const player = (id: string): PlayerRecord => ({ v: 1, id, name: id, seen: 0, dim: 0, pos: { x: 1, y: 2, z: 3, yaw: 0, pitch: 0 }, inv: new Inventory().serialize(), stats: new PlayerStats().serialize(),
-    bed: null, deathAt: null, portalReturn: {}, safe: [1, 2, 3], arriving: -1, pendingBed: false, recallT: 0, modes: { creative: false, hidden: false, god: false }, mail: [{ k: 'stick', n: 2 }] });
+    bed: null, deathAt: null, portalReturn: {}, safe: [1, 2, 3], arriving: -1, pendingBed: false, recallT: 0, modes: { creative: false, hidden: false, god: false, fly: false }, mail: [{ k: 'stick', n: 2 }] });
   const chunk: ChunkRecord = { dim: 0, cx: 1, cz: 2, rev: 3, pal: 0, enc: 0, data: Uint8Array.from([1, 0, 5, 2, 0, 6]), ents: [{ x: 16, y: 70, z: 32, kind: 'chest', data: { s: [{ k: 'stick', n: 1 }, null], loot: null } }] };
   const batch: Batch = { world: worldRecord(), players: [player('a'), player('b')], chunks: [chunk] };
   st.failNext = new StorageError('full', 'no room');
@@ -319,6 +321,37 @@ test('maxSpeed: flight, or a sprint with its bonuses and a margin', () => {
   assert.equal(maxSpeed(stats, true), 24);
   assert.ok(Math.abs(maxSpeed(stats, false) - (5.75 * (1 + stats.d.speed) * Math.max(1, 1 + stats.d.swim) + 1.2)) < 1e-12);
   assert.ok(maxSpeed(stats, false) > 5.75 && maxSpeed(stats, false) < 24);
+});
+
+test('flight is allowed in creative or on a grant of the fly command, and the grant is kept with the record', () => {
+  const r = rig(), a = r.sim.join('a', 'A', null, false), b = a.body;
+  const state = (): boolean[] => [a.modes.creative, a.modes.fly, b.flying, flightAllowed(a)];
+  assert.deepEqual(state(), [false, false, false, false]);
+  assert.ok(maxSpeed(a.stats, flightAllowed(a)) < 24);
+  assert.equal(cheat(r.sim, a, 'fly'), 'fly true');
+  assert.deepEqual(state(), [false, true, true, true]);
+  assert.equal(maxSpeed(a.stats, flightAllowed(a)), 24);
+  // the host's `flying` is whatever the last move said; the grant is what a record and a rejoin keep
+  const rec = toRecord(a, 0);
+  assert.deepEqual(rec.modes, { creative: false, hidden: false, god: false, fly: true });
+  const back = rig().sim.join('a', 'A', JSON.parse(JSON.stringify(rec)), false);
+  assert.equal(back.modes.fly, true); assert.equal(flightAllowed(back), true); assert.equal(back.body.flying, false);
+  assert.equal(cheat(r.sim, a, 'fly'), 'fly false');
+  assert.deepEqual(state(), [false, false, false, false]);
+  // creative allows it without a grant, and takes a grant with it when it ends
+  cheat(r.sim, a, 'fly');
+  assert.equal(cheat(r.sim, a, 'creative'), 'creative true');
+  assert.deepEqual(state(), [true, false, true, true]);
+  assert.equal(cheat(r.sim, a, 'creative'), 'creative false');
+  assert.deepEqual(state(), [false, false, false, false]);
+  // in creative the command still flips the body it is run on
+  cheat(r.sim, a, 'creative');
+  assert.equal(cheat(r.sim, a, 'fly'), 'fly false');
+  assert.deepEqual(state(), [true, false, false, true]);
+  assert.equal(cheat(r.sim, a, 'fly'), 'fly true');
+  assert.deepEqual(state(), [true, true, true, true]);
+  assert.equal(cheat(r.sim, a, 'creative'), 'creative false');
+  assert.deepEqual(state(), [false, false, false, false]);
 });
 
 test('freeSpot: where a body already has room, beside a block it is stuck in, and up out of solid rock', () => {

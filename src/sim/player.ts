@@ -22,7 +22,8 @@ export interface SimPlayer {
   dim: 0 | 1 | 2;
   body: PlayerBody;
   inv: Inventory; stats: PlayerStats;
-  modes: { creative: boolean; hidden: boolean; god: boolean };
+  /** `fly`: flight granted by the `fly` command; creative needs no grant. */
+  modes: { creative: boolean; hidden: boolean; god: boolean; fly: boolean };
   bed: [number, number, number] | null;
   /** Last death as [dimension, x, y, z], until the player walks back to it. */
   deathAt: [number, number, number, number] | null;
@@ -71,11 +72,13 @@ export interface SimPlayer {
 
 /** Online, loaded, landed and heard from: the only state in which a player is hurt, targeted or ticked. */
 export const active = (p: SimPlayer): boolean => p.online && !p.loading && p.arriving < 0 && !p.stalled;
+/** Flying is allowed: the `canFly` of rules.maxSpeed, and the only state in which a move's `flying` flag is believed. */
+export const flightAllowed = (p: SimPlayer): boolean => p.modes.creative || p.modes.fly;
 
 export function newPlayer(id: string, slot: number, name: string, local: boolean, body: PlayerBody): SimPlayer {
   return {
     id, slot, name, local, online: true, epoch: 1, stalled: false, lingerT: 0, parked: false, unsaved: false,
-    dim: 0, body, inv: new Inventory(), stats: new PlayerStats(), modes: { creative: false, hidden: false, god: false },
+    dim: 0, body, inv: new Inventory(), stats: new PlayerStats(), modes: { creative: false, hidden: false, god: false, fly: false },
     bed: null, deathAt: null, portalReturn: {}, safe: [0, 0, 0], mail: [],
     loading: true, clientReady: false, arriving: -1, pendingBed: false, retCheck: false, tp: 0, sleeping: false, embedded: null,
     recallT: 0, hazardT: 0, fullT: 0, portalT: 0, portalArmed: true, actCredit: 0, useCredit: 0, digCredit: 0, dig: null,

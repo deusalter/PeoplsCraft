@@ -31,7 +31,7 @@ export interface PlayerRecord {
   portalReturn: Record<number, [number, number, number]>;
   safe: [number, number, number];
   arriving: number; pendingBed: boolean; recallT: number;
-  modes: { creative: boolean; hidden: boolean; god: boolean };
+  modes: { creative: boolean; hidden: boolean; god: boolean; fly: boolean };
   mail: Item[];
 }
 /** One chunk's edits. `data` is `packSparse` of the edited cells (enc 0) or `packFull` of the whole array (enc 1),

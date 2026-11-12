@@ -638,7 +638,7 @@ export interface SimPlayer {
   dim: 0 | 1 | 2;
   body: PlayerBodyState;                 // x y z vx vy vz yaw pitch hw h eye + flags from the last accepted move
   inv: Inventory; stats: PlayerStats;
-  modes: { creative: boolean; hidden: boolean; god: boolean };
+  modes: { creative: boolean; hidden: boolean; god: boolean; fly: boolean };   // fly: flight granted by a command (7.10)
   bed: [number, number, number] | null;
   deathAt: [number, number, number, number] | null;
   portalReturn: Record<number, [number, number, number]>;
@@ -678,7 +678,9 @@ export interface SimPlayer {
 `PlayerRecord` (3.6) is the persistent subset. `rngSeed` is drawn at join and sent in every inventory
 snapshot; it seeds the per-op random stream (5.2). "Active" means `online && !loading && arriving < 0 && !stalled`.
 A player that is not active cannot be hurt, is not a target, and its hazards, hunger and cooldown credits
-do not run.
+do not run. "Flying is allowed" means `flightAllowed(p)`: `p.modes.creative || p.modes.fly` (`sim/player.ts`,
+beside `active`). It is the `canFly` that `rules.maxSpeed` is called with, and a `flying` flag from a
+client counts only while it holds (4.5).
 
 ### 3.4 Event sink
 
@@ -779,7 +781,7 @@ export interface PlayerRecord {
   portalReturn: Record<number, [number, number, number]>;
   safe: [number, number, number];
   arriving: number; pendingBed: boolean; recallT: number;
-  modes: { creative: boolean; hidden: boolean; god: boolean };
+  modes: { creative: boolean; hidden: boolean; god: boolean; fly: boolean };
   mail: Item[];
 }
 export interface ChunkRecord {
@@ -1177,7 +1179,7 @@ Host to client
 | `welcome` | `proto`, `boot` (random per host start), `you: {slot, id}`, `world: {name, seed, seedText}`, `dim`, `pos: [x, y, z, yaw, pitch]`, `tp`, `tick`, `clock`, `flags: string[]`, `quest`, `event`, `spawn: [x, z]`, `cfg: {cheats, simRadius, viewMax, maxPlayers}`, `players: PlayerInfo[]` | hello accepted (first join, resume or takeover) | reset every mirror, clear the world, set seed and dim, clamp the view to `cfg.viewMax`, teleport, freeze, start loading. If `boot` differs from the previous one: toast "Server restarted". |
 | `error` | `code`, `msg` | before closing | 4.2 |
 | `st` | `ack`, `inv?: InvWire`, `box?: BoxWire \| null` | once per tick per player when `ackSeq` advanced, the inventory, attributes or points changed, or the viewed container changed (forge progress: 5 Hz) | reconcile (5.3). `box: null`: the sim closed the window (5.2); the client closes it too. |
-| `stats` | `level`, `xp`, `buffs: [key, seconds][]`, `salveCd`, `recallT`, `modes: {creative, hidden, god}`, `bed`, `deathAt`, `sleeping` (attributes and points travel in `st.inv`, where the `spend` op can be reconciled) | on change, at most 4 per second | replace the mirror, `stats.recompute(inv)` |
+| `stats` | `level`, `xp`, `buffs: [key, seconds][]`, `salveCd`, `recallT`, `modes: {creative, hidden, god, fly}`, `bed`, `deathAt`, `sleeping` (attributes and points travel in `st.inv`, where the `spend` op can be reconciled) | on change, at most 4 per second | replace the mirror, `stats.recompute(inv)`. If `modes.creative \|\| modes.fly` differs from what the mirror held, `player.flying` takes the new value: this is how the `creative` and `fly` commands reach the body that flies. A `welcome` resets the mirror to no modes, so the first `stats` of a creative or granted player puts it in flight. |
 | `hurt` | `dmg`, `fx`, `fz`, `knock`, `cause`, `dodged?` | the sim damaged this player | flash with the direction formula of today's `hurtPlayer`, shake, add knockback to `player.kbx / kbz`, `vy = 5` when on the ground and `kr > 0.3`, sound |
 | `dead` | `cause`, `lost`, `at: [dim, x, y, z]` | death; also right after `welcome` for a record loaded with `hp <= 0` (`cause: ''`, `lost: 0`) | close windows, death screen (same texts as `Game.onDeath`; for `cause: ''` today's "You did not get back up") |
 | `tp` | `id`, `dim`, `x`, `y`, `z`, `yaw?`, `pitch?`, `load`, `msg?` | movement correction, respawn, recall, portal crossing, cheat `tp` / `dim`, arrival after `land()` | set `player.tp = id`; if `dim` changed: clear world, entity store and predictions, `world.setDim`; `player.teleport`; if `load`: freeze, loading screen with `msg`, send `ready {tp: id}` when loaded |
@@ -1334,7 +1336,9 @@ body that has cleared a cell on the client has cleared it on the host.
 2. Finite numbers, `-64 <= y <= 400`, `|x|, |z| <= 500000`, else correct.
 3. Speed. `p.speedBudget` (blocks) refills at `maxSpeed(p) * 1.25` per second of sim time since the last
    accepted move, capped at 1.5 s worth, plus 2 blocks of slack after a `hurt` with knockback.
-   `maxSpeed(p)` = 24 when flying is allowed; otherwise `SPRINT * (1 + d.speed) * max(1, 1 + d.swim) + 1.2`.
+   `maxSpeed(p)` = 24 when flying is allowed (`flightAllowed(p)`, 3.3); otherwise `SPRINT * (1 + d.speed) * max(1, 1 + d.swim) + 1.2`.
+   The message's `flying` flag counts, here and in steps 6 and 7, only while flying is allowed: from a
+   player who may not fly it reads as not set.
    Horizontal distance moved is taken from the budget; a move the budget cannot pay is a failure.
    Vertical: a rise of more than `JUMP_V * sqrt(1 + d.jump) + 2` blocks within any 1 s window is a
    failure unless flying, in liquid, or within 1 s of a `hurt`. Falling is not limited.
@@ -2130,6 +2134,10 @@ is cleared, sim chunks are released. This is what `Game.travel` does to the real
   the Inventory and the Guide; the sim learns of those two from bit 9 of the move flags).
 - Cheats run in the sim (`cmd`). Allowed when the connection is local, or the host was started with
   `--cheats`. They act on the calling player; `time`, `flag`, `event`, `kill` act on the world.
+- Flight. `fly` grants flight or takes it back: `modes.fly = body.flying = !body.flying`. `creative`
+  toggles `modes.creative`, sets `modes.fly = false` and `body.flying = modes.creative`. The host's
+  `body.flying` is overwritten by the next accepted move, so what lasts is `modes`; the client's body
+  follows from `stats` (4.3). `modes.fly` is saved with the record like the other modes.
 - Chat: `Enter` or `T` opens the line. Text starting with `/` is sent as `cmd`.
 - Pings and friends: there is no map in the game today. Pings and friends are shown as world markers
   (HUD tags projected like floaters) and as compass pips; `where` and `pg` carry what a map would need.
@@ -2582,7 +2590,7 @@ and then frozen; for the rest of stage 2 these files change only through the int
   `dd`, `md`, `mk`. As built (3.4): `ProjSim.fire(kind, x, y, z, dx, dy, dz, dmg, by, cseq = 0, speed?, style,
   knock, crit, lead = 0): Proj | null`, `psOf`, `PROJ_KEYS`, `ProjSim.byId`; `daOf`, `DropSim.byId`; and on
   `SimPlayer` the three fields the snapshot's player record needs and no lane owns (`swingSeq`, `usingItem`,
-  `hurtTick`).
+  `hurtTick`), and `modes.fly` with `flightAllowed(p)`, which the movement check asks (D28).
 - `sim/rules.ts`: `breakTimeMin`, `freeSpot`; with them `bodyFree` (the shrunk box of 4.5 step 4, which
   `freeSpot`, the movement check and the placement check all ask) and `maxSpeed(stats, canFly)` (D20 (d)
   left it to its first caller, `movement.ts`, which cannot add to a frozen file).
@@ -3080,7 +3088,7 @@ and `sim/player.ts` belongs to neither. `actions.attack` and `actions.fire` coun
 stamps the tick and adds the 2 blocks of 7.3 to `speedBudget` now; nothing reads them until stage 2 is
 integrated.
 (f) `rules.ts` also has `bodyFree` and `maxSpeed(stats, canFly)` (11). "Flying is allowed" is the caller's
-to say (creative, or flight granted by a command), since the rule has no player. `freeSpot` takes cell
+to say (creative, or flight granted by a command: D28), since the rule has no player. `freeSpot` takes cell
 centres at whole heights inside a sphere of 4 cells round the body's cell, nearest first with lower cells
 first among equals; it skips columns that are not ready; its second pass (room without footing) is
 what "preferred" means in 4.5.
@@ -3107,6 +3115,27 @@ exists to pull it in. `StorageError` takes `(code, msg)`. `InlineSource` is buil
 (m) What a solo player can notice: nothing. The new events reach `Game`'s sink and fall through to the
 entity store, which acts on none of them (`pe` with how 0 included); ids, random draws and tick order are
 as they were.
+
+D28. Stage 2.0 (3.3, 3.6, 4.3, 4.5, 7.10). A flight grant has a place to live. D27 (f) let the movement
+check allow flight "granted by a command", and nothing recorded such a grant: `fly` only flipped
+`flying` on the one body, which on separate bodies is the host's copy, overwritten by the next move, and
+the client was never told. `modes` gains `fly` on `SimPlayer`, in `PlayerRecord` and in the `stats`
+message; `flightAllowed(p)` is `creative || fly`; the two commands set it (7.10); the client's body takes
+`flying` from a change of that value in `stats` (4.3); and a `flying` flag from a player who may not fly
+is not believed (4.5 step 3), which the document had left open. No record of this format has been
+written yet, so none lacks the field.
+(a) On the one body nothing changes: `flying` after `fly` and after `creative` is what it was, and the
+replies are the same.
+(b) The body's own `canFly` on the client (double-tap Space takes off and lands) stays
+`modes.creative && settings.flyToggle`. A player flying on a grant alone cannot land by double-tap or
+by sinking to the ground, as today; `fly` again ends it.
+(c) On separate bodies, `fly` typed in creative changes nothing the client hears of: flying is allowed
+before and after, so no change reaches the body. On the one body it flips `flying`, which a creative
+player otherwise does with a double-tap. With `flyToggle` off that player has no way out of flight but
+leaving creative. Console only.
+(d) When flight is taken back, the moves the client sent before it heard carry a `flying` flag that no
+longer counts; at 24 blocks a second they can overdraw the budget of a body on foot and cost one
+correction.
 
 ---
 

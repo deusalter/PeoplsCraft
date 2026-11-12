@@ -211,8 +211,9 @@ export type S2C =
   /** Inventory and container state: `ack` is the last `seq` processed. Whatever it carries replaces the client's copy.
    *  `box: null`: the sim closed the window. */
   | { t: 'st'; ack: number; inv?: InvWire; box?: BoxWire | null }
+  /** `modes.fly`: flight granted by a command. Flying is allowed while `creative || fly`; when that changes, the body's `flying` takes the new value. */
   | { t: 'stats'; level: number; xp: number; buffs: [key: string, seconds: number][]; salveCd: number; recallT: number;
-      modes: { creative: boolean; hidden: boolean; god: boolean }; bed: Vec3 | null; deathAt: [number, number, number, number] | null; sleeping: boolean }
+      modes: { creative: boolean; hidden: boolean; god: boolean; fly: boolean }; bed: Vec3 | null; deathAt: [number, number, number, number] | null; sleeping: boolean }
   /** The sim damaged this player from (fx, fz). `dodged`: the blow was avoided and `dmg` is 0. */
   | { t: 'hurt'; dmg: number; fx: number; fz: number; knock: number; cause: string; dodged?: boolean }
   /** Death. `cause` is '' for a record that was loaded with no health left. `at` is [dim, x, y, z]. */

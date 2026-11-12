@@ -17,8 +17,8 @@ export function cheat(sim: Sim, p: SimPlayer, cmd: string): string {
     case 'give': { if (!ITEMS.has(a[1])) return 'unknown item ' + a[1]; const left = p.inv.add({ k: a[1], n: +(a[2] ?? 1) }); return left ? 'inventory full' : `gave ${a[2] ?? 1} ${a[1]}`; }
     case 'time': sim.shared.clock = Math.floor(sim.shared.clock) + (a[1] === 'day' ? 0.15 : a[1] === 'night' ? 0.6 : a[1] === 'dusk' ? 0.49 : +a[1] || 0); return 'time set';
     case 'tp': b.teleport(+a[1], +a[2], +a[3]); sendTp(sim, p, false); return 'teleported';
-    case 'fly': b.flying = !b.flying; return 'fly ' + b.flying;
-    case 'creative': p.modes.creative = !p.modes.creative; b.flying = p.modes.creative; return 'creative ' + p.modes.creative;
+    case 'fly': p.modes.fly = b.flying = !b.flying; return 'fly ' + b.flying;
+    case 'creative': p.modes.creative = !p.modes.creative; p.modes.fly = false; b.flying = p.modes.creative; return 'creative ' + p.modes.creative;
     case 'god': p.modes.god = onOff(p.modes.god); return 'god ' + p.modes.god;
     case 'heal': st.hp = st.maxHp; st.hunger = 20; st.mana = st.maxMana; return 'healed';
     case 'level': st.level = +a[1] || 1; st.points += 2 * (+a[1] || 1); st.recompute(p.inv); return 'level set';

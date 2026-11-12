@@ -25,7 +25,7 @@ export function fromLegacy(meta: WorldMeta, climate: Climate): { world: WorldRec
     v: 1, id: LOCAL_ID, name: 'Player', seen: meta.played, dim: d.dim ?? 0, pos: { x: d.player.x, y: d.player.y, z: d.player.z, yaw: d.player.yaw, pitch: d.player.pitch },
     inv: d.inv, stats: d.stats, bed: d.spawn ?? null, deathAt: d.deathAt ?? null, portalReturn: d.portalReturn || {},
     safe: Array.isArray(d.safe) ? [d.safe[0], d.safe[1], d.safe[2]] : [d.player.x, d.player.y, d.player.z],
-    arriving: d.arriving ?? -1, pendingBed: !!d.pendingBed, recallT: 0, modes: { creative: false, hidden: false, god: false }, mail: [],
+    arriving: d.arriving ?? -1, pendingBed: !!d.pendingBed, recallT: 0, modes: { creative: false, hidden: false, god: false, fly: false }, mail: [],
   };
   return { world, player };
 }
