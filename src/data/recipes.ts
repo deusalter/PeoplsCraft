@@ -135,4 +135,4 @@ export const SMELTS: Smelt[] = [
   { in: 'noctrium_ore', out: 'noctrium_bar', n: 1, time: 12, forge: 3 }, { in: 'aetherium_ore', out: 'aether_bar', n: 1, time: 12, forge: 3 },
   { in: 'prismite_ore', out: 'prism_bar', n: 1, time: 14, forge: 4 }, { in: 'eclipsium_ore', out: 'eclipse_bar', n: 1, time: 16, forge: 5 },
 ];
-export const STATION_NAMES: Record<string, string> = { hand: 'Hand', workbench: 'Workbench', anvil: 'Anvil', runeloom: 'Runeloom', tinker: "Tinker's Bench" };
+export const STATION_NAMES: Record<string, string> = { hand: 'Hand', workbench: 'Workbench', anvil: 'Anvil', runeloom: 'Line Frame', tinker: 'Joining Bench' };

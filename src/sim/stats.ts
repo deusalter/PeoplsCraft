@@ -2,7 +2,7 @@
 import { MOD_BY_KEY, StatKey, Stats, Style, item, setBonus } from '../data/items';
 import type { Inventory } from './inventory';
 
-export const STAT_NAMES = { str: 'Strength', agi: 'Agility', vit: 'Vitality', arc: 'Arcana' } as const;
+export const STAT_NAMES = { str: 'Strength', agi: 'Agility', vit: 'Vitality', arc: 'Arm' } as const;
 export type Attr = keyof typeof STAT_NAMES;
 export const ATTR_DESC: Record<Attr, string> = {
   str: '+2% melee damage and +1% mining speed per point',
@@ -11,8 +11,8 @@ export const ATTR_DESC: Record<Attr, string> = {
   arc: '+2% magic and summon damage, +6 mana per point',
 };
 export const BUFFS: Record<string, { name: string; stats: Stats }> = {
-  ironbark: { name: 'Ironbark', stats: { def: 6 } },
-  swift: { name: 'Swiftroot', stats: { speed: 0.2 } },
+  ironbark: { name: 'Toughened', stats: { def: 6 } },
+  swift: { name: 'Quickened', stats: { speed: 0.2 } },
   fed: { name: 'Well Fed', stats: { regen: 0.5 } },
   dawn: { name: 'Rested', stats: { regen: 0.5, speed: 0.05 } },
 };

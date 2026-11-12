@@ -293,7 +293,7 @@ export class Hud {
     if (b) {
       const spec = b.def.boss!;
       if (this.bossKey !== b.def.key) {
-        this.bossKey = b.def.key; this.bossName.textContent = b.def.name; this.bossTitle.textContent = spec.title; this.bossHpI = -1;
+        this.bossKey = b.def.key; this.bossName.textContent = b.def.name; this.bossTitle.textContent = spec.title; this.bossTitle.style.display = spec.title ? '' : 'none'; this.bossHpI = -1;
         for (const n of this.bossNotches) n.remove();
         this.bossNotches.length = 0;
         for (const ph of spec.phases) if (ph.below < 1 && ph.below > 0) { const n = el('s', '', this.bossBar.root); n.style.left = ph.below * 100 + '%'; this.bossNotches.push(n); }
