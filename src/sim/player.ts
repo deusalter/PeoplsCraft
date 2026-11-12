@@ -46,6 +46,12 @@ export interface SimPlayer {
   actCredit: number; useCredit: number; digCredit: number;
   dig: { x: number; y: number; z: number; id: number; bt: number; t0: number } | null;
   fallPeak: number; grounded: boolean; speedBudget: number; moveSeq: number; lastMoveTick: number;
+  /** Tick the stored position dates from: the last accepted move, or the last sendTp. `speedBudget` refills from it. */
+  moveOkTick: number;
+  /** The base a rise is measured from: a height, and the tick it was taken at (far in the past when there is none). */
+  riseY: number; riseTick: number;
+  /** Jumps made in the air since the body last stood; each resets `fallPeak`, as the body's own does, up to the extra jumps the player has. */
+  airJumps: number;
   /** The client has a window of any kind open. */
   uiOpen: boolean;
   /** The client says it is eating, drinking or drawing a bow (move flag bit 8); other players see the pose. */
@@ -82,7 +88,7 @@ export function newPlayer(id: string, slot: number, name: string, local: boolean
     bed: null, deathAt: null, portalReturn: {}, safe: [0, 0, 0], mail: [],
     loading: true, clientReady: false, arriving: -1, pendingBed: false, retCheck: false, tp: 0, sleeping: false, embedded: null,
     recallT: 0, hazardT: 0, fullT: 0, portalT: 0, portalArmed: true, actCredit: 0, useCredit: 0, digCredit: 0, dig: null,
-    fallPeak: 0, grounded: false, speedBudget: 0, moveSeq: 0, lastMoveTick: 0, uiOpen: false, usingItem: false, swingSeq: 0, hurtTick: -1e9, rtt: 0,
+    fallPeak: 0, grounded: false, speedBudget: 0, moveSeq: 0, lastMoveTick: 0, moveOkTick: 0, riseY: 0, riseTick: -1e9, airJumps: 0, uiOpen: false, usingItem: false, swingSeq: 0, hurtTick: -1e9, rtt: 0,
     ackSeq: 0, rngSeed: 0, invDirty: false, statsDirty: false, window: null, fresh: true, deadOnJoin: false, arriveMsg: '',
   };
 }

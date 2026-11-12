@@ -24,6 +24,7 @@ export class PlayerBody implements Body {
   walkDist = 0; protected lastMoved = 0;  // ground distance walked, and the share of it added by the last tick
   hspeed = 0;                             // horizontal speed actually achieved last tick (0 against a wall, unlike vx/vz)
   fallPeak = 0; landed = 0;               // landed = fall distance reported on the tick of landing
+  jumps = 0;                              // +1 on every jump, from the ground or in the air: what a movement message reports as `jumped`
   eye = 1.62;
   ex = 0; ey = 0; ez = 0;                 // rendered eye position (interpolated, with bob, without shake)
   private lastW = -1; private lastSpace = -1; private jumpCd = 0;
@@ -146,10 +147,10 @@ export class PlayerBody implements Body {
           && boxFree(w, this.x - hw, this.y + this.h, this.z - hw, this.x + hw, this.y + this.h + 1.2, this.z + hw);
       }
       if ((jump || auto || this.jumpBuf > 0) && this.coyote > 0 && this.jumpCd <= 0) {
-        this.vy = JUMP_V * this.jumpMult; this.jumpCd = 0.12; this.onGround = false; this.coyote = 0; this.jumpBuf = 0;
+        this.vy = JUMP_V * this.jumpMult; this.jumpCd = 0.12; this.onGround = false; this.coyote = 0; this.jumpBuf = 0; this.jumps++;
         if (this.sprinting && !auto) { this.vx += wx * 1.2; this.vz += wz * 1.2; }
       } else if (tap && !this.onGround && this.jumpsLeft > 0 && this.vy < 6) {
-        this.vy = JUMP_V * 0.92 * this.jumpMult; this.jumpsLeft--; this.fallPeak = this.y; this.jumpBuf = 0;
+        this.vy = JUMP_V * 0.92 * this.jumpMult; this.jumpsLeft--; this.fallPeak = this.y; this.jumpBuf = 0; this.jumps++;
       }
     }
     this.wasFluid = fluid;

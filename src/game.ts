@@ -14,7 +14,7 @@ import { EntityStore } from './client/entities';
 import { FxPlay, tintOf } from './client/fxplay';
 import { LOCAL_ID, fromLegacy, toLegacy } from './client/legacy';
 import { WorldStore } from './client/worldstore';
-import type { S2C } from './net/protocol';
+import type { EventWire, S2C } from './net/protocol';
 import { Input } from './player/input';
 import { Interact } from './player/interact';
 import { Player, STRIDE } from './player/player';
@@ -91,6 +91,10 @@ export class Game implements DigHost, ActHost, Sink {
   get stats(): PlayerStats { return this.me.stats; }
   get flags(): ReadonlySet<string> { return this.sim.flags; }
   get clock(): number { return this.sim.shared.clock; }
+  /** Index of the guide step the world has reached. */
+  get quest(): number { return this.sim.shared.quest; }
+  /** The world event as the HUD shows it: which is running, kills, goal. */
+  get event(): EventWire { return this.sim.shared.events; }
   get dim(): number { return this.me.dim; }
   get creative(): boolean { return this.me.modes.creative; }
   get spawn(): [number, number, number] | null { return this.me.bed; }

@@ -7,10 +7,13 @@ import type { SimPlayer } from './player';
 import { standSpot } from './rules';
 import type { Sim } from './sim';
 
-/** Tell the client where its body now is. `load`: it must load that place and say so before the player is in play again. */
+/** Tell the client where its body now is. `load`: it must load that place and say so before the player is in play again.
+ *  What the movement check remembers of the body starts again from this place: the tick its position dates from, the
+ *  base of a rise, the peak of a fall, the jumps made in the air, and a note that it stood inside a block. */
 export function sendTp(sim: Sim, p: SimPlayer, load: boolean, msg?: string): void {
   const b = p.body;
   p.tp = (p.tp + 1) & 255;
+  p.moveOkTick = p.riseTick = sim.tick; p.riseY = p.fallPeak = b.y; p.airJumps = 0; p.embedded = null;
   if (load) { p.loading = true; p.clientReady = false; }
   sim.sink.send(p.slot, { t: 'tp', id: p.tp, dim: p.dim, x: b.x, y: b.y, z: b.z, load, msg });
 }

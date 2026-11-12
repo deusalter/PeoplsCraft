@@ -26,6 +26,27 @@ export function followSegs(s: Float32Array, x: number, y: number, z: number): vo
   }
 }
 
+const boxDist = (px: number, py: number, pz: number, x0: number, y0: number, z0: number, x1: number, y1: number, z1: number): number =>
+  Math.hypot(Math.max(x0 - px, 0, px - x1), Math.max(y0 - py, 0, py - y1), Math.max(z0 - pz, 0, pz - z1));
+/** Distance from a point to the nearest of a creature's hit volumes: the boxes rayHitMobs tests, with no padding.
+ *  0 inside one. A host asks it whether a blow could have reached. */
+export function mobDist(m: RayMob, px: number, py: number, pz: number): number {
+  let d = boxDist(px, py, pz, m.x - m.hw, m.y, m.z - m.hw, m.x + m.hw, m.y + m.h, m.z + m.hw);
+  const hb = m.def.boss ? m.def.boss.head : undefined;
+  if (hb) {
+    const hx = m.x + Math.sin(m.ry) * hb[0], hz = m.z + Math.cos(m.ry) * hb[0], hr = hb[3];
+    d = Math.min(d, boxDist(px, py, pz, hx - hr, m.y + hb[1], hz - hr, hx + hr, m.y + hb[2], hz + hr));
+  }
+  const sg = m.boss ? m.boss.segs : null;
+  if (sg) for (let i = 0, n = sg.length / 3; i < n; i++) {
+    const o = i * 3;
+    if (sg[o] === 0 && sg[o + 1] === 0 && sg[o + 2] === 0) continue;
+    const r = m.hw * 0.75 * segK(i, n), cy = sg[o + 1] + m.h * 0.5;
+    d = Math.min(d, boxDist(px, py, pz, sg[o] - r, cy - r, sg[o + 2] - r, sg[o] + r, cy + r, sg[o + 2] + r));
+  }
+  return d;
+}
+
 const out: { m: RayMob; t: number } = { m: null as unknown as RayMob, t: 0 };
 /** First creature whose box a ray hits within `max`. The result object is reused by the next call. */
 export function rayHitMobs<T extends RayMob>(list: readonly T[], ox: number, oy: number, oz: number, dx: number, dy: number, dz: number, max: number, pad = 0.1, filter?: (m: T) => boolean): { m: T; t: number } | null {

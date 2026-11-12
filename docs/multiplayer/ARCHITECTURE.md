@@ -180,7 +180,7 @@ Ownership summary
 | `genjob.ts` | `genChunk(seed, dim, cx, cz): GenOut & { hash }` and `hashBlocks(u8): number` (FNV-1a 32). The only place generators are constructed and cached. Used by `src/world/worker.ts`, `server/genworker.ts`, `InlineSource`, bots and migration. |
 | `light.ts` | `LightSource { sky(x, y, z): number; block(x, y, z): number }` (0..15 each): the only way sim rules read light. From stage 2 its implementation is `ApproxLight` (`skyApprox`, `blockLightApprox`, 7.8). |
 | `physics.ts` | Moved from `src/player/physics.ts` unchanged except `World` -> `VoxelRead`. |
-| `body.ts` | `PlayerBody`: the fields, `teleport`, `look` and `tick(dt, input, w, time)` of today's `Player`, with `input: InputState { down(code): boolean; hit(code): boolean }`. No camera. Used by the client and by bots. |
+| `body.ts` | `PlayerBody`: the fields, `teleport`, `look` and `tick(dt, input, w, time)` of today's `Player`, with `input: InputState { down(code): boolean; hit(code): boolean }`. No camera. Used by the client and by bots. `jumps` counts every jump, from the ground or in the air: what a movement message reports as `jumped` (4.5). |
 | `inventory.ts` | Moved from `src/systems/inventory.ts`; gains `assignWire(inv, wire)` (5.3). |
 | `stats.ts` | Moved from `src/systems/stats.ts`; `damage()` takes `rnd`. |
 | `invops.ts` | `InvOp` union, `applyOp(state, op, ctx)` (section 5). Shared by sim and client. |
@@ -191,7 +191,7 @@ Ownership summary
 | `gates.ts` | `gateFits` (tests every body of the realm), `buildGate`, `collapseGate` (clears the matching `portalReturn` of every player in memory), the gate registry and its upkeep (9). |
 | `travel.ts` | `travel`, `land`, the return check, portal timers (`tickPortal`), realm entry and exit, realm suspension. |
 | `mobs.ts` | `Mob` (sim fields only), `MobSim`: pool, `spawn`, `hurt`, `kill`, `tick`, `canSee`, targeting. |
-| `mobhit.ts` | `rayHitMobs(list, ...)`: the box / head / segment ray test of today's `MobSystem.rayHit`, generic over `{ x, y, z, hw, h, yaw, def, segs }`. Used by `ProjSim` on sim mobs and by the client on views. `segK`, `followSegs` (the serpent-body loop at the end of `bossTick`). |
+| `mobhit.ts` | `rayHitMobs(list, ...)`: the box / head / segment ray test of today's `MobSystem.rayHit`, generic over `{ x, y, z, hw, h, yaw, def, segs }`. Used by `ProjSim` on sim mobs and by the client on views. `mobDist(m, x, y, z)`: the distance from a point to the nearest of those volumes, which the reach test of a melee blow asks (7.3). `segK`, `followSegs` (the serpent-body loop at the end of `bossTick`). |
 | `spawn.ts` | `trySpawn` per player (7.2). |
 | `boss.ts` | `BossState` (sim fields), `newBossState`, `bossTick(realm, m, dt)`, `groundY`, `floorNear`, `roofY`, participants, scaling, leash. |
 | `projectiles.ts` | `ProjSim`: `fire`, `tick`. |
@@ -215,7 +215,7 @@ Ownership summary
 | `codec.ts` | Quantisers, base64 (hand written: no `atob` in the pure program), edit-map encodings (`packSparse`, `packFull`, `encodeEdits`, `decodeSparse`, `decodeFull`). |
 | `snapshot.ts` | `encodeSnapshot`, `decodeSnapshot`, `decodeHead` (the 26-byte header alone: the receiver's own state), `SnapWriter` (the same bytes written record by record, with no objects in between), `encodeMove`, `decodeMove` (4.4, 4.5). |
 | `validate.ts` | `checkC2S(m: unknown): C2S \| null`: type, shape and range check of every inbound JSON message (4.1). Pure. |
-| `interest.ts` | Per-connection interest state: known drops, known projectiles, mob hysteresis, chunk subscriptions. |
+| `interest.ts` | Per-connection interest state: known drops, known projectiles, mob hysteresis. (Chunk subscriptions are kept by the chunk service, in `hostchunks.ts`.) |
 | `host.ts` | `SimHost`: connections, hello and the per-id join lock, validated dispatch with `try / catch`, rate caps, clock driving, `requestSave` and the save loop. |
 | `hostchunks.ts` | Chunk subscription service: range check, nonces, paced edit-map loading and sending, encoded-entry cache, `ce` / `b` / `gh` messages. |
 | `hostsnap.ts` | Snapshot and fx assembly per connection, stagger, backpressure. |
@@ -273,7 +273,7 @@ and the `dist/` folder, nothing else.
 | `Game` member | Destination |
 | --- | --- |
 | `inv`, `stats` | `SimPlayer.inv`, `SimPlayer.stats`; client mirrors in `client/invclient.ts` keep the names `game.inv`, `game.stats`. |
-| `flags`, `clock`, `worldSpawn` | `Sim.shared`; client mirrors `game.flags`, `game.clock`, `game.worldSpawn`. |
+| `flags`, `clock`, `worldSpawn` | `Sim.shared`; client mirrors `game.flags`, `game.clock`, `game.worldSpawn`, and with them `game.quest` (the guide index) and `game.event` (an `EventWire`), which the HUD and the tracker read instead of the sim. |
 | `dim`, `spawn`, `deathAt`, `recallT`, `creative`, `creativeHidden`, `god`, `portalReturn`, `arriving`, `pendingBed`, `safe`, `hazardT`, `portalT`, `portalArmed`, `chestOpen` | `SimPlayer` (`dim`, `bed`, `deathAt`, `recallT`, `modes`, `portalReturn`, `arriving`, `pendingBed`, `safe`, `hazardT`, `portalT`, `portalArmed`, `window`). Client mirrors `game.dim`, `game.spawn`, `game.deathAt`, `game.recallT`, `game.creative` from `stats` / `tp` messages. |
 | `atkCd`, `useCd` | Stay on the client, where they pace swings and uses as today. The sim validates cadence with `SimPlayer.actCredit` / `useCredit` (7.3), not with a copy of these timers. |
 | `swing`, `equip`, `handKey`, `hand`, sway fields, `stepN`, `wasWet`, `wasUnder`, `splashCd`, `popT`, `warnT`, `npcPrompt*` | Stay on the client. |
@@ -661,12 +661,15 @@ export interface SimPlayer {
   dig: { x: number; y: number; z: number; id: number; bt: number; t0: number } | null;
   fallPeak: number; grounded: boolean; speedBudget: number; moveSeq: number;
   lastMoveTick: number;                  // tick of the last `move` received, accepted or not: the liveness signal
+  moveOkTick: number;                    // tick the stored position dates from: the last accepted move, or the last `sendTp`
+  riseY: number; riseTick: number;       // the base a rise is measured from: a height and the tick it was taken at (4.5 step 3)
+  airJumps: number;                      // jumps made in the air since the body last stood (4.5 step 7)
   uiOpen: boolean;                       // the client has any window open (bit 9 of the move flags)
   usingItem: boolean;                    // bit 8 of the move flags; other players see the pose
   swingSeq: number;                      // +1 per accepted attack or shot; its low two bits travel in the snapshot
   hurtTick: number;                      // tick of the last damage taken (-1e9 = never): the `hurt` flag others see, and the knock allowance of 4.5
   rtt: number;                           // seconds, reported by the client, clamped to 0.4
-  // inventory channel
+  // inventory channel. invDirty: an `st` is due (ackSeq advanced, the inventory changed, or the container viewed did)
   ackSeq: number; rngSeed: number; invDirty: boolean; statsDirty: boolean;
   /** Open window. Containers are named by cell only; every op resolves the entity again (5.2). */
   window: null | { mode: 'station' | 'chest' | 'forge' | 'shop'; station?: string;
@@ -681,6 +684,25 @@ A player that is not active cannot be hurt, is not a target, and its hazards, hu
 do not run. "Flying is allowed" means `flightAllowed(p)`: `p.modes.creative || p.modes.fly` (`sim/player.ts`,
 beside `active`). It is the `canFly` that `rules.maxSpeed` is called with, and a `flying` flag from a
 client counts only while it holds (4.5).
+
+What the movement check keeps of a body between two moves (4.5), and where each starts again:
+
+| Field | Holds | Set by |
+| --- | --- | --- |
+| `speedBudget` | blocks the body may still cover | the refill and the cost of each move (step 3); `hurtPlayer` adds 2 on a knock. Never reset: it cannot pass its cap |
+| `moveOkTick` | the tick the stored position dates from; the refill is counted from it | every accepted move; `sendTp` |
+| `riseY`, `riseTick` | the height a rise is measured from, and the tick that base was taken at (`-1e9` in a new player: the first move takes one) | the moves of step 3; `sendTp` (the body's `y`, this tick) |
+| `fallPeak` | the highest `y` since the body last stood | step 7; `sendTp` (the body's `y`) |
+| `airJumps` | jumps made in the air since the body last stood | step 7; `sendTp` (0) |
+| `embedded` | where and when the stored body was found inside a block | step 4; `sendTp` (null) |
+
+`sendTp` (`sim/travel.ts`) is the one place the sim tells a client where its body is, and it is where these
+start again: `moveOkTick = riseTick = tick`, `riseY = fallPeak = body.y`, `airJumps = 0`, `embedded = null`.
+Every way a body comes to stand somewhere by the sim's hand ends in it, so none needs a reset of its own: a
+first join, a resume and a new connection bound to the player all go through loading, whose last act is the
+`tp` of activation (moves are dropped until then, step 1); a respawn, a recall, a realm change and a command
+send one when they move the body, and the loading ones a second on arrival; a correction sends its own.
+`lastMoveTick`, `moveSeq`, `grounded` and the flags on `body` are not touched by it: the next move writes them.
 
 ### 3.4 Event sink
 
@@ -1327,7 +1349,7 @@ landing and on entering or leaving a liquid, plus the forced send below. 36 byte
 | 24 | 6 | i16 x 3 | velocity `* 256`, clamped |
 | 30 | 2 | u16 | yaw, as in the snapshot player record |
 | 32 | 2 | i16 | pitch: `round(pitch / 1.5708 * 32767)` |
-| 34 | 2 | u16 | flags: bit 0 onGround, 1 sprinting, 2 sneaking, 3 flying, 4 inWater, 5 headInWater, 6 inLava, 7 jumped since the last message, 8 usingItem, 9 uiOpen (any window open on the client, Inventory and Guide included) |
+| 34 | 2 | u16 | flags: bit 0 onGround, 1 sprinting, 2 sneaking, 3 flying, 4 inWater, 5 headInWater, 6 inLava, 7 jumped since the last message (from the ground or in the air: `PlayerBody.jumps` moved), 8 usingItem, 9 uiOpen (any window open on the client, Inventory and Guide included) |
 
 Forced send: an action is judged from where the client acted. Every action message (`edit`, `use`,
 `talk`, `item`, `atk`, `fire`, `dig`, `ping`) leaves through `session.act(m)`, which sends, in this
@@ -1347,12 +1369,22 @@ body that has cleared a cell on the client has cleared it on the host.
 2. Finite numbers, `-64 <= y <= 400`, `|x|, |z| <= 500000`, else correct.
 3. Speed. `p.speedBudget` (blocks) refills at `maxSpeed(p) * 1.25` per second of sim time since the last
    accepted move, capped at 1.5 s worth, plus 2 blocks of slack after a `hurt` with knockback.
+   The time is counted from `p.moveOkTick` (3.3). A move that reaches this step first adds
+   `maxSpeed(p) * 1.25 * (tick - p.moveOkTick) * STEP` to the budget, up to the cap (`maxSpeed(p) * 1.875`)
+   and never taking away what a knock has put above it, and `p.moveOkTick` is this tick from then on,
+   whether the move is accepted (it sets it) or fails (the `sendTp` of step 5 does). So the budget always
+   holds what was earned up to `moveOkTick`, and no stretch of time is counted twice or lost.
    `maxSpeed(p)` = 24 when flying is allowed (`flightAllowed(p)`, 3.3); otherwise `SPRINT * (1 + d.speed) * max(1, 1 + d.swim) + 1.2`.
    The message's `flying` flag counts, here and in steps 6 and 7, only while flying is allowed: from a
    player who may not fly it reads as not set.
    Horizontal distance moved is taken from the budget; a move the budget cannot pay is a failure.
    Vertical: a rise of more than `JUMP_V * sqrt(1 + d.jump) + 2` blocks within any 1 s window is a
    failure unless flying, in liquid, or within 1 s of a `hurt`. Falling is not limited.
+   The window is kept as a base, not as a history: `p.riseY` is the height the rise is measured from and
+   `p.riseTick` the tick that base was taken at. An accepted move takes a new base, its own `y` at this
+   tick, when `y <= p.riseY`, when more than 60 ticks have passed since `p.riseTick`, or when it is flying,
+   in liquid or within 1 s of a `hurt`. Any other move fails when `y - p.riseY` is more than the limit.
+   A move that fails, here or in step 4, changes no base; `sendTp` takes one (3.3).
 4. Space. If the destination chunk is a ready sim chunk: `boxFree(realm, x - hw + 0.05, y + 0.05, z - hw + 0.05, x + hw - 0.05, y + h - 0.05, z + hw - 0.05)`
    must hold, and a `raycast` (solid only) from the previous body centre to the new one must not hit.
    If the chunk is not ready the move is accepted unchecked.
@@ -1365,13 +1397,19 @@ body that has cleared a cell on the client has cleared it on the host.
    within 3 blocks of the embedded point. The first accepted move whose destination box is free clears
    `embedded`. A body still embedded 3 s after `t` is moved by the sim to `freeSpot` (below) with a `tp`.
 5. On failure: keep the old position, `p.tp = (p.tp + 1) & 255`, send `tp {load: false}` to the last
-   valid position. Log the reason at `info` (the soak counts these).
+   valid position. Log the reason at `info` (the soak counts these). This is `sendTp(sim, p, false)`, which
+   starts the state of 3.3 again; the body has not moved, so `movement.ts` puts `p.embedded` back after it.
 6. On success: store position, velocity, look and the client's flags `sprinting sneaking flying usingItem uiOpen`.
    The sim computes for itself: `grounded` (`!boxFree` of the body moved down 0.08), `inWater`,
    `headInWater`, `inLava` (the block tests of `Player.tick`).
 7. Fall distance: `fallPeak = max(fallPeak, y)` while airborne; reset to `y` when grounded, in liquid,
-   flying, embedded or teleported. On the transition to grounded: `landed = fallPeak - y`; the rule of today's
+   flying, embedded or teleported (`sendTp` does the last). On the transition to grounded: `landed = fallPeak - y`; the rule of today's
    `Game.tick` applies (`landed > 3.6`, not `noFall`, not creative: `damage((landed - 3) * 5.5, true)`).
+   A jump in the air resets it as well, because `PlayerBody` resets its own peak there: a move with the
+   `jumped` bit from a body that was not grounded at the accepted move before it, while
+   `p.airJumps < d.extraJump`, sets `fallPeak = y` and counts `p.airJumps++`. `airJumps` goes back to 0
+   when the body is grounded, in liquid or flying. (Without it a player who breaks a long fall with a
+   second jump lands softly on the client and takes the whole fall on the host.)
 8. `p.safe` is updated when grounded and not embedded.
 
 Putting a body somewhere. Whenever the sim itself chooses where a player stands (first join, resume
@@ -1659,6 +1697,10 @@ Opening and closing
   `use`; for a chest or forge `realm.getEnt(x, y, z)` exists and has that kind; the player's eye is
   within `reach + 2` of the cell (a shop: the townsperson `mob` is alive and within 7 blocks). If any
   of that fails the sim closes the window as op `close` does, sends `st {box: null}`, and refuses the op.
+- Who is a viewer. A player is in `realm.viewers` under the key `x,y,z` of its window's cell from the
+  moment the sim sets a station, chest or forge `window` until it clears it. `sim/actions.ts` puts it
+  there (`useBlock`) and takes it out (`invOp` on `close`, and wherever it ends a window itself);
+  `closeViewers` and the sender of `st.box` read the map.
 - A container never goes away under a viewer. Any non-silent `setBlock` on a cell, `removeEnt`, and
   `actions.breakBlock` before it spills the contents, first call `realm.closeViewers(x, y, z)`, which
   closes the window of every player in `realm.viewers` for that cell and sends each `st {box: null}`.
@@ -1943,7 +1985,8 @@ plus that surplus. Because a swing costs its own cooldown, switching weapons gai
 
 Melee (`atk`): the client plays the swing at once. The sim accepts when the credit covers it; the
 creature is active and not a townsperson or minion; and the distance from the stored eye position
-(fresh: 4.5, forced send) to the creature's nearest hit volume (box, boss head, serpent segments) is at
+(fresh: 4.5, forced send) to the creature's nearest hit volume (box, boss head, serpent segments:
+`mobDist` of `sim/mobhit.ts`, the boxes the ray test hits, unpadded) is at
 most `weaponReach + d.reach x 0.5 + 1.0 + v x (p.rtt / 2 + 0.15)`, with `v = min(20, max(speed of the creature, def.speed))`.
 Then crit and damage are rolled with `sim.rnd` by today's formula,
 `mobs.hurt(m, dmg, d.x, d.z, knock, crit, p)`, fx `h` to the attacker, `exhaustion += 0.03`.
@@ -2045,7 +2088,9 @@ differences in the table below appear at stage 2 and are listed in `MEASUREMENTS
 | Shades burn at sky light >= 14 by day | `skyApprox >= 14` and `dayAmount(clock, dim) > 0.75` | One block in from an opening still burns, as now. Leaves are not opaque, so shades now burn under a canopy of any depth (today two or more leaf layers protect them). |
 
 The sun-burn test is evaluated every 15 ticks per shade (staggered by id) and its result kept in
-between; the damage itself still runs every tick. Housing checks read block definitions (`b.light`),
+between; the damage itself still runs every tick. The stagger is a change to `sim/mobs.ts`, which no lane
+of stage 2 owns: it arrives with stage 5 (lane A). Until then `realm.light.sky` is asked for every shade
+under a daylit sky on every tick, and `ApproxLight.sky` has to be cheap enough for that (D30 (h)). Housing checks read block definitions (`b.light`),
 not light values, and are unchanged.
 
 ### 7.9 Bosses, realm lifetime, disconnects
@@ -2619,8 +2664,14 @@ and then frozen; for the rest of stage 2 these files change only through the int
 - The two host services of 3.7, which integration's `host.ts` composes and calls: lane A's `ChunkService`
   (`viewMax` as its third constructor argument, `flushLive`, `flushCe`) and lane C's `SnapService`
   (`flushState`, `flushFx`, `flushSnap`). The five flush calls interleave to the send order of 4.1 (D29).
+- What a lane needs in a file that is not its own, found by walking each lane's deliverables (D30): on
+  `SimPlayer` the state the movement check keeps between two moves (`moveOkTick`, `riseY`, `riseTick`,
+  `airJumps`), started again by `sendTp` together with `fallPeak` and `embedded` (3.3, 4.5); `PlayerBody.jumps`,
+  from which a client sets the `jumped` bit; `mobhit.ts mobDist` for the reach test of a melee blow (7.3); and
+  on `Game` the mirrors `quest` and `event`, the two things the HUD and the tracker still read from the sim.
 - Beside the two test files named above, `scripts/tests/hooks.test.ts` (the entity sims' events and wire ids,
-  `InlineSource`, `MemStorage`, the three rules) and `scripts/tests/session.test.ts` (`pump`, `act`, `move`).
+  `InlineSource`, `MemStorage`, the three rules, what `sendTp` starts again, `PlayerBody.jumps`, `mobDist`) and
+  `scripts/tests/session.test.ts` (`pump`, `act`, `move`).
 - A lane builds beside what runs: until integration, `Game` still constructs the `Sim` on `WorldStore`, and the
   tree must pass `npm run check` and both smokes after every lane. So a lane does not change a signature that
   a file outside its own list calls (`Realm`'s constructor and `RealmStore`, `SimDeps`, the functions of
@@ -2634,13 +2685,17 @@ Lanes (parallel, disjoint files):
 | --- | --- | --- |
 | A sim store and storage | `sim/voxels.ts`, `sim/light.ts`, `sim/migrate.ts`, `sim/realm.ts`, `sim/blocks.ts`, `storage/idb.ts`, `net/hostchunks.ts`, `scripts/tests/store.test.ts`, `scripts/tests/migrate.test.ts` | `SimChunks`, `EditStore` (`touch`, `unsaved`, release rule), generator-entity rule with promotion, viewers and `closeViewers`, light approximations, `IdbStorage` v2, legacy migration, chunk subscription service (nonces, range, pacing, cache) |
 | B client world | `net/clientvoxels.ts`, `world/world.ts`, `world/worker.ts`, `world/pool.ts`, `client/blocks.ts`, `scripts/tests/clientvoxels.test.ts` | readiness rule, `editRev`, nonces, `write` (`hasEmit`, `onCellChange`), pending edits, predicted edits, `rej` and resync, generation hash check, re-subscribe timer |
-| C entities | `net/hostsnap.ts`, `net/interest.ts`, `client/entities.ts`, `render/mobView.ts`, `render/projView.ts`, `render/dropView.ts`, `client/fxplay.ts`, `sim/movement.ts` | snapshot building, interest (projectile known-set included), interpolation, projectile and drop kinematics, fx playback, movement validation (embedded rule, liveness) |
-| D inventory and UI | `net/invsync.ts`, `client/invclient.ts`, `client/combat.ts`, `ui/windows.ts`, `ui/hud.ts`, `ui/questView.ts`, `sim/actions.ts`, `sim/invops.ts`, `sim/inventory.ts` | reconcile (`assignWire`, identity, `pendingSel`), ops over messages, `tidy` and the Guide overlay, container re-resolution, dig and action credits, placement rules, HUD on mirrors |
+| C entities | `net/hostsnap.ts`, `net/interest.ts`, `client/entities.ts`, `render/mobView.ts`, `render/projView.ts`, `render/dropView.ts`, `client/fxplay.ts`, `sim/movement.ts`, `scripts/tests/movement.test.ts`, `scripts/tests/snap.test.ts` | snapshot building, interest (projectile known-set included), interpolation, projectile and drop kinematics, fx playback, movement validation (embedded rule, liveness) |
+| D inventory and UI | `net/invsync.ts`, `client/invclient.ts`, `client/combat.ts`, `ui/windows.ts`, `ui/hud.ts`, `ui/questView.ts`, `sim/actions.ts`, `sim/invops.ts`, `sim/inventory.ts`, `scripts/tests/invsync.test.ts`, `scripts/tests/actions.test.ts`, `scripts/tests/invops.test.ts` | reconcile (`assignWire`, identity, `pendingSel`), ops over messages, `tidy` and the Guide overlay, container re-resolution, dig and action credits, placement rules, HUD on mirrors |
 | Integration (after A to D) | `game.ts`, `main.ts`, `dev.ts`, `net/host.ts`, `net/loopback.ts`, `sim/sim.ts`, `sim/player.ts`, `sim/travel.ts`, `sim/gates.ts`, `ui/menus.ts`, removal of `client/worldstore.ts` and `systems/` | `SimHost` (join lock, validation and `try / catch`, rate buckets (off on local transports, first exercised in stage 4), `requestSave`, `prepare`), loopback wiring, join / `tp` / `ready` flow with position checks, title menu on `IdbStorage` |
 
 `clientvoxels.test.ts` must cover: either arrival order of generation and `ce`; a stale-nonce `ce`
 dropped; unsub then sub of one chunk in one message; a `b` with a gap triggering resync; a torch in an
 edit set, in a full array and in a live change each setting `hasEmit`; `rej` with and without cells.
+`movement.test.ts` must cover: a stretch of time refilling the budget once, whether the move that ends it
+is accepted or fails; a knock's 2 blocks surviving the cap; a rise judged from its base, and a new base on
+a lower `y`, after 60 ticks, in liquid, in flight and after a `hurt`; a correction that leaves `embedded`
+set; a fall broken by a jump in the air, with and without `d.extraJump`.
 
 Done when: smoke `golden` passes with `?clone`; smoke `legacy` loads the fixture and finds its probes
 (blocks in three dimensions, chest contents, the unopened chest still rolling loot, forge state, bed,
@@ -3166,6 +3221,47 @@ chunks whose `ce` the connection has been sent. A chunk whose `ce` is still to c
 (c) `ChunkService` takes `viewMax` as a third constructor argument. 4.7 measures both of its ranges from
 it, and it was only in `SimHost`'s `opt`: `SimOptions` has `cheats`, `maxPlayers`, `solo` and `manual`,
 and `sim/sim.ts` is not lane A's to change. The `Sim` still has no use for it.
+
+D30. Stage 2.0 (2.2, 2.3, 3.3, 4.5, 5.2, 7.3, 7.8, 11). What a lane needs in a file it may not edit, found
+by walking every item of the four lanes' deliverables against the frozen files and the files integration
+owns, after D27 to D29.
+(a) The clock of the speed budget. 4.5 step 3 refills "since the last accepted move", and the only tick on
+the player was `lastMoveTick`, which every move received sets. `SimPlayer.moveOkTick` is the tick the stored
+position dates from. The refill is added when a move is judged and the tick moves either way, so a move that
+fails neither loses its stretch of time nor earns it a second time. The cap bounds the refill alone: the 2
+blocks of a knock are added by `hurtPlayer` and stay above it.
+(b) The 1 s window of the vertical rule is kept as a base (`riseY`, `riseTick`), not as a history of
+heights. The rule then holds for every second counted from a base. What that gives up: a modified client
+can put two allowances back to back across a change of base (about 21 blocks in little more than a second,
+once) and one allowance a second after that, where a history would hold it to one in any second. A jump
+rises 1.2 blocks and the allowance is 10.7, so no honest body comes near either.
+(c) `sendTp` starts the movement state again (3.3). Step 7 resets the fall "when teleported" and `embedded`
+describes the stored position, but teleports are made in `travel.ts`, `player.ts` and `cheats.ts`, where the
+movement code cannot see them. All of them end in `sendTp`, so the resets are there and bind, resume,
+respawn and realm change need none of their own. `speedBudget` is left as it is: it cannot pass its cap.
+The correction of step 5 calls `sendTp` without having moved the body, so it puts `embedded` back.
+(d) The fall and the second jump. `PlayerBody` resets its peak when it jumps in the air (`d.extraJump`), so today a fall broken by that jump costs only what comes after it. Step 7 as it stood would have
+charged the whole fall on the host. `PlayerBody.jumps` counts jumps of both kinds, the `jumped` bit of a
+move means either, and the host resets `fallPeak` on a jump in the air at most `d.extraJump` times between
+two landings (`SimPlayer.airJumps`), which is all an honest body can do. Nothing reads `jumps` on the one body.
+(e) `mobhit.ts mobDist`. 7.3 asks for the distance from the eye to a creature's nearest hit volume, and the
+file had only the ray test. The volumes (a head placed with `ry`, tapered segments) are that file's;
+`actions.attack` asks it instead of building them a second time in lane D's file.
+(f) `Game.quest` and `Game.event`. `ui/questView.ts` read `g.sim.shared.quest` and `ui/hud.ts` read
+`g.sim.shared.events`: the only two reads of the HUD, the windows and the tracker that went past `Game`'s
+mirrors. Lane D moves them onto the mirrors; integration fills those from `welcome`, `quest` and `event`.
+(g) `realm.viewers` had no writer: `closeViewers` reads it, `invOp` takes a player out on `close`, and nothing
+put one in. `actions.ts` does, where it sets a station, chest or forge window (5.2). `closeViewers` (lane A)
+ends each viewer's window with `actions.invOp(sim, p, p.ackSeq, { o: 'close' })`, which is op `close` with the
+sequence left where it is, and then sends `st {ack, box: null}`. `invDirty` means an `st` is due, whatever
+for (3.3): whoever changes a container marks its viewers with it.
+(h) The 15-tick stagger of the sun-burn test (7.8) is a change to `sim/mobs.ts`. It waits for stage 5.
+(i) Test files. Lanes C and D had none in their lists and a lane proves its side with tests (11). Lane C:
+`movement.test.ts`, `snap.test.ts`. Lane D: `invsync.test.ts`, `actions.test.ts`, and `invops.test.ts`, which
+exists and tests a file of theirs.
+(j) `net/interest.ts` (2.2) does not hold chunk subscriptions: the chunk service keeps its own, in lane A's file.
+(k) What a solo player can notice: nothing. No rule reads the new fields, `sendTp` writes to state nothing
+reads, and the two mirrors return what the HUD read before.
 
 ---
 

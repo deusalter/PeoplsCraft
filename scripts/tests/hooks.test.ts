@@ -1,25 +1,29 @@
 // What the entity sims say about themselves for replication (wire ids, and the events a projectile, a
 // drop and a creature begin and end with), and the small pieces the contracts step added beside
-// them: the inline chunk source, the in-memory store, breakTimeMin, maxSpeed, the flight grant and freeSpot.
+// them: the inline chunk source, the in-memory store, breakTimeMin, maxSpeed, the flight grant, freeSpot, what
+// the movement check keeps of a body, the body's count of its jumps, and the distance to a creature's hit volumes.
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { B } from '../../src/data/blocks';
 import { item } from '../../src/data/items';
-import { MOB_LIST, PROJECTILES } from '../../src/data/mobs';
+import { MOB_LIST, type MobDef, PROJECTILES } from '../../src/data/mobs';
 import { ID_MAX, PS_PLAYER } from '../../src/net/protocol';
+import { JUMP_V, PlayerBody } from '../../src/sim/body';
 import { cheat } from '../../src/sim/cheats';
 import { InlineSource } from '../../src/sim/chunksource';
 import { daOf } from '../../src/sim/drops';
 import type { Fx, Scope, Sink } from '../../src/sim/fx';
 import { genChunk, hashBlocks } from '../../src/sim/genjob';
 import { Inventory } from '../../src/sim/inventory';
-import { flightAllowed, toRecord } from '../../src/sim/player';
+import { type RayMob, mobDist, rayHitMobs } from '../../src/sim/mobhit';
+import { flightAllowed, respawn, toRecord } from '../../src/sim/player';
 import { PROJ_KEYS, psOf } from '../../src/sim/projectiles';
 import type { RealmStore } from '../../src/sim/realm';
 import { bodyFree, breakTime, breakTimeMin, freeSpot, maxSpeed } from '../../src/sim/rules';
 import { Sim } from '../../src/sim/sim';
 import { PlayerStats } from '../../src/sim/stats';
 import { type Batch, type ChunkRecord, MemStorage, type PlayerRecord, StorageError, type WorldRecord } from '../../src/sim/storage';
+import { sendTp, travel } from '../../src/sim/travel';
 import type { BlockEnt } from '../../src/sim/voxels';
 
 const GROUND = 64;
@@ -406,4 +410,109 @@ test('freeSpot: where a body already has room, beside a block it is stuck in, an
   const shaft = freeSpot(air, 2.5, 106, 0.5);
   assert.equal(bodyFree(air, shaft[0], shaft[1], shaft[2]), true);
   assert.deepEqual([shaft[0], shaft[2]], [0.5, 0.5]);
+});
+
+test('what the movement check keeps of a body starts again wherever the simulation puts it', () => {
+  const r = rig(), sim = r.sim, p = sim.join('a', 'A', null, false), b = p.body;
+  // a new player: no accepted move, no base of a rise, no jump in the air
+  assert.deepEqual([p.moveOkTick, p.riseY, p.airJumps, p.embedded], [0, 0, 0, null]);
+  assert.ok(p.riseTick < -1e8, 'the first move is more than a second after the base');
+  const dirty = (): void => { p.moveOkTick = 3; p.riseY = -5; p.riseTick = 4; p.fallPeak = 999; p.airJumps = 2; p.embedded = { x: 1, y: 2, z: 3, t: 5 }; p.speedBudget = 4.5; };
+  const fresh = (tick: number): void => {
+    assert.deepEqual([p.moveOkTick, p.riseTick, p.riseY, p.fallPeak, p.airJumps, p.embedded], [tick, tick, b.y, b.y, 0, null]);
+    assert.equal(p.speedBudget, 4.5, 'what is left of the budget stays');
+  };
+  // a teleport in place of a correction, with and without a loading screen
+  for (const load of [false, true]) {
+    sim.tick += 500; dirty();
+    const tp = p.tp;
+    b.teleport(8.5, 70.25, -3.5); sendTp(sim, p, load);
+    assert.equal(p.tp, (tp + 1) & 255); fresh(sim.tick);
+  }
+  // the command
+  sim.tick += 7; dirty();
+  assert.equal(cheat(sim, p, 'tp 1.5 81 2.5'), 'teleported');
+  assert.equal(b.y, 81); fresh(sim.tick);
+  // a respawn: home, here the world spawn
+  sim.tick += 7; dirty(); p.stats.dead = true;
+  respawn(sim, p);
+  assert.equal(p.stats.dead, false); fresh(sim.tick);
+  // a realm change
+  sim.tick += 7; dirty();
+  travel(sim, p, 1);
+  assert.equal(p.dim, 1); assert.equal(b.y, 120); fresh(sim.tick);
+  // the arrival that puts the player in play sends the last one
+  sim.tick += 7; dirty(); p.clientReady = true;
+  sim.prepare();
+  assert.equal(p.loading, false); fresh(sim.tick);
+});
+
+test('a body counts its jumps, from the ground and in the air', () => {
+  const w = new Flat(), b = new PlayerBody(), held = new Set<string>(), edges = new Set<string>();
+  const input = { down: (c: string): boolean => held.has(c), hit: (c: string): boolean => edges.delete(c) };
+  let time = 0;
+  const run = (n: number): void => { for (let i = 0; i < n; i++) { b.tick(STEP, input, w, time); time += STEP; } };
+  b.teleport(0.5, GROUND + 0.5, 0.5);
+  run(30);
+  assert.equal(b.onGround, true); assert.equal(b.y, GROUND); assert.equal(b.jumps, 0);
+  // a tap on the ground: one jump, however long the body then flies
+  b.extraJumps = 1; edges.add('Space'); run(1);
+  assert.equal(b.jumps, 1); assert.equal(b.onGround, false); assert.ok(Math.abs(b.vy - (JUMP_V - 32 * STEP)) < 0.6);
+  run(12);
+  assert.equal(b.jumps, 1); assert.equal(b.onGround, false);
+  // a tap in the air with a jump to spare: the second, and the fall is measured from there
+  const before = b.y;
+  edges.add('Space'); run(1);
+  assert.equal(b.jumps, 2); assert.ok(b.fallPeak >= before && b.fallPeak <= b.y);
+  // no third
+  run(12); edges.add('Space'); run(1);
+  assert.equal(b.jumps, 2);
+  run(120);
+  assert.equal(b.onGround, true); assert.equal(b.jumps, 2);
+  // holding the key jumps again on landing; walking off nothing counts nothing
+  held.add('Space'); run(2);
+  assert.equal(b.jumps, 3);
+});
+
+test('mobDist is the distance to the boxes the ray test hits: body, a boss\'s head, a serpent\'s segments', () => {
+  const plain = MOB_LIST.find((d) => !d.boss)!, headed = MOB_LIST.find((d) => d.boss && d.boss.head)!;
+  const mk = (def: MobDef, x: number, y: number, z: number, hw: number, h: number, ry = 0, segs: Float32Array | null = null): RayMob =>
+    ({ active: true, x, y, z, hw, h, def, ry, boss: def.boss ? { segs } : null });
+  // a plain box
+  const a = mk(plain, 10, 64, -4, 0.4, 1.2);
+  assert.equal(mobDist(a, 10, 64.6, -4), 0);
+  assert.equal(mobDist(a, 10.4, 65.2, -3.6), 0, 'on a corner');
+  assert.ok(Math.abs(mobDist(a, 13.4, 64.6, -4) - 3) < 1e-12);
+  assert.ok(Math.abs(mobDist(a, 10, 67.2, -4) - 2) < 1e-12);
+  assert.ok(Math.abs(mobDist(a, 10, 62, -4) - 2) < 1e-12);
+  assert.ok(Math.abs(mobDist(a, 13.4, 69.2, -4) - 5) < 1e-12, 'a 3-4-5 corner');
+  // a head carried in front of the box counts, where the drawn yaw puts it
+  const hb = headed.boss!.head!, far = hb[0] + hb[3] + 2;
+  for (const ry of [0, 1.1, -2.4, Math.PI]) {
+    const m = mk(headed, 0, 64, 0, headed.hw, headed.h, ry), hx = Math.sin(ry) * hb[0], hz = Math.cos(ry) * hb[0], hy = 64 + (hb[1] + hb[2]) / 2;
+    assert.equal(mobDist(m, hx, hy, hz), 0, 'inside the head');
+    const px = Math.sin(ry) * far, pz = Math.cos(ry) * far, body = Math.hypot(Math.max(0, Math.abs(px) - m.hw), Math.max(0, Math.abs(pz) - m.hw));
+    assert.ok(mobDist(m, px, hy, pz) <= body + 1e-9);
+    assert.ok(mobDist(m, px, hy, pz) <= 2 * Math.SQRT2 + 1e-9, 'the head is the nearer of the two when it reaches past the body');
+  }
+  // segments count, and one not yet placed (at the origin) does not
+  const segs = new Float32Array([20, 64, 0, 22, 64, 0, 0, 0, 0]), s = mk(headed, 0, 64, 0, headed.hw, headed.h, 0, segs);
+  assert.equal(mobDist(s, 22, 64 + s.h * 0.5, 0), 0);
+  assert.ok(mobDist(s, 0, 0, 0) > 30, 'nothing at the origin');
+  // against the ray test itself: wherever an unpadded ray lands is on a volume, and no volume is nearer than the ray is long
+  let seed = 99;
+  const rnd = (): number => { seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  let hits = 0;
+  for (const m of [a, mk(headed, 3, 64, 2, headed.hw, headed.h, 0.7), s]) for (let i = 0; i < 4000; i++) {
+    const ox = m.x + (rnd() - 0.5) * 60, oy = m.y + (rnd() - 0.3) * 30, oz = m.z + (rnd() - 0.5) * 60;
+    // aim near the creature so that a good share of the rays land
+    const tx = (i & 1 ? m.x : 21) + (rnd() - 0.5) * 6, ty = m.y + rnd() * (m.h + 2), tz = m.z + (rnd() - 0.5) * 6;
+    const l = Math.hypot(tx - ox, ty - oy, tz - oz) || 1, dx = (tx - ox) / l, dy = (ty - oy) / l, dz = (tz - oz) / l, d = mobDist(m, ox, oy, oz);
+    const hit = rayHitMobs([m], ox, oy, oz, dx, dy, dz, 80, 0);
+    if (!hit) continue;
+    hits++;
+    assert.ok(d <= hit.t + 1e-9, `${d} > ${hit.t}`);
+    assert.ok(mobDist(m, ox + dx * hit.t, oy + dy * hit.t, oz + dz * hit.t) < 1e-6);
+  }
+  assert.ok(hits > 2000, `only ${hits} rays landed`);
 });
