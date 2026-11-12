@@ -1,6 +1,7 @@
 // One player as the simulation holds it.
 import { BLOCKS, T_DAMAGE, T_LIQUID } from '../data/blocks';
 import type { Item } from '../data/items';
+import { endWindow } from './actions';
 import { PlayerBody } from './body';
 import { Inventory } from './inventory';
 import type { Mob } from './mobs';
@@ -137,7 +138,7 @@ export function hurtPlayer(sim: Sim, p: SimPlayer, dmg: number, fx: number, fz: 
 export function onDeath(sim: Sim, p: SimPlayer, cause: string): void {
   const lost = Math.floor(p.inv.coins * 0.15), b = p.body, mobs = sim.realms[p.dim].mobs;
   p.deathAt = [p.dim, Math.floor(b.x), Math.floor(b.y), Math.floor(b.z)];
-  p.inv.coins -= lost; p.inv.touch(); p.window = null;
+  p.inv.coins -= lost; p.inv.touch(); endWindow(sim, p);
   for (const m of mobs.list) if (m.active && m.def.ai === 'minion' && m.owner === p.id) mobs.remove(m);
   sim.sink.send(p.slot, { t: 'dead', cause, lost, at: p.deathAt });
 }

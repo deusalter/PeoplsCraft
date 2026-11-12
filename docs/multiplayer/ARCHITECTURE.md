@@ -3272,6 +3272,125 @@ says whether a cell is one of its 20. The registry is still empty until stage 5 
 (l) What a solo player can notice: nothing. No rule reads the new fields, `sendTp` writes to state nothing
 reads, the two mirrors return what the HUD read before, and nothing calls `mobDist` or `gateHas`.
 
+D31. Stage 2, lane A (3.2, 3.7, 7.8, 8.2, 8.4). The sim store and the storage, where they are not what the
+sections say.
+(a) 7.8, `skyApprox` in a realm without a sky. `ApproxLight.sky` returns 0 where `DIMS[dim].hasSky` is false
+(the Hollows), as the lighting pass gives no sky light there. The formula alone would give 15 in any open
+cavern and let the `time: 'day'` spawn rules pass in the Hollows.
+(b) 8.4 step 2, `tick` and `rnd`. `splitLegacyWorld` keeps `data.tick` and `data.rnd` when the legacy record
+has them (the stage 1 builds write both, D21 (j)); `tick = 0` and a fresh `rnd` (`(seed ^ 0x5bd1e995) | 0`,
+what a new world is seeded with) only when they are missing, as in every save of `8187558`.
+(c) 8.4 step 2, `palettes`. `palettes = data.palettes` plus the current block table at the end when the last
+table differs (8.3). Without it a migrated `edits` record, which holds current ids, would have no `pal` to
+name. `EditMaps` and `IdbStorage.open` apply the same rule to a world of format 2 (`currentPalette`).
+(d) 3.2, `EditStore`. The interface is as written. Its implementation `EditMaps` (`sim/voxels.ts`) has more,
+which the host and the sim need: `hold(fn)` (a sim chunk and a subscription keep a map in memory: what
+`release` asks), `take(all?)` and `committed(records, ok)` (the chunk half of `Sim.takeDirty` and
+`committed`), `sweep()` (retries refused releases; `committed` calls it), `idle()` (settles when every load
+issued so far has: the manual clock waits for it), `pal`, `size`, `loads`, `values()`.
+(e) 3.2, `SimChunks`. Beside `update(players)` and `integrate(gen, edits)`: `arrived(gen)` (a finished job
+waits on its chunk until the edit map has loaded), `integrateReady(max)`, and
+`pumpChunks(source, realms, maxJobs, budgetMs, 2)`, step 2 of 6.1 across the three realms. `SimChunks`
+implements `RealmStore`. What `Realm.setBlock` needs of the realm (`closeViewers`, the gate registry) and of
+the chunk service (`onBlock`, `gh`) is reached through hooks on `SimChunks` (`onClose`, `onCell`, `onEdit`,
+`onGen`), set by the `Realm` and `ChunkService` constructors; the order of 3.2 is kept inside
+`SimChunks.setBlock`. A sim chunk also holds its live entities (the generator's included) and its emitting
+cells (for `blockLightApprox`); `SimChunk` as 3.2 types it is what `chunk(cx, cz)` returns.
+(f) 3.7, `ChunkService`. `detach(c)` for a closed connection. A `chunks` message whose `dim` is not the
+player's realm is ignored whole (4.7 says so for `sub`; its `unsub` and `full` can only name chunks of that
+other realm). `LOADS_MAX` is counted per connection, like `LOADS_PER_TICK`. `FULL_PER_SEC` is applied as the
+requests are taken: those beyond 8 in a second are ignored, as are those the flush finds not a ready sim
+chunk; the client repeats them (4.7 rule 6). Every flush that has anything to send sends at least one entry,
+so a dense entry larger than `CE_BYTES` (up to about 175 KB of base64) still goes, alone in its flush.
+(g) 8.2, `IdbStorage`. `new IdbStorage(worldId, env?)`: one `Storage` per world; `env` is the three IndexedDB
+entry points it uses, the browser's by default, so Node tests run it on a stand-in. `listWorlds()` returns
+`WorldSummary { id, name, seed, seedText, created, played, level, legacy }` for records of both formats. A
+commit holding a chunk with `rev` 0 and no entities deletes its `edits` key instead of writing an empty
+record. An upgrade blocked by another tab rejects with `StorageError('locked')`. The backup of 8.4 step 1 is
+its own transaction, before the one of step 3, as the steps are numbered.
+(h) Measured for risk R3 on the fixture (`npm test -- migrate`, Node 22, Apple Silicon): 7 legacy chunks
+converted, none dense, 1,243 edited cells, 3,729 bytes of edit records against 36,302 bytes of legacy RLE,
+1.2 ms per chunk with generation included (2.6 ms in headless Chrome on real IndexedDB). The fixture was
+saved by a build with today's generator; a save from an older generator, the case R3 is about, was not
+available.
+
+D32. Stage 2, lane B (4.7). The client block store.
+(a) Rule 7, the re-subscribe timer. A resync "marks it not ready, starts generation again". For a record
+whose `ce` never arrived nothing has been written over its generated array, so `ClientVoxels.resync` keeps
+that array and only gives the record a new nonce and queues the subscription. A ready record (a gap, a `rej`
+without cells, a malformed edit set) is generated again as written.
+(b) Rule 3 applies the live changes queued before readiness "with rev > editRev in arrival order". They are
+applied through rule 4, so a queued change with `rev > editRev + 1` resyncs the chunk instead of being
+written over a missing one.
+(c) Rule 3, the answer to `chunks.full`: a `ce` entry with the current nonce for a ready chunk replaces the
+array only when it carries `enc 1`; any other entry under that nonce for a ready chunk is ignored. After the
+replacement the chunk's host hash is forgotten, which ends the 5 s repeat; a later `gh` or a resync's `ce`
+starts the check again.
+(d) Rule 5 names one hook, `onCellChange`. Replacing a whole array does not call it per cell: the store
+calls `onReplace(c)` once and `World` remeshes the chunk and its ready neighbours. `onReady`, `onRegen` and
+`onDrop` are the store's surface towards `World` and bots.
+
+D33. Stage 2, lane C (3.4, 4.4, 4.5, 4.6, 6.4, 7.9). Entities, snapshots and the movement check.
+(a) Interest radii are horizontal. 6.4 says "within" for creatures, drops and projectiles and "horizontally"
+only for players; `net/interest.ts` measures all of them in x and z, which tells a connection of at least as
+much as a sphere would. The positional fx scopes of 3.4 stay spheres.
+(b) `md` is routed by interest too: it goes only to the connections whose last snapshot held that creature,
+since no other client has a view of it.
+(c) `ackMove` (`p.moveSeq`) is the `seq` of the last movement message the check judged, accepted or
+corrected; a message dropped at step 1 does not set it.
+(d) The boss extension's `phase` is written as `max(0, phase)`: the sim's `-1` means "no phase yet" and the
+view draws it as 0.
+(e) A creature's removal (`md`) waits on the client until the moment drawn reaches the newest snapshot tick
+known when it arrived, and the corpse (how 1) is made from the view as it is drawn then. A creature with an
+`md` waiting is not taken out by the "absent from two snapshots" rule.
+(f) The client ends a projectile itself when its own flight meets terrain (with the impact puff) or when its
+life runs out (no puff), and ignores the host's `pe` for it afterwards. Hits on creatures and players are
+the host's alone.
+(g) The host-tick estimate of 4.4: the largest `tick - arrival * 60 / 1000` over the arrivals of the last
+2 s, plus half the round trip from `rtt` (smoothed, factor 0.25), never lowered. `welcome.tick` starts it.
+When the best arrival leaves the window the estimate holds still until the stream catches up.
+(h) A drop picked up (`dd` with a slot) flies to that player for 0.15 s and is then hidden; with the picker
+unknown to the client it is hidden at once.
+(i) `movement.ts` exposes, beside `handleMove(sim, p, buf)`: `checkStall(sim, p)` (7.9), `tickEmbedded(sim, p)`
+(4.5 step 4) and `checkPosition(sim, p)` (4.5, "putting a body somewhere"), which the step and the arrival
+call. A move also sets `stalled = false` at step 1.
+(j) A move that fails at step 2 never reaches the refill of step 3, so the `sendTp` it causes starts the
+budget's clock without crediting the time since `moveOkTick`.
+(k) `scripts/tests/snap.test.ts` drives `EntityStore`, which is client code, so it opens with references to
+the DOM library and Vite's client types; those reach the whole `tsconfig.server.json` program.
+
+D34. Stage 2, lane D (4.3, 4.7, 5.2, 5.3, 7.3). Messages of a player, inventory reconcile, windows.
+(a) `stOf` may return null. 5.3 has an `st` go out in the tick `ackSeq` advanced "even when nothing
+changed"; when one with that ack has already gone out in the tick (a `use` or `talk` that opened a window
+sends `st` then `open` at once), a second identical one is not built.
+(b) Which ops find the window again first (5.2): a slot op on `[4, i]`; a slot op on `[3, i]` at a station;
+`out`, `lay`, `book` at a station; `quick` from the pack with a chest, forge or shop open; `gather` with a
+chest open; `sort {w: 1}`; `takeAll`; `stash`; `buy` and `buyBack` at a shop. A covered window is not
+resolved by ops; the once-a-second check covers it.
+(c) Distances the document gives in blocks are measured from the stored eye to the nearest hit volume
+(`mobDist`): a shop stays open within 7, `talk` is accepted within 5 (D26 (a)). A container or station: the
+eye to the nearest point of the cell within `reach + 2`; `edit`, `use` and a gate kit's `at`: within
+`reach + 1.5`.
+(d) The client ignores an `st` whose `ack` is older than one it has applied.
+(e) A station shown on the client before the host has set it is kept in `net/invsync.ts` as a prediction
+entry `_win` under the `seq` of its `use` (not an `InvOp`, never sent). A `rej` of that `use` removes it.
+(f) A window the host ends (`st {box: null}`, a refused station) is taken down on the client without
+sending `close` (`Windows.ended()`): the host has already tidied grid and cursor, and a `close` could end a
+window opened in the meantime. Under the Guide only the remembered window is forgotten.
+(g) `st` carries `box: null` whenever the sim's window ended and the client had been sent a box or had a
+station, the client's own `close` included.
+(h) `useBlock(sim, p, hit, use, predicted)`: a door toggled through `use` (predicted by `client/blocks.ts`,
+whose caller plays the sound) sends its sound to the others only.
+(i) A gate kit through `item` is used only from the held slot (`placeGate` reads the held kit).
+(j) `atk` is refused while a ranged, magic or summon weapon is held.
+(k) `fire` counts a shot refused for want of arrows or mana in `sim.refused.fire` too.
+(l) On reconcile the stats' `hp` is kept as the view had it (clamped to `maxHp`): replaying a pending
+Vitality point would otherwise add its 6 health again on every `st`; the snapshot header sets `hp`.
+(m) `p.dig.bt` is taken again after every accepted op, not only those that change the held stack.
+(n) `InvClient` counts `recallT` and `salveCd` down between two `stats` messages.
+(o) `travel` and `onDeath` end the player's window with `actions.endWindow` (op `close` under the current
+`ackSeq`), so the player leaves `realm.viewers` and the next `st` says `box: null`.
+
 ---
 
 ## 14. Review log

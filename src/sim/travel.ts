@@ -2,6 +2,7 @@
 import { DIM_NAMES, SEA } from '../core/constants';
 import { B, BLOCKS, T_LIQUID, T_OPAQUE, T_SOLID } from '../data/blocks';
 import { DIMS } from '../data/dims';
+import { endWindow } from './actions';
 import { buildGate } from './gates';
 import type { SimPlayer } from './player';
 import { standSpot } from './rules';
@@ -37,7 +38,7 @@ export function travel(sim: Sim, p: SimPlayer, to: 0 | 1 | 2, home = false): voi
   if (to === p.dim) { goHome(sim, p); return; }
   if (!home) p.portalReturn[p.dim] = [Math.floor(b.x), Math.floor(b.y), Math.floor(b.z)];
   const px = Math.floor(b.x), pz = Math.floor(b.z);
-  p.window = null;
+  endWindow(sim, p);
   // a world event does not outlive the last player in the Overworld, and that player sees it end
   if (from.dim === 0 && from.players.length === 1 && sim.events.active) sim.events.end(false);
   const i = from.players.indexOf(p);
