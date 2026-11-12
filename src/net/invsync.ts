@@ -148,7 +148,7 @@ export class InvSync {
       const op = e.op;
       if (op.o === 'tidy' && this.bWin && typeof op.cover === 'boolean') this.bWin.covered = op.cover;
       else if (op.o === 'close') { this.bWin = null; this.bBox = null; }
-      else if (op.o === '_win') this.bWin = { ...op.w };
+      else if (op.o === '_win') { this.bWin = { ...op.w }; this.bBox = null; }
     }
     if (n) this.pending.splice(0, n);
     // a field that is undefined is absent, as it would be after JSON
