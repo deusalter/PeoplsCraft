@@ -4,7 +4,7 @@
 import { BUILD_MAX } from '../core/constants';
 import { B, BLOCKS, T_OPAQUE, T_REPLACE, T_SOLID } from '../data/blocks';
 import { item } from '../data/items';
-import type { ClientVoxels, VoxChunk, VoxSession } from '../net/clientvoxels';
+import type { ClientVoxels, VoxSession } from '../net/clientvoxels';
 import type { ActMsg } from '../net/protocol';
 import type { Inventory } from '../sim/inventory';
 import type { RayHit } from '../sim/physics';
@@ -28,7 +28,8 @@ export interface BlockBody {
   onGround: boolean; inWater: boolean; headInWater: boolean;
 }
 export interface BlockDeps {
-  vox: ClientVoxels<VoxChunk>;
+  /** The world's block store (`World.vox`), whatever its record type. */
+  vox: Pick<ClientVoxels, 'ready' | 'getBlock' | 'predict' | 'reject'>;
   session: { act(m: ActMsg): void };
   inv: InvChannel;
   bodies: Bodies;
