@@ -13,15 +13,13 @@ import type { Session } from './session';
 
 export interface FxHost { audio: GameAudio; particles: Particles; hud: Hud; player: Player; world: World }
 
-/** The codes the entity store plays itself once connected: projectiles, drops, creature removals, boss marks. */
+/** The codes the entity store plays itself: projectiles, drops, creature removals, boss marks. */
 export const ENTITY_FX: ReadonlySet<string> = new Set(['ps', 'pe', 'da', 'dn', 'dd', 'md', 'mk']);
 
 export const tintOf = (id: number): number => { const t = BLOCKS[id].tint; return t === 1 ? 0x86c653 : t === 2 ? 0x6fb445 : t === 3 ? 0x3a84dc : 0xffffff; };
 
 export class FxPlay {
   private popT = 0;
-  /** Events this player does not handle itself (creature and projectile endings, boss marks). */
-  onEntity: ((ev: Fx) => void) | null = null;
   constructor(private g: FxHost) {}
 
   tick(dt: number): void { if (this.popT > 0) this.popT -= dt; }
@@ -45,7 +43,6 @@ export class FxPlay {
         if (this.popT <= 0) { g.audio.play('pop', 0.7, 0.9 + Math.random() * 0.3); this.popT = 0.06; }
         break;
       }
-      default: if (this.onEntity) this.onEntity(ev);
     }
   }
 

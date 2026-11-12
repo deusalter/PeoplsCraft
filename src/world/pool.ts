@@ -1,11 +1,13 @@
 // Fixed pool of chunk workers. One job per worker at a time so the main thread keeps
-// control of ordering: it only hands out work when someone is idle.
+// control of ordering: it only hands out work when someone is idle. Jobs given to `urgent` wait in
+// the pool itself and take the next worker to come free, ahead of whoever is watching for an idle one.
 export class WorkerPool {
   private workers: Worker[] = [];
   private idle: number[] = [];
   private cbs = new Map<number, (m: any) => void>();
   private jobOf: number[] = [];   // id of the job each worker is running, 0 when it has none
   private nextId = 1;
+  private waiting: { msg: Record<string, unknown>; transfer: Transferable[]; cb: (m: any) => void }[] = [];
   readonly size: number;
 
   constructor(size: number) {
@@ -16,6 +18,7 @@ export class WorkerPool {
         this.jobOf[i] = 0; this.idle.push(i);
         const cb = this.cbs.get(e.data.id);
         this.cbs.delete(e.data.id);
+        this.next();
         if (cb) cb(e.data);
       };
       // A job that throws still has to answer, or its chunk would wait for ever: the callback gets null.
@@ -26,6 +29,7 @@ export class WorkerPool {
         this.jobOf[i] = 0; this.idle.push(i);
         const cb = this.cbs.get(id);
         this.cbs.delete(id);
+        this.next();
         if (cb) cb(null);
       };
       this.workers.push(w); this.idle.push(i); this.jobOf.push(0);
@@ -44,5 +48,10 @@ export class WorkerPool {
     this.cbs.set(id, cb); this.jobOf[i] = id;
     this.workers[i].postMessage(msg, transfer);
   }
-  dispose(): void { for (const w of this.workers) w.terminate(); this.workers.length = 0; this.idle.length = 0; this.cbs.clear(); }
+  /** Run a job on the first worker to come free, before any `run` its finishing would otherwise let in. */
+  urgent(msg: Record<string, unknown>, transfer: Transferable[], cb: (m: any) => void): void {
+    if (this.idle.length) this.run(msg, transfer, cb); else this.waiting.push({ msg, transfer, cb });
+  }
+  private next(): void { const q = this.waiting.shift(); if (q) this.run(q.msg, q.transfer, q.cb); }
+  dispose(): void { for (const w of this.workers) w.terminate(); this.workers.length = 0; this.idle.length = 0; this.cbs.clear(); this.waiting.length = 0; }
 }

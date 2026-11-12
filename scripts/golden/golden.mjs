@@ -5,6 +5,8 @@
 // The script acts the way a player does (held keys and buttons through window.T, real key presses
 // and clicks on the window DOM, cheats through T.cmd). Everything it reads or pokes in the game
 // goes through installHelpers() below, so a refactor that moves those fields re-points them there.
+// What the client mirrors (blocks, inventory, flags, the player) is read from the client; block
+// entities, creatures and homes are the simulation's alone and are read from T.sim.
 
 /** Runs inside the page. R reads state; D does the few things a player has no input for. */
 export async function installHelpers() {
@@ -14,7 +16,8 @@ export async function installHelpers() {
   const { raycast, newRayHit } = await import('/src/sim/physics.ts');
   const hit = newRayHit();
   const P = () => g().player;
-  const mobs = () => T.sim.realms[g().dim].mobs;
+  const realm = () => T.sim.realms[g().dim];
+  const mobs = () => realm().mobs;
   window.R = {
     id: (key) => T.B[key],
     key: (x, y, z) => KEYS[g().world.getBlock(x, y, z)] ?? String(g().world.getBlock(x, y, z)),
@@ -32,9 +35,9 @@ export async function installHelpers() {
     ready: () => g().ready && g().world.counts().waiting === 0,
     quest: () => g().quests.index,
     /** A block entity's slots as plain {k, n} (null where empty), or null when there is no entity. */
-    container: (x, y, z) => { const e = g().world.getEnt(x, y, z); return e && e.data.s ? e.data.s.map((s) => (s ? { k: s.k, n: s.n } : null)) : null; },
-    ent: (x, y, z) => { const e = g().world.getEnt(x, y, z); return e ? { kind: e.kind, loot: e.data.loot ?? null, opened: !!e.data.s } : null; },
-    forge: (x, y, z) => { const e = g().world.getEnt(x, y, z); if (!e || e.kind !== 'forge') return null; const d = e.data; return { s: d.s.map((s) => (s ? { k: s.k, n: s.n } : null)), burn: d.burn, prog: d.prog }; },
+    container: (x, y, z) => { const e = realm().getEnt(x, y, z); return e && e.data.s ? e.data.s.map((s) => (s ? { k: s.k, n: s.n } : null)) : null; },
+    ent: (x, y, z) => { const e = realm().getEnt(x, y, z); return e ? { kind: e.kind, loot: e.data.loot ?? null, opened: !!e.data.s } : null; },
+    forge: (x, y, z) => { const e = realm().getEnt(x, y, z); if (!e || e.kind !== 'forge') return null; const d = e.data; return { s: d.s.map((s) => (s ? { k: s.k, n: s.n } : null)), burn: d.burn, prog: d.prog }; },
     mobs: () => mobs().list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss })),
     spawnPoint: () => g().spawn,
     homes: () => T.sim.npcs.homes.map((h) => ({ x: h.x, y: h.y, z: h.z, npc: h.npc })),
@@ -67,10 +70,10 @@ export async function installHelpers() {
       return false;
     },
     caps: (h, p) => { for (const r of T.sim.realms) { r.mobs.hostileCap = h; r.mobs.passiveCap = p; } },
-    clearMobs: () => { for (const m of mobs().list) m.active = false; },
+    clearMobs: () => mobs().clear(),
     save: () => g().save(),
     /** Set every cell of a box to one block, as the `fill` command of section 10.1 will. */
-    fill: (x0, y0, z0, x1, y1, z1, key) => { const w = g().world, id = T.B[key]; for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) w.setBlock(x, y, z, id); },
+    fill: (x0, y0, z0, x1, y1, z1, key) => { const w = realm(), id = T.B[key]; for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) w.setBlock(x, y, z, id); },
   };
 }
 

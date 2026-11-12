@@ -1,7 +1,9 @@
 // Saves made by the pre-multiplayer build, and the smoke scenarios that make and open them.
 //
-//   npm run smoke -- legacy-make   play two worlds in this build and dump their IndexedDB records to legacy-v1.json
-//   npm run smoke -- legacy        load legacy-v1.json into a fresh profile at IndexedDB version 1, open both worlds, probe
+//   npm run smoke -- legacy-make   play two worlds and dump their IndexedDB records to legacy-v1.json. Only a build from
+//                                  before the save format changed can make them: this one refuses.
+//   npm run smoke -- legacy        load legacy-v1.json into a fresh profile at IndexedDB version 1, open both worlds, probe:
+//                                  what the maker saw is still there, and the old world record is kept as a backup
 //
 // legacy-v1.json holds every `worlds` record and every `chunks` record (with its key) of database
 // "cairnlight" version 1, byte arrays as {"$u8": base64}, plus `expect`: what the maker saw at the
@@ -78,6 +80,8 @@ export const makeQuery = `quick=${DEAD}&fresh`;
 
 export async function make({ page, origin, log }) {
   const d = driver(page, log), { ev, step, until, runMs, cmd, boot, grab, tp, placeOn, useAt } = d;
+  await page.waitForFunction(() => window.T, null, { timeout: 60000 });
+  if (await ev(() => !T.game.markChestDirty)) throw new Error('this build saves in the new format: make the fixture from a checkout of the build before it (56e7a42 or earlier)');
   const expect = {};
   const at = (x, y, z) => ev(([x, y, z]) => R.key(x, y, z), [x, y, z]);
   const fill = (a, key) => ev(([a, k]) => D.fill(...a, k), [a, key]);
@@ -244,18 +248,40 @@ function buildExpect(x) {
     'ruinChest.unopened': true, 'ruinChest.rollsWhenOpened': true,
     'gate.frame': x.gate.overworldFrame, 'gate.sheet': x.gate.overworldSheet, 'gate.leadsToSavedReturn': true,
     'dead.deathScreen': true, 'dead.hp': 0,
+    'db.version': 2, 'backup.main': true, 'backup.dead': true, 'backup.count': 2, 'legacyChunksKept': true,
   });
   return e;
 }
 
-export async function check({ page, origin, log }) {
+/** Runs in the page: the database as the game left it. Legacy records are compared as JSON with byte arrays as base64. */
+async function readBackups(ids) {
+  const enc = (v) => {
+    if (v instanceof Uint8Array) { let s = ''; for (let i = 0; i < v.length; i += 0x8000) s += String.fromCharCode(...v.subarray(i, i + 0x8000)); return { $u8: btoa(s) }; }
+    if (Array.isArray(v)) return v.map(enc);
+    if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, enc(x)]));
+    return v;
+  };
+  const db = await new Promise((res, rej) => { const r = indexedDB.open('cairnlight'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const get = (store, key) => new Promise((res, rej) => { const r = db.transaction(store, 'readonly').objectStore(store).get(key); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const all = (store) => new Promise((res, rej) => {
+    const out = [], r = db.transaction(store, 'readonly').objectStore(store).openCursor();
+    r.onsuccess = () => { const c = r.result; if (!c) { res(out); return; } out.push([c.key, enc(c.value)]); c.continue(); };
+    r.onerror = () => rej(r.error);
+  });
+  const out = { version: db.version, backups: {}, count: (await all('backup')).length, chunks: await all('chunks') };
+  for (const id of ids) out.backups[id] = enc(await get('backup', id + '|v1')) ?? null;
+  db.close();
+  return out;
+}
+
+export async function check({ page, origin, log, extra = '' }) {
   const fx = await loadFixture(page, origin), x = fx.expect;
   const d = driver(page, log), { ev, step, until, cmd, boot, grab, tp, useAt } = d;
   const p = { chunksLoaded: true };
   const at = (c) => ev(([x, y, z]) => R.key(x, y, z), c);
   const blocksOf = async (dim) => { const out = []; for (const [a, b, c] of x.blocks[dim]) out.push(`${a} ${b} ${c} ${await at([a, b, c])}`); return out; };
 
-  await page.goto(`${origin}/?quick=${MAIN}`, { waitUntil: 'load' });
+  await page.goto(`${origin}/?quick=${MAIN}${extra}`, { waitUntil: 'load' });
   await step('open the main world', async () => {
     await boot(); await grab();
     p['main.dim'] = await ev(() => R.dim());
@@ -309,12 +335,24 @@ export async function check({ page, origin, log }) {
     await until(() => R.dim() === 0 && R.ready(), null, 40000, 'the Overworld');
   });
 
-  await page.goto(`${origin}/?quick=${DEAD}`, { waitUntil: 'load' });
+  await page.goto(`${origin}/?quick=${DEAD}${extra}`, { waitUntil: 'load' });
   await step('open the world saved on the death screen', async () => {
     await boot();
     await until(() => R.deathScreen(), null, 5000, 'the death screen').catch(() => {});
     p['dead.deathScreen'] = await ev(() => R.deathScreen());
     p['dead.hp'] = await ev(() => R.hp());
+  });
+
+  await step('the backup of each old world record, and the old chunk records', async () => {
+    const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+    const ids = ['quick-' + MAIN, 'quick-' + DEAD], got = await ev(readBackups, ids);
+    p['db.version'] = got.version;
+    p['backup.main'] = same(got.backups[ids[0]], fx.worlds.find((w) => w.id === ids[0]));
+    p['backup.dead'] = same(got.backups[ids[1]], fx.worlds.find((w) => w.id === ids[1]));
+    p['backup.count'] = got.count;
+    // read, never written or deleted: every legacy chunk record is still what the fixture loaded
+    const by = new Map(got.chunks);
+    p['legacyChunksKept'] = got.chunks.length === fx.chunks.length && fx.chunks.every(([k, v]) => same(by.get(k), v));
   });
   return p;
 }

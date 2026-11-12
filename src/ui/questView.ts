@@ -35,7 +35,7 @@ export class QuestView {
   private compass(key: string): string {
     const g = this.g, dim = structDim(key);
     if (dim !== g.dim) { this.target = null; return `In ${DIM_NAMES[dim]}`; }
-    const o = locate(key, g.player.x, g.player.z, g.cfg.meta.seed, dim === 0 ? g.climate : null);
+    const o = locate(key, g.player.x, g.player.z, g.seed, dim === 0 ? g.climate : null);
     if (!o) { this.target = null; return ''; }
     if (!this.target || this.target[0] !== o[0] || this.target[1] !== o[2]) this.target = [o[0], o[2]];
     const dx = o[0] - g.player.x, dz = o[2] - g.player.z, d = Math.hypot(dx, dz);

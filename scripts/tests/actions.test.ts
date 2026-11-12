@@ -15,10 +15,13 @@ import type { SimPlayer } from '../../src/sim/player';
 import type { RealmStore } from '../../src/sim/realm';
 import { attackRate, breakTime, breakTimeMin } from '../../src/sim/rules';
 import { Sim } from '../../src/sim/sim';
-import type { WorldRecord } from '../../src/sim/storage';
-import type { BlockEnt } from '../../src/sim/voxels';
+import type { ChunkSource } from '../../src/sim/chunksource';
+import { MemStorage, type WorldRecord } from '../../src/sim/storage';
+import { type BlockEnt, EditMaps } from '../../src/sim/voxels';
 
 const GROUND = 64, STEP = 1 / 60;
+/** The rules under test run on the flat store below: the sim's own chunks are given nothing to generate. */
+const NO_SOURCE: ChunkSource = { request() {}, cancel() {}, poll: () => [], pending: 0, dispose() {} };
 class Flat implements RealmStore {
   onChange: RealmStore['onChange'] = null;
   cells = new Map<string, number>(); ents = new Map<string, BlockEnt>();
@@ -45,7 +48,7 @@ interface Rig { sim: Sim; store: Flat; p: SimPlayer; q: SimPlayer; ev: [Scope, F
 function rig(): Rig {
   const store = new Flat(), ev: [Scope, Fx][] = [], sent: [number, S2C][] = [];
   const sink: Sink = { emit: (to, e) => { ev.push([to, e]); }, send: (slot, m) => { sent.push([slot, m]); }, broadcast: () => {} };
-  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, store: () => store, log: () => {}, requestSave: () => {} });
+  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => {} });
   const live = (id: string, x: number): SimPlayer => {
     const pl = sim.join(id, id, null, false);
     pl.loading = false; pl.arriving = -1; pl.body.teleport(x, GROUND, 0.5); pl.stats.recompute(pl.inv);

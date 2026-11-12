@@ -3,7 +3,7 @@ import { GAME_TITLE } from '../core/constants';
 import { strSeed } from '../core/noise';
 import type { Game } from '../game';
 import { GfxSettings, PRESETS } from '../render/gfx';
-import type { SaveDB, WorldMeta } from '../systems/save';
+import { type WorldSummary, deleteWorld, listWorlds } from '../storage/idb';
 import { el } from './hud';
 
 export interface Settings { preset: string; gfx: GfxSettings; sens: number; sfx: number; music: number; bob: boolean;
@@ -102,12 +102,15 @@ function keysPanel(parent: HTMLElement): void {
   for (const [a, b] of KEYS) { el('b', '', k, a); el('span', '', k, b); }
 }
 
+/** The world the title menu was asked to open: one of the list, or a new one that exists once it is first saved. */
+export interface WorldChoice { id: string; name: string; seed: number; seedText: string }
+
 export class TitleMenu {
   private root: HTMLElement;
   /** What Escape does on the current screen (null on the home screen). */
   private back: (() => void) | null = null;
   private onEsc = (e: KeyboardEvent): void => { if (e.code === 'Escape' && this.back) { e.preventDefault(); this.back(); } };
-  constructor(ui: HTMLElement, private db: SaveDB, private settings: Settings, private onPlay: (m: WorldMeta) => void, private canSave = true) {
+  constructor(ui: HTMLElement, private settings: Settings, private onPlay: (w: WorldChoice) => void, private canSave = true) {
     this.root = el('div', '#menu', ui); this.root.classList.add('solid');
     window.addEventListener('keydown', this.onEsc);
     void this.home();
@@ -120,14 +123,14 @@ export class TitleMenu {
   }
   private async home(): Promise<void> {
     this.head('a voxel sandbox of lost lights'); this.back = null;
-    const col = el('div', 'col', this.root), worlds = await this.db.listWorlds();
+    const col = el('div', 'col', this.root), worlds: WorldSummary[] = this.canSave ? await listWorlds().catch(() => []) : [];
     const list = worlds.length ? el('div', 'scroll worlds', col) : col;
     for (const w of worlds) {
       const row = el('div', 'world', list), info = el('div', '', row);
-      el('div', 'nm', info, w.name); el('div', 'mt', info, `seed ${w.seedText} · ${new Date(w.played).toLocaleDateString()} · level ${w.data?.stats?.level ?? 1}`);
+      el('div', 'nm', info, w.name); el('div', 'mt', info, `seed ${w.seedText} · ${new Date(w.played).toLocaleDateString()} · level ${w.level}`);
       el('div', 'sp', row);
       const del = el('button', 'btn sm bad', row, 'Delete');
-      del.onclick = async (e) => { e.stopPropagation(); if (del.textContent === 'Sure?') { await this.db.deleteWorld(w.id); void this.home(); } else del.textContent = 'Sure?'; };
+      del.onclick = async (e) => { e.stopPropagation(); if (del.textContent === 'Sure?') { await deleteWorld(w.id); void this.home(); } else del.textContent = 'Sure?'; };
       row.onclick = () => this.play(w);
     }
     el('button', 'btn gold', col, worlds.length ? 'New world' : 'Begin').onclick = () => this.create();
@@ -144,7 +147,7 @@ export class TitleMenu {
     go.onclick = () => {
       const seedText = seed.value.trim() || String(Math.floor(Math.random() * 1e9));
       const n = /^-?\d+$/.test(seedText) ? Number(seedText) | 0 : strSeed(seedText);
-      this.play({ id: 'w' + Date.now().toString(36), name: name.value.trim() || 'New World', seed: n, seedText, created: Date.now(), played: Date.now(), data: null });
+      this.play({ id: 'w' + Date.now().toString(36), name: name.value.trim() || 'New World', seed: n, seedText });
     };
     this.back = () => void this.home();
     el('button', 'btn', col, 'Back').onclick = this.back;
@@ -156,7 +159,7 @@ export class TitleMenu {
     this.back = () => void this.home();
     el('button', 'btn', this.root, 'Back').onclick = this.back;
   }
-  private play(m: WorldMeta): void { window.removeEventListener('keydown', this.onEsc); this.root.remove(); this.onPlay(m); }
+  private play(w: WorldChoice): void { window.removeEventListener('keydown', this.onEsc); this.root.remove(); this.onPlay(w); }
 }
 
 export class GameMenu {
@@ -177,7 +180,7 @@ export class GameMenu {
     if (this.dead) return;
     g.paused = true; this.show(); this.sub = false;
     this.root.innerHTML = '';
-    el('h2', '', this.root, 'PAUSED'); el('div', 'sub', this.root, g.cfg.meta.name);
+    el('h2', '', this.root, 'PAUSED'); el('div', 'sub', this.root, g.worldName);
     const saved = el('div', 'saved', this.root, g.cfg.canSave === false ? 'Saving is unavailable in this browser' : 'Saving...');
     if (g.cfg.canSave === false) saved.classList.add('warn');
     const col = el('div', 'col', this.root);

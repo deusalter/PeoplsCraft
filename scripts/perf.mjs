@@ -27,10 +27,10 @@ export async function run({ page, url, log }) {
     const g = T.game;
     if (!(await T.loaded())) throw new Error('the world did not load');
     if (g.world.renderDist !== view) throw new Error(`view is ${g.world.renderDist}, wanted ${view}`);
-    T.grab(true); T.cmd('god');
-    if (T.cmd('creative') !== 'creative true') throw new Error('creative did not turn on');
+    T.grab(true); await T.cmd('god');
+    if ((await T.cmd('creative')) !== 'creative true') throw new Error('creative did not turn on');
     const p = g.player;
-    T.cmd(`tp ${p.x} ${Math.floor(p.y) + 20} ${p.z}`);
+    await T.cmd(`tp ${p.x} ${Math.floor(p.y) + 20} ${p.z}`);
     p.yaw = -Math.PI / 2; p.pitch = 0;
     await T.until(() => g.ready && g.world.counts().waiting === 0, 20000);
     await new Promise((res) => setTimeout(res, 1000));
@@ -40,12 +40,17 @@ export async function run({ page, url, log }) {
       const pr = g.prof, keep = { ...pr };
       pr.world = pr.tick = pr.render = 0;
       const t0 = performance.now();
-      orig.call(g, dt);
-      const t1 = performance.now();
-      cpu.push(t1 - t0); sim.push(pr.tick);
-      if (last) gap.push(t0 - last);
-      last = t0;
-      pr.world = Math.max(keep.world, pr.world); pr.tick = Math.max(keep.tick, pr.tick); pr.render = Math.max(keep.render, pr.render);
+      const done = () => {
+        const t1 = performance.now();
+        cpu.push(t1 - t0); sim.push(pr.tick);
+        if (last) gap.push(t0 - last);
+        last = t0;
+        pr.world = Math.max(keep.world, pr.world); pr.tick = Math.max(keep.tick, pr.tick); pr.render = Math.max(keep.render, pr.render);
+      };
+      // a frame whose step had to wait ends later: it is timed to its end
+      const r = orig.call(g, dt);
+      if (r && r.then) return r.then(done);
+      done();
     };
     g.prof.world = g.prof.tick = g.prof.render = 0;
     const x0 = p.x;

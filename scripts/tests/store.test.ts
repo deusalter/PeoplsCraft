@@ -52,10 +52,10 @@ const worldRecord = (): WorldRecord => ({
 interface Rig { sim: Sim; storage: MemStorage; edits: EditMaps; source: FlatSource; chunks: SimChunks[]; sent: [number, S2C][]; ev: [Scope, Fx][] }
 function rig(storage = new MemStorage()): Rig {
   const sent: [number, S2C][] = [], ev: [Scope, Fx][] = [], world = worldRecord(), source = new FlatSource();
-  const edits = new EditMaps(storage, world.palettes), chunks = [0, 1, 2].map((d) => new SimChunks(d, source, edits));
+  const edits = new EditMaps(storage, world.palettes);
   const sink: Sink = { emit: (to, e) => { ev.push([to, e]); }, send: (slot, m) => { sent.push([slot, m]); }, broadcast() {} };
-  const sim = new Sim(world, { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, store: (d) => chunks[d], log() {}, requestSave() {} });
-  return { sim, storage, edits, source, chunks, sent, ev };
+  const sim = new Sim(world, { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, chunks: source, edits, log() {}, requestSave() {} });
+  return { sim, storage, edits, source, chunks: sim.realms.map((r) => r.chunks), sent, ev };
 }
 /** Load and integrate the chunks within `r` of a chunk, as the step does it. */
 async function grow(r: Rig, dim: number, cx: number, cz: number, rad = 1): Promise<void> {

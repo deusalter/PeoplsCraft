@@ -11,7 +11,7 @@ import { ID_MAX, PS_PLAYER } from '../../src/net/protocol';
 import { JUMP_V, PlayerBody } from '../../src/sim/body';
 import { invOp } from '../../src/sim/actions';
 import { cheat } from '../../src/sim/cheats';
-import { InlineSource } from '../../src/sim/chunksource';
+import { type ChunkSource, InlineSource } from '../../src/sim/chunksource';
 import { daOf } from '../../src/sim/drops';
 import type { Fx, Scope, Sink } from '../../src/sim/fx';
 import { buildGate, gateHas } from '../../src/sim/gates';
@@ -26,9 +26,11 @@ import { Sim } from '../../src/sim/sim';
 import { PlayerStats } from '../../src/sim/stats';
 import { type Batch, type ChunkRecord, MemStorage, type PlayerRecord, StorageError, type WorldRecord } from '../../src/sim/storage';
 import { sendTp, travel } from '../../src/sim/travel';
-import type { BlockEnt } from '../../src/sim/voxels';
+import { type BlockEnt, EditMaps } from '../../src/sim/voxels';
 
 const GROUND = 64;
+/** The rules under test run on the flat store below: the sim's own chunks are given nothing to generate. */
+const NO_SOURCE: ChunkSource = { request() {}, cancel() {}, poll: () => [], pending: 0, dispose() {} };
 /** Flat stone up to y = 63, air above, and whatever a test writes on top of that. */
 class Flat implements RealmStore {
   onChange: RealmStore['onChange'] = null;
@@ -56,7 +58,7 @@ interface Rig { sim: Sim; store: Flat; ev: [Scope, Fx][]; of(code: string): [Sco
 function rig(): Rig {
   const store = new Flat(), ev: [Scope, Fx][] = [];
   const sink: Sink = { emit: (to, e) => { ev.push([to, e]); }, send: () => {}, broadcast: () => {} };
-  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, store: () => store, log: () => {}, requestSave: () => {} });
+  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => {} });
   return { sim, store, ev, of: (code) => ev.filter((e) => e[1][0] === code), reset: () => { ev.length = 0; } };
 }
 const STEP = 1 / 60;

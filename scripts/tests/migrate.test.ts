@@ -140,8 +140,9 @@ const sink: Sink = { emit() {}, send() {}, broadcast() {} };
 async function opened(idb: FakeIdb, id: string) {
   const st = new IdbStorage(id, idb.env()), world = (await st.open())!;
   assert.ok(world, 'the world opens');
-  const edits = new EditMaps(st, world.palettes), stores = [0, 1, 2].map((d) => new SimChunks(d, noSource, edits));
-  const sim = new Sim(world, { cheats: true, maxPlayers: 1, solo: true, manual: true }, { sink, store: (d) => stores[d], log() {}, requestSave() {} });
+  const edits = new EditMaps(st, world.palettes);
+  const sim = new Sim(world, { cheats: true, maxPlayers: 1, solo: true, manual: true }, { sink, chunks: noSource, edits, log() {}, requestSave() {} });
+  const stores = sim.realms.map((r) => r.chunks);
   const keys = fixture.chunks.map(([k]: [string]) => k.split('|')).filter((k: string[]) => k[0] === id);
   for (const [, d, cx, cz] of keys) {
     const dim = +d, e = await edits.load(dim, +cx, +cz), g = genChunk(world.seed, dim, +cx, +cz);
@@ -254,7 +255,7 @@ test('the fixture: the world saved on the death screen opens dead', async () => 
   const idb = oldProfile(), st = new IdbStorage(DEAD, idb.env()), world = (await st.open())!;
   const rec = await st.loadPlayer(LOCAL_ID);
   assert.equal((rec!.stats as any).hp, X.dead.hp);
-  const sim = new Sim(world, { cheats: true, maxPlayers: 1, solo: true, manual: true }, { sink, store: (d) => new SimChunks(d, noSource, new EditMaps(st, world.palettes)), log() {}, requestSave() {} });
+  const sim = new Sim(world, { cheats: true, maxPlayers: 1, solo: true, manual: true }, { sink, chunks: noSource, edits: new EditMaps(st, world.palettes), log() {}, requestSave() {} });
   const p = sim.join(LOCAL_ID, 'Player', rec, true);
   assert.equal(p.stats.dead, true);
   assert.deepEqual(idb.store('backup').get(DEAD + '|v1'), dec(fixture.worlds.find((w: any) => w.id === DEAD)));

@@ -3,9 +3,11 @@
 //   npm run smoke -- golden              scripted play-through, compared with scripts/golden/baseline.json
 //   npm run smoke -- golden --record     write that baseline from this run instead
 //   npm run smoke -- legacy              open the saves in scripts/fixtures/legacy-v1.json in this build
-//   npm run smoke -- legacy-make         rebuild that fixture from this build
+//   npm run smoke -- legacy-make         rebuild that fixture (only on a build from before the save format changed)
 //   npm run smoke -- perf                the scripted 20 s flight at view 12 (docs/multiplayer/MEASUREMENTS.md)
 //   --repeat N                           run N times, stop at the first failure
+//   ?clone                               (or any ?a&b=c) added to the page's query: `npm run smoke -- golden ?clone` runs the
+//                                        scenario with every message between client and host taken through JSON
 //
 // Exit code 0 only when every probe matches.
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -15,7 +17,9 @@ import { launch } from './headless.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
-const name = argv.find((a) => !a.startsWith('--'));
+const name = argv.find((a) => !a.startsWith('--') && !a.startsWith('?'));
+/** Query parameters for every page the scenario opens, as `&a&b=c` ('' for none). */
+const extra = argv.filter((a) => a.startsWith('?') && a.length > 1).map((a) => '&' + a.slice(1)).join('');
 const flag = (f) => argv.includes('--' + f);
 const opt = (f, d) => { const i = argv.indexOf('--' + f); return i >= 0 && argv[i + 1] ? argv[i + 1] : d; };
 const log = (...a) => console.log(...a);
@@ -45,10 +49,10 @@ export function diff(expected, got) {
 }
 
 async function once(sc, run) {
-  const s = await launch({ query: sc.query });
+  const s = await launch({ query: sc.query + extra });
   const t0 = Date.now();
   try {
-    const probes = await sc.run({ ...s, log, args: { flag, opt } });
+    const probes = await sc.run({ ...s, log, extra, args: { flag, opt } });
     const errs = [...new Set(s.errors)].filter((e) => !/Failed to load resource/.test(e));
     if (errs.length) throw new Error('page errors:\n' + errs.slice(0, 10).join('\n'));
     log(`${name} run ${run}: finished in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
@@ -57,7 +61,7 @@ async function once(sc, run) {
 }
 
 async function main() {
-  if (!name || !SCENARIOS[name]) { log(`usage: npm run smoke -- <${Object.keys(SCENARIOS).join('|')}> [--repeat N] [--record]`); return 2; }
+  if (!name || !SCENARIOS[name]) { log(`usage: npm run smoke -- <${Object.keys(SCENARIOS).join('|')}> [?clone] [--repeat N] [--record]`); return 2; }
   const sc = await SCENARIOS[name]();
   const repeat = +opt('repeat', 1);
   for (let r = 1; r <= repeat; r++) {

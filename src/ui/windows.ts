@@ -64,8 +64,8 @@ export class Windows {
   private back: { mode: WinMode; o: WinOpts } | null = null;
   private lastV: View | null = null; private lastT = 0; private dragSet: Set<View> | null = null;
   private bookQuery = ''; private bookCat: Record<string, number> = {}; private bookCan: Record<string, boolean> = {}; private hoverR: Recipe | null = null;
-  /** Where ops go: the inventory channel once there is one (client/invclient.ts), else the game, which applies them at once. */
-  channel: { send(op: InvOp): OpResult } | null = null;
+  /** Where ops go: the inventory channel (client/invclient.ts), set by the game before any window opens. */
+  channel!: { send(op: InvOp): OpResult };
 
   constructor(ui: HTMLElement, private g: Game) {
     this.root = el('div', '#win', ui); this.root.classList.add('hidden');
@@ -98,7 +98,7 @@ export class Windows {
       if (sk) this.showTip(this.itemTip({ k: sk.dataset.k!, n: 1, m: sk.dataset.m }, 'buy') + (sk.dataset.need ? `<div class="bd" style="margin-top:4px">${esc(sk.dataset.need)}</div>` : ''));
     });
   }
-  private op(o: InvOp): OpResult { return this.channel ? this.channel.send(o) : this.g.op(o); }
+  private op(o: InvOp): OpResult { return this.channel.send(o); }
   private viewOf(t: EventTarget | null): View | null {
     const s = (t as HTMLElement)?.closest?.('[data-v]') as HTMLElement | null;
     return s ? this.views[+s.dataset.v!] : null;

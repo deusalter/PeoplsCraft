@@ -107,6 +107,9 @@ export class IdbStorage implements Storage {
   private world: WorldRecord | null = null;
   private pal = 0;
   private level = 1;
+  /** Keys of this world in `edits` and in the legacy `chunks`, read once at `open`: most of a world was never edited,
+   *  and asking for one of its chunks must cost no transaction. Null before `open`. */
+  private known: Set<string> | null = null;
   readonly migrated: MigrationCount = { chunks: 0, dense: 0, edits: 0, bytes: 0, ms: 0 };
 
   constructor(readonly worldId: string, private env: IdbEnv = browserEnv()) {}
@@ -122,9 +125,14 @@ export class IdbStorage implements Storage {
     let rec: any;
     try { rec = await req(db.transaction('worlds', 'readonly').objectStore('worlds').get(this.worldId)); }
     catch (e) { throw fail(e, 'open world'); }
-    if (!rec) return null;
+    if (!rec) { this.known = new Set(); return null; }
+    if (rec.format !== undefined && rec.format !== 2) throw new StorageError('version', `world format ${rec.format} is newer than this build`);
+    try {
+      const t = db.transaction(['edits', 'chunks'], 'readonly'), range = this.env.bound(this.worldId + '|', this.worldId + '|\uffff');
+      const [a, b] = await Promise.all([req(t.objectStore('edits').getAllKeys(range)), req(t.objectStore('chunks').getAllKeys(range))]);
+      this.known = new Set([...a, ...b] as string[]);
+    } catch (e) { throw fail(e, 'list chunks'); }
     if (rec.format === undefined) return this.migrate(db, rec as LegacyWorld);
-    if (rec.format !== 2) throw new StorageError('version', `world format ${rec.format} is newer than this build`);
     const { summary, ...world } = rec;
     this.level = summary?.level ?? 1;
     return this.adopt(world as WorldRecord);
@@ -159,7 +167,9 @@ export class IdbStorage implements Storage {
   }
 
   async loadChunk(dim: number, cx: number, cz: number): Promise<ChunkRecord | null> {
-    const db = await this.handle(), k = this.key(dim, cx, cz);
+    const k = this.key(dim, cx, cz);
+    if (this.known && !this.known.has(k)) return null;
+    const db = await this.handle();
     let v: EditValue | undefined, legacy: LegacyChunk | undefined;
     try {
       const t = db.transaction(['edits', 'chunks'], 'readonly');
@@ -204,6 +214,8 @@ export class IdbStorage implements Storage {
       }
       await done(t);
     } catch (err) { throw fail(err, 'save'); }
+    // a key is never taken out: a chunk whose record was deleted just costs a read that finds nothing
+    if (this.known) for (const c of batch.chunks) this.known.add(this.key(c.dim, c.cx, c.cz));
     if (batch.world && !this.world) this.adopt(batch.world);
   }
 

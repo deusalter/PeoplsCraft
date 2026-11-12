@@ -202,7 +202,7 @@ interface Chunk extends SimChunk {
   dist: number;
 }
 
-/** The chunks a realm holds whole, near its players: the block store a Realm runs on from stage 2. */
+/** The chunks a realm holds whole, near its players: the block store a Realm runs on. */
 export class SimChunks implements RealmStore, LightField {
   readonly map = new Map<number, Chunk>();
   readonly light: ApproxLight;
@@ -236,11 +236,13 @@ export class SimChunks implements RealmStore, LightField {
   update(players: readonly { body: { x: number; z: number } }[], dt = 1): void {
     const at = players.map((p) => [Math.floor(p.body.x) >> 4, Math.floor(p.body.z) >> 4]);
     const near = (cx: number, cz: number): number => { let d = Infinity; for (const [px, pz] of at) d = Math.min(d, Math.max(Math.abs(cx - px), Math.abs(cz - pz))); return d; };
-    for (const c of [...this.map.values()]) {
+    let gone: Chunk[] | null = null;
+    for (const c of this.map.values()) {
       c.dist = near(c.cx, c.cz);
       if (c.dist <= SIM_KEEP) c.idleT = 0;
-      else if ((c.idleT += dt) >= SIM_DROP_AFTER) this.drop(c);
+      else if ((c.idleT += dt) >= SIM_DROP_AFTER) (gone ??= []).push(c);
     }
+    if (gone) for (const c of gone) this.drop(c);
     const want: [number, number, number][] = [];
     for (const [px, pz] of at) for (let dz = -SIM_RADIUS; dz <= SIM_RADIUS; dz++) for (let dx = -SIM_RADIUS; dx <= SIM_RADIUS; dx++) {
       const cx = px + dx, cz = pz + dz, k = chunkKey(cx, cz);
@@ -297,9 +299,26 @@ export class SimChunks implements RealmStore, LightField {
     if (edits.full) b.set(edits.full);
     else if (edits.cells) for (const [i, id] of edits.cells) b[i] = id;
     c.blocks = b; c.biomes = gen.biomes; c.edits = edits; c.gen = null;
-    for (let col = 0; col < 256; col++) this.column(c, col);
-    c.emit.clear();
-    for (let i = 0; i < CVOL; i++) if (T_EMITS[b[i]]) c.emit.add(i);
+    // the heightmaps, from the top of each column down to its first opaque block
+    const top = c.top, sky = c.sky, emit = c.emit, lit = gen.emit;
+    for (let col = 0; col < 256; col++) {
+      const base = col << 8;
+      let t = 0, s = 0;
+      for (let y = CH - 1; y >= 0; y--) {
+        const id = b[base + y];
+        if (id === 0) continue;
+        if (t === 0 && y < CH - 1) t = y;
+        if (T_OPAQUE[id]) { s = y; break; }
+      }
+      top[col] = t; sky[col] = s;
+    }
+    // the cells that give light: those the source listed that an edit has not put out, and those an edit lit;
+    // without a list, or with the edits as a whole array, every cell is asked
+    emit.clear();
+    if (lit && edits.cells) {
+      for (let k = 0; k < lit.length; k++) if (T_EMITS[b[lit[k]]]) emit.add(lit[k]);
+      for (const [i, id] of edits.cells) if (T_EMITS[id]) emit.add(i);
+    } else for (let i = 0; i < CVOL; i++) if (T_EMITS[b[i]]) emit.add(i);
     c.ents.clear();
     for (const [i, e] of edits.ents) c.ents.set(i, e);
     for (const e of gen.ents) {

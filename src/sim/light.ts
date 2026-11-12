@@ -1,4 +1,4 @@
-// Light as the simulation reads it. The sim has no light arrays: from stage 2 a realm answers with two
+// Light as the simulation reads it. The sim has no light arrays: a realm answers with two
 // approximations over its sim chunks (7.8), which ignore occlusion and err toward light.
 import { T_EMIT_B, T_EMIT_G, T_EMIT_R } from '../data/blocks';
 
@@ -52,7 +52,7 @@ export function blockLightApprox(f: LightField, x: number, y: number, z: number)
   return best;
 }
 
-/** The stage 2 LightSource of a realm. A realm without a sky has no sky light, as its lighting pass gives none. */
+/** The LightSource of a realm. A realm without a sky has no sky light, as its lighting pass gives none. */
 export class ApproxLight implements LightSource {
   constructor(private f: LightField, private hasSky: boolean) {}
   sky(x: number, y: number, z: number): number { return this.hasSky ? skyApprox(this.f, x, y, z) : 0; }

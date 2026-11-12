@@ -44,7 +44,7 @@ export class ChunkService {
   /** `viewMax` is the host's: what SUB_RANGE and SUB_KEEP are added to. */
   constructor(private sim: Sim, private edits: EditStore, private viewMax: number) {
     if (edits instanceof EditMaps) edits.hold((dim, cx, cz) => { const k = chunkKey(cx, cz); for (const f of this.conns.values()) if (f.dim === dim && f.subs.has(k)) return true; return false; });
-    for (const r of sim.realms) if (r.chunks) {
+    for (const r of sim.realms) {
       const dim = r.dim;
       r.chunks.onEdit = (x, y, z, id, rev) => this.onBlock(dim, x, y, z, id, rev);
       r.chunks.onGen = (cx, cz, h) => this.onGen(dim, cx, cz, h);
@@ -146,7 +146,7 @@ export class ChunkService {
     let used = 0;
     const fits = (n: number): boolean => !l.length || used + n <= budget;
     while (f.full.length) {
-      const w = f.full[0], ch = this.sim.realms[f.dim]?.chunks?.chunk(w.cx, w.cz), e = this.edits.peek(f.dim, w.cx, w.cz);
+      const w = f.full[0], ch = this.sim.realms[f.dim]?.chunks.chunk(w.cx, w.cz), e = this.edits.peek(f.dim, w.cx, w.cz);
       // only a chunk the host holds as a ready sim chunk is answered; the client asks again
       if (!ch || ch.state !== 2 || !ch.blocks || !e || f.subs.get(w.key) !== w.n) { f.full.shift(); continue; }
       const data = toBase64(packFull(ch.blocks));

@@ -156,14 +156,13 @@ export function recall(sim: Sim, p: SimPlayer): boolean {
 }
 
 const AROUND: readonly (readonly [number, number])[] = [[0.36, 0], [-0.36, 0], [0, 0.36], [0, -0.36], [0, 0]];
-/** One step of what the world does to an active player: fall damage, hazards underfoot, the void, hunger and regeneration. */
+/** One step of what the world does to an active player: hazards underfoot, the void, hunger and regeneration.
+ *  The fall is judged where the body's moves are (movement.ts). */
 export function tickPlayer(sim: Sim, p: SimPlayer, dt: number): void {
   const b = p.body, st = p.stats, inv = p.inv, w = sim.realms[p.dim], rnd = sim.rnd;
   const hit = (took: number, cause: string): void => { p.hurtTick = sim.tick; sim.sink.send(p.slot, { t: 'hurt', dmg: took, fx: b.x, fz: b.z, knock: 0, cause }); };
   st.sync(inv);
   if (p.fullT > 0) p.fullT -= dt; if (p.recallT > 0) p.recallT -= dt;
-  if (b.landed > 3.6 && !st.d.noFall && !p.modes.creative) { st.hurtT = 0; const took = st.damage((b.landed - 3) * 5.5, rnd, true); if (took > 0) { hit(took, 'fall'); if (st.dead) onDeath(sim, p, 'fall'); } }
-  if (b.onGround) { p.safe[0] = b.x; p.safe[1] = b.y; p.safe[2] = b.z; }
   p.hazardT -= dt;
   if (p.hazardT <= 0) {
     p.hazardT = 0.5;

@@ -3,7 +3,12 @@
 import type { EntInit } from '../world/gen/types';
 import { genChunk } from './genjob';
 
-export interface GenResult { dim: number; cx: number; cz: number; blocks: Uint8Array; biomes: Uint8Array; ents: EntInit[]; hash: number }
+export interface GenResult {
+  dim: number; cx: number; cz: number; blocks: Uint8Array; biomes: Uint8Array; ents: EntInit[]; hash: number;
+  /** The cells of `blocks` that give light, when the source has looked for them (a worker has the time; the sim's own
+   *  thread would rather not go over the array again). Absent: whoever takes the chunk in finds them. */
+  emit?: Uint16Array;
+}
 
 export interface ChunkSource {
   /** Queue a job; lower `prio` first. Idempotent while the job is pending. */

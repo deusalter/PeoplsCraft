@@ -10,10 +10,13 @@
 // sends a fresh `move` in front of the action when the body has changed since the last one, and the
 // hotbar selection that was still waiting. No DOM here: a bot uses this file as the browser does.
 import type { ActMsg, C2S, S2C, S2COf } from '../net/protocol';
-import { MSG_SNAPSHOT, MV_FLY, MV_GROUND, MV_HEAD_WATER, MV_JUMPED, MV_LAVA, MV_SNEAK, MV_SPRINT, MV_UI, MV_USING, MV_WATER } from '../net/protocol';
+import { MSG_SNAPSHOT, MV_FLY, MV_GROUND, MV_HEAD_WATER, MV_JUMPED, MV_LAVA, MV_SNEAK, MV_SPRINT, MV_UI, MV_USING, MV_WATER, PROTO, RTT_EVERY, dataHash } from '../net/protocol';
 import { type Move, encodeMove } from '../net/snapshot';
 import type { Transport } from '../net/transport';
 import type { InvChannel } from './api';
+
+/** What a hello says of this client beside the protocol's own numbers. */
+export interface Hello { name: string; token: string; password?: string; view: number; build: string }
 
 /** The body as a movement message reports it: everything but the sequence number. */
 export type MoveState = Omit<Move, 'seq'>;
@@ -38,6 +41,16 @@ export class Session {
   private snapHandlers: ((b: ArrayBuffer) => void)[] = [];
   private moveSeq = 0;
   private last: MoveState | null = null;
+  /** Milliseconds, monotonic: what the round trip is timed with. The entity store reads the echo against the same clock. */
+  clock: () => number = () => performance.now();
+  /** The last round trip measured, in ms (0 before the first echo). */
+  rtt = 0;
+  /** The host has accepted the hello of this connection. */
+  welcomed = false;
+  /** The last error the host sent before it closed the connection. */
+  error: S2COf<'error'> | null = null;
+  private rttAt = -1e9;
+  private lastSeq = 0; private savedSeq = 0;
 
   constructor(readonly transport: Transport) {
     transport.onMessage = (m) => { this.inbox.push(m); };
@@ -69,7 +82,10 @@ export class Session {
           continue;
         }
         // a welcome starts the connection's counters again before anyone acts on it
-        if (m.t === 'welcome') this.reset();
+        if (m.t === 'welcome') { this.reset(); this.welcomed = true; this.lastSeq = this.savedSeq = 0; this.rttAt = -1e9; }
+        else if (m.t === 'rtt') this.rtt = Math.max(0, Math.min(600000, this.clock() - m.c));
+        else if (m.t === 'saved') { if (m.ok && m.seq > this.savedSeq) this.savedSeq = m.seq; }
+        else if (m.t === 'error') this.error = m;
         const l = this.handlers.get(m.t);
         if (l) for (const fn of l) fn(m as never);
       }
@@ -80,8 +96,28 @@ export class Session {
   /** Messages waiting for the next pump. */
   get queued(): number { return this.inbox.length - this.at; }
 
+  /** Say who this is: the first message of a connection, and of every reconnection. The host answers with `welcome`. */
+  hello(h: Hello): void {
+    this.welcomed = false; this.error = null;
+    this.send({ t: 'hello', proto: PROTO, build: h.build, data: dataHash(), name: h.name, token: h.token, password: h.password, view: h.view });
+  }
+  /** Once a tick: every RTT_EVERY seconds the host is sent this client's clock, and echoes it. */
+  probe(): void {
+    const now = this.clock();
+    if (!this.welcomed || now - this.rttAt < RTT_EVERY * 1000) return;
+    this.rttAt = now;
+    this.send({ t: 'rtt', c: now, last: this.rtt });
+  }
+  /** Something this client did is not in a save yet: the last sequenced message it sent is newer than the newest
+   *  state the host has reported durable. */
+  get unsaved(): boolean { return this.lastSeq > this.savedSeq; }
+
   /** A message that is not an action: it goes out as it is. */
-  send(m: C2S): void { this.counts.out++; this.transport.send(m); }
+  send(m: C2S): void {
+    this.counts.out++;
+    if ('seq' in m) this.lastSeq = m.seq;
+    this.transport.send(m);
+  }
 
   /** An action. In front of it go a `move`, when position, look or flags differ from the last one sent, and the waiting
    *  hotbar selection. A sequenced action took its `seq` from `InvChannel.nextSeq`, which has sent that selection already. */

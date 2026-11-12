@@ -220,8 +220,8 @@ export type S2C =
   | { t: 'dead'; cause: string; lost: number; at: [number, number, number, number] }
   /** Authoritative position. `load`: the client freezes behind its loading screen until the area is ready, then says `ready`. */
   | { t: 'tp'; id: number; dim: number; x: number; y: number; z: number; yaw?: number; pitch?: number; load: boolean; msg?: string }
-  /** The sim opened a shop, chest or forge for this player. The cell is there for the build that has no `st.box` yet. */
-  | { t: 'open'; mode: 'station' | 'chest' | 'forge' | 'shop'; station?: string; npc?: string; x?: number; y?: number; z?: number }
+  /** The sim opened a shop, chest or forge for this player. What is in it came in the `st` just before. */
+  | { t: 'open'; mode: 'station' | 'chest' | 'forge' | 'shop'; station?: string; npc?: string }
   /** An `edit` or `use` was refused. `cells`: flat (x, y, z, id) of the truth; empty when the host could not read it. */
   | { t: 'rej'; seq: number; cells: number[] }
   /** Edit sets of subscribed chunks. */

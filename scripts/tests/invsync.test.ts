@@ -20,7 +20,8 @@ import type { RealmStore } from '../../src/sim/realm';
 import { goods } from '../../src/sim/rules';
 import { Sim } from '../../src/sim/sim';
 import { PlayerStats } from '../../src/sim/stats';
-import type { WorldRecord } from '../../src/sim/storage';
+import type { ChunkSource } from '../../src/sim/chunksource';
+import { MemStorage, type WorldRecord } from '../../src/sim/storage';
 import type { EditHost, Ghosts } from '../../src/client/api';
 import { Combat, type CombatView, type HandMob } from '../../src/client/combat';
 import { InvClient } from '../../src/client/invclient';
@@ -31,9 +32,11 @@ import { type EventWire, SELF_DEAD } from '../../src/net/protocol';
 import { eventLabel, eventProgress, moonTint } from '../../src/client/invclient';
 import { Player } from '../../src/player/player';
 import { newRayHit } from '../../src/sim/physics';
-import type { BlockEnt } from '../../src/sim/voxels';
+import { type BlockEnt, EditMaps } from '../../src/sim/voxels';
 
 const GROUND = 64;
+/** The rules under test run on the flat store below: the sim's own chunks are given nothing to generate. */
+const NO_SOURCE: ChunkSource = { request() {}, cancel() {}, poll: () => [], pending: 0, dispose() {} };
 class Flat implements RealmStore {
   onChange: RealmStore['onChange'] = null;
   cells = new Map<string, number>(); ents = new Map<string, BlockEnt>();
@@ -80,7 +83,7 @@ function rig(seed = 1): Rig {
   let pSlot = -1, qSlot = -1;
   const qup: C2S[] = [], qdown: S2C[] = [];
   const sink: Sink = { emit: (_to: Scope, _e: Fx) => {}, send: (slot, m) => { if (slot === pSlot) down.push(m); else if (slot === qSlot) qdown.push(m); }, broadcast: () => {} };
-  const sim = new Sim({ ...worldRecord(), seed }, { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, store: () => store, log: () => {}, requestSave: () => {} });
+  const sim = new Sim({ ...worldRecord(), seed }, { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => {} });
   store.setBlock(...CHEST, B.chest); store.setEnt(...CHEST, 'chest', { s: new Array(27).fill(null), loot: null });
   store.setBlock(...FORGE, B.furnace); store.setBlock(...BENCH, B.workbench); store.setBlock(...ANVIL, B.anvil);
   const live = (id: string): SimPlayer => {

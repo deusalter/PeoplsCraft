@@ -1,5 +1,6 @@
 // Chunk worker: stateless generation and lighting + meshing jobs.
 import { CVOL } from '../core/constants';
+import { T_EMITS } from '../data/blocks';
 import { genChunk } from '../sim/genjob';
 import { assembleRegion, computeLight, packCenterLight } from './light';
 import { meshCenter } from './mesher';
@@ -9,9 +10,16 @@ const ctx = self as unknown as { postMessage(m: unknown, t?: Transferable[]): vo
 ctx.onmessage = (e: MessageEvent) => {
   const m = e.data;
   if (m.t === 'gen') {
-    const out = genChunk(m.seed, m.dim, m.cx, m.cz);
-    ctx.postMessage({ t: 'gen', id: m.id, cx: m.cx, cz: m.cz, blocks: out.blocks, biomes: out.biomes, hasEmit: out.hasEmit, ents: out.ents, hash: out.hash },
-      [out.blocks.buffer, out.biomes.buffer]);
+    const out = genChunk(m.seed, m.dim, m.cx, m.cz), tr: Transferable[] = [out.blocks.buffer, out.biomes.buffer];
+    // `emit`: the caller wants the cells that give light listed (a simulation's chunk source)
+    let emit: Uint16Array | undefined;
+    if (m.emit) {
+      const b = out.blocks, l: number[] = [];
+      if (out.hasEmit) for (let i = 0; i < CVOL; i++) if (T_EMITS[b[i]]) l.push(i);
+      emit = Uint16Array.from(l);
+      tr.push(emit.buffer);
+    }
+    ctx.postMessage({ t: 'gen', id: m.id, cx: m.cx, cz: m.cz, blocks: out.blocks, biomes: out.biomes, hasEmit: out.hasEmit, ents: out.ents, hash: out.hash, emit }, tr);
   } else if (m.t === 'mesh') {
     const t0 = performance.now();
     const region: ArrayBuffer = m.region, blocks: Uint8Array[] = [], biomes: Uint8Array[] = [];

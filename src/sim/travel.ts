@@ -4,9 +4,11 @@ import { B, BLOCKS, T_LIQUID, T_OPAQUE, T_SOLID } from '../data/blocks';
 import { DIMS } from '../data/dims';
 import { endWindow } from './actions';
 import { buildGate } from './gates';
+import { checkPosition } from './movement';
 import type { SimPlayer } from './player';
 import { standSpot } from './rules';
 import type { Sim } from './sim';
+import { SIM_RADIUS } from './voxels';
 
 /** Tell the client where its body now is. `load`: it must load that place and say so before the player is in play again.
  *  What the movement check remembers of the body starts again from this place: the tick its position dates from, the
@@ -16,6 +18,8 @@ export function sendTp(sim: Sim, p: SimPlayer, load: boolean, msg?: string): voi
   p.tp = (p.tp + 1) & 255;
   p.moveOkTick = p.riseTick = sim.tick; p.riseY = p.fallPeak = b.y; p.airJumps = 0; p.embedded = null;
   if (load) { p.loading = true; p.clientReady = false; }
+  // the chunks round the new place are wanted now, not at the next whole second
+  sim.chunkDue = true;
   sim.sink.send(p.slot, { t: 'tp', id: p.tp, dim: p.dim, x: b.x, y: b.y, z: b.z, load, msg });
 }
 
@@ -79,10 +83,12 @@ export function land(sim: Sim, p: SimPlayer): void {
   p.safe[0] = b.x; p.safe[1] = b.y; p.safe[2] = b.z;
 }
 
-/** A loading player whose client has its area ready: finish the journey and put the player in play. */
+/** A loading player whose client has its area ready, once the sim holds the chunks round it too (under a manual clock
+ *  every chunk it wants there, so the first counted step starts from the same world in every run): finish the journey,
+ *  make sure the body has room where it stands, and put the player in play. */
 export function arrive(sim: Sim, p: SimPlayer): void {
   const b = p.body, w = sim.realms[p.dim], ws = sim.shared.worldSpawn;
-  if (!p.loading || !p.clientReady || !w.store.areaReady(b.x, b.z, 3)) return;
+  if (!p.online || !p.loading || !p.clientReady || !w.store.areaReady(b.x, b.z, sim.opt.manual ? SIM_RADIUS : 3)) return;
   if (p.pendingBed) {
     // sent to a bed whose chunk was not loaded: now that it is, make sure the bed is still there
     const s = p.bed;
@@ -91,7 +97,9 @@ export function arrive(sim: Sim, p: SimPlayer): void {
     else { p.bed = null; p.arriveMsg = 'Your bedroll is gone. Returned to the world spawn.'; b.teleport(ws[0] + 0.5, SEA + 60, ws[1] + 0.5); p.arriving = 0; sendTp(sim, p, true); return; }
   }
   if (p.arriving >= 0) land(sim, p);
-  p.loading = false; p.portalArmed = false;
+  checkPosition(sim, p);
+  // the stall rule counts from here
+  p.loading = false; p.portalArmed = false; p.lastMoveTick = sim.tick;
   sendTp(sim, p, false);
   if (p.arriveMsg) { sim.sink.emit({ p: p.slot }, ['t', p.arriveMsg, '#ff9a8a']); p.arriveMsg = ''; }
   if (p.deadOnJoin) { p.deadOnJoin = false; sim.sink.send(p.slot, { t: 'dead', cause: '', lost: 0, at: p.deathAt ?? [p.dim, Math.floor(b.x), Math.floor(b.y), Math.floor(b.z)] }); }

@@ -361,6 +361,5 @@ export class Hud {
   }
 }
 
-export { eventLabel, eventProgress, moonTint } from '../client/invclient';
 /** Nights until the Hollow Moon (0 = tonight), or -1 before the Pale Warden has fallen. */
 export function moonIn(flags: ReadonlySet<string>, clock: number): number { return flags.has('boss:3') ? 7 - (Math.floor(clock) % 8) : -1; }

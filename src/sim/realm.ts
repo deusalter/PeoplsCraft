@@ -10,7 +10,7 @@ import { MobSim } from './mobs';
 import { active, type SimPlayer } from './player';
 import { ProjSim } from './projectiles';
 import type { Sim } from './sim';
-import { type BlockEnt, type BlockEnts, SimChunks, type VoxelWrite } from './voxels';
+import type { BlockEnt, BlockEnts, SimChunks, VoxelWrite } from './voxels';
 
 /** The block data a realm runs on, owned by whoever holds the chunks. */
 export interface RealmStore extends VoxelWrite, BlockEnts, LightSource {
@@ -29,22 +29,18 @@ export class Realm implements VoxelWrite, BlockEnts {
   readonly players: SimPlayer[] = [];
   readonly mobs: MobSim; readonly proj: ProjSim; readonly drops: DropSim; readonly fluids: Fluids;
   readonly light: LightSource;
-  /** The sim chunks this realm runs on, when its store is one (stage 2). */
-  // integration: always the store once Game stops building realms on WorldStore; then `readonly chunks: SimChunks`
-  readonly chunks: SimChunks | null;
+  /** What the realm reads and writes its blocks through: its sim chunks, unless the caller of the Sim brought a store of its own. */
+  readonly store: RealmStore;
   blockT = 0;
   /** Players with a station, chest or forge window open, by cell key `x,y,z`. Not saved. */
   readonly viewers = new Map<string, Set<SimPlayer>>();
   private live: SimPlayer[] = [];
 
-  constructor(readonly sim: Sim, readonly dim: 0 | 1 | 2, readonly store: RealmStore) {
-    this.light = store;
+  constructor(readonly sim: Sim, readonly dim: 0 | 1 | 2, readonly chunks: SimChunks, store: RealmStore = chunks) {
+    this.store = store; this.light = store;
     store.onChange = (x, y, z, old, now) => onBlockChange(this, x, y, z, old, now);
-    this.chunks = store instanceof SimChunks ? store : null;
-    if (this.chunks) {
-      this.chunks.onClose = (x, y, z) => this.closeViewers(x, y, z);
-      this.chunks.onCell = (x, y, z) => this.dropGates(x, y, z);
-    }
+    chunks.onClose = (x, y, z) => this.closeViewers(x, y, z);
+    chunks.onCell = (x, y, z) => this.dropGates(x, y, z);
     this.mobs = new MobSim(this); this.proj = new ProjSim(this); this.drops = new DropSim(this);
     this.fluids = new Fluids(this);
   }
@@ -65,7 +61,7 @@ export class Realm implements VoxelWrite, BlockEnts {
     this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; tickBlocks(this, 0.25); }
   }
   /** Nobody is left here: what lived in this realm is gone. */
-  suspend(): void { this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); this.viewers.clear(); if (this.chunks) this.chunks.clear(); }
+  suspend(): void { this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); this.viewers.clear(); this.chunks.clear(); }
 
   // ---- effects at a place in this realm ----
   sound(name: string, vol: number, pitch: number, x: number, y: number, z: number): void { this.sim.sink.emit({ dim: this.dim, x, y, z, r: SOUND_R }, ['s', name, vol, pitch, x, y, z]); }

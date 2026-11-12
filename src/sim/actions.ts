@@ -23,7 +23,7 @@ import type { Sim } from './sim';
 export const DIG_SURPLUS = 1.0, ACT_SURPLUS = 0.5;
 /** Use kinds that open a crafting station, and which. */
 export const STATIONS: Record<string, string> = { workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker' };
-/** A targeted block face, as the client's ray reports it. */
+/** A block and the face of it that was touched. */
 export interface BlockHit { x: number; y: number; z: number; nx: number; ny: number; nz: number; id: number }
 
 const dirOf = (p: SimPlayer): [number, number, number] => { const b = p.body, cp = Math.cos(b.pitch); return [-Math.sin(b.yaw) * cp, Math.sin(b.pitch), -Math.cos(b.yaw) * cp]; };
@@ -214,44 +214,17 @@ export function breakBlock(sim: Sim, p: SimPlayer, x: number, y: number, z: numb
   return true;
 }
 
-/** Put the held block against the targeted face. */
-export function place(sim: Sim, p: SimPlayer, hit: BlockHit, id: number): boolean {
-  const w = sim.realms[p.dim], b = BLOCKS[id];
-  let x = hit.x, y = hit.y, z = hit.z;
-  if (!T_REPLACE[hit.id]) { x += hit.nx; y += hit.ny; z += hit.nz; }
-  if (y < 1 || y > BUILD_MAX || !T_REPLACE[w.getBlock(x, y, z)]) return false;
-  if (b.solid) for (const q of w.players) { const o = q.body; if (x + 1 > o.x - o.hw && x < o.x + o.hw && y + 1 > o.y && y < o.y + o.h && z + 1 > o.z - o.hw && z < o.z + o.hw) return false; }
-  if (b.support && !(T_SOLID[w.getBlock(x, y - 1, z)] && T_OPAQUE[w.getBlock(x, y - 1, z)])) return false;
-  if (b.solid && w.mobs.list.some((m) => m.active && m.def.ai !== 'minion' && x + 1 > m.x - m.hw && x < m.x + m.hw && y + 1 > m.y && y < m.y + m.h && z + 1 > m.z - m.hw && z < m.z + m.hw)) return false;
-  if (!w.setBlock(x, y, z, id)) return false;
-  if (!p.modes.creative) p.inv.consumeHeld();
-  if (b.use === 'guestbed') { if (p.dim === 0) sim.npcs.addBed(x, y, z); else tell(sim, p, 'Townsfolk settle only on the living ground.', '#ff9a8a'); }
-  sim.addFlag('place:' + b.key);
-  sim.sink.emit({ dim: p.dim, x, y, z, r: 40, not: p.slot }, ['s', placeSound(id), 0.8, 0.9, x + 0.5, y + 0.5, z + 0.5]);
-  return true;
-}
 export const placeSound = (id: number): string => { const s = BLOCKS[id].sound; return s === 'stone' || s === 'metal' ? 'place' : 'dig_' + s; };
 
-/** Stand a door (two cells) on the targeted face, turned across the way the player looks. */
-export function placeDoor(sim: Sim, p: SimPlayer, hit: BlockHit): boolean {
-  const w = sim.realms[p.dim], [dx, , dz] = dirOf(p), x = hit.x + hit.nx, y = hit.y + hit.ny, z = hit.z + hit.nz;
-  if (!T_REPLACE[w.getBlock(x, y, z)] || !T_REPLACE[w.getBlock(x, y + 1, z)] || !T_SOLID[w.getBlock(x, y - 1, z)]) return false;
-  const id = Math.abs(dz) > Math.abs(dx) ? B.door_x : B.door_z;
-  w.setBlock(x, y, z, id); w.setBlock(x, y + 1, z, id);
-  p.inv.consumeHeld(); sim.addFlag('place:door');
-  sim.sink.emit({ dim: p.dim, x, y, z, r: 40, not: p.slot }, ['s', 'door', 1, 1, x + 0.5, y + 0.5, z + 0.5]);
-  return true;
-}
-
-/** Right-click on a block that does something. False when this block does nothing. `predicted`: the client has already
- *  toggled the door and played its sound, so only the others hear it. */
-export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string, predicted = false): boolean {
+/** Right-click on a block that does something. False when this block does nothing. A door has been toggled by the
+ *  client that asks, which played its sound, so only the others hear it. */
+export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string): boolean {
   const w = sim.realms[p.dim], { x, y, z } = hit, b = p.body, own = { p: p.slot };
   if (STATIONS[use]) { setWindow(sim, p, { mode: 'station', station: STATIONS[use], x, y, z, sold: [] }); return true; }
   if (use.startsWith('forge')) {
     let e = w.getEnt(x, y, z);
     if (!e) e = w.setEnt(x, y, z, 'forge', { s: [null, null, null], burn: 0, burnMax: 0, prog: 0, need: 0, level: +use.slice(5), rev: 0 });
-    if (e) { setWindow(sim, p, { mode: 'forge', x, y, z, sold: [] }); announce(sim, p, { t: 'open', mode: 'forge', x, y, z }); }
+    if (e) { setWindow(sim, p, { mode: 'forge', x, y, z, sold: [] }); announce(sim, p, { t: 'open', mode: 'forge' }); }
     return true;
   }
   if (use === 'chest') {
@@ -260,7 +233,7 @@ export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string, pre
     if (!e) return true;
     if (!e.data.s) { e.data.s = new Array(27).fill(null); if (e.data.loot) rollLoot(sim, p, e.data.loot).forEach((it, i) => (e!.data.s[(i * 5 + 3) % 27] = it)); e.data.loot = null; }
     w.touchEnt(e);
-    setWindow(sim, p, { mode: 'chest', x, y, z, sold: [] }); announce(sim, p, { t: 'open', mode: 'chest', x, y, z });
+    setWindow(sim, p, { mode: 'chest', x, y, z, sold: [] }); announce(sim, p, { t: 'open', mode: 'chest' });
     return true;
   }
   if (use === 'crate') { breakBlock(sim, p, x, y, z, hit.id); return true; }
@@ -278,7 +251,7 @@ export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string, pre
     const swap: Record<string, string> = { door_x: 'door_x_open', door_x_open: 'door_x', door_z: 'door_z_open', door_z_open: 'door_z' }, to = B[swap[BLOCKS[hit.id].key]];
     for (const dy of [-1, 1]) if (w.getBlock(x, y + dy, z) === hit.id) w.setBlock(x, y + dy, z, to, true);
     w.setBlock(x, y, z, to, true);
-    if (predicted) sim.sink.emit({ dim: p.dim, x, y, z, r: 40, not: p.slot }, ['s', 'door', 1, 1, x + 0.5, y + 0.5, z + 0.5]); else sim.sink.emit(own, ['s', 'door', 1, 1]);
+    sim.sink.emit({ dim: p.dim, x, y, z, r: 40, not: p.slot }, ['s', 'door', 1, 1, x + 0.5, y + 0.5, z + 0.5]);
     return true;
   }
   if (use === 'berries') {
@@ -481,7 +454,7 @@ export function onUse(sim: Sim, p: SimPlayer, m: C2SOf<'use'>): boolean {
   if (!live(p) || !realm.ready(x, z)) return refuse([]);
   const cur = realm.getBlock(x, y, z), use = BLOCKS[cur]?.use;
   const cells: [number, number, number][] = BLOCKS[m.id]?.door ? [[x, y - 1, z], [x, y, z], [x, y + 1, z]] : [[x, y, z]];
-  if (cur !== m.id || !use || !inReach(p, x, y, z, 1.5) || !useBlock(sim, p, { x, y, z, nx: 0, ny: 0, nz: 0, id: cur }, use, true)) return refuse(truth(realm, cells));
+  if (cur !== m.id || !use || !inReach(p, x, y, z, 1.5) || !useBlock(sim, p, { x, y, z, nx: 0, ny: 0, nz: 0, id: cur }, use)) return refuse(truth(realm, cells));
   return true;
 }
 /** `talk`: open the shop of a townsperson within reach of the eye. */

@@ -25,10 +25,13 @@ import type { SimPlayer } from '../../src/sim/player';
 import { PROJ_KEYS } from '../../src/sim/projectiles';
 import type { RealmStore } from '../../src/sim/realm';
 import { Sim } from '../../src/sim/sim';
-import type { WorldRecord } from '../../src/sim/storage';
-import type { BlockEnt } from '../../src/sim/voxels';
+import type { ChunkSource } from '../../src/sim/chunksource';
+import { MemStorage, type WorldRecord } from '../../src/sim/storage';
+import { type BlockEnt, EditMaps } from '../../src/sim/voxels';
 
 const GROUND = 64, STEP = 1 / 60, MS = 1000 / 60;
+/** The rules under test run on the flat store below: the sim's own chunks are given nothing to generate. */
+const NO_SOURCE: ChunkSource = { request() {}, cancel() {}, poll: () => [], pending: 0, dispose() {} };
 class Flat implements RealmStore {
   onChange: RealmStore['onChange'] = null;
   cells = new Map<string, number>();
@@ -79,7 +82,7 @@ function host(): Host {
   const store = new Flat();
   let snap: SnapService;
   const sink: Sink = { emit: (to, e) => snap.emit(to, e), send: (s, m) => snap.send(s, m), broadcast: (m) => snap.broadcast(m) };
-  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, store: () => store, log: () => {}, requestSave: () => {} });
+  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => {} });
   snap = new SnapService(sim);
   const h: Host = {
     sim, store, snap, links: [],
@@ -488,8 +491,7 @@ test('fx playback on a connection: every code but the entity store\'s is played 
     player: { shake: (k: number) => { did.push(`k:${k}`); } },
     world: { getLight: () => 0xf0 },
   } as unknown as FxHost;
-  const fx = new FxPlay(g), handed: string[] = [];
-  fx.onEntity = (ev) => { handed.push(ev[0]); };
+  const fx = new FxPlay(g);
   fx.connect(c.s);
   const entity: Fx[] = [['ps', 9, 0, 0, 70, 0, 1, 0, 0, 2, 0, 0], ['pe', 9, 0, 70, 0, 1], ['da', 4, 'stone', 1, '', 0, 70, 0, 0, 0, 0, 0], ['dn', 4, 2], ['dd', 4, 0],
     ['md', 3, 1], ['mk', 3, 10, 20, 1]];
@@ -499,7 +501,6 @@ test('fx playback on a connection: every code but the entity store\'s is played 
   deliver(c, { t: 'fx', l: [entity[0], played[0], entity[1], played[1], entity[2], entity[3], played[2], played[3], entity[4], played[4], entity[5], played[5], entity[6], played[6], played[7]] });
   c.s.pump();
   assert.deepEqual(did, ['s:hit', 'p', 'p', 'f:12', 't:hello', 'n:Title', 'k:0.5', 'h:true', 'u:stone:3', 's:pop']);
-  assert.deepEqual(handed, [], 'no entity code reaches the player\'s own fallback');
 });
 
 test('a boss\'s rain marks flicker on the client from the tick after they arrive until their strike falls, and its removal clears them', () => {

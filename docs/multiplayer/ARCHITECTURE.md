@@ -1237,8 +1237,6 @@ Host to client
 Wire forms: a slot is `0` (empty), `[k, n]` or `[k, n, m]`, with `k` the item key and `m` the modifier key,
 both strings (`slotWire`, `wireSlot` in `net/protocol.ts`). An item key that stands alone (`PlayerInfo.held`,
 `armor`) is `''` for none. `event` in `welcome` is `{a, k, g}`, the fields of the `event` message.
-`open` also carries the container's cell (`x`, `y`, `z`) for as long as the one-thread build of stage 1 reads
-it (D21 (f)); a client built on `st.box` ignores it.
 `InvWire = {s: Slot[36], a: Slot[3], c: Slot[5], g: Slot[9], cur: Slot, sel, coins, seed, attr: [str, agi, vit, arc], pts}`.
 `BoxWire = {kind: 'chest', x, y, z, s: Slot[27]} | {kind: 'forge', x, y, z, s: Slot[3], burn, burnMax, prog, need, level} | {kind: 'shop', npc, sold: [id, Slot, price][]}`.
 
@@ -3390,6 +3388,83 @@ Vitality point would otherwise add its 6 health again on every `st`; the snapsho
 (n) `InvClient` counts `recallT` and `salveCd` down between two `stats` messages.
 (o) `travel` and `onDeath` end the player's window with `actions.endWindow` (op `close` under the current
 `ackSeq`), so the player leaves `realm.viewers` and the next `st` says `box: null`.
+
+D35. Stage 2, integration (1, 2.2, 3.3, 3.5, 3.7, 3.8, 4.2 to 4.4, 6.1, 8.2, 10.1, 11). What the switch-over built
+differently, and what it left to the stage that owns it.
+(a) Every world runs in the page under a manual clock. Stage 2 is one thread, so a world from the title menu is
+opened as `?quick` opens one: a `SimHost` with `clock: 'manual'`, the loopback, `IdbStorage`. The game's frame
+steps the host through `GameConfig.step`, once after each client tick (`pump`, tick, step, `pump`, as 10.1 has
+it), and neither ticks nor steps while paused. A frame's step is `SimHost.step()`: one step now, without waiting
+for storage. 10.1 has every frame await `stepManual(1)`; a frame that waits on IndexedDB is drawn late, and only
+`&det` promises that two runs agree, so only `&det` awaits (`step: () => host.stepManual(1)`). `runFrame` then
+returns a promise and a frame that starts meanwhile does nothing, as written. With a manual clock a player is put
+in play when every sim chunk it wants is ready (10.1), which holds for title-menu worlds too until stage 3 gives
+them a real clock.
+(b) `SimHost` beside 3.7: `step()` is public (the frame's step, and what the real clock's timer and `stepManual`
+call). Its options gain `id` (the id a new world is saved under; `Storage` has no way to say it) and `solo` (the
+new world's `owner`, and `SimOptions.solo`). `step`, `pause` and `save` from a local connection are taken when
+they arrive, not in the next drain: under a manual clock nothing would drain them. A `hello` is handled in the
+drain like any message; what a connection sends between its hello and its welcome is discarded. The snapshot
+stagger counts the host's steps, not `sim.tick`, so a client behind a loading screen of a world that stands still
+still gets its header (hp, the loading flag). A snapshot that repeats the tick of the one before tells the entity
+store that the host's clock stands still: it takes that tick as the host's now (the one case in which the
+estimate of D33 (g) is lowered).
+(c) Generation for a host in the page goes through the page's chunk workers (`client/poolsource.ts`, a
+`ChunkSource` on `WorkerPool`), not `InlineSource`. A chunk of the Overworld takes about 1.2 ms to generate in
+this page's thread, and 6.6 item 2 allows the worst world, tick and render times 1.0 ms between them: a frame
+that also draws cannot spare two chunks in a step. `WorkerPool.urgent` puts the simulation's jobs ahead of the
+client's own. Which step a chunk arrives in
+then depends on the workers, so the determinism promise of 10.1 is not kept in the page; it waits for the worker
+of stage 3, where `InlineSource` runs off the frame. The pool keeps `cores - 2` workers until then (2.3 gives
+`cores - 3` to solo, for the worker that does not exist yet).
+(d) `GenResult` has `emit?: Uint16Array`: the cells of the generated array that give light, when the source has
+looked (the page's workers do, for the simulation's jobs). `SimChunks.integrate` then asks only those cells and
+the edited ones instead of all 65,536. A step that runs the world integrates one chunk, a step that only loads
+integrates two (6.1 says at most two). `IdbStorage.open` reads the keys of the world's `edits` and legacy
+`chunks` once and answers `loadChunk` for any other chunk without a transaction, as 8.1 has the disk storage do.
+(e) `SimDeps.edits` is an `EditMaps` (D31 (d): the sim needs `take`, `committed` and the realms' holds), and
+`SimDeps` has an optional `store(dim)`: a block store of the caller's for a realm, used in place of its sim
+chunks. The unit tests of stage 2.0 and of lanes C and D run the rules on a flat store of their own, as they did
+before the switch. `new Realm(sim, dim, chunks, store = chunks)`: `realm.chunks` is always a `SimChunks`, and
+`realm.store` is what the rules read and write through. `Sim.join` no longer takes a body (D21 (b)); the host
+body is the sim's own and follows the client's moves.
+(f) `Sim` beside 3.3: `takeDirty(all, now)` stamps `played` and `seen` with the wall time the host hands it (the
+sim has no clock of its own); a save holds the world and every player in memory, since a body, a clock and a
+random state change in every step; `seated()` counts the players that hold a slot; `chunkDue` asks the realms
+for their chunks at the next step when a body was put somewhere, instead of at the next whole second;
+`statsNow(p)` is the first `stats` of a connection; `playerInfo(p)` builds a roster entry.
+(g) Replication (6.1 step 7). `st`: `invDirty`, or a change of `inv.rev`, of the unspent points or of the
+attributes since the last look (a pickup, a kill's coins, a level). `stats`: looked at four times a second and
+after every command, sent when it differs from the last one with every countdown rounded up to a second, so a
+running buff costs one message a second and the HUD's seconds tick. `time`: every 5 s and when the clock moved by
+anything but its own step. `pl {upd}` and `where` go out only while more than one player is online.
+(h) Leaving. `Sim.leave`, the linger countdown, parking and the eviction on `committed` are built in their plain
+form so that a connection can close: a parked player leaves memory when the commit that took its record
+resolves and the record has not changed since. The rest of 7.9 is stage 5's: owned drops to `mail`, boss
+participants and refunds, the gate registry in `land()`, `retCheck`. The `idle` close is in the host.
+(i) `sim/identity.ts` (`sha256Hex`, `playerIdOf`, `cleanName`) is written here, ahead of stage 4, because the
+join lock of 4.2 cannot be built or tested without a record id per token.
+(j) `Session` (3.8) gained `hello(h)`, `probe()` (the `rtt` every 2 s), `rtt`, `welcomed`, `error`, `unsaved` and
+`clock`. Reconnecting is stage 4's. The game hands the session and the entity store one clock that stands still
+while the game is paused or draws no frames, since the host it steps stood still as well.
+(k) Saving (8.2). The host saves every 30 s when the tick has moved, on `save`, and when asked
+(`requestSave`, at least 1 s apart, from a timer and never inside a step); each commit is answered with `saved`
+to the local connections. The 3 s timer after a change and `closetab` are stage 3's. In the page the commit that
+`beforeunload` asks for is still issued before the page goes, as today's was.
+(l) `?clone` takes every loopback message through `JSON.parse(JSON.stringify())` as 3.7 says, and copies a
+binary message. `open` lost its cell (4.3). `WorkerPool`, `World` and the entity store lost the paths that fed
+them from a simulation in the same thread.
+(m) Harness. `T.loaded()` runs frames paced by the wall clock and tests after each. `T.cmd` gives up after 600
+frames without a reply (a paused game steps nothing). `T.showcase` and `T.orbit` move the body with `tp` and
+`fly`, since the body is the client's and a move the host did not allow is corrected. `npm run smoke -- golden
+'?clone'` adds query parameters to every page of a scenario. `legacy-make` runs only on a build from before this
+stage: it dumps the save format that build wrote.
+(n) What a solo player can notice. Creatures and bosses are drawn 4 ticks in the past (R11). A world opens and a
+crossing lands about a third of a second later than before (1.3 s against 1.0 s, and 0.6 s against 0.35 s, in
+headless Chrome on the machine of `MEASUREMENTS.md`), while the simulation takes in its 121 chunks two a step.
+Spawning and sun-burn read the light approximations of 7.8 (D7). A break or a placement the host refuses is
+shown and then undone, where it used not to happen. The portal veil is drawn from the client's own count of the
+test the host makes.
 
 ---
 
