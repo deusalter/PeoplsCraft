@@ -13,8 +13,9 @@ npm install
 npm run dev        # http://localhost:5173
 npm run build      # type-check + production bundle in dist/
 npm run check      # the three type-checks (client, simulation, scripts) and the simulation lint
-npm test           # unit tests of the simulation under plain Node, no browser
+npm test           # unit tests of the simulation, the host and the pure client code under plain Node, no browser
 npm run smoke -- golden   # a scripted play-through in headless Chrome, compared with a recorded baseline
+                          # (add '?clone' to take every message between client and host through JSON)
 ```
 
 Needs a WebGL2 browser. Worlds are saved to IndexedDB in that browser.
@@ -50,31 +51,41 @@ MSAA on the high preset.
 src/
   core/        constants, seeded noise
   data/        every table: blocks, items, recipes, mobs + bosses, loot, npcs, quests, biomes, dims
-  world/       chunk storage and scheduling (world.ts), worker entry, lighting, greedy mesher
+  world/       the client's chunks: scheduling, worker pool and worker entry, lighting, greedy mesher (world.ts
+               keeps the block data in a ClientVoxels and meshes it)
     gen/       climate, overworld, the two dimensions, structures
   sim/         the whole simulation, with no Three.js and no DOM: Sim (three realms, the players, shared state,
-               one seeded random stream), creatures + AI, boss brain, spawning, projectiles, drops, loot,
-               world events, townsfolk, the guide, player actions, gates, travel, block ticking, cheats;
+               one seeded random stream, one step at a time), the sim's own chunks and edit maps (voxels.ts),
+               approximate light, creatures + AI, boss brain, spawning, projectiles, drops, loot, world events,
+               townsfolk, the guide, what a player's messages ask for (actions.ts), the check of the movement
+               a client reports (movement.ts), gates, travel, block ticking, cheats;
                swept-AABB physics, the player body, inventory + crafting, stats, fluids, shared rules,
-               the chunk generation job;
+               the chunk generation job, the storage interface and the conversion of old saves;
                invops.ts: every change to a pack, the cursor, the crafting grid, equipment, a shop or an
                open chest or forge is one op, carried out by its applyOp and by nothing else
-  net/         the wire between a host and a client: every message both ways (protocol.ts), the two binary
-               ones byte by byte (snapshot.ts), base64 and the edit-set encodings (codec.ts), the check every
-               inbound message passes (validate.ts), the two ends of a connection (transport.ts)
-  client/      what stands between the simulation and the screen: entity views, fx playback, the adapter that
-               lets the simulation run on the loaded World, the save format bridge; session.ts (messages in
-               and actions out, in the order a host must see them) and api.ts (what client modules ask of
-               each other). The game does not use the wire yet: it still calls the simulation directly
+  net/         the wire between a host and a client, and both ends of it that need no screen:
+               protocol.ts (every message), snapshot.ts (the two binary ones), codec.ts, validate.ts,
+               transport.ts (the two ends of a connection) and loopback.ts (both ends in one thread);
+               host.ts (SimHost: connections, hello, checked dispatch, the step, saving) with hostchunks.ts
+               (chunk subscriptions and edit sets) and hostsnap.ts + interest.ts (snapshots, events and who
+               is told what); clientvoxels.ts (the client's block data) and invsync.ts (inventory reconcile)
+  client/      the client's side of the connection: session.ts (messages in, actions out, in the order a host
+               must see them), blocks.ts (predicted break, place and door), combat.ts (what a click does),
+               invclient.ts (inventory ops and the mirrors the HUD reads), entities.ts (creatures, shots and
+               drops from snapshots and events), fxplay.ts, api.ts (what these modules ask of each other),
+               poolsource.ts (terrain for a simulation in the page, from the page's chunk workers)
+  storage/     idb.ts: worlds in IndexedDB (database "cairnlight" version 2), the world list for the title
+               menu, and the migration of saves made before the simulation was split from the client
   render/      atlas + texture painters, shaders, renderer/sky/post (gfx.ts), instanced batches, icons, item models,
                creatures, projectiles and drops as drawn (mobView, projView, dropView)
-  player/      input, first-person camera, block interaction
-  systems/     save (IndexedDB)
+  player/      input, first-person camera, block targeting and mining progress
   ui/          HUD, windows (inventory / crafting / chest / forge / shop / guide: they draw the state and
                send ops), guide tracker, menus, debug overlay
   audio/       synthesized effects and generative music
   dev/         the data cross-check that runs at startup in development
-  game.ts      the client: view, input, HUD and audio; steps the simulation and plays what it sends out
+  game.ts      the client: view, input, HUD and audio, the local player's body; it knows the simulation only
+               through its session
+  main.ts      the title menu, then a host for the chosen world and a game connected to it
   dev.ts       window.T
 scripts/
   headless.mjs   the game in headless Chrome with the real GPU, for automated checks
@@ -91,9 +102,13 @@ Design notes worth knowing before changing things:
 - **Simulation and client.** `src/sim` decides everything that happens in the world and never draws,
   plays or reads input; it compiles on its own without the DOM (`tsconfig.sim.json`) and
   `scripts/lint-sim.mjs` fails the check if it reaches for the clock, `Math.random`, the console or
-  a client file. `Game` owns the local player's body and camera, calls the simulation's actions,
-  steps it once per tick, and plays the sounds, particles, toasts and messages it sends out through
-  its sink. Today both run in one thread on the same `World`; the co-op plan puts a wire between them.
+  a client file. A `SimHost` owns one simulation and its storage, and speaks to clients in messages.
+  `Game` is a client: it owns the local player's body and camera, tells the host where the body is
+  and what the hands do, shows a break, a placement or an inventory change at once and takes the
+  host's word when it differs, and draws creatures from the host's snapshots. Today the host runs in
+  the page's own thread and the two are joined by `net/loopback.ts`, with the game's frame stepping
+  the host; nothing in `game.ts` imports the simulation. The co-op plan moves the host into a worker
+  for solo play and into a Node server for friends, on the same messages.
 - **Inventory ops.** A click in a window does not move an item. The window sends an op
   (`click`, `quick`, `book`, `buy` ...) and `applyOp` in `sim/invops.ts` carries it out or refuses it,
   returning the sound and the line to show. A refused op changes nothing.
@@ -113,8 +128,11 @@ Design notes worth knowing before changing things:
   A model is a list of `Part` boxes that can be rotated, parented to an earlier box's joint, shown
   only in some boss phases, given a surface pattern and driven by an animation tag. The full list of
   fields and tags is in the comment above `Part` in `data/mobs.ts`.
-- **Saves** store only modified chunks (run-length encoded) plus one world record. Each chunk
-  remembers which block-id table it was written with, so the block list can change between builds.
+- **Saves** hold one world record, one record per player and, per chunk, only the cells that differ
+  from generated terrain (plus its chests and forges). A save writes everything that changed in one
+  transaction. Each chunk record remembers which block-id table it was written with, so the block
+  list can change between builds. A world saved by an older build is converted the first time it is
+  opened; its old record is kept as a backup.
 
 ## Adding content
 
