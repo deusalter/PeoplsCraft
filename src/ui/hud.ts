@@ -29,7 +29,7 @@ const COMPASS_NAMES = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'], PIP_CLS = ['
 /** Half the strip in pixels, and the bearing (radians either side of straight ahead) it spans. */
 const CW = 150, CSPAN = 1.2;
 const wrapPi = (a: number): number => { a %= Math.PI * 2; return a > Math.PI ? a - Math.PI * 2 : a < -Math.PI ? a + Math.PI * 2 : a; };
-const STAT_WORDS: Record<string, string> = { def: 'defense', speed: 'speed', regen: 'regen', hp: 'health', mana: 'mana', crit: 'crit', melee: 'melee', ranged: 'ranged', magic: 'magic', mining: 'mining' };
+const STAT_WORDS: Record<string, string> = { def: 'defense', speed: 'speed', regen: 'regen', hp: 'health', mana: 'mana', crit: 'crit', melee: 'melee', ranged: 'ranged', magic: 'crystal-work', summon: 'totem', mining: 'mining' };
 /** "+6 defense, +20% speed": fractional stats read as percentages. */
 function buffLine(stats: Record<string, number | undefined>): string {
   const out: string[] = [];
