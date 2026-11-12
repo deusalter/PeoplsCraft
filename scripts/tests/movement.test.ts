@@ -314,6 +314,7 @@ test('liveness: every message counts, a silent player stalls after STALL_AFTER t
   assert.equal(checkStall(r.sim, p), false);
   r.wait(1);
   assert.equal(checkStall(r.sim, p), true);
+  assert.ok(!r.sim.realms[0].targets().includes(p), 'a stalled player is no target');
   // a move under an old teleport id is dropped, and still says the client is there
   assert.equal(r.move(0.5, GROUND, 0.5, MV_GROUND, (p.tp + 7) & 255), 'dropped');
   assert.equal(p.stalled, false); assert.equal(p.lastMoveTick, r.sim.tick);
@@ -327,6 +328,22 @@ test('liveness: every message counts, a silent player stalls after STALL_AFTER t
   const l = rig(true);
   l.wait(10 * STALL_AFTER);
   assert.equal(checkStall(l.sim, l.p), false);
+});
+
+test('building under your own feet: a pillar jump of 6 blocks is believed move after move', () => {
+  const r = rig(), p = r.p;
+  let base = GROUND;
+  for (let n = 0; n < 6; n++) {
+    // the jump; once the body has cleared the cell the client places into it, and the move in front of that edit says so
+    for (const [dy, f] of [[0.55, MV_JUMPED], [1.0, 0], [1.2, 0]] as const) { r.wait(3); assert.equal(r.move(0.5, base + dy, 0.5, f), 'ok'); }
+    r.store.setBlock(0, base, 0, B.stone);
+    for (const dy of [1.15, 1.02]) { r.wait(3); assert.equal(r.move(0.5, base + dy, 0.5, 0), 'ok'); }
+    base++;
+    r.wait(3); assert.equal(r.move(0.5, base, 0.5), 'ok');
+    assert.equal(p.grounded, true);
+  }
+  assert.equal(p.body.y, GROUND + 6);
+  assert.equal(r.tps().length, 0); assert.equal(r.hurts().length, 0);
 });
 
 test('numbers out of range are corrected', () => {

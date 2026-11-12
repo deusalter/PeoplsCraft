@@ -298,6 +298,24 @@ test('projectile interest: the known set, the sweep that finds a player walking 
   assert.equal(Bl.cl.fx.filter((e) => e[0] === 'ps')[0][11], 0);
 });
 
+test('a player in another realm is told again from nothing: what it knew of the old one is forgotten', () => {
+  const h = host(), A = h.add('a', 0.5, 0.5), Bl = h.add('b', 2.5, 0.5), sim = h.sim, r0 = sim.realms[0], r1 = sim.realms[1];
+  r0.drops.spawn(1.5, GROUND + 0.2, 0.5, { k: 'stick', n: 1 }, 0, 0, 0, 0);
+  const shot = r0.proj.fire('wardenorb', 1.5, 70, 0.5, 0, 0, 1, 5, null)!;
+  h.flush();
+  assert.equal(A.cl.fx.filter((e) => e[0] === 'da' || e[0] === 'ps').length, 2);
+  // A crosses; in realm 1 a drop lies near the same coordinates
+  r0.players.splice(r0.players.indexOf(A.p), 1); A.p.dim = 1; r1.players.push(A.p);
+  r1.drops.spawn(1.5, GROUND + 0.2, 0.5, { k: 'torch', n: 1 }, 0, 0, 0, 0);
+  A.cl.fx.length = 0;
+  // the old realm's end of the shot is not A's to hear, and the sweep tells A of the new realm's drop
+  r0.proj.clear();
+  for (let i = 0; i < SWEEP_EVERY; i++) { sim.tick++; h.flush(); }
+  assert.deepEqual(A.cl.fx.map((e) => e[0]), ['da']);
+  assert.equal(A.cl.fx[0][2], 'torch');
+  assert.ok(Bl.cl.fx.some((e) => e[0] === 'pe' && e[1] === shot.id));
+});
+
 test('a shooter\'s ghost gives way to the ps that answers its fire, and is dropped after GHOST_SECONDS without one', () => {
   const h = host(), A = h.add('a', 0.5, 0.5), realm = h.sim.realms[0], ents = A.cl.ents;
   ents.ghost(9, 'arrow', 0.5, 66, 0.5, 0, 0, 1);
