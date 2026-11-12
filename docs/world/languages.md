@@ -110,7 +110,7 @@ In neither tongue does a name change for number. Game text adds an English s whe
 | *hasta*, hand | hasta>hattha | **Hatta** |
 | *gṛhapati*, master of a house | gṛhapati>gahapati | **Gahapat** |
 | *manuṣya*, a human being | manuṣya>manuṣṣa | **Manussa** |
-| *deśika*, one who knows the country, a guide | deśika>desika | **Desik** |
+| *deśika*, familiar with a place, a guide | deśika>desika | **Desik** |
 | *karmāra*, a smith | karmāra>kammāra | **Kammār** |
 | *vaidya*, a physician | vaidya>vedya | **Vejja** |
 | *vāhaka*, a carrier | vāhaka | **Vāhak** |
@@ -189,7 +189,7 @@ After the changes the spelling is set: the one sibilant is written sh.
 | *vālukā + deśa*, sand country | vālukā>vālugā>bālugā>bālugā+deśa>balugadeśa | **Balugadesha** |
 | *agni*, fire | agni>aggi | **Āgi** |
 | *agni + -sthāna*, place of the fire | agni+sthāna>agnisthāna>agnitthāna>aggitthāna>āgīthāna | **Āgītāna** |
-| *dāhaka*, one who burns | dāhaka | **Dāhaga** |
+| *dāhaka*, burning, setting on fire | dāhaka | **Dāhaga** |
 | *bhasman*, ashes | bhasman>bhasma>bhamha>bhamma>bhāma | **Bāma** |
 | *kāca + śakala*, fragment of glass | kāca>kāsa; śakala>śagala>kāsa+śagala>kasaśagala | **Kasashagala** |
 | *yodha*, a fighter | yodha>yoda | **Zoda** |
@@ -199,9 +199,9 @@ After the changes the spelling is set: the one sibilant is written sh.
 | *śilpa*, craft | śilpa>śippa>śīpa | **Shīpa** |
 | *khādaka*, an eater | khādaka>khādaga | **Kādaga** |
 | *mahā + khādaka*, great eater | khādaka>khādaga>kādaga>mahā+kādaga | **Mahakādaga** |
-| *palāyita*, one who has fled | palāyita | **Palāyida** |
+| *palāyita*, fled | palāyita | **Palāyida** |
 | *citā*, a pyre | citā>cidā>sidā | **Sida** |
-| *kṣāra*, ashes, lye | kṣāra>cchāra>chāra>cāra | **Sāra** |
+| *kṣāra*, caustic alkali | kṣāra>cchāra>chāra>cāra | **Sāra** |
 | *kumbha + -kāra*, maker of pots | kumbha+kāra>kumbhakāra>kumbhagāra | **Kumbagāra** |
 | *nidhāna*, a store, hoard | nidhāna | **Nidāna** |
 | *lavaṇa*, salt | lavaṇa>loṇa | **Lona** |
@@ -230,7 +230,7 @@ A doubled consonant, a ch, a j, a v or a final consonant means the householders'
 
 The cutters' tongue is written as Sanskrit is written in Roman letters, with every mark. The rules are short.
 
-1. A word is used only if it is in a dictionary with the sense wanted. The root list gives each word's page in Monier-Williams, *A Sanskrit-English Dictionary* (1899), and a word that is not in the root list is added to it first.
+1. A word is used only if it is in a dictionary with the sense wanted, and the dictionary cites that sense from a text. A sense it has only from the old word-lists, which Monier-Williams marks L., is not used. The root list gives each word's page in Monier-Williams, *A Sanskrit-English Dictionary* (1899). Where that dictionary names no text for the sense, the list also names one that does. A word that is not in the root list is added to it first.
 2. The gloss in the glossary is the dictionary's sense. A wrong gloss is worse than no name.
 3. A word is written in its stem form, in full, with its marks: *sāra*, never *sara*. It takes no English plural.
 4. A compound is made only of words on the root list, plainly, with the describing word first, and the glossary says that it is a new compound. A compound the dictionary already has is better.
@@ -243,7 +243,7 @@ This register is small on purpose. Most of what a cutter knows has a plain Engli
 1. **Ask whether the thing needs a name.** If a plain English word is true of it, use the word. A present name that is two evocative nouns glued together, or cute, or wrong by the bible, is replaced by the plain word for what the thing is.
 2. **Write down the namer and the reason** (L.2). If no people on the ground had a reason to name the thing, it has a plain English name.
 3. **Pick the register** from the table in L.1.
-4. **Pick the root or roots** from `lang/roots.json` by their sense. One root is best. Two are joined when the namer would have joined them: a country named for what covers it, a trade for what it makes, a young animal for its kind. Three words are never joined. A root marked `skip` for a tongue is not used in that tongue, and a root marked `alone` is used there only inside a joined name.
+4. **Pick the root or roots** from `lang/roots.json` by their sense. One root is best. Two are joined when the namer would have joined them: a country named for what covers it, a trade for what it makes, a young animal for its kind. Three words are never joined. A root marked `skip` for a tongue is not used in that tongue, and a root marked `alone` is used there only inside a joined name. Both marks can name the cutters' tongue. A root with a `note` has another sense that a reader of Sanskrit will hear, and the note is read before the root is used.
 5. **Run the script.**
 
    ```
@@ -269,7 +269,7 @@ This register is small on purpose. Most of what a cutter knows has a plain Engli
    `tongue` is `hearth`, `sand`, `cutters`, `frame` for a term whose spelling `borrowed.md` fixes, or `plain`. `limit` sets a length other than 18. A name of two words gives `from` as a list of lists, and an English word in it is written `{ "plain": "Stone" }`.
 8. **Write the glossary line**: key, name, tongue, roots, meaning, namer, reason, and any other people's name for the same thing. Internal keys never change.
 
-**Adding a root.** Find the word in the dictionary and confirm the sense. Add a line to `lang/roots.json` with the headword, its part of speech, the sense used and the page. Then run `node lang/derive.mjs --roots --fill`, which writes both daughter forms, and `node lang/derive.mjs --roots`, which stops if two roots have come out alike in one tongue. When that happens, or when a form reads badly in a language many players speak, mark the root `skip` for that tongue with the reason, or choose another word.
+**Adding a root.** Find the word in the dictionary and confirm the sense, its gender, and that the sense is cited from a text. Two words spelled alike are two words, and the gloss gives the sense of one. If the word is also an insult, a coarse word, or a name of a god, of a figure of a real epic or of a living faith, say so in a `note`, and mark it `alone` where it must not stand as a whole name. Add a line to `lang/roots.json` with the headword, its part of speech, the sense used and the page. Then run `node lang/derive.mjs --roots --fill`, which writes both daughter forms, and `node lang/derive.mjs --roots`, which stops if two roots have come out alike in one tongue. When that happens, or when a form reads badly in a language many players speak, mark the root `skip` for that tongue with the reason, or choose another word.
 
 **Changing a rule.** A rule changes every word it touches. After any change to `lang/rules.json`, run `node lang/derive.mjs --selftest`, fill the roots again and check the name map. A rule is never changed to mend one name.
 
