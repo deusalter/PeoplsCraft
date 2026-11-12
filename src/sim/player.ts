@@ -47,6 +47,13 @@ export interface SimPlayer {
   fallPeak: number; grounded: boolean; speedBudget: number; moveSeq: number; lastMoveTick: number;
   /** The client has a window of any kind open. */
   uiOpen: boolean;
+  /** The client says it is eating, drinking or drawing a bow (move flag bit 8); other players see the pose. */
+  usingItem: boolean;
+  /** Counts swings and attacks; its low two bits travel in the snapshot so other players see each one. */
+  swingSeq: number;
+  /** Tick of the last damage taken, far in the past when there was none: the `hurt` flash other players see,
+   *  and the second in which the movement checks allow for a knock. */
+  hurtTick: number;
   rtt: number;
   ackSeq: number; rngSeed: number; invDirty: boolean; statsDirty: boolean;
   /** Open window. Containers are named by cell only. */
@@ -72,7 +79,7 @@ export function newPlayer(id: string, slot: number, name: string, local: boolean
     bed: null, deathAt: null, portalReturn: {}, safe: [0, 0, 0], mail: [],
     loading: true, clientReady: false, arriving: -1, pendingBed: false, retCheck: false, tp: 0, sleeping: false, embedded: null,
     recallT: 0, hazardT: 0, fullT: 0, portalT: 0, portalArmed: true, actCredit: 0, useCredit: 0, digCredit: 0, dig: null,
-    fallPeak: 0, grounded: false, speedBudget: 0, moveSeq: 0, lastMoveTick: 0, uiOpen: false, rtt: 0,
+    fallPeak: 0, grounded: false, speedBudget: 0, moveSeq: 0, lastMoveTick: 0, uiOpen: false, usingItem: false, swingSeq: 0, hurtTick: -1e9, rtt: 0,
     ackSeq: 0, rngSeed: 0, invDirty: false, statsDirty: false, window: null, fresh: true, deadOnJoin: false, arriveMsg: '',
   };
 }
@@ -110,6 +117,9 @@ export function hurtPlayer(sim: Sim, p: SimPlayer, dmg: number, fx: number, fz: 
   const took = st.damage(dmg, sim.rnd);
   if (took === 0) return;
   if (took < 0) { sim.realms[p.dim].floater(b.x, b.y + 2, b.z, 'Dodged', '#9ad0ff', false); return; }
+  p.hurtTick = sim.tick;
+  // the knock carries the body farther than its own legs would: the movement check allows for it
+  if (knock > 0) p.speedBudget += 2;
   sim.sink.send(p.slot, { t: 'hurt', dmg: took, fx, fz, knock, cause });
   if (from && st.d.thorns > 0) sim.realms[p.dim].mobs.hurt(from, took * st.d.thorns + 1, fx - b.x, fz - b.z, 2, false, p);
   if (st.dead) onDeath(sim, p, cause);
@@ -139,7 +149,7 @@ const AROUND: readonly (readonly [number, number])[] = [[0.36, 0], [-0.36, 0], [
 /** One step of what the world does to an active player: fall damage, hazards underfoot, the void, hunger and regeneration. */
 export function tickPlayer(sim: Sim, p: SimPlayer, dt: number): void {
   const b = p.body, st = p.stats, inv = p.inv, w = sim.realms[p.dim], rnd = sim.rnd;
-  const hit = (took: number, cause: string): void => sim.sink.send(p.slot, { t: 'hurt', dmg: took, fx: b.x, fz: b.z, knock: 0, cause });
+  const hit = (took: number, cause: string): void => { p.hurtTick = sim.tick; sim.sink.send(p.slot, { t: 'hurt', dmg: took, fx: b.x, fz: b.z, knock: 0, cause }); };
   st.sync(inv);
   if (p.fullT > 0) p.fullT -= dt; if (p.recallT > 0) p.recallT -= dt;
   if (b.landed > 3.6 && !st.d.noFall && !p.modes.creative) { st.hurtT = 0; const took = st.damage((b.landed - 3) * 5.5, rnd, true); if (took > 0) { hit(took, 'fall'); if (st.dead) onDeath(sim, p, 'fall'); } }

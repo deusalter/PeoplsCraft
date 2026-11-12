@@ -62,6 +62,10 @@ Constants (single definitions; import, never copy)
 | `STALL_AFTER` / `LINGER` | 90 ticks (1.5 s) / 30 s | `src/sim/player.ts` |
 | `DIG_SURPLUS` / `ACT_SURPLUS` | 1.0 s / 0.5 s | `src/sim/actions.ts` |
 
+Every other number of section 4 that two sides or two lanes must agree on (message and list limits, coordinate
+bounds, record sizes, flag bits, buffer thresholds, subscription ranges, rate buckets, keepalive times) has a
+name in `src/net/protocol.ts` as well; that file is the list.
+
 ---
 
 ## 1. Overview
@@ -156,7 +160,7 @@ Ownership summary
     "lib": ["ES2022"], "types": [], "strict": true, "noImplicitAny": true, "skipLibCheck": true,
     "isolatedModules": true, "noEmit": true },
   "include": ["src/sim", "src/core", "src/data", "src/world/gen",
-    "src/net/protocol.ts", "src/net/codec.ts", "src/net/snapshot.ts", "src/net/validate.ts", "src/net/clientvoxels.ts",
+    "src/net/protocol.ts", "src/net/codec.ts", "src/net/snapshot.ts", "src/net/transport.ts", "src/net/validate.ts", "src/net/clientvoxels.ts",
     "src/net/interest.ts", "src/net/invsync.ts", "src/net/host.ts", "src/net/hostchunks.ts", "src/net/hostsnap.ts",
     "src/net/loopback.ts"]
 }
@@ -180,7 +184,7 @@ Ownership summary
 | `inventory.ts` | Moved from `src/systems/inventory.ts`; gains `assignWire(inv, wire)` (5.3). |
 | `stats.ts` | Moved from `src/systems/stats.ts`; `damage()` takes `rnd`. |
 | `invops.ts` | `InvOp` union, `applyOp(state, op, ctx)` (section 5). Shared by sim and client. |
-| `rules.ts` | Pure rules used by both sides: `reach`, `canHarvest`, `breakTime`, `breakTimeMin` (4.7), `accepts`, `refusal`, `smeltable`, `itemValue`, `sellPrice`, `rollLoot`, `standSpot`, `freeSpot` (4.5), `findSpawn`, `goods(npc, flags)`, `attackRate`, `maxSpeed`, `sortCompare` (5.2). |
+| `rules.ts` | Pure rules used by both sides: `reach`, `canHarvest`, `breakTime`, `breakTimeMin` (4.7), `accepts`, `refusal`, `smeltable`, `itemValue`, `sellPrice`, `rollLoot`, `standSpot`, `bodyFree`, `freeSpot` (4.5), `findSpawn`, `goods(npc, flags)`, `attackRate`, `maxSpeed`, `sortCompare` (5.2). |
 | `player.ts` | `SimPlayer`, per-player tick (credits, hazards, fall damage, hunger, stall detection, linger), `hurtPlayer`, `onDeath`, `respawn`, `goHome`, `gainXp`, sleeping, parking. |
 | `movement.ts` | Validation of the movement stream, the embedded rule, position checks before activation (4.5). |
 | `actions.ts` | World actions of a player: `breakBlock`, `breakNatural`, `place`, `placeDoor`, `useBlock`, `trySummon`, `consume`, `attack`, `fire`, `dropItem`; the dig and action credits (4.7, 7.3). |
@@ -208,8 +212,8 @@ Ownership summary
 | File | Responsibility |
 | --- | --- |
 | `protocol.ts` | `PROTO`, every message type (`C2S`, `S2C`), flag bit constants, `dataHash()`. |
-| `codec.ts` | `DataView` helpers, quantisers, base64 (hand written: no `atob` in the pure program), edit-map encodings. |
-| `snapshot.ts` | `encodeSnapshot`, `decodeSnapshot`, `encodeMove`, `decodeMove` (4.4, 4.5). |
+| `codec.ts` | Quantisers, base64 (hand written: no `atob` in the pure program), edit-map encodings (`packSparse`, `packFull`, `encodeEdits`, `decodeSparse`, `decodeFull`). |
+| `snapshot.ts` | `encodeSnapshot`, `decodeSnapshot`, `decodeHead` (the 26-byte header alone: the receiver's own state), `SnapWriter` (the same bytes written record by record, with no objects in between), `encodeMove`, `decodeMove` (4.4, 4.5). |
 | `validate.ts` | `checkC2S(m: unknown): C2S \| null`: type, shape and range check of every inbound JSON message (4.1). Pure. |
 | `interest.ts` | Per-connection interest state: known drops, known projectiles, mob hysteresis, chunk subscriptions. |
 | `host.ts` | `SimHost`: connections, hello and the per-id join lock, validated dispatch with `try / catch`, rate caps, clock driving, `requestSave` and the save loop. |
@@ -229,7 +233,7 @@ Other new client and server files
 | `src/sim-worker.ts` | Web Worker entry for solo: `SimHost` + `IdbStorage` + `InlineSource`. |
 | `src/storage/idb.ts` | `IdbStorage implements Storage` on database `cairnlight` version 2, plus `listWorlds` / `deleteWorld` for the title menu. Replaces `src/systems/save.ts`. |
 | `src/client/session.ts` | Creates the transport, hello, message dispatch registry (`session.on(type, fn)`), `session.act(m)` (4.5), `session.pump()` (deliver queued inbound messages now), reconnect state, rtt probe, the `unsaved` flag (8.2). |
-| `src/client/api.ts` | Interfaces that cross client modules: `DigHost`, `ActHost` (the two halves of today's `InteractHost`), `InvChannel` (11, stage 2.0). |
+| `src/client/api.ts` | Interfaces that cross client modules: `DigHost`, `ActHost` (the two halves of today's `InteractHost`), `EditHost`, `InvChannel`, `Bodies`, `Ghosts` (3.8; 11, stage 2.0). |
 | `src/client/worldstore.ts` | Stage 1 only: adapter that lets the sim run on the client `World` (`VoxelWrite`, `BlockEnts`, `LightSource` from `World.getLight`). Deleted in stage 2. |
 | `src/client/entities.ts` | `EntityStore`: views of mobs, players, projectiles, drops; snapshot buffer and interpolation; local kinematics for projectiles and drops. |
 | `src/client/invclient.ts` | Wraps `net/invsync.ts`: sends ops, plays their sounds and toasts, exposes the `Inventory` and `PlayerStats` instances the HUD and windows read. |
@@ -658,6 +662,9 @@ export interface SimPlayer {
   fallPeak: number; grounded: boolean; speedBudget: number; moveSeq: number;
   lastMoveTick: number;                  // tick of the last `move` received, accepted or not: the liveness signal
   uiOpen: boolean;                       // the client has any window open (bit 9 of the move flags)
+  usingItem: boolean;                    // bit 8 of the move flags; other players see the pose
+  swingSeq: number;                      // +1 per accepted attack or shot; its low two bits travel in the snapshot
+  hurtTick: number;                      // tick of the last damage taken (-1e9 = never): the `hurt` flag others see, and the knock allowance of 4.5
   rtt: number;                           // seconds, reported by the client, clamped to 0.4
   // inventory channel
   ackSeq: number; rngSeed: number; invDirty: boolean; statsDirty: boolean;
@@ -680,7 +687,7 @@ do not run.
 export type Scope =
   | { p: number }                                                    // one player slot
   | { dim: number; x: number; y: number; z: number; r: number; not?: number }   // players of a realm within r, optionally except one slot
-  | { dim: number }                                                  // everyone in a realm
+  | { dim: number; not?: number }                                    // everyone in a realm, optionally except one slot
   | { all: true };
 export interface Sink {
   /** Side effects: batched per connection, flushed every tick as one `fx` message. */
@@ -693,8 +700,30 @@ export interface Sink {
 ```
 
 `Fx` is the tuple union of 4.6. The sim never loops over particles: one burst event replaces each loop.
-Two families are not scoped by the sim at all: the host decides per connection who is told about a
-drop (`da`, `dn`, `dd`) and about a projectile (`ps`, `pe`) from its interest sets (6.4).
+Two families are not culled by distance by the sim: the host decides per connection who is told about a
+drop (`da`, `dn`, `dd`) and about a projectile (`ps`, `pe`) from its interest sets (6.4). The scope the sim
+gives them only names who may be told at all:
+
+- `ps` of a creature's shot: `{dim}`. `ps` of a player's shot: once to `{p: shooter}` with `cseq`, once to
+  `{dim, not: shooter}` with `cseq` 0. The host tells the shooter always, and of the others those within
+  `PROJ_R`; either way the id enters that connection's known set. `ProjSim.fire` flies a shot through its
+  `lead` (7.3) before it emits, so the `ps` is the state after the lag compensation; a shot that ends inside
+  its lead still emits `ps` and then `pe`.
+- `pe`: `{dim}`, for every end: a hit, terrain, the life running out (how 0) and `ProjSim.clear()` (how 0,
+  when a boss falls or withdraws). The host passes it to the connections whose known set holds the id and
+  forgets the id. A client that has already ended the projectile by itself ignores it.
+- `da` of an unowned drop: `{dim}`. `da` of an owned drop: `{p: owner}` when the owner is in that realm,
+  else nothing (the sweep of 6.4 tells the owner on coming near). The host applies `DROP_R` to both.
+- `dn`, `dd`: `{dim}`; the host passes them to the connections that know the drop. `DropSim.clear()` and a
+  full pool giving up its oldest drop say `dd` with slot 0.
+
+For the sweeps the host reads the pools themselves (`realm.proj.list`, `realm.drops.list`, bounded by `hi`)
+and builds the event of a live entity with `psOf(p, own)` (`sim/projectiles.ts`) and `daOf(d)`
+(`sim/drops.ts`), the functions the sim's own emits use.
+Wire ids. A creature, a projectile and a drop each carry `id`, 1..65535 (`ID_MAX`), from a wrapping counter
+that passes over ids still in use: creatures from one counter for all realms (`sim.mobId`), projectiles and
+drops from one counter per realm. An id is unique among the live entities of its kind in its realm, which
+is all a client ever sees at once.
 Rule for the acting player: effects the client already produced by prediction (its own swing, dig tick,
 block-break burst and sound, placement sound, eating sound) are emitted with `not: p.slot`.
 
@@ -718,7 +747,9 @@ export interface ChunkSource {
 }
 ```
 
-Implementations: `InlineSource` (`sim/chunksource.ts`; needs a `now()` function from the host),
+Implementations: `InlineSource` (`sim/chunksource.ts`; `new InlineSource(seed, now)` with `now()` in
+milliseconds from the host; jobs leave lowest `prio` first and in asking order among equals, and a second
+`request` for a pending job changes nothing, its `prio` included),
 `NodePoolSource` (`server/nodepool.ts`, `worker_threads`, `min(4, cores - 2)` workers, at least 1).
 The seed is fixed at construction. A worker error returns no result; the host re-requests twice, then
 logs and leaves the chunk unready (bodies freeze there, as on the client today).
@@ -759,7 +790,7 @@ export interface ChunkRecord {
 }
 /** What one save writes: every record that changed, copied at one instant between two steps. */
 export interface Batch { world?: WorldRecord; players: PlayerRecord[]; chunks: ChunkRecord[] }
-export class StorageError extends Error { code: 'corrupt' | 'full' | 'locked' | 'io' | 'version' }
+export class StorageError extends Error { code: 'corrupt' | 'full' | 'locked' | 'io' | 'version'; constructor(code, msg) }
 export interface Storage {
   /** Opens (and migrates) the world. Null = nothing saved yet. */
   open(): Promise<WorldRecord | null>;
@@ -772,7 +803,10 @@ export interface Storage {
 ```
 
 Implementations: `DiskStorage` (server), `IdbStorage` (solo), `MemStorage` (tests, `?quick&fresh`
-may still use `IdbStorage` so save/load can be tested).
+may still use `IdbStorage` so save/load can be tested). `MemStorage` (`sim/storage.ts`) keeps and hands out
+copies only, counts `commits` and `loads`, and rejects the next commit with `failNext` when a test sets it.
+`ChunkRecord.data` is exactly the bytes of 4.7 rule 2 before base64: `packSparse(cells)` for `enc 0`,
+`packFull(blocks)` for `enc 1` (`net/codec.ts`). A record with `rev` 0 holds entities only.
 
 Three rules bind every caller of `Storage`; together they are what makes "items neither vanish nor
 duplicate" true, and each closes a hole that a per-record save would open.
@@ -871,6 +905,78 @@ export class SnapService implements Sink {
 }
 ```
 
+### 3.8 Client session and the interfaces between client modules
+
+```ts
+// src/client/session.ts (no DOM: a bot uses it as the browser does)
+export type MoveState = Omit<Move, 'seq'>;      // Move is the decoded movement message of net/snapshot.ts
+export function moveFlags(body, jumped: boolean, usingItem: boolean, uiOpen: boolean): number;   // the MV_ bits
+export class Session {
+  constructor(transport: Transport);            // takes over transport.onMessage and onBinary; onOpen and onClose stay the caller's
+  readonly transport: Transport;
+  readonly local: boolean;                      // transport.kind !== 'ws'
+  mover: (() => MoveState) | null;              // where the body is now; set by whoever owns the body
+  inv: InvChannel | null;                       // set by the inventory client
+  on<T extends S2C['t']>(type: T, fn: (m: S2COf<T>) => void): void;   // several handlers per type run in registration order
+  onSnapshot(fn: (b: ArrayBuffer) => void): void;                     // undecoded; decodeSnapshot is the handler's
+  pump(): void;                                 // deliver everything received so far, in arrival order
+  send(m: C2S): void;                           // anything that is not an action
+  act(m: ActMsg): void;                         // 4.5: a `move` if the body changed, inv.flushSel(), then m
+  move(): void;                                 // the scheduled movement send: inv.flushSel(), then a `move` whatever changed
+  reset(): void;                                // movement numbering from 0, next act sends a move; done by itself on `welcome`
+  readonly lastMove: number;                    // seq of the last move sent: what a snapshot's `ackMove` answers
+  readonly queued: number; readonly counts: { in: number; out: number; moves: number };
+}
+```
+
+Nothing is delivered from inside a transport callback: a message waits in the session until `pump()`.
+A message that arrives while a pump runs is delivered by that pump; `pump()` called from a handler does
+nothing; when a handler throws, the error reaches the caller of `pump()` and the messages behind it stay
+queued. Hello, reconnect state, the rtt probe and the `unsaved` flag are added to this class by integration.
+
+```ts
+// src/client/api.ts
+export interface DigHost {                      // lane B, client/blocks.ts
+  reach(): number; breakTime(id: number): number;
+  onBroken(x, y, z, id): void; onDigStart(id): void; onDigTick(x, y, z, id, nx, ny, nz): void;
+  onDig(on: boolean, x, y, z): void;            // progress began to build on this block, or stopped: what `dig` reports
+}
+export interface EditHost {                     // lane B, client/blocks.ts; called by lane D's ActHost.secondary
+  place(hit: RayHit, id: number): boolean;      // each: check, write the cells, send `edit` or `use`; false = refused here, nothing sent
+  placeDoor(hit: RayHit): boolean;
+  toggleDoor(hit: RayHit): boolean;
+}
+export interface ActHost {                      // lane D, client/combat.ts
+  primary(pressed: boolean, held: boolean): boolean;
+  secondary(hit: RayHit | null, pressed: boolean): boolean;
+}
+export interface InvChannel {                   // lane D, client/invclient.ts
+  nextSeq(): number;                            // the seq for the next op / edit / use / item / fire; sends a waiting selection first
+  send(op: InvOp): OpResult;                    // apply locally, send under the next seq
+  internal(seq: number, op: { o: '_held'; n } | { o: '_slot'; i; n }): void;   // apply locally, queue under that seq, send nothing
+  setSel(i: number): void;                      // select locally now; the `sel` op waits (5.3)
+  flushSel(): void;                             // send the waiting selection, if any
+}
+export interface Bodies {                       // lane C, client/entities.ts; called by lane B's predicted placement
+  blocked(x: number, y: number, z: number): boolean;   // a creature (not a minion) or another player, as seen now, overlaps the cell
+}
+export interface Ghosts {                       // lane C, client/entities.ts; called by lane D's client/combat.ts
+  ghost(seq: number, kind: string, x, y, z, dx, dy, dz, speed?: number): void;   // stand-in for the shot of `fire` seq (7.3)
+}
+```
+
+`Interact.tick(dt, input, dig, act, active)` takes the two hosts. It calls `onDig(true, x, y, z)` on the first
+tick progress builds on a block (before that tick's `onDigTick` and `onBroken`), again with the new cell when
+the aim moves to another block, and `onDig(false, ...)` on the first tick it no longer builds (button up,
+aim off, the pause after a break, the hands taken away). `client/blocks.ts` turns each call into a `dig`
+message. After a successful `EditHost` call the caller plays the placement sound and the swing, as
+`Game.secondary` does today; the break burst and sound are `onBroken`'s. One `seq` counter serves every sequenced
+message, and it lives in the `InvChannel` because that is where unacknowledged ops are kept by `seq`.
+`nextSeq()` sends a waiting hotbar selection before it returns: the `sel` op must carry the number in
+front of the action's, and the host accepts numbers only in order (4.3). So a module that predicts an
+action does `seq = inv.nextSeq()`, `inv.internal(seq, ...)` where the action uses something up, then
+`session.act({ ..., seq })`.
+
 ---
 
 ## 4. Protocol
@@ -901,6 +1007,41 @@ JSON message on every transport:
 - `seq` must equal `p.ackSeq + 1`.
 - A message that fails closes the connection with `error proto`. So does a binary message whose length
   is not 36 or whose type byte is not 2.
+
+`checkC2S` is a pure function of the message, so what needs the player is the host's to check after it:
+`seq === p.ackSeq + 1`, reach, and what `hello` claims (`proto` against `PROTO`, `data`, the name rule
+`NAME_RE` and the token, each of which has its own error code and so must not fail as `proto`). It returns
+the message itself, never a copy, and never throws. Exactly what it checks:
+
+- Fields. Every declared field is present with its type; an optional field may be absent; a field that is
+  not declared fails the message. A field whose value is `undefined` counts as absent (it would be after
+  JSON), so the in-thread transport and a socket agree.
+- `op` carries its op fields beside `t` and `seq` (`{t: 'op', seq, o: 'click', v, r, e}`); `_held` and
+  `_slot` fail.
+
+| Field | Passes when |
+| --- | --- |
+| `seq` | integer 1..2,147,483,647 (`SEQ_MAX`) |
+| block cell `x, y, z` (`dig`, `edit`, `use`, `item.at`) | integers, `\|x\|, \|z\| <= 500000`, `0 <= y <= 255` |
+| block `id` (`edit`, `use`, `pick`) | integer inside `BLOCKS` |
+| creature `id` (`talk`, `atk`) | integer 1..65535 |
+| `d` (`atk`, `fire`) | three numbers, each within 1.01 of zero |
+| `fire.o` | three numbers within 2 blocks of where a body may be: `\|x\|, \|z\| <= 500002`, `-66 <= y <= 402` |
+| `ping` `x, y, z` | numbers (not cells) within 32 blocks of where a body may be |
+| `hello` | `proto` integer 0..65535; `data` integer 0..2^32 - 1; `build`, `name`, `token` strings of at most 64 characters; `password` at most 128; `view` integer 4..16 |
+| `ready.tp` | integer 0..255 |
+| `chunks` | `dim` 0..2; `sub` whole triples, at most 1,024, `\|cx\|, \|cz\| <= 31250`, nonce 0..65535; `unsub` whole pairs, at most 1,024; `full` whole pairs, at most 16 |
+| `edit.k` | 0, 1 or 2 |
+| `item.slot` | integer 0..35 |
+| `chat.text`, `cmd.text` | strings of 1..200 characters; `cmd.id` integer 0..`SEQ_MAX` |
+| `rtt` | `c` a number 0..1e15, `last` a number 0..600000 |
+| `step.n` | integer 1..600 |
+| slot ref `[c, i]` | `c` 0..4 and `i` inside that container: 36, 3, 5, 9, 27 slots (whether the open window shows the slot is `applyOp`'s to say) |
+| `e`, `buy.k` | strings of at most 48 characters (`buy.k` at least 1) |
+| `sel.i`, `hotkey.i` | integer 0..8 |
+| `lay.r`, `book.r` | integer inside `RECIPES`; `book.max` 1 or 64 |
+| `sort.w` | 0 or 1; `spend.a` one of `str agi vit arc`; `buyBack.id` integer 1..`SEQ_MAX` |
+| every other field | the boolean it is declared as |
 
 The host wraps the handling of each inbound message in `try / catch`: an exception is logged with its
 stack and closes that connection with `error proto`; the step goes on for everyone else. `sim.step()` is
@@ -1058,7 +1199,11 @@ Host to client
 | `stepped` | `tick` | manual clock: after the requested steps and after every message they produced | resolve `T.step` |
 | `saved` | `ok`, `seq`, `err?` (`seq`: this player's `ackSeq` at the instant the saved state was taken) | after every commit on local transports; on a server only failures are announced, as a toast to everyone | HUD "Saved" mark, or the "Save failed" toast; `session.unsaved` is true while the last `seq` sent is greater than the last `saved.seq` (8.2) |
 
-Wire forms: a slot is `0` (empty), `[k, n]` or `[k, n, m]`.
+Wire forms: a slot is `0` (empty), `[k, n]` or `[k, n, m]`, with `k` the item key and `m` the modifier key,
+both strings (`slotWire`, `wireSlot` in `net/protocol.ts`). An item key that stands alone (`PlayerInfo.held`,
+`armor`) is `''` for none. `event` in `welcome` is `{a, k, g}`, the fields of the `event` message.
+`open` also carries the container's cell (`x`, `y`, `z`) for as long as the one-thread build of stage 1 reads
+it (D21 (f)); a client built on `st.box` ignores it.
 `InvWire = {s: Slot[36], a: Slot[3], c: Slot[5], g: Slot[9], cur: Slot, sel, coins, seed, attr: [str, agi, vit, arc], pts}`.
 `BoxWire = {kind: 'chest', x, y, z, s: Slot[27]} | {kind: 'forge', x, y, z, s: Slot[3], burn, burnMax, prog, need, level} | {kind: 'shop', npc, sold: [id, Slot, price][]}`.
 
@@ -1101,7 +1246,7 @@ Player record, 14 bytes (other players only)
 | 12 | 1 | u8 | `ceil(hp / maxHp * 255)` |
 | 13 | 1 | u8 | dig progress: `floor(progress * 255)`, 0 when not digging (progress = `min(1, (tick - p.dig.t0) * STEP / p.dig.bt)`; for the cracks other players see, nothing is validated with it) |
 
-Creature record, 11 bytes, plus 23 when flag bit 4 is set
+Creature record, 11 bytes, plus 24 when flag bit 4 is set
 
 | Offset | Size | Type | Field |
 | --- | --- | --- | --- |
@@ -1113,7 +1258,7 @@ Creature record, 11 bytes, plus 23 when flag bit 4 is set
 | 8 | 2 | i16 | `round((z - oz) * 32)` |
 | 10 | 1 | u8 | yaw: `round(yaw / (2 * PI) * 256) & 255` |
 
-Boss extension, 23 bytes
+Boss extension, 24 bytes
 
 | Offset | Size | Type | Field |
 | --- | --- | --- | --- |
@@ -1132,6 +1277,12 @@ Boss extension, 23 bytes
 | 18 | 1 | i8 | `b.roll / 1.5708 * 127` |
 | 19 | 3 | i8 x 3 | `b.ax`, `b.ay`, `b.az`, each `* 127` |
 | 22 | 1 | u8 | `min(255, floor(m.age * 10))` |
+| 23 | 1 | u8 | `b.fxm`: the continuous emitters that ran this tick (`FXM` bits of `sim/boss.ts`: 1 telegraph, 2 sight, 4 chargeDust, 8 weaveDust, 16 burrowDust) |
+
+The fractions (`wind` to `scale`) are rounded to the nearest of 255 steps and the signed ones to the nearest
+of 127. `net/protocol.ts` names the kinds (`BOSS_KINDS`) and every flag bit (`SELF_`, `PF_`, `MF_`, `MV_`).
+A player counts as `hurt` for 0.22 s after `hurtTick` and its `tpToggle` is bit 0 of `p.tp`; a creature's
+`tpToggle` is bit 0 of `m.tpn`.
 
 Quantisation error: position 1/64 block, creature yaw 0.7 degrees, player yaw 0.003 degrees.
 A position more than 1,023 blocks from the origin cannot be encoded: such entities are outside every
@@ -1168,7 +1319,9 @@ landing and on entering or leaving a liquid, plus the forced send below. 36 byte
 Forced send: an action is judged from where the client acted. Every action message (`edit`, `use`,
 `talk`, `item`, `atk`, `fire`, `dig`, `ping`) leaves through `session.act(m)`, which sends, in this
 order: a `move` if position, look or flags differ from the last `move` sent; the pending hotbar
-selection as a `sel` op if there is one (5.3); then `m`. The host applies them in that order, so reach,
+selection as a `sel` op if there is one (5.3); then `m`. (For a sequenced `m` the selection has left
+already, in front of the `move`: it was sent when `m` took its `seq`, 3.8. The host only needs both
+in front of `m`.) The host applies them in that order, so reach,
 the body-overlap test of a placement, the origin of a shot and the held item are all tested against
 the state the client used, on every transport and at any latency. (Without this a block placed under
 your own feet during a jump is tested against a body 1 to 3 ticks old that still overlaps the cell, and
@@ -1233,10 +1386,10 @@ arrives already scaled for the recipient.
 | `h` | `['h', crit]` | Crosshair hit mark, to the attacker. |
 | `u` | `['u', key, n, total]` | Pickup line, to the picker. |
 | `ps` | `['ps', id, kind, x, y, z, vx, vy, vz, life, flags, cseq]` | A projectile this client did not know: its position, velocity and remaining life in seconds now. `kind` indexes `Object.keys(PROJECTILES)`. `flags` bit 0: fired by a player. `cseq`: the `fire.seq` that caused it, for the shooter only, else 0. Sent at the spawn to every connection whose player is within `PROJ_R` of it, and afterwards, by the 10 Hz interest sweep (6.4), to any connection whose player has come within `PROJ_R` of a live projectile it has not been told about: a player walking into a fight has every projectile that can hit them. |
-| `pe` | `['pe', id, x, y, z, how]` | Projectile ended: 0 expired, 1 terrain, 2 hit. To every connection that was sent its `ps`. The client also ends a projectile by itself when its life runs out. |
-| `da` | `['da', id, k, n, m, x, y, z, vx, vy, vz, delay]` | Drop entered this client's interest (`DROP_R`), or spawned inside it. Owned drops go to their owner only. |
+| `pe` | `['pe', id, x, y, z, how]` | Projectile ended: 0 expired or withdrawn, 1 terrain, 2 hit. To every connection that was sent its `ps`. The client also ends a projectile by itself when its life runs out. |
+| `da` | `['da', id, k, n, m, x, y, z, vx, vy, vz, delay]` | Drop entered this client's interest (`DROP_R`), or spawned inside it: item key, count, modifier key (`''` for none), position and velocity now, seconds until it can be picked up. Owned drops go to their owner only. |
 | `dn` | `['dn', id, n]` | Drop count changed (merge, partial pickup). |
-| `dd` | `['dd', id, slot]` | Drop gone: picked by `slot` (fly to that player), 0 = expired, merged or out of interest (`DROP_R_OUT`). |
+| `dd` | `['dd', id, slot]` | Drop gone: picked by `slot` (fly to that player), 0 = expired, given up by a full pool, or out of interest (`DROP_R_OUT`). A stack that folds into a drop lying nearby never becomes a drop of its own: the one it joined says `dn`. |
 | `md` | `['md', id, how]` | Creature removed: 0 despawned, 1 killed (play the corpse), 2 boss withdrew. |
 | `mk` | `['mk', id, x, z, t, x, z, t, ...]` | Rain marks of boss `id`: positions and seconds until each strike. |
 | `dg` | `['dg', slot, on, x, y, z]` | Another player started or stopped digging a block. |
@@ -1645,13 +1798,13 @@ reconnect is then a fair answer.
 
 ### 6.5 Bandwidth per client, 8 players
 
-A snapshot is `26 + 14 x (other players in range) + 11 x (creatures in range) + 23 per boss` bytes, 20
+A snapshot is `26 + 14 x (other players in range) + 11 x (creatures in range) + 24 per boss` bytes, 20
 times a second. The creature count is what moves it, and its ceilings come from 7.2 and 7.5:
 
 | Case | Creatures in range | Snapshot | Per second |
 | --- | --- | --- | --- |
 | Typical: own surroundings | 40 | 564 B | 11.3 kB/s |
-| Boss fight, all 8 together (hostile cap 2 x 4.5, passive 41, fish 6, adds 7, minions 8, the boss) | about 75 | 972 B | 19.4 kB/s |
+| Boss fight, all 8 together (hostile cap 2 x 4.5, passive 41, fish 6, adds 7, minions 8, the boss) | about 75 | 973 B | 19.5 kB/s |
 | Raid, all 8 together, no boss (hostile cap (14 + 8) x 4.5 = 99, event creatures up to 29 + difficulty above it, passive 41, fish 6, townsfolk, minions) | about 160 to 200 | 1,884 to 2,324 B | 37.7 to 46.5 kB/s |
 | Hard bound: the whole pool of 320 inside `MOB_R` of one player | 320 | 3,644 B | 72.9 kB/s |
 
@@ -2426,14 +2579,30 @@ and then frozen; for the rest of stage 2 these files change only through the int
 - Replication hooks inside the entity sims, which lanes C and D only consume: in `sim/mobs.ts`,
   `sim/projectiles.ts`, `sim/drops.ts`: wire ids, `Proj.by` and `cseq`, `Drop.owner`,
   `MobSim.hurt(..., by)`, `ProjSim.fire(..., by, cseq)`, and the emit points of `ps`, `pe`, `da`, `dn`,
-  `dd`, `md`, `mk`.
-- `sim/rules.ts`: `breakTimeMin`, `freeSpot`.
+  `dd`, `md`, `mk`. As built (3.4): `ProjSim.fire(kind, x, y, z, dx, dy, dz, dmg, by, cseq = 0, speed?, style,
+  knock, crit, lead = 0): Proj | null`, `psOf`, `PROJ_KEYS`, `ProjSim.byId`; `daOf`, `DropSim.byId`; and on
+  `SimPlayer` the three fields the snapshot's player record needs and no lane owns (`swingSeq`, `usingItem`,
+  `hurtTick`).
+- `sim/rules.ts`: `breakTimeMin`, `freeSpot`; with them `bodyFree` (the shrunk box of 4.5 step 4, which
+  `freeSpot`, the movement check and the placement check all ask) and `maxSpeed(stats, canFly)` (D20 (d)
+  left it to its first caller, `movement.ts`, which cannot add to a frozen file).
 - `client/api.ts`: the interfaces that cross lanes on the client. `DigHost` (`reach`, `breakTime`,
   `onBroken`, `onDigStart`, `onDigTick`: implemented by lane B's `client/blocks.ts`), `ActHost`
   (`primary`, `secondary`: lane D's `client/combat.ts`), `InvChannel` (`nextSeq()`, `send(op)`,
   `internal(seq, op)` for `_held` and `_slot`, `setSel(i)`: lane D's `client/invclient.ts`, called by
   lane B's predicted placement). `player/interact.ts` is changed here to take the two hosts
-  (`tick(dt, input, dig, act, active)`) and is frozen with the rest.
+  (`tick(dt, input, dig, act, active)`) and is frozen with the rest. As built (3.8), five more crossings
+  are settled there: `DigHost.onDig` (what `dig` reports; `Interact` alone knows it), `InvChannel.flushSel`,
+  `EditHost` (lane B's predicted place, door and door toggle, called from lane D's `secondary`), `Bodies`
+  and `Ghosts` (lane C's entity store, asked by lane B's placement and lane D's shot).
+- Beside the two test files named above, `scripts/tests/hooks.test.ts` (the entity sims' events and wire ids,
+  `InlineSource`, `MemStorage`, the three rules) and `scripts/tests/session.test.ts` (`pump`, `act`, `move`).
+- A lane builds beside what runs: until integration, `Game` still constructs the `Sim` on `WorldStore`, and the
+  tree must pass `npm run check` and both smokes after every lane. So a lane does not change a signature that
+  a file outside its own list calls (`Realm`'s constructor and `RealmStore`, `SimDeps`, the functions of
+  `sim/actions.ts` that `game.ts` calls, `EntityStore`'s `begin` / `end` / `sync` / `onFx` / `mobs` / `boss()`,
+  `FxPlay.play` and `burst`, `Windows`' and `Hud`'s constructors); it adds the new path next to the old one,
+  proves it with its tests, and integration switches the callers.
 
 Lanes (parallel, disjoint files):
 
@@ -2886,6 +3055,58 @@ caller stood in one tick of event pressure and then showed the end banner. Conso
 its `Math.random` sat (D21 (j)): the sim decides and emits burst 11. The particle draws of D21 (j) are
 the ones `fxplay.ts` makes to shape a burst. The roll is made on every block tick, as before: up to 4
 puffs a second for one forge and 1.2 on average, where 4.6 says at most 2.
+
+D27. Stage 2.0 (3.3 to 3.8, 4, 11). What the contracts step settled where the document was open, and the
+places where it built something other than what was written. The sections named carry the result; this
+entry is the list.
+(a) Boss extension: 24 bytes, not 23 (4.4). Byte 23 is `b.fxm`, the continuous emitters of the tick. D21 (g)
+made them sim state because three of the five cannot be told from `kind` and `wind` (the dust of a charge
+only during the dash, the dust of a burrow only while it travels, the weave only between attacks), and a
+client that guessed them would not draw what stage 1 draws. One byte per boss per snapshot (6.5).
+(b) `ProjSim.fire` has `cseq` right after `by`, as 11 writes it, in front of the optional `speed`, `style`,
+`knock`, `crit`; the six callers that pass a speed pass `0` before it. It returns the projectile (null when
+the pool is full) and takes `lead` last: the lag compensation of 7.3 is flown inside `fire`, because the
+`ps` must describe the shot after it and a shot can end during it.
+(c) Events of projectiles and drops (3.4, 4.6). The sim names who may be told and the host culls by interest;
+the shooter's `ps` and an owned drop's `da` go to that one slot, so the host needs no look-up to route
+them. `pe` is emitted for every end, expiry included: the host's known sets then need no sweep of their
+own to forget an id, at the price of about 20 bytes per expired projectile to clients that had it.
+`Scope {dim}` takes `not`, as stage 1 already used it.
+(d) Wire ids are 16 bits for projectiles and drops as well as creatures (4.4 gives the width only for
+creatures), from wrapping counters that pass over ids in use.
+(e) `SimPlayer` gains `swingSeq`, `usingItem` and `hurtTick` (3.3). The snapshot's player record carries all
+three, lane C reads them, lane D's attack and shot count the first, the movement stream sets the second,
+and `sim/player.ts` belongs to neither. `actions.attack` and `actions.fire` count a swing, `hurtPlayer`
+stamps the tick and adds the 2 blocks of 7.3 to `speedBudget` now; nothing reads them until stage 2 is
+integrated.
+(f) `rules.ts` also has `bodyFree` and `maxSpeed(stats, canFly)` (11). "Flying is allowed" is the caller's
+to say (creative, or flight granted by a command), since the rule has no player. `freeSpot` takes cell
+centres at whole heights inside a sphere of 4 cells round the body's cell, nearest first with lower cells
+first among equals; it skips columns that are not ready; its second pass (room without footing) is
+what "preferred" means in 4.5.
+(g) `checkC2S` (4.1) refuses undeclared fields and returns the message itself. It does not judge `hello`
+beyond types and loose lengths, and it lets a `hello.proto` of any 16-bit value through, so that a stale
+tab gets `version` and a bad name `name_invalid`, not `proto`. The table in 4.1 is every bound it applies;
+the ones the document did not give (`d` within 1.01, `fire.o` and `ping` near the range of a body, `cmd.text`
+1..200, `step.n` up to 600, `rtt` bounds, `e` and `buy.k` up to 48 characters, `SEQ_MAX`) were chosen here.
+(h) Wire forms (4.3): item and modifier keys travel as strings, `''` for none where a key stands alone;
+`op` is flat; `open` keeps the cell until integration removes the one-thread reader. `dataHash()` is FNV-1a
+over the UTF-16 code units of the five parts joined with `|`.
+(i) `client/api.ts` has five crossings 11 did not list: `DigHost.onDig`, `InvChannel.flushSel`, `EditHost`,
+`Bodies`, `Ghosts` (3.8). Each is a call from one lane's file into another's that would otherwise have
+been agreed between two agents. `nextSeq()` sends a waiting selection itself (3.8, 4.5), which puts that
+`sel` in front of the action's `move` instead of behind it.
+(j) `Session` (3.8) holds inbound messages for every transport, not only the in-thread one, and delivers
+them only in `pump()`. A socket message therefore waits for the next frame's pump instead of running in
+the socket's callback; at 60 frames a second that is under 17 ms, inside the interpolation delay, and it
+makes a handler run at the same points of a frame on every transport.
+(k) `tsconfig.sim.json` includes `net/transport.ts` (2.1), so the pure program checks it before `host.ts`
+exists to pull it in. `StorageError` takes `(code, msg)`. `InlineSource` is built here, with the rest of
+`chunksource.ts`, as `MemStorage` is with `storage.ts`.
+(l) Two test files beyond the two that 11 names: `hooks.test.ts` and `session.test.ts`.
+(m) What a solo player can notice: nothing. The new events reach `Game`'s sink and fall through to the
+entity store, which acts on none of them (`pe` with how 0 included); ids, random draws and tick order are
+as they were.
 
 ---
 

@@ -9,13 +9,14 @@ import { BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
 import { type Item, ITEMS, TIERS, item } from './data/items';
 import { NPCS } from './data/npcs';
+import type { ActHost, DigHost } from './client/api';
 import { EntityStore } from './client/entities';
 import { FxPlay, tintOf } from './client/fxplay';
 import { LOCAL_ID, fromLegacy, toLegacy } from './client/legacy';
 import { WorldStore } from './client/worldstore';
 import type { S2C } from './net/protocol';
 import { Input } from './player/input';
-import { Interact, InteractHost } from './player/interact';
+import { Interact } from './player/interact';
 import { Player, STRIDE } from './player/player';
 import { buildArm } from './player/viewmodel';
 import { BoxBatch, Particles, makeItemMaterial } from './render/batches';
@@ -59,7 +60,7 @@ for (const it of ITEMS.values()) if (it.use?.startsWith('summon')) {
   SUMMON_USE[n] = it.use; ALTAR_OFFER[n] = `Right-click: offer the ${it.name}`; ALTAR_NEED[n] = `Needs ${/^[AEIOU]/.test(it.name) ? 'an' : 'a'} ${it.name}`;
 }
 
-export class Game implements InteractHost, Sink {
+export class Game implements DigHost, ActHost, Sink {
   readonly gfx: Gfx; readonly pool: WorkerPool; readonly world: World; readonly input: Input;
   readonly player = new Player(); readonly interact: Interact; readonly debug: DebugOverlay; readonly climate: Climate;
   readonly sim: Sim; readonly me: SimPlayer; readonly fx: FxPlay;
@@ -265,7 +266,7 @@ export class Game implements InteractHost, Sink {
     this.toast(text, color); if (sound) this.audio.play('error', 0.5); this.warnT = gap;
   }
 
-  // ---- InteractHost: what the hands do. The decision is made here; what it changes is the simulation's. ----
+  // ---- DigHost and ActHost: what the hands do. The decision is made here; what it changes is the simulation's. ----
   reach(): number { return rules.reach(this.stats, this.me.modes); }
   breakTime(id: number): number { return rules.breakTime(id, this.inv, this.stats, this.me.modes, this.player); }
   onDigTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void {
@@ -275,6 +276,8 @@ export class Game implements InteractHost, Sink {
     for (let i = 0; i < 3; i++) this.particles.spawn(x + 0.5 + nx * 0.55 + (Math.random() - 0.5) * 0.5, y + 0.5 + ny * 0.55 + (Math.random() - 0.5) * 0.5, z + 0.5 + nz * 0.55 + (Math.random() - 0.5) * 0.5,
       nx * 1.5 + (Math.random() - 0.5) * 2, ny * 1.5 + Math.random() * 2, nz * 1.5 + (Math.random() - 0.5) * 2, 0.5, 0.12, tintOf(id), 0, 14, T_LAYER[id * 6], true, (l >> 4) / 15, (l & 15) / 15);
   }
+  /** The simulation is not told of a dig while it runs in this thread: it hears of the break. */
+  onDig(_on: boolean, _x: number, _y: number, _z: number): void {}
   /** Auto-tool: when mining starts with a tool (or nothing) in hand, switch to the best hotbar tool for the block. */
   onDigStart(id: number): void {
     const b = BLOCKS[id], inv = this.inv, h = inv.held(), cur = h ? item(h.k).tool : undefined;
@@ -447,7 +450,7 @@ export class Game implements InteractHost, Sink {
     if (sn !== this.stepN) { this.stepN = sn; if (p.onGround) { const below = w.getBlock(Math.floor(p.x), Math.floor(p.y - 0.2), Math.floor(p.z)); if (below) this.audio.play('step_' + BLOCKS[below].sound, p.sneaking ? 0.25 : 0.6); } }
 
     me.uiOpen = this.win.open;
-    this.interact.tick(dt, inp, this, inp.locked && !st.dead);
+    this.interact.tick(dt, inp, this, this, inp.locked && !st.dead);
     if (inp.clicks[1] && this.interact.hit.hit && this.op({ o: 'pick', id: this.interact.hit.id }).ok) this.audio.play('click', 0.4);
 
     // the world: one step of the simulation, with the views told before and after

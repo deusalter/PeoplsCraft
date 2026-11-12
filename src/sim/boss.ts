@@ -105,7 +105,7 @@ export function bossTick(realm: Realm, m: Mob, dt: number): void {
       const mx = b.marks[i], mz = b.marks[i + 1], gy = floorNear(w, mx, mz, p.y);
       // strikes start under any roof, and are dropped where there is no room for one
       const top = roofY(w, mx, mz, gy);
-      if (top - gy >= 2) realm.proj.fire(RAIN_PROJ[b.marks[i + 3]] ?? 'wardenorb', mx, Math.min(gy + 16, top - 0.6), mz, 0, -1, 0, b.marks[i + 4] * dmgMul, null, 26);
+      if (top - gy >= 2) realm.proj.fire(RAIN_PROJ[b.marks[i + 3]] ?? 'wardenorb', mx, Math.min(gy + 16, top - 0.6), mz, 0, -1, 0, b.marks[i + 4] * dmgMul, null, 0, 26);
       b.marks.splice(i, 5); i -= 5;
     }
   }
@@ -209,7 +209,7 @@ export function bossTick(realm: Realm, m: Mob, dt: number): void {
           const n = Math.floor((b.t - 0.6) / 0.13);
           while (b.step <= n) {
             const base = b.step * 0.13 * a.spin;
-            for (let i = 0; i < a.arms; i++) { const an = base + (i / a.arms) * 6.283; realm.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), flatDy, Math.cos(an), a.dmg * dmgMul, null, 9); }
+            for (let i = 0; i < a.arms; i++) { const an = base + (i / a.arms) * 6.283; realm.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), flatDy, Math.cos(an), a.dmg * dmgMul, null, 0, 9); }
             if (b.step % 3 === 0) realm.sound('shoot', 0.4, 1.4, m.x, m.y, m.z);
             b.step++;
           }
@@ -232,7 +232,7 @@ export function bossTick(realm: Realm, m: Mob, dt: number): void {
       }
       case 'ring': {
         if (b.t < 0.55) { wn = b.t / 0.55; telegraph(); }
-        else { b.strike = 1; realm.sound('shoot', 1, 0.5, m.x, m.y, m.z); for (let i = 0; i < a.n; i++) { const an = (i / a.n) * 6.283 + b.orbit; realm.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), flatDy, Math.cos(an), a.dmg * dmgMul, null, 11); } end(); }
+        else { b.strike = 1; realm.sound('shoot', 1, 0.5, m.x, m.y, m.z); for (let i = 0; i < a.n; i++) { const an = (i / a.n) * 6.283 + b.orbit; realm.proj.fire(a.proj, cx, flatY, cz, Math.sin(an), flatDy, Math.cos(an), a.dmg * dmgMul, null, 0, 11); } end(); }
         break;
       }
       case 'summon': {
@@ -271,7 +271,7 @@ export function bossTick(realm: Realm, m: Mob, dt: number): void {
           b.ax += (tx - b.ax) * k; b.ay += (ty - b.ay) * k; b.az += (tz - b.az) * k;
           const l = Math.hypot(b.ax, b.ay, b.az) || 1; b.ax /= l; b.ay /= l; b.az /= l;
           const n = Math.floor((b.t - a.windup) / 0.045);
-          while (b.step <= n) { realm.proj.fire(a.proj, cx, cy, cz, b.ax, b.ay, b.az, a.dmg * dmgMul, null, 42); b.step++; }
+          while (b.step <= n) { realm.proj.fire(a.proj, cx, cy, cz, b.ax, b.ay, b.az, a.dmg * dmgMul, null, 0, 42); b.step++; }
           if (rnd() < dt * 8) realm.sound('magic', 0.5, 0.5, m.x, m.y, m.z);
         } else end();
         break;

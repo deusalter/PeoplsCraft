@@ -20,25 +20,44 @@ export type Fx =
   | ['h', boolean]
   /** Pickup line, to the picker: item key, count, total now held. */
   | ['u', string, number, number]
-  /** Projectile ended: id, where, how (0 expired, 1 terrain, 2 hit). */
+  /** A projectile as it is now: id, kind (index into PROJ_KEYS), position, velocity, seconds of life left, flags
+   *  (bit 0: fired by a player), and the `seq` of the `fire` that caused it (for the shooter alone, else 0). */
+  | ['ps', number, number, number, number, number, number, number, number, number, number, number]
+  /** Projectile ended: id, where, how (0 expired or withdrawn, 1 terrain, 2 hit). */
   | ['pe', number, number, number, number, number]
+  /** A drop as it is now: id, item key, count, modifier ('' for none), position, velocity, seconds until it can be picked up. */
+  | ['da', number, string, number, string, number, number, number, number, number, number, number]
+  /** Drop count changed: id, count. */
+  | ['dn', number, number]
+  /** Drop gone: id, and the slot of the player who picked it up (0: expired, replaced or out of interest). */
+  | ['dd', number, number]
   /** Creature removed: id, how (0 despawned, 1 killed, 2 boss withdrew). */
   | ['md', number, number]
   /** Rain marks of boss `id`: x, z and seconds until the strike, repeated. */
-  | ['mk', number, ...number[]];
+  | ['mk', number, ...number[]]
+  /** Another player started or stopped digging a block: slot, on, cell. */
+  | ['dg', number, boolean, number, number, number]
+  /** Ping: slot, position. */
+  | ['pg', number, number, number, number];
 
+/** Who an event is for. The host resolves it against its connections.
+ *  `ps`, `pe`, `da`, `dn` and `dd` are not culled by the scope's reach: of the connections a scope names, the host tells
+ *  those whose interest set holds, or now takes in, the projectile or drop. */
 export type Scope =
+  /** One player slot. */
   | { p: number }
+  /** Players of a realm within `r` of a point, optionally except one slot. */
   | { dim: number; x: number; y: number; z: number; r: number; not?: number }
+  /** Everyone in a realm, optionally except one slot. */
   | { dim: number; not?: number }
   | { all: true };
 
 export interface Sink {
-  /** Side effects, to whoever the scope covers. */
+  /** Side effects, to whoever the scope covers: batched per connection and flushed every tick as one `fx` message. */
   emit(to: Scope, ev: Fx): void;
-  /** Reliable state for one player slot. */
+  /** Reliable state for one player slot (`st`, `stats`, `tp`, `hurt`, `dead`, `open`, `rej`, `cmdr`). */
   send(slot: number, m: S2C): void;
-  /** Reliable state for everyone. */
+  /** Reliable state for everyone (`flags`, `quest`, `time`, `event`, `pl`, `chat`). */
   broadcast(m: S2C): void;
 }
 
@@ -68,5 +87,5 @@ export const BURST = {
   summoned: 12,
 } as const;
 
-/** Ranges the positional scopes use (blocks). */
-export const SOUND_R = 40, BURST_R = 64, FLOAT_R = 32;
+/** Ranges the positional scopes use (blocks). A forge's smoke is told to players within the last. */
+export const SOUND_R = 40, BURST_R = 64, FLOAT_R = 32, SMOKE_R = 16;

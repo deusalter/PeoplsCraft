@@ -59,9 +59,13 @@ src/
                the chunk generation job;
                invops.ts: every change to a pack, the cursor, the crafting grid, equipment, a shop or an
                open chest or forge is one op, carried out by its applyOp and by nothing else
-  net/         messages the simulation sends a client
+  net/         the wire between a host and a client: every message both ways (protocol.ts), the two binary
+               ones byte by byte (snapshot.ts), base64 and the edit-set encodings (codec.ts), the check every
+               inbound message passes (validate.ts), the two ends of a connection (transport.ts)
   client/      what stands between the simulation and the screen: entity views, fx playback, the adapter that
-               lets the simulation run on the loaded World, the save format bridge
+               lets the simulation run on the loaded World, the save format bridge; session.ts (messages in
+               and actions out, in the order a host must see them) and api.ts (what client modules ask of
+               each other). The game does not use the wire yet: it still calls the simulation directly
   render/      atlas + texture painters, shaders, renderer/sky/post (gfx.ts), instanced batches, icons, item models,
                creatures, projectiles and drops as drawn (mobView, projView, dropView)
   player/      input, first-person camera, block interaction

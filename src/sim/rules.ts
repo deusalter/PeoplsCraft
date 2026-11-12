@@ -1,6 +1,6 @@
 // Rules both sides of the game apply: the simulation to decide, the client to predict and to prompt.
 // Pure functions of their arguments.
-import { SEA } from '../core/constants';
+import { CH, SEA } from '../core/constants';
 import { BIOME } from '../data/biomes';
 import { BLOCKS, T_DAMAGE, T_LIQUID, T_SOLID } from '../data/blocks';
 import { Item, ITEMS, item, matches, rollModifier } from '../data/items';
@@ -8,7 +8,9 @@ import { LOOT } from '../data/loot';
 import type { NpcDef } from '../data/npcs';
 import { SMELTS } from '../data/recipes';
 import { Climate, newCol } from '../world/gen/climate';
+import { SPRINT } from './body';
 import type { Inventory, Slot } from './inventory';
+import { boxFree } from './physics';
 import type { PlayerStats } from './stats';
 import type { VoxelRead } from './voxels';
 
@@ -30,11 +32,17 @@ export function breakTime(id: number, inv: Inventory, stats: PlayerStats, modes:
   if (!body.onGround && !body.inWater) speed /= 2.5;
   return (b.hard * (canHarvest(id, inv) ? 1.5 : 5)) / speed;
 }
+const AT_REST = { headInWater: false, onGround: true, inWater: false };
+/** The shortest `breakTime` the body's state allows: on the ground, out of water. A host holds a dig to this,
+ *  because the flags it knows of the body are older than the ones the client mined with. */
+export function breakTimeMin(id: number, inv: Inventory, stats: PlayerStats, modes: { creative: boolean }): number { return breakTime(id, inv, stats, modes, AT_REST); }
 /** Swings, shots or casts per second with the held item. */
 export function attackRate(inv: Inventory, stats: PlayerStats): number {
   const h = inv.held(), wpn = h ? item(h.k).weapon : undefined;
   return (wpn?.rate ?? 2.2) * (1 + stats.d.atkSpeed);
 }
+/** Blocks per second a body can honestly cover on the level; `canFly`: flight is open to this player. */
+export function maxSpeed(stats: PlayerStats, canFly: boolean): number { return canFly ? 24 : SPRINT * (1 + stats.d.speed) * Math.max(1, 1 + stats.d.swim) + 1.2; }
 
 // ---- slots -----------------------------------------------------------------------------------
 export type SlotKind = 'inv' | 'armor' | 'acc' | 'craft' | 'out' | 'chest' | 'fin' | 'ffuel' | 'fout';
@@ -104,6 +112,35 @@ export function standSpot(w: VoxelRead, x: number, y: number, z: number): [numbe
     if (T_SOLID[below] && !T_DAMAGE[below] && !T_SOLID[a] && !T_LIQUID[a] && !T_DAMAGE[a] && !T_SOLID[b] && !T_LIQUID[b]) return [cx + 0.5, y + 0.05, cz + 0.5];
   }
   return [x + 0.5, y + 0.6, z + 0.5];
+}
+/** How far a body is drawn in on every side when a host asks whether it has room. */
+export const BODY_SHRINK = 0.05;
+/** True when a body of half-width `hw` and height `h`, drawn in by BODY_SHRINK, overlaps no solid block with its feet at (x, y, z). */
+export function bodyFree(w: VoxelRead, x: number, y: number, z: number, hw = 0.3, h = 1.8): boolean {
+  const s = BODY_SHRINK;
+  return boxFree(w, x - hw + s, y + s, z - hw + s, x + hw - s, y + h - s, z + hw - s);
+}
+const SPOTS: Int8Array = (() => {
+  const l: [number, number, number, number][] = [];
+  for (let dy = -4; dy <= 4; dy++) for (let dz = -4; dz <= 4; dz++) for (let dx = -4; dx <= 4; dx++) { const d = dx * dx + dy * dy + dz * dz; if (d <= 16) l.push([d, dx, dy, dz]); }
+  l.sort((a, b) => a[0] - b[0]);
+  return Int8Array.from(l.flatMap((q) => [q[1], q[2], q[3]]));
+})();
+/** Where to put a body that has no room at (x, y, z): the nearest cell centre within 4 blocks where it has room and stands
+ *  on something solid; failing that the nearest where it has room at all; failing that straight up to the first free space.
+ *  The position itself when the body has room there already. */
+export function freeSpot(w: VoxelRead, x: number, y: number, z: number, hw = 0.3, h = 1.8): [number, number, number] {
+  if (bodyFree(w, x, y, z, hw, h)) return [x, y, z];
+  const bx = Math.floor(x), by = Math.floor(y), bz = Math.floor(z);
+  for (let pass = 0; pass < 2; pass++) for (let i = 0; i < SPOTS.length; i += 3) {
+    const cx = bx + SPOTS[i], cy = by + SPOTS[i + 1], cz = bz + SPOTS[i + 2];
+    if (cy < 1 || cy > CH || !w.ready(cx, cz)) continue;
+    if (pass === 0 && !T_SOLID[w.getBlock(cx, cy - 1, cz)]) continue;
+    if (bodyFree(w, cx + 0.5, cy, cz + 0.5, hw, h)) return [cx + 0.5, cy, cz + 0.5];
+  }
+  let cy = by + 1;
+  while (cy < CH && !bodyFree(w, x, cy, z, hw, h)) cy++;
+  return [x, cy, z];
 }
 /** Where a new world starts, as x and z: the first gentle dry land on a spiral out from the origin. */
 export function findSpawn(climate: Climate): [number, number] {

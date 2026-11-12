@@ -206,6 +206,7 @@ export function consume(sim: Sim, p: SimPlayer, slot: number): number {
 export function attack(sim: Sim, p: SimPlayer, mobId: number, dx: number, dz: number): boolean {
   const mobs = sim.realms[p.dim].mobs, m = mobs.byId(mobId), st = p.stats, it = p.inv.held(), wpn = it ? item(it.k).weapon : undefined;
   if (!m || st.dead) { sim.refused.atk++; return false; }
+  p.swingSeq++;
   const crit = sim.rnd() < st.d.crit;
   const dmg = (wpn?.dmg ?? 2) * st.dmgMult('melee') * (crit ? 2 : 1) * (0.92 + sim.rnd() * 0.16);
   mobs.hurt(m, dmg, dx, dz, wpn?.knock ?? 3, crit, p);
@@ -226,15 +227,16 @@ export function fire(sim: Sim, p: SimPlayer, ox: number, oy: number, oz: number,
     const a = inv.slots[slot]!, extra = item(a.k).ammoDmg ?? 0;
     if (--a.n <= 0) inv.slots[slot] = null;
     inv.touch();
-    w.proj.fire('arrow', ox + dx * 0.4, oy - 0.12 + dy * 0.4, oz + dz * 0.4, dx, dy + 0.02, dz, (wpn.dmg + extra) * st.dmgMult('ranged') * (crit ? 2 : 1), p, wpn.projSpeed, 'ranged', wpn.knock, crit);
+    w.proj.fire('arrow', ox + dx * 0.4, oy - 0.12 + dy * 0.4, oz + dz * 0.4, dx, dy + 0.02, dz, (wpn.dmg + extra) * st.dmgMult('ranged') * (crit ? 2 : 1), p, 0, wpn.projSpeed, 'ranged', wpn.knock, crit);
     sim.sink.emit(others, ['s', 'bow', 1, 1, ox, oy, oz]);
+    p.swingSeq++;
     return 1;
   }
   const cost = wpn.mana ?? 0;
   if (st.mana < cost) return 3;
   st.mana -= cost;
   if (style === 'magic') {
-    w.proj.fire(wpn.proj!, ox + dx * 0.5, oy - 0.15 + dy * 0.5, oz + dz * 0.5, dx, dy, dz, wpn.dmg * st.dmgMult('magic') * (crit ? 2 : 1), p, wpn.projSpeed, 'magic', wpn.knock, crit);
+    w.proj.fire(wpn.proj!, ox + dx * 0.5, oy - 0.15 + dy * 0.5, oz + dz * 0.5, dx, dy, dz, wpn.dmg * st.dmgMult('magic') * (crit ? 2 : 1), p, 0, wpn.projSpeed, 'magic', wpn.knock, crit);
     sim.sink.emit(others, ['s', 'magic', 1, 1, ox, oy, oz]);
   } else {
     const mine = w.mobs.list.filter((m) => m.active && m.def.ai === 'minion' && m.owner === p.id);
@@ -242,5 +244,6 @@ export function fire(sim: Sim, p: SimPlayer, ox: number, oy: number, oz: number,
     const m = w.mobs.spawn(wpn.minion!, b.x + dx, b.y + 1.5, b.z + dz);
     if (m) { m.minionDmg = wpn.dmg; m.owner = p.id; sim.sink.emit({ p: p.slot }, ['s', 'summon', 1, 1]); w.burst(BURST.puff, m.x, m.y + 0.3, m.z, 14, m.def.parts[0].c); }
   }
+  p.swingSeq++;
   return 1;
 }

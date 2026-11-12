@@ -2,6 +2,7 @@
 import { T_LIQUID } from '../data/blocks';
 import { DIMS } from '../data/dims';
 import { MOB_LIST, MobDef, mob as mobDef } from '../data/mobs';
+import { ID_MAX } from '../net/protocol';
 import { type BossState, bossTick, newBossState } from './boss';
 import { dayAmount } from './clock';
 import { BURST } from './fx';
@@ -66,13 +67,22 @@ export class MobSim {
     const m = l[i], d = mobDef(key);
     if (i >= this.hi) this.hi = i + 1;
     Object.assign(m, new Mob());
-    m.active = true; m.def = d; m.id = this.realm.sim.mobId++;
+    m.active = true; m.def = d; m.id = this.newId();
     m.x = x; m.y = y; m.z = z; m.hw = d.hw; m.h = d.h; m.hp = m.maxHp = d.hp;
     m.yaw = rnd() * 6.283; m.tx = x; m.tz = z; m.timer = rnd() * 2;
     m.noclip = d.ai === 'minion' || (!!d.boss && d.boss.move !== 'walk');
     if (d.boss) { m.boss = newBossState(m, rnd); m.dmgMul = 1.4; }
     m.ry = m.yaw;
     return m;
+  }
+  /** The id a creature travels under: 1..65535 from one counter for all realms, passing over any still alive here. */
+  private newId(): number {
+    const sim = this.realm.sim;
+    for (;;) {
+      const id = sim.mobId;
+      sim.mobId = id >= ID_MAX ? 1 : id + 1;
+      if (!this.byId(id)) return id;
+    }
   }
   /** Take a creature out of the world without a death: how 0 despawned, 2 a boss withdrew. */
   remove(m: Mob, how = 0): void { if (!m.active) return; m.active = false; this.realm.sim.sink.emit({ dim: this.realm.dim }, ['md', m.id, how]); }

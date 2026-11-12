@@ -4,23 +4,9 @@ import { T_BOX, texLayer } from '../data/blocks';
 import { U } from '../render/gfx';
 import type { World } from '../world/world';
 import type { Input } from './input';
+import type { ActHost, DigHost } from '../client/api';
 import { RayHit, newRayHit, raycast } from '../sim/physics';
 import type { Player } from './player';
-
-export interface InteractHost {
-  reach(): number;
-  /** Seconds to break the block with the held item; Infinity if it cannot be broken. */
-  breakTime(id: number): number;
-  onBroken(x: number, y: number, z: number, id: number): void;
-  /** Called once when mining turns to a new block, before its break time is read.
-   *  Not called while the press began as an attack, or within a second of the last attack. */
-  onDigStart(id: number): void;
-  onDigTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void;
-  /** Left click. Return true if something other than mining consumed it (an attack). */
-  primary(pressed: boolean, held: boolean): boolean;
-  /** Right click. `hit` is the targeted block if any. Return true if consumed. */
-  secondary(hit: RayHit | null, pressed: boolean): boolean;
-}
 
 const CRACK_VERT = /* glsl */ `out vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
 const CRACK_FRAG = /* glsl */ `precision highp float; precision highp sampler2DArray; uniform sampler2DArray uAtlas; uniform float uLayer; in vec2 vUv;
@@ -33,6 +19,8 @@ export class Interact {
   private breakCd = 0; private useCd = 0; private digT = 0;
   /** The current press hit a mob, and seconds since the last attack: no auto tool switch mid-fight. */
   private fought = false; private fightT = 0;
+  /** The block progress was last reported building on, and whether it still is. */
+  private digOn = false; private dx = 0; private dy = 0; private dz = 0;
   private outline: THREE.LineSegments;
   private crack: THREE.Mesh; private crackMat: THREE.ShaderMaterial;
   private dir = new THREE.Vector3();
@@ -71,38 +59,51 @@ export class Interact {
     } else { this.outline.visible = false; this.crack.visible = false; }
   }
 
-  /** Fixed-step update. Targets from the same eye position the last frame was drawn from. */
-  tick(dt: number, input: Input, host: InteractHost, active: boolean): void {
+  /** Tell the host when progress starts to build on a block, moves to another, or stops. */
+  private digging(dig: DigHost, on: boolean, x: number, y: number, z: number): void {
+    if (on ? this.digOn && x === this.dx && y === this.dy && z === this.dz : !this.digOn) return;
+    if (on) { this.dx = x; this.dy = y; this.dz = z; }
+    this.digOn = on;
+    dig.onDig(on, this.dx, this.dy, this.dz);
+  }
+
+  /** Fixed-step update. Targets from the same eye position the last frame was drawn from.
+   *  `dig` is asked about mining, `act` about what a click does before it is a dig or a placement. */
+  tick(dt: number, input: Input, dig: DigHost, act: ActHost, active: boolean): void {
     const p = this.player, h = this.hit, d = p.dir(this.dir);
-    if (!active) { h.hit = false; this.progress = 0; this.fought = false; return; }
-    raycast(this.world, p.ex, p.ey, p.ez, d.x, d.y, d.z, host.reach(), h);
+    if (!active) { h.hit = false; this.progress = 0; this.fought = false; this.digging(dig, false, 0, 0, 0); return; }
+    raycast(this.world, p.ex, p.ey, p.ez, d.x, d.y, d.z, dig.reach(), h);
     if (this.breakCd > 0) this.breakCd -= dt;
     if (this.useCd > 0) this.useCd -= dt;
 
     // a click released before this tick still counts as held for one tick, so quick taps are never lost
     const held = input.buttons[0] || input.clicks[0];
-    const consumed = host.primary(input.clicks[0], held);
+    const consumed = act.primary(input.clicks[0], held);
     if (this.fightT > 0) this.fightT -= dt;
     if (consumed) { this.fought = true; this.fightT = 1; } else if (!held) this.fought = false;
     // never swap out the tool the player is fighting with when the mob leaves the crosshair
     const auto = !this.fought && this.fightT <= 0;
+    let mining = false;
     if (h.hit && held && !consumed) {
-      if (h.x !== this.tx || h.y !== this.ty || h.z !== this.tz) { this.tx = h.x; this.ty = h.y; this.tz = h.z; this.progress = 0; if (auto) host.onDigStart(h.id); }
-      else if (this.progress === 0 && auto) host.onDigStart(h.id);   // a fresh press on the block mined last
-      const bt = host.breakTime(h.id);
-      if (this.breakCd <= 0 && bt !== Infinity) {
+      if (h.x !== this.tx || h.y !== this.ty || h.z !== this.tz) { this.tx = h.x; this.ty = h.y; this.tz = h.z; this.progress = 0; if (auto) dig.onDigStart(h.id); }
+      else if (this.progress === 0 && auto) dig.onDigStart(h.id);   // a fresh press on the block mined last
+      const bt = dig.breakTime(h.id);
+      mining = this.breakCd <= 0 && bt !== Infinity;
+      if (mining) {
+        this.digging(dig, true, h.x, h.y, h.z);
         this.progress += bt <= 0 ? 1 : dt / bt;
         this.digT -= dt;
-        if (this.digT <= 0) { this.digT = 0.22; host.onDigTick(h.x, h.y, h.z, h.id, h.nx, h.ny, h.nz); }
+        if (this.digT <= 0) { this.digT = 0.22; dig.onDigTick(h.x, h.y, h.z, h.id, h.nx, h.ny, h.nz); }
         if (this.progress >= 1) {
-          host.onBroken(h.x, h.y, h.z, h.id);
+          dig.onBroken(h.x, h.y, h.z, h.id);
           this.progress = 0; this.breakCd = bt <= 0.06 ? 0.12 : 0.1; this.ty = -1;
         }
       }
     } else { this.progress = 0; this.digT = 0; }
+    if (!mining) this.digging(dig, false, 0, 0, 0);
 
     if (input.clicks[2] || (input.buttons[2] && this.useCd <= 0)) {
-      if (host.secondary(h.hit ? h : null, input.clicks[2])) this.useCd = 0.22;
+      if (act.secondary(h.hit ? h : null, input.clicks[2])) this.useCd = 0.22;
       else if (input.clicks[2]) this.useCd = 0.22;
     }
   }
