@@ -1,9 +1,14 @@
-// Main-thread chunk manager. Owns block data, schedules worker jobs nearest-first,
+// Main-thread chunk manager. Holds the chunk records, schedules worker jobs nearest-first,
 // uploads meshes inside a per-frame budget and unloads by distance.
+// Two ways to fill the records: from the generator and the save loader (the World the simulation runs on in this
+// thread), or, after connect(), through a ClientVoxels that subscribes each chunk to the host and readies it when
+// its generation and its edit set have both arrived (4.7).
 import * as THREE from 'three';
 import { BUILD_MAX, CH, CVOL, chunkKey } from '../core/constants';
 import { T_ATTEN, T_EMITS, T_OPAQUE } from '../data/blocks';
 import { U } from '../render/gfx';
+import { ClientVoxels, VoxChunk } from '../net/clientvoxels';
+import { hashBlocks } from '../sim/genjob';
 import type { BlockEnt } from '../sim/voxels';
 import type { EntInit } from './gen/types';
 import type { MeshPart } from './mesher';
@@ -12,17 +17,13 @@ import { WorkerPool } from './pool';
 /** `pal` is the index of the block-id palette the chunk was written with (see Game.palettes). */
 export interface SavedChunk { blocks: Uint8Array; biomes: Uint8Array; hasEmit: boolean; ents: BlockEnt[]; pal?: number }
 
-export class Chunk {
-  blocks: Uint8Array | null = null;
+export class Chunk extends VoxChunk {
   light: Uint8Array | null = null;
-  biomes: Uint8Array | null = null;
-  state = 0;            // 0 new, 1 loading, 2 ready
   dirty = true; pending = false; meshed = false; urgent = false;
-  rev = 0; modified = false; hasEmit = false;
+  modified = false;
   fails = 0;            // worker or load failures in a row (retries are capped)
   meshes: (THREE.Mesh | null)[] = [null, null, null];
   ents = new Map<number, BlockEnt>();
-  constructor(readonly cx: number, readonly cz: number, readonly key: number) {}
 }
 
 // Chunk meshes are culled through Mesh.intersectsFrustum, which three calls for the main and the shadow camera:
@@ -50,6 +51,8 @@ export class World {
   onChunkReady: ((c: Chunk, fresh: boolean, ents: EntInit[]) => void) | null = null;
   meshMs = 0;
   uploadsThisFrame = 0;
+  /** The block store when the world is connected to a host; null on the in-thread simulation's path. */
+  vox: ClientVoxels<Chunk> | null = null;
 
   private offsets = new Int16Array(0);
   private results: any[] = [];
@@ -81,8 +84,29 @@ export class World {
     list.forEach((o, i) => { this.offsets[i * 2] = o[1]; this.offsets[i * 2 + 1] = o[2]; });
     this.scan = 0; this.pcx = 1e9;
   }
-  /** View distance in chunks: the setting, cut down to what the dimension's fog lets through. */
+  /** Fill the records through a ClientVoxels from now on: every record made is subscribed, every record dropped is
+   *  unsubscribed, and a record is ready only when the host's edit set is in as well. The caller attaches the
+   *  store to its session and calls its `tick` and `flush` from the frame. */
+  connect(): ClientVoxels<Chunk> {
+    if (this.vox) return this.vox;
+    this.clear(false);
+    const v = new ClientVoxels<Chunk>((cx, cz, key) => new Chunk(cx, cz, key), this.chunks);
+    v.dim = this.dim;
+    v.onCellChange = (c, x, _y, z, old, id) => this.cellChanged(c, x & 15, z & 15, old, id);
+    v.onReady = (c) => {
+      // after a resync the neighbours still hold meshes made against the old blocks
+      c.fails = 0; this.markDirty(c); this.markAround(c); this.scan = 0; this.pump();
+    };
+    v.onReplace = (c) => { this.markDirty(c); this.markAround(c); };
+    v.onRegen = () => { this.scan = 0; };
+    v.onDrop = (c) => this.disposeMeshes(c);
+    this.vox = v;
+    return v;
+  }
+
+  /** View distance in chunks: the setting, cut down to what the dimension's fog lets through, and to the host's limit. */
   setView(chunks: number, fogScale: number): void {
+    if (this.vox) chunks = Math.min(chunks, this.vox.cfg.viewMax);
     const r = Math.min(chunks, Math.max(4, Math.ceil(chunks * fogScale) + 1));
     if (r !== this.renderDist) this.setRenderDist(r);
   }
@@ -143,6 +167,13 @@ export class World {
     c.blocks[i] = id; c.modified = true;
     if (T_EMITS[id]) c.hasEmit = true;
     if (c.ents.size && c.ents.has(i) && !silent) c.ents.delete(i);
+    this.cellChanged(c, lx, lz, old, id);
+    if (!silent && this.onBlockChange) this.onBlockChange(x, y, z, old, id);
+    return true;
+  }
+  /** A cell of chunk `c` at local (lx, lz) changed from `old` to `id`: the chunk and the neighbours its light reaches need meshing. */
+  private cellChanged(c: Chunk, lx: number, lz: number, old: number, id: number): void {
+    const cx = c.cx, cz = c.cz;
     this.markDirty(c);
     // light can travel 15 blocks, so neighbours inside that reach need a new mesh too. A swap that cannot change
     // light (same opacity and attenuation, no emitter) only shows to a neighbour through its one-column rim.
@@ -154,11 +185,15 @@ export class World {
       const n = this.chunkAt(cx + dx, cz + dz);
       if (n && n.state === 2) this.markDirty(n);
     }
-    if (!silent && this.onBlockChange) this.onBlockChange(x, y, z, old, id);
-    return true;
+  }
+  private markAround(c: Chunk): void {
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      const n = (dx || dz) ? this.chunkAt(c.cx + dx, c.cz + dz) : null;
+      if (n && n.state === 2) this.markDirty(n);
+    }
   }
   private markDirty(c: Chunk): void {
-    c.dirty = true; c.rev++;
+    c.dirty = true;
     if (c.meshed && !c.urgent) { c.urgent = true; this.urgent.push(c); }
     this.scan = 0;
   }
@@ -216,7 +251,7 @@ export class World {
     const urgent = this.urgent;
     for (let i = 0; i < urgent.length; i++) {
       const c = urgent[i];
-      if (!c.dirty || c.state !== 2 || !this.chunks.has(c.key)) { c.urgent = false; urgent.splice(i--, 1); continue; }
+      if (!c.dirty || c.state !== 2 || this.chunks.get(c.key) !== c) { c.urgent = false; urgent.splice(i--, 1); continue; }
       if (c.pending || !this.neighborsReady(c)) continue;
       c.urgent = false; urgent.splice(i, 1);
       this.sendMesh(c, true);
@@ -229,7 +264,10 @@ export class World {
     for (let i = this.scan; i < offs.length; i += 2) {
       const dx = offs[i], dz = offs[i + 1], cx = this.pcx + dx, cz = this.pcz + dz, key = chunkKey(cx, cz);
       let c = this.chunks.get(key);
-      if (!c) { c = new Chunk(cx, cz, key); this.chunks.set(key, c); }
+      if (!c) {
+        if (this.vox) c = this.vox.create(cx, cz);
+        else { c = new Chunk(cx, cz, key); this.chunks.set(key, c); }
+      }
       const inMesh = dx * dx + dz * dz <= meshR;
       if (adv) { if (c.state === 2 && (!inMesh || (c.meshed && !c.dirty))) this.scan = i + 2; else adv = false; }
       if (c.state === 0) { if (this.requestChunk(c)) return true; continue; }
@@ -241,6 +279,7 @@ export class World {
   /** Returns true if a worker was consumed. */
   private requestChunk(c: Chunk): boolean {
     c.state = 1;
+    if (this.vox) return this.generate(c, this.vox);
     if (this.loader && this.savedKeys.has(c.key)) {
       const dim = this.dim;
       this.loader(c.cx, c.cz).then((s) => {
@@ -275,6 +314,24 @@ export class World {
       if (this.onChunkReady) this.onChunkReady(c, true, m.ents);
       c.modified = was;
       this.pump();
+    });
+    return true;
+  }
+
+  /** Connected: the generator's output goes to the block store, which readies the record once its edit set is in too. */
+  private generate(c: Chunk, v: ClientVoxels<Chunk>): boolean {
+    const dim = this.dim;
+    this.pool.run({ t: 'gen', cx: c.cx, cz: c.cz, dim, seed: this.seed }, [], (m) => {
+      if (this.dim !== dim || this.chunks.get(c.key) !== c || this.vox !== v) return;
+      if (!m) {
+        // try once more, then take an empty chunk: its hash differs from the host's, which then sends the true array
+        if (++c.fails < 2) c.state = 0;
+        else { const a = new Uint8Array(CVOL); v.generated(c, a, new Uint8Array(256), false, hashBlocks(a)); console.warn(`chunk ${c.cx},${c.cz} failed to generate and was left empty`); }
+        this.scan = 0; this.pump();
+        return;
+      }
+      v.generated(c, m.blocks, m.biomes, m.hasEmit, m.hash);
+      this.scan = 0; this.pump();
     });
     return true;
   }
@@ -349,18 +406,24 @@ export class World {
     }
   }
   private dropChunk(c: Chunk, save: boolean): void {
+    if (this.vox) { this.vox.drop(c); return; }
     if (save && c.modified && c.state === 2 && this.onUnload) this.onUnload(c);
-    for (let i = 0; i < 3; i++) { const m = c.meshes[i]; if (m) { m.geometry.dispose(); this.group.remove(m); c.meshes[i] = null; } }
+    this.disposeMeshes(c);
     this.chunks.delete(c.key);
+  }
+  private disposeMeshes(c: Chunk): void {
+    for (let i = 0; i < 3; i++) { const m = c.meshes[i]; if (m) { m.geometry.dispose(); this.group.remove(m); c.meshes[i] = null; } }
     if (this.last === c) this.last = null;
   }
 
-  /** Drop everything (dimension change or leaving the world). Modified chunks are saved first. */
+  /** Drop everything (dimension change or leaving the world). Modified chunks are saved first. Connected, nothing is
+   *  unsubscribed: the host drops a connection's subscriptions itself when its player changes realm or joins again. */
   clear(save: boolean): void {
-    for (const c of [...this.chunks.values()]) this.dropChunk(c, save);
+    if (this.vox) this.vox.clear();
+    else for (const c of [...this.chunks.values()]) this.dropChunk(c, save);
     this.results.length = 0; this.urgent.length = 0; this.warm.length = 0; this.scan = 0; this.pcx = 1e9; this.last = null;
   }
-  setDim(dim: number, hasSky: boolean): void { this.clear(true); this.dim = dim; this.hasSky = hasSky; }
+  setDim(dim: number, hasSky: boolean): void { this.clear(true); this.dim = dim; this.hasSky = hasSky; if (this.vox) this.vox.dim = dim; }
 
   /** Count chunks with a mesh, and how many are still waiting. */
   counts(): { loaded: number; meshed: number; waiting: number } {

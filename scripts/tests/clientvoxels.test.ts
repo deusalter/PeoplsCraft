@@ -4,10 +4,17 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CVOL, ci } from '../../src/core/constants';
 import { B } from '../../src/data/blocks';
+import type { InvChannel } from '../../src/client/api';
+import { BlockClient, type BlockBody } from '../../src/client/blocks';
+import { TIERS } from '../../src/data/items';
 import { ClientVoxels, VoxChunk } from '../../src/net/clientvoxels';
 import { encodeEdits } from '../../src/net/codec';
-import { FULL_RETRY_MS, RESUB_MS, SUB_MAX, type C2S, type C2SOf, type CeEntry, type S2C, type S2COf } from '../../src/net/protocol';
+import { FULL_RETRY_MS, RESUB_MS, SUB_MAX, type ActMsg, type C2S, type C2SOf, type CeEntry, type S2C, type S2COf } from '../../src/net/protocol';
 import { hashBlocks } from '../../src/sim/genjob';
+import { Inventory } from '../../src/sim/inventory';
+import type { InvOp } from '../../src/sim/invops';
+import { newRayHit, type RayHit } from '../../src/sim/physics';
+import { PlayerStats } from '../../src/sim/stats';
 
 type Chunks = C2SOf<'chunks'>;
 
@@ -304,4 +311,102 @@ test('welcome over a session: config taken, every record and queue cleared, noth
   assert.equal(cv.chunks.size, 0); assert.equal(dropped.length, 2); assert.equal(cv.dim, 2);
   assert.deepEqual(cv.cfg, { simRadius: 4, viewMax: 10 });
   assert.equal(cv.flush(1e6), false); assert.deepEqual(out, []);
+});
+
+// ---- client/blocks.ts: the predicted edits on top of the store --------------------------------------
+
+function hands(opt: { creative?: boolean; blocked?: boolean } = {}) {
+  const t = setup(), { cv, gen, ce } = t;
+  for (const [cx, cz] of [[0, 0], [1, 0]]) { const c = cv.create(cx, cz); gen(c); ce([cx, cz, c.subN, 0, 0]); }
+  const acts: ActMsg[] = [], internal: [number, InvOp][] = [], sels: number[] = [];
+  let seq = 0;
+  const inv: InvChannel = {
+    nextSeq: () => ++seq, send: () => ({ ok: true }), internal: (s, op) => internal.push([s, op]), setSel: (i) => sels.push(i), flushSel: () => {},
+  };
+  const body: BlockBody = { x: 8.5, y: 10, z: 8.5, hw: 0.3, h: 1.8, yaw: 0, pitch: 0, onGround: true, inWater: false, headInWater: false };
+  const me = { inv: new Inventory(), stats: new PlayerStats(), modes: { creative: !!opt.creative } };
+  me.stats.recompute(me.inv);
+  const played: string[] = [];
+  const bc = new BlockClient({
+    vox: cv, session: { act: (m) => acts.push(m) }, inv, bodies: { blocked: () => !!opt.blocked }, me, body,
+    view: { burst: (x, y, z, id) => played.push(`burst ${x},${y},${z} ${id}`), play: (n) => played.push(n), digTick: () => played.push('tick') },
+    autoTool: () => true,
+  });
+  return { ...t, bc, acts, internal, sels, body, me, played };
+}
+const hitAt = (x: number, y: number, z: number, id: number, nx = 0, ny = 1, nz = 0): RayHit => ({ ...newRayHit(), hit: true, x, y, z, nx, ny, nz, id });
+
+test('a break writes air at once, plays its own burst and sound, and sends edit k 0 under a fresh seq', () => {
+  const { bc, cv, acts, played, b } = hands();
+  bc.onBroken(3, 9, 3, B.stone);
+  assert.equal(cv.getBlock(3, 9, 3), 0); assert.equal(cv.predicted(), 1);
+  assert.deepEqual(acts, [{ t: 'edit', seq: 1, k: 0, x: 3, y: 9, z: 3, id: B.stone }]);
+  assert.deepEqual(played, [`burst 3,9,3 ${B.stone}`, 'break_stone']);
+  b(3, 9, 3, 0, 1);
+  assert.equal(cv.predicted(), 0);
+  // a cell that no longer holds the block is not sent
+  bc.onBroken(3, 9, 3, B.stone);
+  assert.equal(acts.length, 1);
+});
+
+test('breaking one half of a door predicts both', () => {
+  const { bc, cv, acts } = hands();
+  cv.predict(100, 5, 10, 5, B.door_x); cv.predict(100, 5, 11, 5, B.door_x); cv.reject(100, [5, 10, 5, B.door_x, 5, 11, 5, B.door_x]);
+  bc.onBroken(5, 11, 5, B.door_x);
+  assert.equal(cv.getBlock(5, 10, 5), 0); assert.equal(cv.getBlock(5, 11, 5), 0); assert.equal(cv.predicted(), 2);
+  assert.equal(acts.length, 1);
+});
+
+test('a placement is checked, written, uses the held item up under its seq and sends edit k 1', () => {
+  const { bc, cv, acts, internal } = hands();
+  assert.equal(bc.place(hitAt(2, 9, 2, B.stone), B.dirt), true);
+  assert.equal(cv.getBlock(2, 10, 2), B.dirt);
+  assert.deepEqual(acts, [{ t: 'edit', seq: 1, k: 1, x: 2, y: 10, z: 2, id: B.dirt }]);
+  assert.deepEqual(internal, [[1, { o: '_held', n: 1 }]]);
+  // into the player's own body: refused, nothing sent
+  assert.equal(bc.place(hitAt(8, 9, 8, B.stone), B.dirt), false);
+  // a torch needs solid ground under it; air under air refuses
+  assert.equal(bc.place(hitAt(12, 30, 12, 0), B.torch), false);
+  assert.equal(bc.place(hitAt(12, 9, 12, B.stone), B.torch), true);
+  assert.equal(cv.chunkAt(0, 0)!.hasEmit, true);
+  assert.equal(acts.length, 2);
+});
+
+test('the shrunk own box lets a block go in under feet that have just cleared the cell', () => {
+  const { bc, body } = hands();
+  body.y = 10.97;   // feet 0.03 into the cell above y = 10: inside BODY_SHRINK
+  assert.equal(bc.place(hitAt(8, 9, 8, B.stone), B.dirt), true);
+});
+
+test('a body seen in the cell refuses a solid block but not a plant; creative uses nothing up', () => {
+  const { bc, internal, acts } = hands({ blocked: true, creative: true });
+  assert.equal(bc.place(hitAt(2, 9, 2, B.stone), B.dirt), false);
+  assert.equal(bc.place(hitAt(2, 9, 2, B.stone), B.torch), true);
+  assert.deepEqual(internal, []); assert.equal(acts.length, 1);
+});
+
+test('a door is predicted in both cells and sent as edit k 2 with the lower cell; a toggle as use', () => {
+  const { bc, cv, acts, internal, body } = hands();
+  body.yaw = 0;   // looking along -z
+  assert.equal(bc.placeDoor(hitAt(4, 9, 4, B.stone)), true);
+  assert.equal(cv.getBlock(4, 10, 4), B.door_x); assert.equal(cv.getBlock(4, 11, 4), B.door_x);
+  assert.deepEqual(acts[0], { t: 'edit', seq: 1, k: 2, x: 4, y: 10, z: 4, id: B.door_x });
+  assert.deepEqual(internal, [[1, { o: '_held', n: 1 }]]);
+  assert.equal(bc.toggleDoor(hitAt(4, 11, 4, B.door_x)), true);
+  assert.equal(cv.getBlock(4, 10, 4), B.door_x_open); assert.equal(cv.getBlock(4, 11, 4), B.door_x_open);
+  assert.deepEqual(acts[1], { t: 'use', seq: 2, x: 4, y: 11, z: 4, id: B.door_x });
+  assert.equal(bc.toggleDoor(hitAt(4, 9, 4, B.stone)), false);
+  // the toggle refused: the truth comes back in the rej
+  bc.attach({ on: (t, fn) => { if (t === 'rej') (fn as (m: S2COf<'rej'>) => void)({ t: 'rej', seq: 2, cells: [4, 10, 4, B.door_x, 4, 11, 4, B.door_x] }); } });
+  assert.equal(cv.getBlock(4, 10, 4), B.door_x); assert.equal(cv.getBlock(4, 11, 4), B.door_x);
+});
+
+test('dig reports go out as actions; mining starts on the best hotbar tool', () => {
+  const { bc, acts, sels, me } = hands();
+  bc.onDig(true, 1, 9, 1); bc.onDig(false, 1, 9, 1);
+  assert.deepEqual(acts, [{ t: 'dig', on: true, x: 1, y: 9, z: 1 }, { t: 'dig', on: false, x: 1, y: 9, z: 1 }]);
+  me.inv.slots[4] = { k: `${TIERS[0].key}_pickaxe`, n: 1 };
+  bc.onDigStart(B.stone);
+  assert.deepEqual(sels, [4]);
+  assert.ok(bc.breakTime(B.stone) > 0 && bc.reach() >= 5);
 });
