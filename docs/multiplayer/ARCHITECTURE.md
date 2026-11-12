@@ -1381,9 +1381,10 @@ body that has cleared a cell on the client has cleared it on the host.
    Vertical: a rise of more than `JUMP_V * sqrt(1 + d.jump) + 2` blocks within any 1 s window is a
    failure unless flying, in liquid, or within 1 s of a `hurt`. Falling is not limited.
    The window is kept as a base, not as a history: `p.riseY` is the height the rise is measured from and
-   `p.riseTick` the tick that base was taken at. An accepted move takes a new base, its own `y` at this
-   tick, when `y <= p.riseY`, when more than 60 ticks have passed since `p.riseTick`, or when it is flying,
-   in liquid or within 1 s of a `hurt`. Any other move fails when `y - p.riseY` is more than the limit.
+   `p.riseTick` the tick that base was taken at. A move that is not flying, in liquid or within 1 s of a
+   `hurt` fails when `y - p.riseY` is more than the limit, whatever the age of the base. An accepted move
+   takes a new base, its own `y` at this tick, when `y <= p.riseY`, when more than 60 ticks have passed
+   since `p.riseTick`, or when it is flying, in liquid or within 1 s of a `hurt`.
    A move that fails, here or in step 4, changes no base; `sendTp` takes one (3.3).
 4. Space. If the destination chunk is a ready sim chunk: `boxFree(realm, x - hw + 0.05, y + 0.05, z - hw + 0.05, x + hw - 0.05, y + h - 0.05, z + hw - 0.05)`
    must hold, and a `raycast` (solid only) from the previous body centre to the new one must not hit.
@@ -3467,6 +3468,14 @@ headless Chrome on the machine of `MEASUREMENTS.md`), while the simulation takes
 Spawning and sun-burn read the light approximations of 7.8 (D7). A break or a placement the host refuses is
 shown and then undone, where it used not to happen. The portal veil is drawn from the client's own count of the
 test the host makes.
+
+D36. Stage 2, read by four more readers (3.2, 4.1, 4.2, 4.3, 4.5, 4.6, 5.2, 5.3, 6.4, 7.3, 8.2). What their findings
+changed, and what a solo player can notice that D18 and D35 (n) did not list.
+(a) The rise rule judges the move that takes a new base. As 4.5 step 3 stood, a move more than 60 ticks after
+`riseTick` took a new base without being measured, so a body that had kept still for a second could rise by any
+amount in one move, and by as much again every second. Every move that is not flying, in liquid or within 1 s of
+a `hurt` is now held to `riseY` as it stands, and only then may take a new base. What is given up is what
+D30 (b) says and no more.
 
 ---
 

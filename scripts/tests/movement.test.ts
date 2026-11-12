@@ -204,9 +204,10 @@ test('a rise is judged from its base, and the base moves on a lower y, after 60 
   {
     const r = rig();
     r.wait(3); assert.equal(r.move(0.5, GROUND + 6, 0.5, 0), 'ok');
-    r.wait(58); assert.equal(r.move(0.5, GROUND + LIMIT + 1, 0.5, 0), 'ok');
-    r.wait(3); assert.equal(r.move(0.5, GROUND + LIMIT + 1 + LIMIT - 0.2, 0.5, 0), 'ok', 'measured from the new base');
-    r.wait(3); assert.equal(r.move(0.5, GROUND + LIMIT + 1 + LIMIT + 0.3, 0.5, 0), 'rise');
+    r.wait(58); assert.equal(r.move(0.5, GROUND + LIMIT - 0.2, 0.5, 0), 'ok');
+    assert.deepEqual([r.p.riseY, r.p.riseTick], [r.p.body.y, r.sim.tick]);
+    r.wait(3); assert.equal(r.move(0.5, GROUND + 2 * LIMIT - 0.4, 0.5, 0), 'ok', 'measured from the new base');
+    r.wait(3); assert.equal(r.move(0.5, GROUND + 2 * LIMIT + 0.3, 0.5, 0), 'rise');
   }
   // in liquid: a water column
   {
@@ -231,6 +232,33 @@ test('a rise is judged from its base, and the base moves on a lower y, after 60 
     // once the second is over, the base taken then holds again
     r.wait(61); assert.equal(r.move(0.5, GROUND + LIMIT + 2.5, 0.5, 0), 'ok');
     r.wait(3); assert.equal(r.move(0.5, GROUND + 2 * LIMIT + 3, 0.5, 0), 'rise');
+  }
+});
+
+test('the move that takes a new base is held to the old one: a body that has kept still for a second cannot leap', () => {
+  // silent for more than a second, then straight up
+  {
+    const r = rig(), p = r.p;
+    r.wait(61);
+    assert.equal(r.move(0.5, GROUND + 300, 0.5, 0), 'rise');
+    assert.equal(p.body.y, GROUND); assert.equal(r.tps().length, 1);
+    // and again a second later
+    r.wait(61); assert.equal(r.move(0.5, GROUND + LIMIT + 0.3, 0.5, 0), 'rise');
+    assert.equal(p.body.y, GROUND);
+  }
+  // a stream of moves that stands still, then one that leaps when the base has run out
+  {
+    const r = rig();
+    for (let i = 0; i < 20; i++) { r.wait(3); assert.equal(r.move(0.5, GROUND + 0.5, 0.5, 0), 'ok'); }
+    r.wait(3); assert.equal(r.move(0.5, GROUND + 0.5 + LIMIT + 0.3, 0.5, 0), 'rise', 'the base at 64 is ' + 63 + ' ticks old');
+  }
+  // what the base gives up against a history: two allowances back to back across one change of base
+  {
+    const r = rig();
+    r.wait(60); assert.equal(r.move(0.5, GROUND + LIMIT - 0.1, 0.5, 0), 'ok');
+    r.wait(1); assert.equal(r.move(0.5, GROUND + LIMIT - 0.1, 0.5, 0), 'ok', 'the new base');
+    r.wait(1); assert.equal(r.move(0.5, GROUND + 2 * LIMIT - 0.3, 0.5, 0), 'ok');
+    r.wait(3); assert.equal(r.move(0.5, GROUND + 2 * LIMIT + 0.3, 0.5, 0), 'rise');
   }
 });
 

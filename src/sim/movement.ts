@@ -50,8 +50,10 @@ export function handleMove(sim: Sim, p: SimPlayer, buf: DataView | ArrayBuffer):
   if (dist > p.speedBudget) return fail('speed');
   const inWater = liquidAt(realm, x, y + 0.4, z) === 1, inLava = liquidAt(realm, x, y + 0.3, z) === 2, liquid = inWater || inLava;
   const hurt = tick - p.hurtTick <= HURT_TICKS;
-  const newBase = y <= p.riseY || tick - p.riseTick > RISE_TICKS || flying || liquid || hurt;
-  if (!newBase && y - p.riseY > JUMP_V * Math.sqrt(1 + st.d.jump) + 2) return fail('rise');
+  const free = flying || liquid || hurt;
+  // the move that takes a new base because the old one has run out is held to the old one like any other
+  if (!free && y - p.riseY > JUMP_V * Math.sqrt(1 + st.d.jump) + 2) return fail('rise');
+  const newBase = free || y <= p.riseY || tick - p.riseTick > RISE_TICKS;
   // 4. space, where the host holds the blocks; a move into a chunk it does not hold is taken as it comes
   let freeThere = false;
   if (realm.ready(Math.floor(x), Math.floor(z))) {
