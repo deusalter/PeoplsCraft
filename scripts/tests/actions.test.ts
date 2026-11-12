@@ -177,8 +177,9 @@ test('a solid block is refused where any body of the realm stands, whatever that
   const r = rig(), { sim, p, q } = r;
   hold(p, 'cobble', 10);
   q.body.teleport(3.5, GROUND, 0.5);
-  for (const state of ['active', 'loading', 'stalled', 'dead'] as const) {
+  for (const state of ['active', 'loading', 'stalled', 'lingering', 'dead'] as const) {
     q.loading = state === 'loading'; q.stalled = state === 'stalled'; q.stats.dead = state === 'dead';
+    q.online = state !== 'lingering'; q.lingerT = state === 'lingering' ? 20 : 0;
     assert.equal(onEdit(sim, p, { t: 'edit', seq: r.seq(), k: 1, x: 3, y: GROUND + 1, z: 0, id: B.cobble }), false, state);
   }
   // another body is drawn in by 0.1: a block that touches it by less goes in

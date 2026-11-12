@@ -606,3 +606,31 @@ test('the hands: a shot, a swing, a station, a meal and a gate kit each leave as
   const kit = link.out.at(-1) as Extract<C2S, { t: 'item' }>;
   assert.deepEqual([kit.slot, kit.at], [2, [0, 64, 2]]); assert.equal(inv.slots[2], null);
 });
+
+test('the Guide over a chest: tidy keeps the window on both sides, ops act as with none, and Back finds the chest as it now is', () => {
+  const r = rig(), { sync, p, q, store } = r, v = sync.view;
+  give(r, p, { k: 'stick', n: 6 }, 9); r.serve(); openBox(r, CHEST);
+  // a stack in hand when the Guide opens goes back to the pack
+  sync.send({ o: 'click', v: [0, 9], r: false, e: 'stick' });
+  sync.send({ o: 'tidy', cover: true });
+  assert.equal(v.inv.cursor, null); assert.equal(v.window?.covered, true);
+  r.flush();
+  assert.equal(p.window?.covered, true); assert.equal(p.window?.mode, 'chest', 'the host keeps the window under the Guide');
+  // a shift-click in the Guide acts on the plain inventory: hotbar to backpack, not into the hidden chest
+  give(r, p, { k: 'cobble', n: 3 }, 0); r.serve(); r.flush();
+  sync.send({ o: 'quick', v: [0, 0], e: 'cobble' });
+  r.flush();
+  assert.equal(store.getEnt(...CHEST)!.data.s.some((s: Slot) => s?.k === 'cobble'), false);
+  // the other player changes the chest meanwhile: the covered window still hears of it
+  openBox(r, CHEST, r.qsync, r.qup);
+  give(r, q, { k: 'flint', n: 2 }, 0); r.serve(); r.flush();
+  r.qsync.send({ o: 'quick', v: [0, 0], e: 'flint' }); r.flush();
+  assert.equal(v.box?.kind === 'chest' && v.box.s.some((s) => s?.k === 'flint'), true);
+  assert.equal(v.window?.covered, true, 'still covered after the state that told it');
+  // Back: uncovered again, and the chest takes ops
+  sync.send({ o: 'tidy', cover: false });
+  sync.send({ o: 'quick', v: [0, v.inv.slots.findIndex((s) => s?.k === 'cobble')], e: 'cobble' });
+  r.flush();
+  assert.equal(store.getEnt(...CHEST)!.data.s.some((s: Slot) => s?.k === 'cobble'), true);
+  same(r, 'after Back');
+});
