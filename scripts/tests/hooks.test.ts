@@ -247,6 +247,24 @@ test('a creature leaving says md: despawned, killed, withdrawn; a blow is counte
   assert.ok(MOB_LIST.length <= 255, 'a creature kind fits the byte it travels in');
 });
 
+test('a creature set down somewhere else counts the jump in tpn, and one that walks does not', () => {
+  const r = rig(), sim = r.sim, mobs = sim.realms[0].mobs, a = sim.join('a', 'A', null, false);
+  a.body.teleport(0.5, GROUND, 0.5);
+  const far = mobs.spawn('n_wayfinder', 60.5, GROUND, 0.5)!, near = mobs.spawn('n_smith', 5.5, GROUND, 0.5)!;
+  far.home = [0, GROUND, 0]; near.home = [0, GROUND, 0];
+  const wisp = mobs.spawn('m_wisp', 0.5, GROUND + 2, 60.5)!, close = mobs.spawn('m_wisp', 1.5, GROUND + 2, 1.5)!;
+  wisp.owner = close.owner = a.id;
+  assert.deepEqual([far.tpn, near.tpn, wisp.tpn, close.tpn], [0, 0, 0, 0]);
+  mobs.tick(STEP);
+  assert.equal(far.tpn, 1, 'a townsperson brought back home');
+  assert.ok(Math.hypot(far.x - 0.5, far.z - 0.5) < 3, 'beside its bed');
+  assert.equal(wisp.tpn, 1, 'a minion brought back to its owner');
+  assert.ok(Math.hypot(wisp.x - a.body.x, wisp.z - a.body.z) < 3, 'over its owner');
+  for (let i = 0; i < 120; i++) mobs.tick(STEP);
+  assert.deepEqual([far.tpn, near.tpn, wisp.tpn, close.tpn], [1, 0, 1, 0], 'once per jump, never for a step');
+  assert.ok(far.active && near.active && wisp.active && close.active);
+});
+
 test('InlineSource: lowest prio first, in asking order among equals, a bounded number per poll', () => {
   let t = 0;
   const src = new InlineSource(7, () => (t += 5));

@@ -25,7 +25,7 @@ export class Mob implements Body {
   ry = 0;
   /** Landing squash of a hopper, 1 at touchdown, decaying. */
   sq = 0;
-  /** Counts the jumps (a boss teleport) that a view must not blend across. */
+  /** Counts the jumps a view must not blend across: a boss teleport, a townsperson put back home, a minion put back on its owner. */
   tpn = 0;
   /** Record id of a minion's owner. */
   owner: string | null = null;
@@ -183,7 +183,7 @@ export class MobSim {
           if (m.timer <= 0) { m.timer = 4 + rnd() * 7; const a = rnd() * 6.283, r = night ? rnd() * 1.5 : 1 + rnd() * 7; m.tx = hx + Math.cos(a) * r; m.tz = hz + Math.sin(a) * r; }
           wx = m.tx - m.x; wz = m.tz - m.z; speed *= 0.7;
           if (Math.hypot(wx, wz) < 0.6) { wx = 0; wz = 0; }
-          if (m.home && Math.hypot(m.x - hx, m.z - hz) > 40) { const q = standSpot(w, m.home[0], m.home[1], m.home[2]); m.x = q[0]; m.y = q[1]; m.z = q[2]; }
+          if (m.home && Math.hypot(m.x - hx, m.z - hz) > 40) { const q = standSpot(w, m.home[0], m.home[1], m.home[2]); m.x = q[0]; m.y = q[1]; m.z = q[2]; m.tpn++; }
           break;
         }
         case 'melee': case 'hopper': {
@@ -245,7 +245,7 @@ export class MobSim {
           if (t) { gx = t.x; gy = t.y + t.h * 0.5; gz = t.z; }
           else { const a = m.id * 2.4 + time * 0.7; gx = p.x + Math.cos(a) * 1.6; gy = p.y + 2.1 + Math.sin(time * 2 + m.id) * 0.2; gz = p.z + Math.sin(a) * 1.6; }
           const ex = gx - m.x, ey = gy - m.y, ez = gz - m.z, el = Math.hypot(ex, ey, ez);
-          if (el > 40) { m.x = p.x; m.y = p.y + 2; m.z = p.z; }
+          if (el > 40) { m.x = p.x; m.y = p.y + 2; m.z = p.z; m.tpn++; }
           const sp = Math.min(d.speed, el * 5), k = Math.min(1, dt * 8);
           m.vx += ((ex / (el || 1)) * sp - m.vx) * k; m.vy += ((ey / (el || 1)) * sp - m.vy) * k; m.vz += ((ez / (el || 1)) * sp - m.vz) * k;
           m.x += m.vx * dt; m.y += m.vy * dt; m.z += m.vz * dt;

@@ -1284,7 +1284,9 @@ Boss extension, 24 bytes
 The fractions (`wind` to `scale`) are rounded to the nearest of 255 steps and the signed ones to the nearest
 of 127. `net/protocol.ts` names the kinds (`BOSS_KINDS`) and every flag bit (`SELF_`, `PF_`, `MF_`, `MV_`).
 A player counts as `hurt` for 0.22 s after `hurtTick` and its `tpToggle` is bit 0 of `p.tp`; a creature's
-`tpToggle` is bit 0 of `m.tpn`.
+`tpToggle` is bit 0 of `m.tpn`, which the sim raises wherever it sets a creature down somewhere else: the
+boss teleport and the jump of a boss that is stuck (`sim/boss.ts`), a townsperson more than 40 blocks from
+home put back beside it, and a minion more than 40 blocks from its goal put back on its owner (`sim/mobs.ts`).
 
 Quantisation error: position 1/64 block, creature yaw 0.7 degrees, player yaw 0.003 degrees.
 A position more than 1,023 blocks from the origin cannot be encoded: such entities are outside every
