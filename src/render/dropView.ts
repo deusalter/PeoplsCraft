@@ -6,6 +6,9 @@ import type { ItemModels } from './itemModel';
 export class DropView {
   active = false; id = 0; x = 0; y = 0; z = 0; age = 0;
   px = 0; py = 0; pz = 0;   // previous tick position, for interpolation
+  /** What the client flies by itself from a `da`: the item, the body it falls and rests with, and when it may be taken.
+   *  `fly` > 0: picked up, flying to that player slot for the seconds left in `flyT`. */
+  k = ''; n = 0; m = ''; vx = 0; vy = 0; vz = 0; hw = 0.12; h = 0.24; onGround = false; hitH = false; hitUp = false; delay = 0; fly = 0; flyT = 0;
   mesh: THREE.Mesh | null = null; light = new THREE.Vector4(1, 0, 0, 0);
 }
 
