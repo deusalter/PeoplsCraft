@@ -1,6 +1,7 @@
 // Player inventory, equipment slots and the crafting-grid matcher.
 import { ITEMS, Item, item, matches, rollModifier } from '../data/items';
 import { RECIPES, Recipe } from '../data/recipes';
+import { type InvWire, type SlotWire, wireSlot } from '../net/protocol';
 
 export type Slot = Item | null;
 export const HOTBAR = 9, INV_SIZE = 36;
@@ -86,6 +87,15 @@ export class Inventory {
     if (d.cur && typeof d.cur.k === 'string' && ITEMS.has(d.cur.k)) { const c: Item = { k: d.cur.k, n: d.cur.n | 0, m: d.cur.m }, left = c.n > 0 ? this.add(c) : 0; if (left) this.cursor = { ...c, n: left }; }
     this.sel = d.sel | 0; this.coins = d.coins | 0; this.rev++;
   }
+}
+
+/** Write an inventory snapshot into an inventory: element by element into the arrays it already has, since windows and
+ *  the HUD hold those arrays, and with the grid and the cursor where the snapshot has them. Not `load`, which replaces
+ *  the arrays and empties grid and cursor into the pack. `rev` is the caller's to bump. */
+export function assignWire(inv: Inventory, w: InvWire): void {
+  const put = (dst: Slot[], src: readonly SlotWire[]): void => { for (let i = 0; i < dst.length; i++) dst[i] = wireSlot(src[i] ?? 0); };
+  put(inv.slots, w.s); put(inv.armor, w.a); put(inv.acc, w.c); put(inv.craft, w.g);
+  inv.cursor = wireSlot(w.cur); inv.sel = w.sel; inv.coins = w.coins;
 }
 
 // ---- crafting ---------------------------------------------------------------------------
