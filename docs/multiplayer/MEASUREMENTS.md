@@ -186,3 +186,107 @@ every sound with its volume, every toast with its colour, every thrown stack, an
 both containers, the shop's buy-back list, attributes and `craft:` flags after each event. 77,757
 events over 24 seeds with the Sort buttons left out, and 12,919 more over 4 seeds with them: the
 records of the two trees are identical.
+
+## 6. Stage 2: a host and a client, joined in one thread (6.6 item 2, and the checks of section 11)
+
+Build: commit `be17010` (the performance runs were made on it and on `68be03a`, which differ by two lines
+no flight runs). Machine and browser as in section 1. 2026-11-11, with other work on the machine
+throughout: the 1-minute load average was between 3 and 12, so the comparison is against a control run
+in the same minutes, not against the numbers of section 1.
+
+Performance. The control is the stage 0 tree (`git archive 4ff2b0d` into a scratch folder, `node_modules`
+linked, a Vite cache folder of its own). `npm run smoke -- perf` was run on the control and on this tree
+turn about, fourteen pairs; the load is the 1-minute average when each run ended. One run of this tree
+has no result: a source file was edited while it ran and the page reloaded.
+
+| Pair | load | stage 0: sum (world + tick + render) | frame CPU mean / p95 / max | sim mean | load | this tree: sum (world + tick + render) | frame CPU mean / p95 / max | sim mean |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 9.2 | 7.6 (1.8 + 0.6 + 5.2) | 1.99 / 3.3 / 5.3 | 0.08 | 7.1 | 10.7 (1.9 + 1.9 + 6.9) | 2.01 / 3.3 / 7.0 | 0.20 |
+| 2 | 10.2 | 11.9 (1.5 + 3.1 + 7.3) | 2.03 / 3.0 / 8.5 | 0.09 | 11.1 | 5.4 (1.1 + 0.7 + 3.6) | 2.00 / 3.0 / 4.2 | 0.19 |
+| 3 | 11.6 | 5.6 (1.4 + 0.4 + 3.8) | 2.00 / 3.2 / 4.0 | 0.08 | 10.5 | 8.9 (1.3 + 2.9 + 4.7) | 1.99 / 3.3 / 7.6 | 0.20 |
+| 4 | 9.4 | 8.6 (1.7 + 2.3 + 4.6) | 2.01 / 3.5 / 4.9 | 0.08 | 7.7 | 25.2 (2.3 + 1.6 + 21.3) | 1.93 / 3.3 / 25.2 | 0.19 |
+| 5 | 5.4 | 9.4 (1.7 + 1.0 + 6.7) | 2.11 / 3.6 / 6.7 | 0.10 | 9.4 | no result | | |
+| 6 | 10.5 | 9.9 (1.3 + 2.0 + 6.6) | 2.04 / 3.3 / 6.6 | 0.09 | 10.9 | 8.0 (1.9 + 1.6 + 4.5) | 1.89 / 3.3 / 4.9 | 0.18 |
+| 7 | 10.8 | 12.3 (1.5 + 1.0 + 9.8) | 1.90 / 3.4 / 10.9 | 0.08 | 8.1 | 6.4 (1.8 + 0.8 + 3.8) | 1.88 / 3.4 / 4.5 | 0.19 |
+| 8 | 6.3 | 8.6 (2.0 + 0.8 + 5.8) | 1.96 / 3.4 / 5.9 | 0.09 | 5.0 | 8.3 (1.9 + 2.2 + 4.2) | 2.03 / 3.3 / 5.7 | 0.19 |
+| 9 | 4.2 | 10.4 (1.3 + 0.5 + 8.6) | 2.03 / 3.2 / 9.1 | 0.09 | 5.4 | 52.0 (1.4 + 3.0 + 47.6) | 2.12 / 3.2 / 47.8 | 0.21 |
+| 10 | 5.2 | 6.5 (1.9 + 0.4 + 4.2) | 1.97 / 3.2 / 4.4 | 0.08 | 4.4 | 7.3 (1.9 + 0.9 + 4.5) | 1.90 / 3.3 / 4.9 | 0.18 |
+| 11 | 4.0 | 34.8 (1.4 + 3.8 + 29.6) | 1.99 / 3.1 / 33.0 | 0.09 | 4.4 | 11.5 (1.3 + 2.6 + 7.6) | 1.95 / 3.1 / 10.2 | 0.19 |
+| 12 | 3.9 | 6.7 (1.4 + 0.4 + 4.9) | 1.92 / 3.1 / 5.0 | 0.08 | 3.4 | 7.5 (2.0 + 0.9 + 4.6) | 1.96 / 3.5 / 4.9 | 0.19 |
+| 13 | 3.8 | 6.1 (1.5 + 0.6 + 4.0) | 1.97 / 3.4 / 4.1 | 0.09 | 4.8 | 6.4 (1.8 + 0.8 + 3.8) | 1.89 / 3.4 / 4.2 | 0.18 |
+| 14 | 4.3 | 6.6 (1.5 + 0.7 + 4.4) | 1.97 / 3.4 / 4.6 | 0.08 | 4.8 | 41.4 (5.7 + 12.1 + 23.6) | 1.93 / 3.3 / 38.9 | 0.21 |
+
+| | runs | prof sum, median | frame CPU mean, median (range) | p95, median (range) | sim mean | worst tick, median |
+| --- | --- | --- | --- | --- | --- | --- |
+| stage 0 | 14 | 8.6 | 1.99 (1.90 to 2.11) | 3.3 (3.0 to 3.6) | 0.08 | 0.75 |
+| this tree | 13 | 8.3 | 1.95 (1.88 to 2.12) | 3.3 (3.0 to 3.5) | 0.19 | 1.6 |
+
+The median sum is 0.3 ms under the control's, the mean frame and its p95 are the control's. What the
+numbers also say:
+
+- The tick costs 0.11 ms more on the mean frame (0.19 against 0.08): it is now the client's tick, a
+  step of the host, two pumps of the session and the entity store's tick. One flight with each phase
+  timed (load 10): client tick 0.04 ms, host step 0.13 (of which the simulation's step 0.09: creatures,
+  shots and drops 0.04, taking in a chunk 0.02), the pumps 0.015, the entity store 0.024. The frame
+  as a whole did not grow, because the old tick also filled every view from the simulation's lists
+  twice a tick.
+- The worst tick is about 0.8 ms higher on the median (1.6 against 0.75). Its largest single item is
+  a chunk taken into the simulation (0.3 to 0.6 ms: a 65 KB copy and the two heightmaps), which is why
+  a step that runs the world takes in one chunk, not two.
+- Frames over 16.7 ms: three of this tree's 13 runs had one (25, 48 and 39 ms), one of the control's 14
+  (33 ms). In the earlier batches of the same evening, on trees that are not the final one, it was
+  two of nine against none of nine. In every such frame the long phase was `render`. One was caught
+  with each call timed: 16.6 ms inside `gfx.render` (the WebGL calls), nothing else above 0.7 ms. The
+  control showed the same kind of frame when three of its flights were watched frame by frame (19.8
+  and 17.0 ms in one, 10.1 ms in another, and gaps of 280 ms between two frames in two of them).
+  Whether this tree has more of them than the control, and if so whether a quiet machine has any, is
+  not settled by these runs.
+
+What was changed on the way. As first built, two flights gave worst ticks of 4.3 and 2.0 ms and a
+mean of 0.25. Then: no transaction for a chunk that has no record; a chunk's light-giving cells found
+by the worker that generates it; one chunk taken in per step that runs the world; the workers fed
+from their own answers, not from inside a step; mesh jobs for chunks whose edit set arrived in a
+frame sent right after the frame. Single flights with each phase timed then gave worst ticks of 0.6
+to 1.2 ms and a mean of 0.14 to 0.19. Generating in the page's thread would add about 1.2 ms a chunk
+(Overworld, 40 chunks timed in the page), which is why it is not done (D35 (c)).
+
+Loading. From the page's start to the player in play, three runs each: 1.26, 1.27 and 1.44 s against
+0.93, 0.93 and 1.08 s for the stage 0 tree. A crossing to the Hollows: 0.6 s against 0.3 to 0.4 s (read
+at 0.1 s steps). The simulation now takes in its own 121 chunks before a player is put in play.
+
+Risk R11 (creatures drawn 4 ticks in the past). Ten blows on a creature held still, frames counted
+from the click: the hit mark comes in the frame of the click, as before (1 frame in the stage 1 tree
+and in this one); the creature's flash and recoil come 7 to 9 frames after it (about 120 to 150 ms),
+where the stage 1 tree shows them in the frame of the click. The frames are those of the test's own
+pacing, which run a little under 60 a second.
+
+Light. From this stage the spawn rules and the sun-burn rule read the two approximations of 7.8
+(D7, D31 (a)); nothing was counted. A sim chunk of the Overworld holds 99 light-giving cells on the
+median and 1,852 at most (121 chunks round a spawn), of the Hollows 227 and 654, of the Skyrift 20 and
+320; one block-light question costs about 9 microseconds in the Hollows and 1.5 in the Skyrift.
+
+The checks of "Done when" for stage 2.
+
+- `npm run smoke -- golden` and `npm run smoke -- golden '?clone'`: all 174 probes match the stage 0
+  baseline. During the run the host corrected no movement, refused no edit, blow or shot, and the
+  client resynced no chunk.
+- `npm run smoke -- legacy` (and with `'?clone'`): all 66 probes. The 61 of before, and five new ones:
+  the database is at version 2, the `backup` store holds the old record of each of the two worlds
+  equal to the fixture's, it holds nothing else, and every old `chunks` record is still what the
+  fixture loaded.
+- A world made by the stage 1 build (`56e7a42` in a scratch worktree: a levelled site, two blocks
+  broken and two placed by hand, a chest with two stacks, a furnace mid-smelt, a bed, a place and a
+  look to stand with), its database dumped as `scripts/fixtures/legacy.mjs` dumps one and written into
+  a fresh profile at version 1, opens in this build with the body where it stood (within 0.01 blocks,
+  yaw and pitch kept), all six probed cells, the chest, the six items of the furnace, the bed, the
+  flags, the counts of seven items and the tick going on from the saved one; saved by this build and
+  opened once more, it is the same.
+- `git grep -n "integration:" src` prints nothing. Of the client, only `src/dev.ts` imports
+  `sim/sim.ts` (a type, for `T.sim`); `src/main.ts` reaches it through `net/host.ts`.
+- `npm test`: 13 files. `npm run check` and `npm run build` pass.
+- Beyond the list: the title menu makes a world, the pause menu saves it, it is listed with its
+  level and opens where it was left; a tab closed 0.3 s after a change, with nothing but the page's
+  own save at `beforeunload`, has the change when it is opened again; a bow shot, a kill by arrows, a
+  cast, a salve, a thrown stack picked up again, a shop, a night slept through and a placement out of
+  reach (shown, refused, undone) each behave on both sides; the client's estimate of the host's tick
+  stays within 1.5 ticks of it across a pause, a loading screen and a crossing.
