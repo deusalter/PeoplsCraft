@@ -5,7 +5,7 @@ import { B, T_LIQUID, T_OPAQUE, T_REPLACE, T_SOLID, T_SUPPORT } from '../data/bl
 import { item, matches } from '../data/items';
 import { SMELTS } from '../data/recipes';
 import { breakNatural } from './actions';
-import { BURST } from './fx';
+import { BURST, SMOKE_R } from './fx';
 import type { Slot } from './inventory';
 import type { Realm } from './realm';
 import type { BlockEnt } from './voxels';
@@ -57,6 +57,13 @@ export function tickBlocks(realm: Realm, dt: number): void {
   }
 }
 
+/** A forge's slots changed: its chunk is saved, and whoever has it open is due an `st`. */
+function changed(realm: Realm, e: BlockEnt): void {
+  realm.touchEnt(e);
+  const v = realm.viewers.get(`${e.x},${e.y},${e.z}`);
+  if (v) for (const p of v) p.invDirty = true;
+}
+
 function tickForge(realm: Realm, e: BlockEnt, dt: number, quiet = false): void {
   const sim = realm.sim, d = e.data, s = d.s as Slot[], w = realm;
   const inp = s[0], r = inp ? SMELTS.find((q) => matches(q.in, inp.k) && q.forge <= d.level) : undefined;
@@ -64,19 +71,19 @@ function tickForge(realm: Realm, e: BlockEnt, dt: number, quiet = false): void {
   const was = d.burn > 0;
   if (d.burn > 0) d.burn -= dt;
   if (r && room) {
-    if (d.burn <= 0 && s[1] && item(s[1].k).fuel) { d.burn = d.burnMax = item(s[1].k).fuel!; if (--s[1].n <= 0) s[1] = null; d.rev++; realm.touchEnt(e); }
+    if (d.burn <= 0 && s[1] && item(s[1].k).fuel) { d.burn = d.burnMax = item(s[1].k).fuel!; if (--s[1].n <= 0) s[1] = null; d.rev++; changed(realm, e); }
     if (d.burn > 0) {
       d.need = r.time / (1 + (d.level - r.forge) * 0.6); d.prog += dt;
       if (d.prog >= d.need) {
         d.prog = 0;
         if (--inp!.n <= 0) s[0] = null;
         if (out) out.n += r.n; else s[2] = { k: r.out, n: r.n };
-        d.rev++; realm.touchEnt(e); sim.addFlag('smelt:' + r.out);
+        d.rev++; changed(realm, e); sim.addFlag('smelt:' + r.out);
         if (!quiet) for (const q of realm.players) if (Math.hypot(e.x - q.body.x, e.z - q.body.z) < 12) sim.sink.emit({ p: q.slot }, ['s', 'fizz', 0.4, 1, e.x, e.y, e.z]);
       }
     } else d.prog = Math.max(0, d.prog - dt * 2);
   } else { d.prog = 0; d.need = 0; }
   const now = d.burn > 0, id = w.getBlock(e.x, e.y, e.z);
   if (was !== now && (id === B.furnace || id === B.furnace_lit)) w.setBlock(e.x, e.y, e.z, now ? B.furnace_lit : B.furnace, true);
-  if (now && !quiet && sim.rnd() < 0.3) sim.sink.emit({ dim: realm.dim, x: e.x, y: e.y, z: e.z, r: 16 }, ['p', BURST.forgeSmoke, e.x, e.y, e.z, 0, 0]);
+  if (now && !quiet && sim.rnd() < 0.3) sim.sink.emit({ dim: realm.dim, x: e.x, y: e.y, z: e.z, r: SMOKE_R }, ['p', BURST.forgeSmoke, e.x, e.y, e.z, 0, 0]);
 }
