@@ -1,14 +1,16 @@
 // One dimension of the world: its blocks, block entities, light, and everything that lives in it.
+import { invOp } from './actions';
 import { onBlockChange, tickBlocks } from './blocks';
 import { DropSim } from './drops';
 import { Fluids } from './fluids';
 import { BURST_R, FLOAT_R, SOUND_R } from './fx';
+import { gateHas } from './gates';
 import type { LightSource } from './light';
 import { MobSim } from './mobs';
 import { active, type SimPlayer } from './player';
 import { ProjSim } from './projectiles';
 import type { Sim } from './sim';
-import type { BlockEnt, BlockEnts, VoxelWrite } from './voxels';
+import { type BlockEnt, type BlockEnts, SimChunks, type VoxelWrite } from './voxels';
 
 /** The block data a realm runs on, owned by whoever holds the chunks. */
 export interface RealmStore extends VoxelWrite, BlockEnts, LightSource {
@@ -27,6 +29,9 @@ export class Realm implements VoxelWrite, BlockEnts {
   readonly players: SimPlayer[] = [];
   readonly mobs: MobSim; readonly proj: ProjSim; readonly drops: DropSim; readonly fluids: Fluids;
   readonly light: LightSource;
+  /** The sim chunks this realm runs on, when its store is one (stage 2). */
+  // integration: always the store once Game stops building realms on WorldStore; then `readonly chunks: SimChunks`
+  readonly chunks: SimChunks | null;
   blockT = 0;
   /** Players with a station, chest or forge window open, by cell key `x,y,z`. Not saved. */
   readonly viewers = new Map<string, Set<SimPlayer>>();
@@ -35,6 +40,11 @@ export class Realm implements VoxelWrite, BlockEnts {
   constructor(readonly sim: Sim, readonly dim: 0 | 1 | 2, readonly store: RealmStore) {
     this.light = store;
     store.onChange = (x, y, z, old, now) => onBlockChange(this, x, y, z, old, now);
+    this.chunks = store instanceof SimChunks ? store : null;
+    if (this.chunks) {
+      this.chunks.onClose = (x, y, z) => this.closeViewers(x, y, z);
+      this.chunks.onCell = (x, y, z) => this.dropGates(x, y, z);
+    }
     this.mobs = new MobSim(this); this.proj = new ProjSim(this); this.drops = new DropSim(this);
     this.fluids = new Fluids(this);
   }
@@ -55,7 +65,7 @@ export class Realm implements VoxelWrite, BlockEnts {
     this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; tickBlocks(this, 0.25); }
   }
   /** Nobody is left here: what lived in this realm is gone. */
-  suspend(): void { this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); this.viewers.clear(); }
+  suspend(): void { this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); this.viewers.clear(); if (this.chunks) this.chunks.clear(); }
 
   // ---- effects at a place in this realm ----
   sound(name: string, vol: number, pitch: number, x: number, y: number, z: number): void { this.sim.sink.emit({ dim: this.dim, x, y, z, r: SOUND_R }, ['s', name, vol, pitch, x, y, z]); }
@@ -88,11 +98,21 @@ export class Realm implements VoxelWrite, BlockEnts {
     for (const p of l) { const b = p.body, d = (b.x - x) ** 2 + (b.y - y) ** 2 + (b.z - z) ** 2; if (d < bd) { bd = d; best = p; } }
     return best;
   }
-  /** Forget every viewer of this cell before the block or its entity goes away. */
+  /** Close the window of every viewer of this cell before the block or its entity goes away (5.2): each ends as
+   *  op `close` does, with its sequence left where it is, and is told `st {box: null}`. */
   closeViewers(x: number, y: number, z: number): void {
     const k = `${x},${y},${z}`, v = this.viewers.get(k);
     if (!v) return;
-    for (const p of v) p.window = null;
+    for (const p of [...v]) {
+      invOp(this.sim, p, p.ackSeq, { o: 'close' });
+      p.window = null;
+      this.sim.sink.send(p.slot, { t: 'st', ack: p.ackSeq, box: null });
+    }
     this.viewers.delete(k);
+  }
+  /** A cell changed: a registered gate that holds it is no longer what the registry says (9). */
+  private dropGates(x: number, y: number, z: number): void {
+    const g = this.sim.shared.gates;
+    for (let i = g.length - 1; i >= 0; i--) if (g[i].dim === this.dim && gateHas(g[i], x, y, z)) g.splice(i, 1);
   }
 }
