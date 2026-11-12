@@ -471,6 +471,43 @@ test('chunks: changes before the ce are inside its rev, changes after it arrive 
   assert.deepEqual(c.out, [{ t: 'b', dim: 0, l: [2, 70, 2, B.stone, 2, 2, 71, 2, B.stone, 3] }]);
 });
 
+test('chunks: a ce encoded at one revision is not handed out at the next', async () => {
+  const r = rig(), realm = r.sim.realms[0], p = player(r, 'a', 8, 8), q = player(r, 'b', 8, 8);
+  await grow(r, 0, 0, 0, 0);
+  const svc = new ChunkService(r.sim, r.edits, 12), a = new FakeConn(), b = new FakeConn();
+  realm.setBlock(1, 70, 1, B.stone);
+  svc.onChunks(a, p, chunksMsg(0, [0, 0, 1]));
+  const [ea] = entries(await serve(svc, a, p));
+  assert.equal(ea[3], 1);
+  realm.setBlock(2, 70, 2, B.cobble);
+  svc.onChunks(b, q, chunksMsg(0, [0, 0, 1]));
+  const [eb] = entries(await serve(svc, b, q));
+  const e = r.edits.peek(0, 0, 0)!;
+  assert.equal(eb[3], e.rev);
+  assert.equal(e.rev, 2);
+  const got = new Map<number, number>();
+  assert.ok(decodeSparse(eb[6] as string, (i, id) => got.set(i, id)));
+  assert.deepEqual([...got].sort(), [...e.cells!].sort(), 'the entry holds every edit its rev counts');
+  assert.equal(got.size, 2);
+});
+
+test('chunks: a chunk unsubscribed while its edit map loads gets no ce and no b', async () => {
+  const st = new MemStorage(), gate: (() => void)[] = [];
+  const slow = Object.assign(Object.create(st), { loadChunk: () => new Promise<null>((res) => gate.push(() => res(null))) });
+  const r = rig(slow), p = player(r, 'a', 8, 8), svc = new ChunkService(r.sim, r.edits, 12), c = new FakeConn();
+  svc.onChunks(c, p, chunksMsg(0, [3, 3, 1, 4, 4, 1]));
+  svc.tick(c, p);
+  assert.equal(gate.length, 2, 'both loads in flight');
+  svc.onChunks(c, p, chunksMsg(0, [], [3, 3]));
+  while (gate.length) gate.shift()!();
+  const l = entries(await serve(svc, c, p));
+  assert.deepEqual(l.map((e) => e.slice(0, 3)), [[4, 4, 1]]);
+  svc.onBlock(0, 3 * 16 + 1, 70, 3 * 16 + 1, B.stone, 1);
+  svc.onBlock(0, 4 * 16 + 1, 70, 4 * 16 + 1, B.stone, 1);
+  svc.flushLive(c);
+  assert.deepEqual(c.take('b'), [{ t: 'b', dim: 0, l: [65, 70, 65, B.stone, 1] }], 'only the followed chunk has this connection as a listener');
+});
+
 test('chunks: gh for a chunk first generated after its ce went out; full answered only for ready sim chunks, 8 a second', async () => {
   const r = rig(), p = player(r, 'a', 8, 8), svc = new ChunkService(r.sim, r.edits, 12), c = new FakeConn(), sub: number[] = [];
   for (let i = 0; i < 12; i++) sub.push(i - 6, 0, 1);
