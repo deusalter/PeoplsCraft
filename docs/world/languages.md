@@ -36,7 +36,7 @@ Two peoples may have two names for one thing where the bible has both speak of i
 
 A name is what some particular people called a thing, for a reason they had. Before a name is made, two things are written down: who named it, and why. The namer is the born, the sand-country people, the cutters, or nobody, which means plain English. The reason comes from the bible: what that people knew about the thing, believed about it or used it for.
 
-Where the bible says a people believes something false about a thing, the name carries the belief. Householders say each great feeder was set over its country by the forebears (4.11), so their names for the eight are names for something set over a country. They say the things of the dark night come down from the moon (1.8), so their name for that kind has the moon in it. The sand-country people held the burrower above themselves (5.3), and their name for it is the name of a thing that holds a country.
+Where the bible says a people believes something false about a thing, the name carries the belief. Householders say each great feeder was set over its country by the forebears (4.11). Their names for the two whose countries they walk, the wood and the waste, are names for a thing that holds a country, and the great stone of each of the eight is its altar. The other six they name for what is seen of the animal or told of it. They say the things of the dark night come down from the moon (1.8), so their name for that kind has the moon in it. The sand-country people held the burrower above themselves (5.3), and their name for it is the name of a thing that holds a country.
 
 A name never explains the lore, winks at the player or makes a pun. A tooltip does not gloss its own name. The glossary gives each name's meaning to the people building the game.
 
@@ -87,7 +87,7 @@ Both born tongues are written with English letters and three long vowels, ā ī 
 
 After the changes the spelling is set: c is written ch, and doubled c is written cch.
 
-**Joining two words.** The describing word comes first. The two are joined before the changes run, so the joined word wears as one word. Three things happen at the join. A final vowel falls before a vowel. A long final vowel is short. The head of the second word is worn as the inside of a word, so a cluster there doubles and a stop with breath there wears to h: *jala + sthāna* gives Jalattān, and *vālukā + bhūmi* gives Vālukahūm. For that reason the ending for a country is *-deśa*, which wears cleanly.
+**Joining two words.** The describing word comes first. The two are joined before the changes run, so the joined word wears as one word. Three things happen at the join. A final vowel falls before a vowel. A long final vowel is short. The head of the second word is worn as the inside of a word, so a cluster there doubles and a stop with breath there wears to h: *jala + sthāna* gives Jalattān, and *vālukā + bhūmi* gives Vālukahūm. For that reason the ending for a country is *-deśa*, which wears cleanly. After a word that ends in a it spells -ades, which an English reader says wrongly at sight. So a country the game shows is named by one word, and the ending is used after another vowel, as in Marudes.
 
 **Endings and first words.**
 
@@ -95,11 +95,11 @@ After the changes the spelling is set: c is written ch, and doubled c is written
 | --- | --- | --- | --- |
 | *-kāra* | one who does or makes X | *kumbha + -kāra* | Kumbakār |
 | *-śālā* | place of X, under a roof | *loha + -śālā* | Lohasāl |
-| *-deśa* | place of X, a country | *tṛṇa + -deśa* | Tanades |
+| *-deśa* | place of X, a country | *maru + -deśa* | Marudes |
 | *-maya* | thing made of X | *śilā + -maya* | Silamaya |
 | *-ka* | little X | *kumbha + -ka* | Kumbak |
 | *mahā* | great X | *mahā + kūpa* | Mahakūp |
-| *-gaṇa* | a host of X | *pakṣin + -gaṇa* | Pakkigan |
+| *-gaṇa* | a host of X | *vana + -gaṇa* | Vanagan |
 
 In neither tongue does a name change for number. Game text adds an English s where it needs one, as it does to peopl.
 
@@ -117,13 +117,13 @@ In neither tongue does a name change for number. Game text adds an English s whe
 | *rekhā + -kāra*, maker of lines | rekhā+kāra>rekhakāra>rehakāra | **Rehakār** |
 | *poṣaka*, one who feeds, a breeder | poṣaka>posaka | **Posak** |
 | *loha + -śālā*, iron hall | loha+śālā>lohaśālā>lohasālā>lohasāla | **Lohasāl** |
-| *hima + -deśa*, snow country | hima+deśa>himadeśa>himadesa | **Himades** |
-| *paṅka + -deśa*, mire country | paṅka+deśa>paṅkadeśa>paṅkadesa>pankadesa | **Pankades** |
+| *vana + dhara*, holding the wood | vana+dhara>vanadhara>vanahara | **Vanahar** |
+| *maru + -deśa*, waste country | maru+deśa>marudeśa>marudesa | **Marudes** |
 | *kaṇṭaka*, thorn | kaṇṭaka>kantaka | **Kantak** |
 | *praroha + śāvaka*, young of the sprout | praroha+śāvaka>prarohaśāvaka>pparohaśāvaka>parohaśāvaka>parohasāvaka | **Parohasāvak** |
 | *chāyā*, shade | chāyā>cāyā>cāya | **Chāya** |
 | *candra + śāvaka*, young of the moon | candra+śāvaka>candraśāvaka>canddaśāvaka>candaśāvaka>candasāvaka>candasāvak | **Chandasāvak** |
-| *suṣira + candra*, hollow moon | suṣira+candra>suṣiracandra>suṣiracandda>suṣiracanda>susiracanda | **Susirachanda** |
+| *jvalita*, lighted, blazing | jvalita>jjalita>jalita | **Jalit** |
 | *bali + śilā*, offering stone | bali+śilā>baliśilā>balisilā>balisila | **Balisil** |
 | *deśa + pati*, master of a country | deśa+pati>deśapati>desapati | **Desapat** |
 | *amāvāsyā*, the night of new moon | amāvāsyā>amāvāssā>amāvassā | **Amāvassa** |
@@ -167,7 +167,7 @@ In neither tongue does a name change for number. Game text adds an English s whe
 
 After the changes the spelling is set: the one sibilant is written sh.
 
-**Joining two words.** The describing word comes first. Each word is worn down by itself, and the two are then set side by side. Every long vowel of the first word is short. The first word ends in its old stem vowel, which falls before a vowel. So *vālukā + deśa* gives Balugadesha, and *kāca + śakala* gives Kasashagala. An ending is older than this habit and is joined the householders' way, before the changes run: *kumbha + -kāra* gives Kumbagāra, where the k has softened as it does inside a word.
+**Joining two words.** The describing word comes first. Each word is worn down by itself, and the two are then set side by side. Every long vowel of the first word is short. The first word ends in its old stem vowel, which falls before a vowel. So *dāru + deśa* gives Darudesha, and *maru + jana* gives Maruzana. An ending is older than this habit and is joined the householders' way, before the changes run: *kumbha + -kāra* gives Kumbagāra, where the k has softened as it does inside a word.
 
 **Endings and first words.**
 
@@ -186,13 +186,13 @@ After the changes the spelling is set: the one sibilant is written sh.
 | From | Stages | Name |
 | --- | --- | --- |
 | *maru*, waste, desert | maru | **Maru** |
-| *vālukā + deśa*, sand country | vālukā>vālugā>bālugā>bālugā+deśa>balugadeśa | **Balugadesha** |
+| *dāru + deśa*, timber country | dāru+deśa>darudeśa | **Darudesha** |
 | *agni*, fire | agni>aggi | **Āgi** |
 | *agni + -sthāna*, place of the fire | agni+sthāna>agnisthāna>agnitthāna>aggitthāna>āgīthāna | **Āgītāna** |
 | *dāhaka*, burning, setting on fire | dāhaka | **Dāhaga** |
 | *bhasman*, ashes | bhasman>bhasma>bhamha>bhamma>bhāma | **Bāma** |
-| *kāca + śakala*, fragment of glass | kāca>kāsa; śakala>śagala>kāsa+śagala>kasaśagala | **Kasashagala** |
-| *yodha*, a fighter | yodha>yoda | **Zoda** |
+| *maru + jana*, people of the waste | jana>zana>maru+zana | **Maruzana** |
+| *śūra*, a warrior | śūra | **Shūra** |
 | *indhana*, fuel | indhana | **Indana** |
 | *maru + dhara*, holding the waste | dhara>dara>maru+dara | **Marudara** |
 | *manuṣya*, a human being | manuṣya>manuṣṣa>manūṣa>manūśa | **Manūsha** |
@@ -236,7 +236,7 @@ The cutters' tongue is written as Sanskrit is written in Roman letters, with eve
 4. A compound is made only of words on the root list, plainly, with the describing word first, and the glossary says that it is a new compound. A compound the dictionary already has is better.
 5. No name of a god, of a figure of a real epic or of a living faith is used, and no word is used for the sound of it. A Sanskrit word names a thing. It does not make a thing deeper.
 
-This register is small on purpose. Most of what a cutter knows has a plain English word.
+This register is small on purpose. Most of what a cutter knows has a plain English word, and no name the game shows today is in this tongue. Its one word in the glossary is *koṭara*, the hollow of a tree.
 
 ## L.8 Making a new name
 
@@ -259,15 +259,15 @@ This register is small on purpose. Most of what a cutter knows has a plain Engli
    node lang/derive.mjs --check names.json
    ```
 
-   The script derives every name in a born tongue again and fails on any that differs, on a root that is missing or skipped, and on a name over its length. An entry looks like this:
+   The script derives every name in a born tongue again and fails on any that differs, on a root that is missing or skipped, on a name over its length, and on one name of a tongue given to two different things. An entry looks like this:
 
    ```
-   { "key": "tundra", "name": "Himades", "tongue": "hearth", "from": ["hima", "-deśa"],
-     "other": [{ "name": "Himadesha", "tongue": "sand", "from": ["hima", "deśa"] }] }
+   { "kind": "biome", "key": "desert", "name": "Marudesha", "tongue": "sand", "from": ["maru", "deśa"],
+     "other": [{ "name": "Marudes", "tongue": "hearth", "from": ["maru", "-deśa"] }] }
    ```
 
-   `tongue` is `hearth`, `sand`, `cutters`, `frame` for a term whose spelling `borrowed.md` fixes, or `plain`. `limit` sets a length other than 18. A name of two words gives `from` as a list of lists, and an English word in it is written `{ "plain": "Stone" }`.
-8. **Write the glossary line**: key, name, tongue, roots, meaning, namer, reason, and any other people's name for the same thing. Internal keys never change.
+   `tongue` is `hearth`, `sand`, `cutters`, `frame` for a term whose spelling `borrowed.md` fixes, or `plain`. `limit` sets a length other than 18. A name of two words gives `from` as a list of lists, and an English word in it is written `{ "plain": "Stone" }`. `kind` says what sort of thing the key is. `same` gives the kind and key of another entry that names the same thing, such as a townsperson and the body of that townsperson. `shown: false` marks a name that is for writers and is not shown in play. `personal` holds a name for one townsperson, which is not shown either. `byHand` marks the two forms of L.9.
+8. **Write the rest of the entry and make the glossary again.** The entry carries the old name, the meaning, the namer, the reason, and any other people's name for the same thing. Then run `node lang/glossary.mjs`, which writes `glossary.md` from the name map. Nobody edits the glossary by hand. Internal keys never change.
 
 **Adding a root.** Find the word in the dictionary and confirm the sense, its gender, and that the sense is cited from a text. Two words spelled alike are two words, and the gloss gives the sense of one. If the word is also an insult, a coarse word, or a name of a god, of a figure of a real epic or of a living faith, say so in a `note`, and mark it `alone` where it must not stand as a whole name. Add a line to `lang/roots.json` with the headword, its part of speech, the sense used and the page. Then run `node lang/derive.mjs --roots --fill`, which writes both daughter forms, and `node lang/derive.mjs --roots`, which stops if two roots have come out alike in one tongue. When that happens, or when a form reads badly in a language many players speak, mark the root `skip` for that tongue with the reason, or choose another word.
 
@@ -285,7 +285,7 @@ This register is small on purpose. Most of what a cutter knows has a plain Engli
 
 ## L.9 The word for a peopl
 
-The born word for a person is *manuṣya* as each people says it: Manussa at a hearth, Manūsha at a fire. Of an arrival both peoples say that word with its last sound left out, Manuss and Manūsh (1.5). These two are the only forms in either tongue made by hand, because leaving the sound out is something speakers do on purpose. The game does not show them. Its English writes peopl and peopls in every mouth, and writes Peopls Craft for the trade, whose word is Sippa at a hearth and Shīpa at a fire.
+The born word for a person is *manuṣya* as each people says it: Manussa at a hearth, Manūsha at a fire. Of an arrival both peoples say that word with its last sound left out, Manuss and Manūsh (1.5). These two are the only forms in either tongue made by hand, because leaving the sound out is something speakers do on purpose, and the name map marks them `byHand`. The game does not show them. Its English writes peopl and peopls in every mouth, and writes Peopls Craft for the trade, whose word is Sippa at a hearth and Shīpa at a fire.
 
 ## L.10 Letters
 
@@ -311,3 +311,5 @@ That is nineteen letters in all. `lang/rules.json` lists both sets, and the scri
 
 - Section 5.6 says the two born peoples speak the same tongue. This chapter reads that as two speeches of one tongue (L.1). The sentence there may want a clause saying so.
 - The bible does not say how far an arrival, who speaks the trade's speech, follows a householder at first hearing. Game text is English and does not have to settle it.
+- Section 1.8 says the names on the boss bars are the belief that each great feeder was set over a country. Two of the eight names carry that belief, and the altar of each of the eight carries it. The sentence there may want changing.
+- Section 4.6 has the born see small ones round the strongest of the hollow and say mother, and 3.6 says no householder has seen the hollow. The glossary reads the saying as one that came down with the telling of the Guide.
