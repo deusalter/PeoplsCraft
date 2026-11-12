@@ -65,6 +65,10 @@ export const HELLO_STR_MAX = 64, PASSWORD_MAX = 128;
 /** Longest item key an op may carry (`e`, `buy.k`). */
 export const KEY_MAX = 48;
 export const NAME_RE = /^[A-Za-z0-9 _-]{1,16}$/;
+/** Where a browser keeps its token (32 hex characters), and how many hex characters of its SHA-256 name the player record. */
+export const TOKEN_KEY = 'peopls.token', TOKEN_HEX = 32, RECORD_ID_HEX = 24;
+/** Wrong passwords one address may send within PASSWORD_WINDOW seconds before it is shut out for as long. */
+export const PASSWORD_TRIES = 5, PASSWORD_WINDOW = 60;
 /** Highest wire id of a creature, a projectile or a drop; ids start at 1 and wrap. */
 export const ID_MAX = 65535;
 /** Highest player slot. */
