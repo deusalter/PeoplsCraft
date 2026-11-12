@@ -5,7 +5,7 @@ import { BUILD_MAX } from '../core/constants';
 import { B, BLOCKS, T_OPAQUE, T_REPLACE, T_SOLID } from '../data/blocks';
 import { hashInt, mulberry32 } from '../core/noise';
 import type { Slot } from './inventory';
-import { ITEMS, type Item, item } from '../data/items';
+import { ITEMS, type Item, article, item } from '../data/items';
 import { BOSSES } from '../data/mobs';
 import { BURST } from './fx';
 import { collapseGate } from './gates';
@@ -100,7 +100,7 @@ export function place(sim: Sim, p: SimPlayer, hit: BlockHit, id: number): boolea
   if (b.solid && w.mobs.list.some((m) => m.active && m.def.ai !== 'minion' && x + 1 > m.x - m.hw && x < m.x + m.hw && y + 1 > m.y && y < m.y + m.h && z + 1 > m.z - m.hw && z < m.z + m.hw)) return false;
   if (!w.setBlock(x, y, z, id)) return false;
   if (!p.modes.creative) p.inv.consumeHeld();
-  if (b.use === 'guestbed') { if (p.dim === 0) sim.npcs.addBed(x, y, z); else tell(sim, p, 'Townsfolk only settle in the Overworld.', '#ff9a8a'); }
+  if (b.use === 'guestbed') { if (p.dim === 0) sim.npcs.addBed(x, y, z); else tell(sim, p, 'Townsfolk settle only on the living ground.', '#ff9a8a'); }
   sim.addFlag('place:' + b.key);
   sim.sink.emit({ dim: p.dim, x, y, z, r: 40, not: p.slot }, ['s', placeSound(id), 0.8, 0.9, x + 0.5, y + 0.5, z + 0.5]);
   return true;
@@ -139,7 +139,7 @@ export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string): bo
   }
   if (use === 'crate') { breakBlock(sim, p, x, y, z, hit.id); return true; }
   if (use === 'bed') {
-    if (p.dim !== 0) { tell(sim, p, 'A bedroll only holds your spawn in the Overworld.', '#ff9a8a'); return true; }
+    if (p.dim !== 0) { tell(sim, p, 'A bedroll marks your place only on the living ground.', '#ff9a8a'); return true; }
     p.bed = [x, y, z];
     if (sim.isNight() && p.dim === 0) {
       if (w.mobs.nearestHostile(b.x, b.y, b.z, 14) || sim.events.active) tell(sim, p, 'You cannot rest with enemies near.', '#ff9a8a');
@@ -165,8 +165,8 @@ export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string): bo
 export function trySummon(sim: Sim, p: SimPlayer, n: number, x: number, y: number, z: number): void {
   const w = sim.realms[p.dim], boss = BOSSES[n - 1], it = p.inv.held(), all = { dim: p.dim };
   if (w.mobs.boss()) return;
-  if (!it || item(it.k).use !== 'summon' + n) { const need = [...ITEMS.values()].find((q) => q.use === 'summon' + n); tell(sim, p, `The altar waits for a ${need?.name ?? 'summoning item'}.`, '#ffd9a0'); return; }
-  if (n === 7 && !sim.isNight()) { tell(sim, p, 'The Hart only answers at night.', '#ffd9a0'); return; }
+  if (!it || item(it.k).use !== 'summon' + n) { const need = [...ITEMS.values()].find((q) => q.use === 'summon' + n); const name = need?.name ?? 'summoning item'; tell(sim, p, `The altar waits for ${article(name)} ${name}.`, '#ffd9a0'); return; }
+  if (n === 7 && !sim.isNight()) { tell(sim, p, 'Kuranga comes up only at night.', '#ffd9a0'); return; }
   if (sim.events.active) sim.events.end(false);
   p.inv.consumeHeld();
   const m = w.mobs.spawn(boss.key, x + 0.5, y + (boss.boss!.move === 'walk' ? 1.2 : 5), z + 6.5);

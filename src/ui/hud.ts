@@ -29,7 +29,7 @@ const COMPASS_NAMES = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'], PIP_CLS = ['
 /** Half the strip in pixels, and the bearing (radians either side of straight ahead) it spans. */
 const CW = 150, CSPAN = 1.2;
 const wrapPi = (a: number): number => { a %= Math.PI * 2; return a > Math.PI ? a - Math.PI * 2 : a < -Math.PI ? a + Math.PI * 2 : a; };
-const STAT_WORDS: Record<string, string> = { def: 'defense', speed: 'speed', regen: 'regen', hp: 'health', mana: 'mana', crit: 'crit', melee: 'melee', ranged: 'ranged', magic: 'magic', mining: 'mining' };
+const STAT_WORDS: Record<string, string> = { def: 'defense', speed: 'speed', regen: 'regen', hp: 'health', mana: 'mana', crit: 'crit', melee: 'melee', ranged: 'ranged', magic: 'crystal-work', summon: 'totem', mining: 'mining' };
 /** "+6 defense, +20% speed": fractional stats read as percentages. */
 function buffLine(stats: Record<string, number | undefined>): string {
   const out: string[] = [];
@@ -293,7 +293,7 @@ export class Hud {
     if (b) {
       const spec = b.def.boss!;
       if (this.bossKey !== b.def.key) {
-        this.bossKey = b.def.key; this.bossName.textContent = b.def.name; this.bossTitle.textContent = spec.title; this.bossHpI = -1;
+        this.bossKey = b.def.key; this.bossName.textContent = b.def.name; this.bossTitle.textContent = spec.title; this.bossTitle.style.display = spec.title ? '' : 'none'; this.bossHpI = -1;
         for (const n of this.bossNotches) n.remove();
         this.bossNotches.length = 0;
         for (const ph of spec.phases) if (ph.below < 1 && ph.below > 0) { const n = el('s', '', this.bossBar.root); n.style.left = ph.below * 100 + '%'; this.bossNotches.push(n); }
@@ -366,8 +366,8 @@ type EventState = SharedState['events'];
 export function eventLabel(ev: EventState): string {
   switch (ev.a) {
     case 'raid': return `Night raid  ${ev.k} / ${ev.g}`;
-    case 'ashen': return `The Ashen Host  ${ev.k} / ${ev.g}`;
-    case 'moon': return 'The Hollow Moon is risen';
+    case 'ashen': return `Sand March  ${ev.k} / ${ev.g}`;
+    case 'moon': return 'Amāvassa';
     default: return '';
   }
 }

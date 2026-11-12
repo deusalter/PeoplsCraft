@@ -7,7 +7,7 @@ import { clamp } from './core/noise';
 import { B, BLOCKS, T_LAYER } from './data/blocks';
 import { BIOMES } from './data/biomes';
 import { DIMS } from './data/dims';
-import { type Item, ITEMS, TIERS, item } from './data/items';
+import { type Item, ITEMS, TIERS, article, item } from './data/items';
 import { NPCS } from './data/npcs';
 import type { ActHost, DigHost } from './client/api';
 import { EntityStore } from './client/entities';
@@ -57,7 +57,7 @@ const NOT_FRIEND = (m: MobView): boolean => m.def.ai !== 'minion' && m.def.ai !=
 const SUMMON_USE: string[] = [], ALTAR_OFFER: string[] = [], ALTAR_NEED: string[] = [], TRADE_PROMPT = new Map<string, string>();
 for (const it of ITEMS.values()) if (it.use?.startsWith('summon')) {
   const n = +it.use.slice(6);
-  SUMMON_USE[n] = it.use; ALTAR_OFFER[n] = `Right-click: offer the ${it.name}`; ALTAR_NEED[n] = `Needs ${/^[AEIOU]/.test(it.name) ? 'an' : 'a'} ${it.name}`;
+  SUMMON_USE[n] = it.use; ALTAR_OFFER[n] = `Right-click: offer the ${it.name}`; ALTAR_NEED[n] = `Needs ${article(it.name)} ${it.name}`;
 }
 
 export class Game implements DigHost, ActHost, Sink {
@@ -484,7 +484,7 @@ export class Game implements DigHost, ActHost, Sink {
       const u = BLOCKS[h.id].use;
       if (u && u.startsWith('altar')) { const n = +u.slice(5), held = inv.held(); prompt = this.ents.boss() ? null : held && item(held.k).use === SUMMON_USE[n] ? (n === 7 && !isNight(this.clock) ? 'Answers only at night' : ALTAR_OFFER[n]) : ALTAR_NEED[n]; }
       else if (u) prompt = u === 'bed' ? 'Right-click: rest / set spawn' : u === 'guestbed' ? 'Right-click: check this room' : u === 'berries' ? 'Right-click: pick berries' : u === 'nest' ? null : 'Right-click: open';
-      else if (!rules.canHarvest(h.id, inv) && BLOCKS[h.id].hard >= 0) prompt = `Needs a ${TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name} pickaxe or better`;
+      else if (!rules.canHarvest(h.id, inv) && BLOCKS[h.id].hard >= 0) { const tier = TIERS[Math.max(0, BLOCKS[h.id].power - 1)].name; prompt = `Needs ${article(tier)} ${tier} pick or better`; }
     }
     this.hud.setPrompt(this.win.open || this.menu.open ? null : !inp.locked && !inp.uiMode ? 'Click to take control' : prompt);
   }

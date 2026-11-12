@@ -181,95 +181,95 @@ const fish = (c: number, belly: number): Part[] => [{ s: [0.16, 0.24, 0.5], p: [
 const LAND = ['plains', 'forest', 'palewood', 'bloomvale', 'taiga', 'savanna', 'jungle', 'swamp', 'crags'];
 const M: MobDef[] = [
   // passive
-  { key: 'woolback', name: 'Woolback', hp: 12, dmg: 0, def: 0, speed: 1.6, xp: 2, coins: [0, 0], hw: 0.42, h: 1.1, ai: 'passive', hostile: false, voice: 0.8,
+  { key: 'woolback', name: 'Sheep', hp: 12, dmg: 0, def: 0, speed: 1.6, xp: 2, coins: [0, 0], hw: 0.42, h: 1.1, ai: 'passive', hostile: false, voice: 0.8,
     parts: quad(0xe8e2d2, { w: 0.8, h: 0.7, l: 1.15, leg: 0.42, head: 0.42, hc: 0x4a3a30, legC: 0x4a3a30, horn: 0xd8c8a0, back: 0xf6f2e6, snout: 0x33261f, ears: 0x4a3a30, pat: 2 }),
     drops: [['raw_meat', 1, 1, 2], ['hide', 0.8, 1, 2]], spawn: [{ dim: 0, biomes: ['plains', 'forest', 'palewood', 'bloomvale', 'savanna'], where: 'surface', time: 'day', weight: 10, group: [2, 4] }] },
-  { key: 'gobblet', name: 'Gobblet', hp: 6, dmg: 0, def: 0, speed: 1.9, xp: 1, coins: [0, 0], hw: 0.25, h: 0.6, ai: 'passive', hostile: false, voice: 1.7,
+  { key: 'gobblet', name: 'Grouse', hp: 6, dmg: 0, def: 0, speed: 1.9, xp: 1, coins: [0, 0], hw: 0.25, h: 0.6, ai: 'passive', hostile: false, voice: 1.7,
     parts: [{ s: [0.36, 0.34, 0.46], p: [0, 0.42, 0], c: 0xb86a3a }, { s: [0.22, 0.26, 0.22], p: [0, 0.72, 0.2], c: 0xd8c0a0, a: 'head' }, { s: [0.08, 0.06, 0.12], p: [0, 0.72, 0.2], o: [0, -0.02, 0.16], c: 0xf2a02a, a: 'head' },
       { s: [0.06, 0.26, 0.06], p: [-0.1, 0.26, 0], o: [0, -0.13, 0], c: 0xf2a02a, a: 'legA' }, { s: [0.06, 0.26, 0.06], p: [0.1, 0.26, 0], o: [0, -0.13, 0], c: 0xf2a02a, a: 'legB' },
       { s: [0.3, 0.26, 0.08], p: [0, 0.56, -0.24], c: 0x6a3a22, a: 'tail' }, ...eyes(0.78, 0.31, 0.07, 0x101018, 0, 0.05, [0, 0.72, 0.2])],
     drops: [['raw_meat', 1, 1, 1], ['feather', 1, 1, 3]], spawn: [{ dim: 0, biomes: ['plains', 'forest', 'palewood', 'jungle', 'swamp'], where: 'surface', time: 'day', weight: 8, group: [2, 4] }] },
-  { key: 'burrowhog', name: 'Burrowhog', hp: 16, dmg: 0, def: 1, speed: 1.8, xp: 3, coins: [0, 0], hw: 0.4, h: 0.85, ai: 'passive', hostile: false, voice: 0.6,
+  { key: 'burrowhog', name: 'Boar', hp: 16, dmg: 0, def: 1, speed: 1.8, xp: 3, coins: [0, 0], hw: 0.4, h: 0.85, ai: 'passive', hostile: false, voice: 0.6,
     parts: quad(0x6a4a34, { w: 0.7, h: 0.55, l: 1.0, leg: 0.3, head: 0.44, hc: 0x7a5a40, tusk: 0xe6dfcc, snout: 0x9a7458, ears: 0x4a3222, tail: 0x4a3222, pat: 7 }),
     drops: [['raw_meat', 1, 1, 3], ['hide', 1, 1, 2]], spawn: [{ dim: 0, biomes: ['taiga', 'forest', 'tundra', 'crags'], where: 'surface', time: 'day', weight: 7, group: [1, 3] }] },
-  { key: 'dune_skipper', name: 'Dune Skipper', hp: 8, dmg: 0, def: 0, speed: 2.6, xp: 2, coins: [0, 0], hw: 0.3, h: 0.4, ai: 'passive', hostile: false, voice: 1.4,
+  { key: 'dune_skipper', name: 'Hare', hp: 8, dmg: 0, def: 0, speed: 2.6, xp: 2, coins: [0, 0], hw: 0.3, h: 0.4, ai: 'passive', hostile: false, voice: 1.4,
     parts: quad(0xcfae62, { w: 0.4, h: 0.2, l: 0.8, leg: 0.14, head: 0.24, tail: 0xb89650, ears: 0xe4cf96, pat: 1 }),
     drops: [['hide', 0.7, 1, 1], ['raw_meat', 0.6, 1, 1]], spawn: [{ dim: 0, biomes: ['desert', 'savanna'], where: 'surface', time: 'day', weight: 8, group: [1, 3] }] },
-  { key: 'glimmerfin', name: 'Glimmerfin', hp: 4, dmg: 0, def: 0, speed: 1.6, xp: 1, coins: [0, 0], hw: 0.2, h: 0.3, ai: 'fish', hostile: false,
+  { key: 'glimmerfin', name: 'Fish', hp: 4, dmg: 0, def: 0, speed: 1.6, xp: 1, coins: [0, 0], hw: 0.2, h: 0.3, ai: 'fish', hostile: false,
     parts: fish(0x6ab8d8, 0xd0e8f0), drops: [['raw_fish', 1, 1, 1]], spawn: [{ dim: 0, where: 'water', time: 'any', weight: 10, group: [2, 5] }] },
 
   // overworld hostiles
-  { key: 'gloomshade', name: 'Gloomshade', hp: 22, dmg: 9, def: 1, speed: 2.5, xp: 8, coins: [1, 4], hw: 0.3, h: 1.8, ai: 'melee', hostile: true, aggro: 22, voice: 0.5,
+  { key: 'gloomshade', name: 'Tama', hp: 22, dmg: 9, def: 1, speed: 2.5, xp: 8, coins: [1, 4], hw: 0.3, h: 1.8, ai: 'melee', hostile: true, aggro: 22, voice: 0.5,
     parts: biped(0x2a2440, { h: 1.8, w: 0.5, skin: 0x3a3258, glow: 1, eye: 0xc8a0ff, long: true }),
     drops: [['shade_essence', 0.45, 1, 1], ['bone', 0.4, 1, 2]], spawn: [{ dim: 0, where: 'surface', time: 'night', weight: 12, group: [1, 3] }, { dim: 0, where: 'cave', time: 'any', y: [8, 70], weight: 5, group: [1, 2] }] },
-  { key: 'thornling', name: 'Thornling', hp: 16, dmg: 7, def: 0, speed: 2.1, xp: 6, coins: [0, 3], hw: 0.3, h: 1.0, ai: 'melee', hostile: true, aggro: 14, voice: 1.2,
+  { key: 'thornling', name: 'Kantak', hp: 16, dmg: 7, def: 0, speed: 2.1, xp: 6, coins: [0, 3], hw: 0.3, h: 1.0, ai: 'melee', hostile: true, aggro: 14, voice: 1.2,
     parts: [...biped(0x5a8a3a, { h: 1.0, w: 0.5, skin: 0x6a9a44, legs: 0x6a4a2a, glow: 0.8, eye: 0xffe06a }), { s: [0.1, 0.3, 0.1], p: [0, 0.875, 0], o: [0, 0.225, 0], c: 0xe2452f, a: 'head' }],
     drops: [['thorn', 0.7, 1, 2], ['fiber', 0.8, 1, 3]], spawn: [{ dim: 0, biomes: ['forest', 'jungle', 'palewood', 'bloomvale', 'swamp'], where: 'surface', time: 'any', weight: 5, group: [1, 2] }] },
-  { key: 'gelcap', name: 'Gelcap', hp: 14, dmg: 6, def: 0, speed: 2.4, xp: 5, coins: [0, 3], hw: 0.4, h: 0.7, ai: 'hopper', hostile: true, aggro: 14, voice: 1.5,
+  { key: 'gelcap', name: 'Kinva', hp: 14, dmg: 6, def: 0, speed: 2.4, xp: 5, coins: [0, 3], hw: 0.4, h: 0.7, ai: 'hopper', hostile: true, aggro: 14, voice: 1.5,
     parts: [...blob(0x7ad6a0, 0.8, 0x3f8a5a), { s: [0.9, 0.16, 0.9], p: [0, 0.72, 0], c: 0xd86a5a, a: 'squash' }],
     drops: [['gel', 0.9, 1, 2]], spawn: [{ dim: 0, biomes: ['plains', 'swamp', 'forest', 'bloomvale', 'savanna'], where: 'surface', time: 'any', weight: 6, group: [1, 3] }] },
-  { key: 'bog_lurker', name: 'Bog Lurker', hp: 30, dmg: 12, def: 2, speed: 1.9, xp: 12, coins: [2, 6], hw: 0.4, h: 1.5, ai: 'melee', hostile: true, aggro: 16, voice: 0.4,
+  { key: 'bog_lurker', name: 'Kaddam', hp: 30, dmg: 12, def: 2, speed: 1.9, xp: 12, coins: [2, 6], hw: 0.4, h: 1.5, ai: 'melee', hostile: true, aggro: 16, voice: 0.4,
     parts: biped(0x4a5a34, { h: 1.5, w: 0.7, skin: 0x5a6a3a, glow: 0.9, eye: 0xb8ff6a, long: true }),
     drops: [['bog_pearl', 0.3, 1, 1], ['fiber', 0.8, 1, 3], ['bone', 0.3, 1, 1]], spawn: [{ dim: 0, biomes: ['swamp'], where: 'surface', time: 'any', weight: 8, group: [1, 2] }] },
-  { key: 'frost_stalker', name: 'Frost Stalker', hp: 26, dmg: 12, def: 1, speed: 3.2, xp: 12, coins: [2, 6], hw: 0.4, h: 0.9, ai: 'melee', hostile: true, aggro: 24, voice: 0.7,
+  { key: 'frost_stalker', name: 'Vaka', hp: 26, dmg: 12, def: 1, speed: 3.2, xp: 12, coins: [2, 6], hw: 0.4, h: 0.9, ai: 'melee', hostile: true, aggro: 24, voice: 0.7,
     parts: quad(0xd8e6f2, { w: 0.55, h: 0.5, l: 1.1, leg: 0.4, head: 0.4, glow: 1, eye: 0x6ad0ff, tail: 0xb8cce0, legC: 0xa8bcd0, snout: 0xb8cce0, ears: 0xa8bcd0, pat: 1 }),
     drops: [['frost_fang', 0.4, 1, 1], ['hide', 0.7, 1, 2]], spawn: [{ dim: 0, biomes: ['tundra', 'taiga', 'peaks'], where: 'surface', time: 'night', weight: 10, group: [1, 3] }] },
-  { key: 'cinder_wisp', name: 'Cinder Wisp', hp: 14, dmg: 10, def: 0, speed: 2.6, xp: 10, coins: [1, 5], hw: 0.25, h: 0.5, ai: 'flyer', hostile: true, aggro: 20, range: 10, proj: 'ember', rate: 2.4, glow: true, voice: 2,
+  { key: 'cinder_wisp', name: 'Angār', hp: 14, dmg: 10, def: 0, speed: 2.6, xp: 10, coins: [1, 5], hw: 0.25, h: 0.5, ai: 'flyer', hostile: true, aggro: 20, range: 10, proj: 'ember', rate: 2.4, glow: true, voice: 2,
     parts: wisp(0xff8a2a, 0.3, 0xffe06a), drops: [['ember_dust', 0.7, 1, 2]],
     spawn: [{ dim: 0, biomes: ['desert', 'savanna'], where: 'surface', time: 'night', weight: 8, group: [1, 2] }, { dim: 0, where: 'cave', time: 'any', y: [3, 30], weight: 6, group: [1, 2] }] },
-  { key: 'stonegnawer', name: 'Stonegnawer', hp: 28, dmg: 10, def: 4, speed: 1.9, xp: 10, coins: [1, 5], hw: 0.42, h: 0.6, ai: 'melee', hostile: true, aggro: 14, voice: 0.6,
+  { key: 'stonegnawer', name: 'Silahādak', hp: 28, dmg: 10, def: 4, speed: 1.9, xp: 10, coins: [1, 5], hw: 0.42, h: 0.6, ai: 'melee', hostile: true, aggro: 14, voice: 0.6,
     parts: quad(0x5a5048, { w: 0.75, h: 0.4, l: 0.95, leg: 0.18, head: 0.36, glow: 0.8, eye: 0xff6a3a, legC: 0x3a322c, legs: 6, plates: 0x7a6e62, snout: 0x3a322c }),
     drops: [['chitin', 0.7, 1, 2], ['coal', 0.3, 1, 2]], spawn: [{ dim: 0, where: 'cave', time: 'any', y: [5, 90], weight: 10, group: [1, 2] }] },
-  { key: 'cave_skitter', name: 'Cave Skitter', hp: 10, dmg: 6, def: 0, speed: 3.6, xp: 6, coins: [0, 3], hw: 0.3, h: 0.4, ai: 'melee', hostile: true, aggro: 16, voice: 2.2,
+  { key: 'cave_skitter', name: 'Lūta', hp: 10, dmg: 6, def: 0, speed: 3.6, xp: 6, coins: [0, 3], hw: 0.3, h: 0.4, ai: 'melee', hostile: true, aggro: 16, voice: 2.2,
     parts: quad(0x2e2a34, { w: 0.5, h: 0.22, l: 0.6, leg: 0.16, head: 0.22, glow: 1, eye: 0xff3a5a, legs: 8, pat: 1 }),
     drops: [['fiber', 0.7, 1, 2]], spawn: [{ dim: 0, where: 'cave', time: 'any', y: [5, 100], weight: 8, group: [2, 4] }] },
-  { key: 'crag_bat', name: 'Crag Bat', hp: 9, dmg: 6, def: 0, speed: 3.4, xp: 5, coins: [0, 2], hw: 0.25, h: 0.4, ai: 'flyer', hostile: true, aggro: 16, voice: 2.6,
+  { key: 'crag_bat', name: 'Jatu', hp: 9, dmg: 6, def: 0, speed: 3.4, xp: 5, coins: [0, 2], hw: 0.25, h: 0.4, ai: 'flyer', hostile: true, aggro: 16, voice: 2.6,
     parts: flyer(0x3a3440, 0.3, 0.45, 0x5a4a5a), drops: [['feather', 0.3, 1, 1], ['hide', 0.3, 1, 1]],
     spawn: [{ dim: 0, where: 'cave', time: 'any', y: [10, 110], weight: 7, group: [1, 3] }, { dim: 0, biomes: ['crags', 'peaks'], where: 'air', time: 'night', weight: 6, group: [1, 3] }] },
-  { key: 'rustbound', name: 'Rustbound Sentinel', hp: 40, dmg: 14, def: 5, speed: 1.5, xp: 20, coins: [4, 10], hw: 0.4, h: 1.9, ai: 'ranged', hostile: true, aggro: 20, range: 12, proj: 'rustbolt', rate: 2.2, voice: 0.3,
+  { key: 'rustbound', name: 'Nihirakka', hp: 40, dmg: 14, def: 5, speed: 1.5, xp: 20, coins: [4, 10], hw: 0.4, h: 1.9, ai: 'ranged', hostile: true, aggro: 20, range: 12, proj: 'rustbolt', rate: 2.2, voice: 0.3,
     parts: biped(0x8a5a3a, { h: 1.9, w: 0.7, skin: 0x6a6e78, legs: 0x4a4e58, glow: 1, eye: 0xff8a3a, hat: 0x4a4e58, pads: 0x9a6a44 }),
     drops: [['rust_core', 0.6, 1, 1], ['iron_bar', 0.5, 1, 2], ['barbed_arrow', 0.4, 2, 6]] },
 
   // Gloomroot Hollows
-  { key: 'sporeling', name: 'Sporeling', hp: 60, dmg: 22, def: 6, speed: 2.8, xp: 30, coins: [4, 10], hw: 0.4, h: 0.8, ai: 'hopper', hostile: true, aggro: 18, voice: 1.3,
+  { key: 'sporeling', name: 'Kavak', hp: 60, dmg: 22, def: 6, speed: 2.8, xp: 30, coins: [4, 10], hw: 0.4, h: 0.8, ai: 'hopper', hostile: true, aggro: 18, voice: 1.3,
     parts: [...blob(0x3f8f86, 0.85, 0x8af0d8, 0x101018, 0.8), { s: [1.0, 0.2, 1.0], p: [0, 0.78, 0], c: 0x6a3f9a, a: 'squash', e: 0.3 }],
     drops: [['spore_sac', 0.6, 1, 2], ['glowshroom', 0.3, 1, 1]], spawn: [{ dim: 1, where: 'cave', time: 'any', weight: 10, group: [1, 3] }] },
-  { key: 'mycelid_knight', name: 'Mycelid Knight', hp: 110, dmg: 30, def: 12, speed: 2.2, xp: 50, coins: [8, 18], hw: 0.4, h: 2.0, ai: 'melee', hostile: true, aggro: 20, knockRes: 0.5, voice: 0.4,
+  { key: 'mycelid_knight', name: 'Asikavak', hp: 110, dmg: 30, def: 12, speed: 2.2, xp: 50, coins: [8, 18], hw: 0.4, h: 2.0, ai: 'melee', hostile: true, aggro: 20, knockRes: 0.5, voice: 0.4,
     parts: biped(0x4a5a6a, { h: 2.0, w: 0.75, skin: 0xa8b4c8, legs: 0x3f4f5c, glow: 1, eye: 0x4ae6b8, hat: 0x6a3f9a, weapon: 0x8af0d8, pads: 0x6a3f9a }),
     drops: [['spore_sac', 0.7, 1, 2], ['umbrite_ore', 0.3, 1, 2], ['bone', 0.5, 1, 3]], spawn: [{ dim: 1, where: 'cave', time: 'any', weight: 7, group: [1, 2] }] },
-  { key: 'umbral_moth', name: 'Umbral Moth', hp: 45, dmg: 20, def: 3, speed: 3.6, xp: 30, coins: [4, 10], hw: 0.3, h: 0.5, ai: 'flyer', hostile: true, aggro: 20, range: 9, proj: 'mothdust', rate: 2.6, voice: 2.2,
+  { key: 'umbral_moth', name: 'Salaha', hp: 45, dmg: 20, def: 3, speed: 3.6, xp: 30, coins: [4, 10], hw: 0.3, h: 0.5, ai: 'flyer', hostile: true, aggro: 20, range: 9, proj: 'mothdust', rate: 2.6, voice: 2.2,
     parts: flyer(0x3a2a5a, 0.34, 0.6, 0x9a5af0, 0xf0e0ff, 1), drops: [['moth_dust', 0.7, 1, 2]], spawn: [{ dim: 1, where: 'cave', time: 'any', weight: 8, group: [1, 3] }] },
-  { key: 'glowmaw', name: 'Glowmaw', hp: 80, dmg: 28, def: 8, speed: 3.8, xp: 40, coins: [6, 14], hw: 0.45, h: 1.0, ai: 'melee', hostile: true, aggro: 22, voice: 0.5,
+  { key: 'glowmaw', name: 'Sagāl', hp: 80, dmg: 28, def: 8, speed: 3.8, xp: 40, coins: [6, 14], hw: 0.45, h: 1.0, ai: 'melee', hostile: true, aggro: 22, voice: 0.5,
     parts: quad(0x24343c, { w: 0.7, h: 0.6, l: 1.3, leg: 0.4, head: 0.55, glow: 1, eye: 0x3fe6c8, tail: 0x3fe6c8, back: 0x2f8a86, snout: 0x16242a, ears: 0x2f8a86, pat: 1 }),
     drops: [['spore_sac', 0.4, 1, 1], ['hide', 0.6, 1, 2], ['noctrium_ore', 0.15, 1, 1]], spawn: [{ dim: 1, where: 'cave', time: 'any', weight: 6, group: [1, 2] }] },
 
   // The Skyrift
-  { key: 'rift_ray', name: 'Rift Ray', hp: 130, dmg: 40, def: 12, speed: 4.2, xp: 80, coins: [10, 24], hw: 0.5, h: 0.5, ai: 'flyer', hostile: true, aggro: 28, voice: 0.9,
+  { key: 'rift_ray', name: 'Vihanga', hp: 130, dmg: 40, def: 12, speed: 4.2, xp: 80, coins: [10, 24], hw: 0.5, h: 0.5, ai: 'flyer', hostile: true, aggro: 28, voice: 0.9,
     parts: [...flyer(0x4a5ab0, 0.5, 1.1, 0x9ab6ff, 0xffffff, 1), { s: [0.08, 0.08, 0.9], p: [0, 0.3, -0.5], o: [0, 0, -0.45], c: 0x9ab6ff, a: 'tail' }],
     drops: [['rift_scale', 0.8, 1, 2]], spawn: [{ dim: 2, where: 'air', time: 'any', weight: 9, group: [1, 2] }] },
-  { key: 'shardling', name: 'Shardling', hp: 200, dmg: 46, def: 22, speed: 2.4, xp: 110, coins: [14, 30], hw: 0.45, h: 1.7, ai: 'melee', hostile: true, aggro: 20, knockRes: 0.6, voice: 1.9,
+  { key: 'shardling', name: 'Sakal', hp: 200, dmg: 46, def: 22, speed: 2.4, xp: 110, coins: [14, 30], hw: 0.45, h: 1.7, ai: 'melee', hostile: true, aggro: 20, knockRes: 0.6, voice: 1.9,
     parts: biped(0xd8d0f6, { h: 1.7, w: 0.8, skin: 0xf4f0ff, legs: 0xa8a0d6, glow: 1, eye: 0xf6a0f0 }).map((p) => ({ ...p, e: p.e || 0.25 })),
     drops: [['shard', 0.8, 1, 2], ['prismite_ore', 0.12, 1, 1]], spawn: [{ dim: 2, where: 'surface', time: 'any', weight: 8, group: [1, 2] }] },
-  { key: 'aether_wisp', name: 'Aether Wisp', hp: 90, dmg: 38, def: 6, speed: 3.4, xp: 70, coins: [10, 22], hw: 0.3, h: 0.6, ai: 'flyer', hostile: true, aggro: 24, range: 12, proj: 'aetherbolt', rate: 2, glow: true, voice: 2.4,
+  { key: 'aether_wisp', name: 'Kajjot', hp: 90, dmg: 38, def: 6, speed: 3.4, xp: 70, coins: [10, 22], hw: 0.3, h: 0.6, ai: 'flyer', hostile: true, aggro: 24, range: 12, proj: 'aetherbolt', rate: 2, glow: true, voice: 2.4,
     parts: wisp(0x6fc0f0, 0.36, 0xf4f8ff), drops: [['rift_scale', 0.3, 1, 1], ['mana_crystal', 0.6, 1, 3]], spawn: [{ dim: 2, where: 'air', time: 'any', weight: 8, group: [1, 3] }] },
 
   // event creatures
-  { key: 'ashen_raider', name: 'Ashen Raider', hp: 34, dmg: 13, def: 3, speed: 2.9, xp: 14, coins: [3, 8], hw: 0.3, h: 1.8, ai: 'melee', hostile: true, aggro: 40, voice: 0.7,
+  { key: 'ashen_raider', name: 'Shūra', hp: 34, dmg: 13, def: 3, speed: 2.9, xp: 14, coins: [3, 8], hw: 0.3, h: 1.8, ai: 'melee', hostile: true, aggro: 40, voice: 0.7,
     parts: biped(0x5a5a62, { h: 1.8, w: 0.55, skin: 0x8a8a92, legs: 0x3a3a42, glow: 0.8, eye: 0xff6a3a, hat: 0x8a2a22, weapon: 0xc8c8d0 }), drops: [['ash_token', 0.5, 1, 1], ['iron_bar', 0.2, 1, 1]] },
-  { key: 'ashen_hexer', name: 'Ashen Hexer', hp: 26, dmg: 14, def: 1, speed: 2.2, xp: 16, coins: [3, 9], hw: 0.3, h: 1.8, ai: 'ranged', hostile: true, aggro: 40, range: 13, proj: 'hex', rate: 2.4, voice: 1.1,
+  { key: 'ashen_hexer', name: 'Dāhaga', hp: 26, dmg: 14, def: 1, speed: 2.2, xp: 16, coins: [3, 9], hw: 0.3, h: 1.8, ai: 'ranged', hostile: true, aggro: 40, range: 13, proj: 'hex', rate: 2.4, voice: 1.1,
     parts: biped(0x3a2a4a, { h: 1.8, w: 0.5, skin: 0x8a8a92, glow: 1, eye: 0xd86af6, hat: 0x2a1a3a, cape: 0x2a1a3a }), drops: [['ash_token', 0.6, 1, 2], ['mana_crystal', 0.3, 1, 1]] },
-  { key: 'siege_brute', name: 'Siege Brute', hp: 120, dmg: 24, def: 8, speed: 1.9, xp: 45, coins: [10, 22], hw: 0.55, h: 2.5, ai: 'melee', hostile: true, aggro: 40, knockRes: 0.8, voice: 0.3,
+  { key: 'siege_brute', name: 'Bedaga', hp: 120, dmg: 24, def: 8, speed: 1.9, xp: 45, coins: [10, 22], hw: 0.55, h: 2.5, ai: 'melee', hostile: true, aggro: 40, knockRes: 0.8, voice: 0.3,
     parts: biped(0x4a4a52, { h: 2.5, w: 1.0, skin: 0x7a7a82, legs: 0x2a2a32, glow: 1, eye: 0xff6a3a, long: true, club: 0x6a4a2a, pads: 0x8a2a22 }), drops: [['ash_token', 1, 2, 4], ['iron_bar', 0.6, 1, 3]] },
-  { key: 'moonspawn', name: 'Moonspawn', hp: 150, dmg: 44, def: 14, speed: 3.6, xp: 90, coins: [12, 26], hw: 0.3, h: 1.9, ai: 'melee', hostile: true, aggro: 40, voice: 0.6,
+  { key: 'moonspawn', name: 'Chandasāvak', hp: 150, dmg: 44, def: 14, speed: 3.6, xp: 90, coins: [12, 26], hw: 0.3, h: 1.9, ai: 'melee', hostile: true, aggro: 40, voice: 0.6,
     parts: biped(0x1e1830, { h: 1.9, w: 0.55, skin: 0x3a2a5a, glow: 1, eye: 0xfff0d0, long: true, cape: 0x120e1e }), drops: [['moon_sliver', 0.5, 1, 1], ['shade_essence', 0.6, 1, 2]],
     spawn: [{ dim: 0, where: 'surface', time: 'night', weight: 14, group: [1, 3], event: 'moon' }] },
-  { key: 'lunar_howler', name: 'Lunar Howler', hp: 110, dmg: 40, def: 8, speed: 4.4, xp: 80, coins: [10, 24], hw: 0.35, h: 0.6, ai: 'flyer', hostile: true, aggro: 40, voice: 1.4,
+  { key: 'lunar_howler', name: 'Ulūk', hp: 110, dmg: 40, def: 8, speed: 4.4, xp: 80, coins: [10, 24], hw: 0.35, h: 0.6, ai: 'flyer', hostile: true, aggro: 40, voice: 1.4,
     parts: flyer(0x2a2040, 0.4, 0.8, 0xfff0d0, 0xfff0d0, 1), drops: [['moon_sliver', 0.45, 1, 1]], spawn: [{ dim: 0, where: 'air', time: 'night', weight: 9, group: [1, 2], event: 'moon' }] },
 
   // boss adds
-  { key: 'sproutling', name: 'Sproutling', hp: 18, dmg: 9, def: 0, speed: 2.8, xp: 2, coins: [0, 0], hw: 0.25, h: 0.6, ai: 'melee', hostile: true, aggro: 40, voice: 1.8,
+  { key: 'sproutling', name: 'Paroha', hp: 18, dmg: 9, def: 0, speed: 2.8, xp: 2, coins: [0, 0], hw: 0.25, h: 0.6, ai: 'melee', hostile: true, aggro: 40, voice: 1.8,
     parts: biped(0x6ae05a, { h: 0.6, w: 0.36, legs: 0x6a4a2a, glow: 1, eye: 0xffe06a }), drops: [] },
-  { key: 'dune_mite', name: 'Dune Mite', hp: 30, dmg: 14, def: 2, speed: 3.6, xp: 3, coins: [0, 0], hw: 0.3, h: 0.4, ai: 'melee', hostile: true, aggro: 40, voice: 2,
+  { key: 'dune_mite', name: 'Kīta', hp: 30, dmg: 14, def: 2, speed: 3.6, xp: 3, coins: [0, 0], hw: 0.3, h: 0.4, ai: 'melee', hostile: true, aggro: 40, voice: 2,
     parts: quad(0xcfae62, { w: 0.5, h: 0.25, l: 0.7, leg: 0.15, head: 0.25, glow: 1, eye: 0xff6a3a, legs: 6, plates: 0x8a6a34 }), drops: [] },
 ];
 
@@ -277,24 +277,24 @@ const M: MobDef[] = [
 const minion = (key: string, name: string, parts: Part[], speed: number): MobDef =>
   ({ key, name, hp: 1, dmg: 0, def: 0, speed, xp: 0, coins: [0, 0], hw: 0.25, h: 0.5, ai: 'minion', hostile: false, parts, drops: [], glow: true });
 M.push(
-  minion('m_thornling', 'Thornling', [...blob(0x5a8a3a, 0.4, 0x6ae05a, 0xffe06a, 1), { s: [0.08, 0.2, 0.08], p: [0, 0.44, 0], c: 0xe2452f, a: 'squash' }], 7),
-  minion('m_wisp', 'Lumen Wisp', wisp(0x4fe6e0, 0.2, 0xc0fff8), 8),
-  minion('m_brazier', 'Brazier Spirit', wisp(0xff7a2a, 0.24, 0xffe06a), 8.5),
-  minion('m_shade', 'Bound Shade', flyer(0x3a2a5a, 0.3, 0.4, 0x9a5af0, 0xc8a0ff, 1), 9),
-  minion('m_mycelid', 'Mycelid Sprite', [...blob(0x3f8f86, 0.42, 0x8af0d8, 0x101018, 1), { s: [0.5, 0.12, 0.5], p: [0, 0.4, 0], c: 0x6a3f9a, e: 0.4, a: 'squash' }], 9.5),
-  minion('m_zephyr', 'Zephyr', flyer(0xdfeeff, 0.3, 0.5, 0x9ab6ff, 0xffffff, 1), 11),
-  minion('m_shardling', 'Shard Mote', wisp(0xf6a0f0, 0.24, 0xf4f0ff), 11),
-  minion('m_moon', 'Moonbound Fawn', quad(0x2a2040, { w: 0.3, h: 0.26, l: 0.5, leg: 0.24, head: 0.24, glow: 1, eye: 0xfff0d0, horn: 0xfff0d0, ears: 0x3a2a5a, tail: 0xfff0d0 }), 12),
-  minion('m_cairn', 'Cairnlight', wisp(0xffd27a, 0.28, 0xffffff), 13),
+  minion('m_thornling', 'Sūlak', [...blob(0x5a8a3a, 0.4, 0x6ae05a, 0xffe06a, 1), { s: [0.08, 0.2, 0.08], p: [0, 0.44, 0], c: 0xe2452f, a: 'squash' }], 7),
+  minion('m_wisp', 'Kanik', wisp(0x4fe6e0, 0.2, 0xc0fff8), 8),
+  minion('m_brazier', 'Jālak', wisp(0xff7a2a, 0.24, 0xffe06a), 8.5),
+  minion('m_shade', 'Jatuk', flyer(0x3a2a5a, 0.3, 0.4, 0x9a5af0, 0xc8a0ff, 1), 9),
+  minion('m_mycelid', 'Chattak', [...blob(0x3f8f86, 0.42, 0x8af0d8, 0x101018, 1), { s: [0.5, 0.12, 0.5], p: [0, 0.4, 0], c: 0x6a3f9a, e: 0.4, a: 'squash' }], 9.5),
+  minion('m_zephyr', 'Setasalaha', flyer(0xdfeeff, 0.3, 0.5, 0x9ab6ff, 0xffffff, 1), 11),
+  minion('m_shardling', 'Sakalak', wisp(0xf6a0f0, 0.24, 0xf4f0ff), 11),
+  minion('m_moon', 'Harinak', quad(0x2a2040, { w: 0.3, h: 0.26, l: 0.5, leg: 0.24, head: 0.24, glow: 1, eye: 0xfff0d0, horn: 0xfff0d0, ears: 0x3a2a5a, tail: 0xfff0d0 }), 12),
+  minion('m_cairn', 'Dīpik', wisp(0xffd27a, 0.28, 0xffffff), 13),
 );
 
 // ---- townsfolk ---------------------------------------------------------------------------
 const npc = (key: string, name: string, shirt: number, hat: number, skin = 0xe0b088, extra?: Partial<BipedOpt>): MobDef =>
   ({ key, name, hp: 250, dmg: 0, def: 10, speed: 1.3, xp: 0, coins: [0, 0], hw: 0.3, h: 1.8, ai: 'npc', hostile: false, parts: biped(shirt, { h: 1.8, w: 0.5, skin, legs: 0x4a4038, hat, ...extra }), drops: [], voice: 1 });
 // each trade is told apart by what its keeper wears: a pack, an apron, bare hair instead of a hat, a cape
-M.push(npc('n_wayfinder', 'Wayfinder', 0x3a7a5a, 0x8a5f34, undefined, { pack: 0x8a6a3a }), npc('n_provisioner', 'Provisioner', 0xb86a3a, 0xe6d6a8, undefined, { apron: 0xe6dfcc }), npc('n_smith', 'Smith', 0x5a5a62, 0x2a2a32, 0xc89870, { apron: 0x4a3222 }),
-  npc('n_apothecary', 'Apothecary', 0x7a4a8a, 0, undefined, { hair: 0x4a9a3c, apron: 0xd8cfe6 }), npc('n_tinker', 'Tinker', 0xb8943a, 0x4a4e5a, 0xd0a078, { pack: 0x5a5a62 }), npc('n_runescribe', 'Runescribe', 0x3a4a9a, 0, undefined, { hair: 0xd8d8e0, cape: 0x2a3878 }),
-  npc('n_beastcaller', 'Beastcaller', 0x2f8a7a, 0xece6d2, 0xb88860, { cape: 0x6a4a2a }), npc('n_deserter', 'Ashen Deserter', 0x5a5a62, 0x8a2a22, 0xa8a8b0, { pads: 0x3a3a42 }));
+M.push(npc('n_wayfinder', 'Desik', 0x3a7a5a, 0x8a5f34, undefined, { pack: 0x8a6a3a }), npc('n_provisioner', 'Vāhak', 0xb86a3a, 0xe6d6a8, undefined, { apron: 0xe6dfcc }), npc('n_smith', 'Kammār', 0x5a5a62, 0x2a2a32, 0xc89870, { apron: 0x4a3222 }),
+  npc('n_apothecary', 'Vejja', 0x7a4a8a, 0, undefined, { hair: 0x4a9a3c, apron: 0xd8cfe6 }), npc('n_tinker', 'Kāru', 0xb8943a, 0x4a4e5a, 0xd0a078, { pack: 0x5a5a62 }), npc('n_runescribe', 'Rehakār', 0x3a4a9a, 0, undefined, { hair: 0xd8d8e0, cape: 0x2a3878 }),
+  npc('n_beastcaller', 'Posak', 0x2f8a7a, 0xece6d2, 0xb88860, { cape: 0x6a4a2a }), npc('n_deserter', 'Deserter', 0x5a5a62, 0x8a2a22, 0xa8a8b0, { pads: 0x3a3a42 }));
 
 // ---- bosses --------------------------------------------------------------------------------
 type PartX = Omit<Partial<Part>, 's' | 'p' | 'c'>;
@@ -633,56 +633,56 @@ const boss = (key: string, name: string, hp: number, dmg: number, def: number, h
   ({ key, name, hp, dmg, def, speed: spec.phases[0].speed, xp, coins: [hp / 12, hp / 8], hw, h, ai: 'boss', hostile: true, parts, drops, aggro: 90, knockRes: 1, boss: spec, voice: 0.25, glow: true });
 
 M.push(
-  boss('b_colossus', 'Mossback Colossus', 420, 12, 4, 1.7, 5.8, 150, colossus, [['heartroot', 1, 6, 9], ['mossheart_sprig', 0.33, 1, 1], ['salve', 1, 3, 5], ['iron_bar', 1, 4, 8]], {
-    n: 1, move: 'walk', stomp: 0.12, cast: 4.05, title: 'Warden of the Greenwood', intro: 'The ground remembers how to stand up.', phases: [
+  boss('b_colossus', 'Vanahar', 420, 12, 4, 1.7, 5.8, 150, colossus, [['heartroot', 1, 6, 9], ['mossheart_sprig', 0.33, 1, 1], ['salve', 1, 3, 5], ['iron_bar', 1, 4, 8]], {
+    n: 1, move: 'walk', stomp: 0.12, cast: 4.05, title: '', intro: 'Roots come up through the paving.', phases: [
       { below: 1, speed: 2.6, cd: [1.8, 2.8], attacks: [{ t: 'slam', radius: 6, dmg: 14, windup: 0.9 }, { t: 'charge', speed: 11, dmg: 12, windup: 0.8, dur: 1.2 }] },
-      { below: 0.5, speed: 3.3, cd: [1.3, 2.1], say: 'Roots tear free of the altar.', enter: { t: 'summon', mob: 'sproutling', n: 4 },
+      { below: 0.5, speed: 3.3, cd: [1.3, 2.1], say: 'Its roots tear up out of the paving.', enter: { t: 'summon', mob: 'sproutling', n: 4 },
         attacks: [{ t: 'slam', radius: 7, dmg: 16, windup: 0.75, ring: ['rootspike', 10] }, { t: 'charge', speed: 13, dmg: 14, windup: 0.6, dur: 1.2 }, { t: 'rain', proj: 'rootspike', n: 7, radius: 7, dmg: 12 }, { t: 'summon', mob: 'sproutling', n: 2 }] },
     ] }),
-  boss('b_maw', 'Dune Maw', 900, 20, 8, 1.2, 2.2, 320, maw, [['scorched_core', 1, 6, 9], ['maw_fang', 0.33, 1, 1], ['gold_bar', 1, 5, 10], ['salve', 1, 3, 6]], {
-    n: 2, move: 'burrow', segments: 12, seg: mawSeg, title: 'Hunger Beneath the Sand', intro: 'The dunes begin to breathe.', phases: [
+  boss('b_maw', 'Maruhar', 900, 20, 8, 1.2, 2.2, 320, maw, [['scorched_core', 1, 6, 9], ['maw_fang', 0.33, 1, 1], ['gold_bar', 1, 5, 10], ['salve', 1, 3, 6]], {
+    n: 2, move: 'burrow', segments: 12, seg: mawSeg, title: '', intro: 'The sand in the bowl begins to move.', phases: [
       { below: 1, speed: 9, cd: [2.2, 3.2], attacks: [{ t: 'burrow', dmg: 22 }, { t: 'volley', proj: 'sandball', n: 5, spread: 0.6, dmg: 14 }] },
-      { below: 0.45, speed: 12, cd: [1.4, 2.2], say: 'The Maw thrashes, shedding grit and fury.', enter: { t: 'summon', mob: 'dune_mite', n: 4 },
+      { below: 0.45, speed: 12, cd: [1.4, 2.2], say: 'It stays up and thrashes, shedding grit.', enter: { t: 'summon', mob: 'dune_mite', n: 4 },
         attacks: [{ t: 'burrow', dmg: 26, ring: ['sandball', 12] }, { t: 'volley', proj: 'sandball', n: 7, spread: 0.8, dmg: 16, bursts: 2, gap: 0.35 }, { t: 'summon', mob: 'dune_mite', n: 2 }] },
     ] }),
-  boss('b_warden', 'The Pale Warden', 1500, 26, 12, 1.3, 5.6, 600, warden, [['warden_sigil', 1, 6, 9], ['wardens_aegis', 0.33, 1, 1], ['lumenite', 1, 4, 8], ['greater_salve', 1, 2, 4]], {
-    n: 3, move: 'hover', cast: 3.85, spin: [0.7, 1.1], castSound: 'bell', title: 'Keeper of the Sealed Way', intro: 'A bell tolls with no bell to toll it.', phases: [
+  boss('b_warden', 'Kankāl', 1500, 26, 12, 1.3, 5.6, 600, warden, [['warden_sigil', 1, 6, 9], ['wardens_aegis', 0.33, 1, 1], ['lumenite', 1, 4, 8], ['greater_salve', 1, 2, 4]], {
+    n: 3, move: 'hover', cast: 3.85, spin: [0.7, 1.1], castSound: 'bell', title: '', intro: 'The bell is rung, and something pale comes up.', phases: [
       { below: 1, speed: 3.4, cd: [1.6, 2.4], attacks: [{ t: 'volley', proj: 'wardenorb', n: 3, spread: 0.3, dmg: 20, bursts: 2, gap: 0.4 }, { t: 'teleport' }, { t: 'ring', proj: 'wardenorb', n: 12, dmg: 18 }] },
-      { below: 0.6, speed: 4, cd: [1.3, 2], say: 'The Warden raises both hands.', attacks: [{ t: 'spiral', proj: 'wardenorb', arms: 3, dur: 3, dmg: 18, spin: 1.6 }, { t: 'volley', proj: 'wardenorb', n: 5, spread: 0.5, dmg: 22, bursts: 2, gap: 0.3 }, { t: 'teleport' }] },
-      { below: 0.25, speed: 4.8, cd: [0.9, 1.5], say: 'The seal cracks. So does the Warden.', enter: { t: 'summon', mob: 'gloomshade', n: 4 },
+      { below: 0.6, speed: 4, cd: [1.3, 2], say: 'It turns, throwing pale matter in spirals.', attacks: [{ t: 'spiral', proj: 'wardenorb', arms: 3, dur: 3, dmg: 18, spin: 1.6 }, { t: 'volley', proj: 'wardenorb', n: 5, spread: 0.5, dmg: 22, bursts: 2, gap: 0.3 }, { t: 'teleport' }] },
+      { below: 0.25, speed: 4.8, cd: [0.9, 1.5], say: 'It is coming apart, and the smaller ones come for it.', enter: { t: 'summon', mob: 'gloomshade', n: 4 },
         attacks: [{ t: 'rain', proj: 'wardenorb', n: 10, radius: 8, dmg: 22 }, { t: 'spiral', proj: 'wardenorb', arms: 4, dur: 3, dmg: 20, spin: -2 }, { t: 'teleport' }, { t: 'ring', proj: 'wardenorb', n: 18, dmg: 20 }] },
     ] }),
-  boss('b_sporemother', 'Sporemother', 2600, 34, 16, 2.3, 5.6, 1100, sporemother, [['queen_spore', 1, 6, 9], ['mycelial_crown', 0.33, 1, 1], ['umbrite_bar', 1, 6, 12], ['greater_salve', 1, 3, 5]], {
-    n: 4, move: 'hover', cast: 2.55, spin: [0.8, 0.8], title: 'Mother of the Under-Bloom', intro: 'The cavern exhales.', phases: [
+  boss('b_sporemother', 'Guhamāt', 2600, 34, 16, 2.3, 5.6, 1100, sporemother, [['queen_spore', 1, 6, 9], ['mycelial_crown', 0.33, 1, 1], ['umbrite_bar', 1, 6, 12], ['greater_salve', 1, 3, 5]], {
+    n: 4, move: 'hover', cast: 2.55, spin: [0.8, 0.8], title: '', intro: 'The smoke reaches the roof, and the roof moves.', phases: [
       { below: 1, speed: 1.6, cd: [1.8, 2.6], attacks: [{ t: 'rain', proj: 'sporebomb', n: 8, radius: 9, dmg: 28 }, { t: 'summon', mob: 'sporeling', n: 2 }, { t: 'ring', proj: 'sporebomb', n: 14, dmg: 24 }] },
-      { below: 0.55, speed: 2.2, cd: [1.4, 2.1], say: 'Her cap splits and glows.', attacks: [{ t: 'spiral', proj: 'sporebomb', arms: 4, dur: 3.5, dmg: 26, spin: 1.2 }, { t: 'ring', proj: 'sporebomb', n: 20, dmg: 26 }, { t: 'rain', proj: 'sporebomb', n: 12, radius: 10, dmg: 30 }, { t: 'summon', mob: 'sporeling', n: 3 }] },
-      { below: 0.2, speed: 5.5, cd: [1, 1.6], say: 'Sporemother tears loose from her roots!', attacks: [{ t: 'charge', speed: 14, dmg: 40, windup: 0.7, dur: 1.4 }, { t: 'slam', radius: 8, dmg: 36, windup: 0.6, ring: ['sporebomb', 16] }, { t: 'spiral', proj: 'sporebomb', arms: 5, dur: 3, dmg: 28, spin: -1.8 }] },
+      { below: 0.55, speed: 2.2, cd: [1.4, 2.1], say: 'Its cap splits, and the inside glows.', attacks: [{ t: 'spiral', proj: 'sporebomb', arms: 4, dur: 3.5, dmg: 26, spin: 1.2 }, { t: 'ring', proj: 'sporebomb', n: 20, dmg: 26 }, { t: 'rain', proj: 'sporebomb', n: 12, radius: 10, dmg: 30 }, { t: 'summon', mob: 'sporeling', n: 3 }] },
+      { below: 0.2, speed: 5.5, cd: [1, 1.6], say: 'Its growth tears from the roof, and it swings.', attacks: [{ t: 'charge', speed: 14, dmg: 40, windup: 0.7, dur: 1.4 }, { t: 'slam', radius: 8, dmg: 36, windup: 0.6, ring: ['sporebomb', 16] }, { t: 'spiral', proj: 'sporebomb', arms: 5, dur: 3, dmg: 28, spin: -1.8 }] },
     ] }),
-  boss('b_regent', 'Tempest Regent', 3800, 42, 18, 1.5, 3.0, 1800, regent, [['storm_plume', 1, 6, 9], ['tempest_feather', 0.33, 1, 1], ['noctrium_bar', 1, 6, 12], ['greater_salve', 1, 3, 6]], {
-    n: 5, move: 'fly', cast: 2.6, title: 'Sovereign of the High Wind', intro: 'The sky leans down to look at you.', phases: [
+  boss('b_regent', 'Jīmūt', 3800, 42, 18, 1.5, 3.0, 1800, regent, [['storm_plume', 1, 6, 9], ['tempest_feather', 0.33, 1, 1], ['noctrium_bar', 1, 6, 12], ['greater_salve', 1, 3, 6]], {
+    n: 5, move: 'fly', cast: 2.6, title: '', intro: 'Something large circles over the kite.', phases: [
       { below: 1, speed: 8, cd: [1.6, 2.4], attacks: [{ t: 'charge', speed: 22, dmg: 40, windup: 0.7, dur: 1.3 }, { t: 'volley', proj: 'lightning', n: 5, spread: 0.5, dmg: 30 }] },
-      { below: 0.6, speed: 9.5, cd: [1.3, 2], say: 'Thunder gathers under its wings.', attacks: [{ t: 'rain', proj: 'lightning', n: 12, radius: 10, dmg: 36 }, { t: 'ring', proj: 'lightning', n: 16, dmg: 30 }, { t: 'charge', speed: 26, dmg: 44, windup: 0.55, dur: 1.2 }] },
-      { below: 0.25, speed: 11, cd: [0.9, 1.5], say: 'The Regent screams, and the storm answers.', attacks: [{ t: 'spiral', proj: 'lightning', arms: 4, dur: 3, dmg: 32, spin: 2.2 }, { t: 'charge', speed: 30, dmg: 48, windup: 0.45, dur: 1.1 }, { t: 'rain', proj: 'lightning', n: 16, radius: 11, dmg: 38 }] },
+      { below: 0.6, speed: 9.5, cd: [1.3, 2], say: 'Pieces of it begin to fall on the floor.', attacks: [{ t: 'rain', proj: 'lightning', n: 12, radius: 10, dmg: 36 }, { t: 'ring', proj: 'lightning', n: 16, dmg: 30 }, { t: 'charge', speed: 26, dmg: 44, windup: 0.55, dur: 1.2 }] },
+      { below: 0.25, speed: 11, cd: [0.9, 1.5], say: 'It screams and stoops lower.', attacks: [{ t: 'spiral', proj: 'lightning', arms: 4, dur: 3, dmg: 32, spin: 2.2 }, { t: 'charge', speed: 30, dmg: 48, windup: 0.45, dur: 1.1 }, { t: 'rain', proj: 'lightning', n: 16, radius: 11, dmg: 38 }] },
     ] }),
-  boss('b_luminarch', 'The Luminarch', 5400, 50, 22, 1.7, 5.6, 2800, luminarch, [['prism_heart', 1, 6, 9], ['prism_core', 0.33, 1, 1], ['aether_bar', 1, 6, 12], ['greater_salve', 1, 4, 6]], {
-    n: 6, move: 'hover', cast: 2.8, spin: [0.5, 2.5], title: 'First Light, Refracted', intro: 'Every colour arrives at once.', phases: [
+  boss('b_luminarch', 'Ratan', 5400, 50, 22, 1.7, 5.6, 2800, luminarch, [['prism_heart', 1, 6, 9], ['prism_core', 0.33, 1, 1], ['aether_bar', 1, 6, 12], ['greater_salve', 1, 4, 6]], {
+    n: 6, move: 'hover', cast: 2.8, spin: [0.5, 2.5], title: '', intro: 'Crystal gathers over the stone and turns.', phases: [
       { below: 1, speed: 4.5, cd: [1.5, 2.2], attacks: [{ t: 'beam', proj: 'prismray', dmg: 40, windup: 0.9, dur: 1.6 }, { t: 'volley', proj: 'prismray', n: 4, spread: 0.4, dmg: 36, bursts: 3, gap: 0.25 }, { t: 'teleport' }] },
-      { below: 0.6, speed: 5.5, cd: [1.2, 1.8], say: 'The prisms begin to turn.', attacks: [{ t: 'spiral', proj: 'prismray', arms: 4, dur: 3.5, dmg: 36, spin: 1.8 }, { t: 'beam', proj: 'prismray', dmg: 44, windup: 0.7, dur: 2 }, { t: 'ring', proj: 'prismray', n: 20, dmg: 34 }, { t: 'teleport' }] },
-      { below: 0.25, speed: 6.5, cd: [0.8, 1.3], say: 'It burns too bright to hold its shape.', enter: { t: 'summon', mob: 'shardling', n: 2 },
+      { below: 0.6, speed: 5.5, cd: [1.2, 1.8], say: 'The crystals round it begin to turn.', attacks: [{ t: 'spiral', proj: 'prismray', arms: 4, dur: 3.5, dmg: 36, spin: 1.8 }, { t: 'beam', proj: 'prismray', dmg: 44, windup: 0.7, dur: 2 }, { t: 'ring', proj: 'prismray', n: 20, dmg: 34 }, { t: 'teleport' }] },
+      { below: 0.25, speed: 6.5, cd: [0.8, 1.3], say: 'It stops holding its shape, and pieces come away.', enter: { t: 'summon', mob: 'shardling', n: 2 },
         attacks: [{ t: 'rain', proj: 'prismray', n: 16, radius: 11, dmg: 42 }, { t: 'beam', proj: 'prismray', dmg: 48, windup: 0.5, dur: 2.2 }, { t: 'spiral', proj: 'prismray', arms: 6, dur: 3, dmg: 36, spin: -2.4 }, { t: 'teleport' }] },
     ] }),
-  boss('b_hart', 'Moonbound Hart', 7200, 60, 26, 1.25, 3.9, 4000, hart, [['eclipse_ember', 1, 6, 9], ['eclipse_shard', 0.33, 1, 1], ['prism_bar', 1, 6, 12], ['moon_sliver', 1, 4, 8]], {
-    n: 7, move: 'walk', gallop: true, cast: 4.3, head: [2.4, 2.2, 4.7, 0.9], title: 'Herald of the Long Night', intro: 'Hoofbeats, and then no moon.', phases: [
+  boss('b_hart', 'Kuranga', 7200, 60, 26, 1.25, 3.9, 4000, hart, [['eclipse_ember', 1, 6, 9], ['eclipse_shard', 0.33, 1, 1], ['prism_bar', 1, 6, 12], ['moon_sliver', 1, 4, 8]], {
+    n: 7, move: 'walk', gallop: true, cast: 4.3, head: [2.4, 2.2, 4.7, 0.9], title: '', intro: 'Hoofbeats come up out of the dark.', phases: [
       { below: 1, speed: 7, cd: [1.3, 2], attacks: [{ t: 'charge', speed: 24, dmg: 58, windup: 0.6, dur: 1.1 }, { t: 'slam', radius: 7, dmg: 50, windup: 0.6, ring: ['moonblade', 12] }, { t: 'volley', proj: 'moonblade', n: 5, spread: 0.5, dmg: 44 }] },
-      { below: 0.6, speed: 8.5, cd: [1, 1.6], say: 'Its antlers catch a light that is not there.', enter: { t: 'summon', mob: 'moonspawn', n: 3 },
+      { below: 0.6, speed: 8.5, cd: [1, 1.6], say: 'Its tines light up violet.', enter: { t: 'summon', mob: 'moonspawn', n: 3 },
         attacks: [{ t: 'teleport' }, { t: 'charge', speed: 28, dmg: 62, windup: 0.45, dur: 1 }, { t: 'ring', proj: 'moonblade', n: 20, dmg: 44 }, { t: 'rain', proj: 'moonblade', n: 12, radius: 9, dmg: 48 }] },
-      { below: 0.25, speed: 10, cd: [0.7, 1.2], say: 'The Hart will not be led back.', attacks: [{ t: 'charge', speed: 32, dmg: 66, windup: 0.35, dur: 0.9 }, { t: 'teleport' }, { t: 'spiral', proj: 'moonblade', arms: 5, dur: 3, dmg: 44, spin: 2.6 }, { t: 'slam', radius: 9, dmg: 56, windup: 0.5, ring: ['moonblade', 18] }] },
+      { below: 0.25, speed: 10, cd: [0.7, 1.2], say: 'It charges, and is somewhere else.', attacks: [{ t: 'charge', speed: 32, dmg: 66, windup: 0.35, dur: 0.9 }, { t: 'teleport' }, { t: 'spiral', proj: 'moonblade', arms: 5, dur: 3, dmg: 44, spin: 2.6 }, { t: 'slam', radius: 9, dmg: 56, windup: 0.5, ring: ['moonblade', 18] }] },
     ] }),
-  boss('b_sovereign', 'Cairn Sovereign', 11000, 72, 30, 1.9, 6.8, 8000, sovereign, [['cairn_heart', 1, 1, 1], ['sovereign_light', 1, 1, 1], ['cairn_edge', 0.5, 1, 1], ['cairn_bow', 0.5, 1, 1], ['cairn_staff', 0.5, 1, 1], ['cairn_totem', 0.5, 1, 1], ['eclipse_bar', 1, 8, 14]], {
-    n: 8, move: 'hover', cast: 4.25, spin: [0.9, 1.4], title: 'The First Stone Laid', intro: 'It was here before the light. It kept it.', phases: [
+  boss('b_sovereign', 'Nihān', 11000, 72, 30, 1.9, 6.8, 8000, sovereign, [['cairn_heart', 1, 1, 1], ['sovereign_light', 1, 1, 1], ['cairn_edge', 0.5, 1, 1], ['cairn_bow', 0.5, 1, 1], ['cairn_staff', 0.5, 1, 1], ['cairn_totem', 0.5, 1, 1], ['eclipse_bar', 1, 8, 14]], {
+    n: 8, move: 'hover', cast: 4.25, spin: [0.9, 1.4], title: '', intro: 'Stone moves inside the cairn.', phases: [
       { below: 1, speed: 4, cd: [1.4, 2], attacks: [{ t: 'volley', proj: 'cairnstar', n: 5, spread: 0.5, dmg: 54, bursts: 2, gap: 0.3 }, { t: 'slam', radius: 8, dmg: 64, windup: 0.8, ring: ['cairnstar', 14] }, { t: 'ring', proj: 'cairnstar', n: 18, dmg: 50 }] },
-      { below: 0.66, speed: 5, cd: [1.1, 1.7], say: 'Stone grinds on stone. The cairn opens its eye.', attacks: [{ t: 'spiral', proj: 'cairnstar', arms: 5, dur: 3.5, dmg: 50, spin: 1.6 }, { t: 'beam', proj: 'cairnstar', dmg: 60, windup: 0.7, dur: 2 }, { t: 'rain', proj: 'cairnstar', n: 16, radius: 11, dmg: 58 }, { t: 'teleport' }] },
-      { below: 0.33, speed: 6.5, cd: [0.7, 1.2], say: 'All the light it ever kept, all at once.', enter: { t: 'summon', mob: 'moonspawn', n: 3 },
+      { below: 0.66, speed: 5, cd: [1.1, 1.7], say: 'Stone grinds on stone. The stack parts, and its lit middle shows.', attacks: [{ t: 'spiral', proj: 'cairnstar', arms: 5, dur: 3.5, dmg: 50, spin: 1.6 }, { t: 'beam', proj: 'cairnstar', dmg: 60, windup: 0.7, dur: 2 }, { t: 'rain', proj: 'cairnstar', n: 16, radius: 11, dmg: 58 }, { t: 'teleport' }] },
+      { below: 0.33, speed: 6.5, cd: [0.7, 1.2], say: 'It is coming apart, and everything in it shows.', enter: { t: 'summon', mob: 'moonspawn', n: 3 },
         attacks: [{ t: 'charge', speed: 22, dmg: 76, windup: 0.5, dur: 1.2 }, { t: 'spiral', proj: 'cairnstar', arms: 7, dur: 3, dmg: 52, spin: -2.4 }, { t: 'beam', proj: 'cairnstar', dmg: 66, windup: 0.5, dur: 2.4 }, { t: 'rain', proj: 'cairnstar', n: 22, radius: 12, dmg: 60 }, { t: 'teleport' }, { t: 'ring', proj: 'cairnstar', n: 26, dmg: 54 }] },
     ] }),
 );
