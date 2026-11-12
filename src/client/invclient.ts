@@ -3,7 +3,7 @@
 // are kept here: the Inventory and PlayerStats instances (`game.inv`, `game.stats`), the open
 // container, and what `stats` and the snapshot header say of the player.
 import { InvSync, type ViewBox, type Win } from '../net/invsync';
-import { SELF_DEAD, SELF_LOADING, SELF_SLEEPING, type S2COf } from '../net/protocol';
+import { type EventWire, SELF_DEAD, SELF_LOADING, SELF_SLEEPING, type S2COf } from '../net/protocol';
 import { decodeHead } from '../net/snapshot';
 import { Inventory } from '../sim/inventory';
 import type { InvOp, OpResult } from '../sim/invops';
@@ -88,3 +88,18 @@ export class InvClient implements InvChannel {
   }
 }
 const NOTHING: Win['sold'] = [];
+
+// The world event as the HUD and the sky show it, from what the `event` message carries; free of the DOM so a test can run it.
+export function eventLabel(ev: EventWire): string {
+  switch (ev.a) {
+    case 'raid': return `Night raid  ${ev.k} / ${ev.g}`;
+    case 'ashen': return `Sand March  ${ev.k} / ${ev.g}`;
+    case 'moon': return 'Amāvassa';
+    default: return '';
+  }
+}
+export function eventProgress(ev: EventWire, clock: number): number {
+  if (ev.a === 'moon') { const t = clock % 1; return 1 - Math.max(0, Math.min(1, (t - 0.5) / 0.5)); }
+  return ev.g ? ev.k / ev.g : 0;
+}
+export function moonTint(ev: EventWire): [number, number, number] | null { return ev.a === 'moon' ? [1.0, 0.42, 0.78] : null; }

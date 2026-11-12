@@ -4,7 +4,7 @@ import { RARITY, item, itemName, itemRarity } from '../data/items';
 import type { Game } from '../game';
 import { BOSS_BARS } from '../data/hudstyle';
 import { HOTBAR } from '../sim/inventory';
-import type { EventWire } from '../net/protocol';
+import { eventLabel, eventProgress } from '../client/invclient';
 import { BUFFS } from '../sim/stats';
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
@@ -361,19 +361,6 @@ export class Hud {
   }
 }
 
-// ---- the world event, read from its replicated state ----
-export function eventLabel(ev: EventWire): string {
-  switch (ev.a) {
-    case 'raid': return `Night raid  ${ev.k} / ${ev.g}`;
-    case 'ashen': return `Sand March  ${ev.k} / ${ev.g}`;
-    case 'moon': return 'Amāvassa';
-    default: return '';
-  }
-}
-export function eventProgress(ev: EventWire, clock: number): number {
-  if (ev.a === 'moon') { const t = clock % 1; return 1 - Math.max(0, Math.min(1, (t - 0.5) / 0.5)); }
-  return ev.g ? ev.k / ev.g : 0;
-}
-export function moonTint(ev: EventWire): [number, number, number] | null { return ev.a === 'moon' ? [1.0, 0.42, 0.78] : null; }
+export { eventLabel, eventProgress, moonTint } from '../client/invclient';
 /** Nights until the Hollow Moon (0 = tonight), or -1 before the Pale Warden has fallen. */
 export function moonIn(flags: ReadonlySet<string>, clock: number): number { return flags.has('boss:3') ? 7 - (Math.floor(clock) % 8) : -1; }

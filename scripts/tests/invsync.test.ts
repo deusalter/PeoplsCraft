@@ -27,7 +27,8 @@ import { InvClient } from '../../src/client/invclient';
 import { Session } from '../../src/client/session';
 import type { Transport } from '../../src/net/transport';
 import { encodeSnapshot } from '../../src/net/snapshot';
-import { SELF_DEAD } from '../../src/net/protocol';
+import { type EventWire, SELF_DEAD } from '../../src/net/protocol';
+import { eventLabel, eventProgress, moonTint } from '../../src/client/invclient';
 import { Player } from '../../src/player/player';
 import { newRayHit } from '../../src/sim/physics';
 import type { BlockEnt } from '../../src/sim/voxels';
@@ -633,4 +634,31 @@ test('the Guide over a chest: tidy keeps the window on both sides, ops act as wi
   r.flush();
   assert.equal(store.getEnt(...CHEST)!.data.s.some((s: Slot) => s?.k === 'cobble'), true);
   same(r, 'after Back');
+});
+
+test('the HUD reads the world event as the wire carries it: the label, the bar and the moon\'s tint, with no field of the host\'s own', () => {
+  const r = rig(), ev = r.sim.shared.events;
+  // what the `event` message carries: a, k and g, without the day of the last march the host keeps beside them
+  const wire = (): EventWire => { const m: S2C = { t: 'event', a: ev.a, k: ev.k, g: ev.g }; const { t: _t, ...w } = m; return w as EventWire; };
+  const none = (welcome() as S2COf<'welcome'>).event;
+  assert.deepEqual([eventLabel(none), eventProgress(none, 0.7), moonTint(none)], ['', 0, null], 'no event, and a goal of 0 is no bar rather than NaN');
+  r.sim.events.start('raid');
+  const g = ev.g;
+  assert.ok(g > 0);
+  assert.deepEqual([eventLabel(wire()), eventProgress(wire(), 0.7), moonTint(wire())], [`Night raid  0 / ${g}`, 0, null]);
+  ev.k = 3;
+  assert.deepEqual([eventLabel(wire()), eventProgress(wire(), 0.7)], [`Night raid  3 / ${g}`, 3 / g]);
+  r.sim.events.end(false);
+  assert.equal(eventLabel(wire()), '');
+  r.sim.events.start('ashen');
+  assert.deepEqual([eventLabel(wire()), eventProgress(wire(), 0.3)], [`Sand March  0 / ${ev.g}`, 0]);
+  r.sim.events.end(false);
+  // the moon: its bar is the night that is left, whatever its count says
+  r.sim.events.start('moon');
+  const m = wire();
+  assert.equal(eventLabel(m), 'Amāvassa');
+  assert.deepEqual(moonTint(m), [1.0, 0.42, 0.78]);
+  for (const [clock, left] of [[12.3, 1], [12.5, 1], [12.75, 0.5], [12.95, 0.1]] as const) assert.ok(Math.abs(eventProgress(m, clock) - left) < 1e-9, `at ${clock}: ${eventProgress(m, clock)}`);
+  r.sim.events.end(false);
+  assert.equal(moonTint(wire()), null);
 });

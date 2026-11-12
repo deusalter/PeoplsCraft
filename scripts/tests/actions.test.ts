@@ -97,6 +97,26 @@ test('a break is paid for from a budget that fills in sim time: an honest dig pa
   assert.ok(n >= 1);
 });
 
+test('what a break needs is 0.8 of its break time less 0.1 s, never below nothing, over a surplus of 1 s', () => {
+  const near = (a: number, b: number): boolean => Math.abs(a - b) < 1e-9;
+  assert.equal(DIG_SURPLUS, 1.0);
+  assert.ok(near(digNeed(1), 0.7), `digNeed(1) = ${digNeed(1)}`);
+  assert.ok(near(digNeed(2), 1.5), `digNeed(2) = ${digNeed(2)}`);
+  assert.ok(near(digNeed(0.5), 0.3), `digNeed(0.5) = ${digNeed(0.5)}`);
+  assert.equal(digNeed(0.125), 0); assert.equal(digNeed(0.05), 0); assert.equal(digNeed(0), 0);
+  // the same numbers at the edit: with the credit set by hand, 0.8 * bt - 0.1 passes and a hair under it does not
+  const r = rig(), { p } = r, y = GROUND - 1, z = 0;
+  hold(p, PICK);
+  const bt = breakTimeMin(B.stone, p.inv, p.stats, p.modes), exact = 0.8 * bt - 0.1;
+  assert.ok(exact > 0.05, `the pick's break time ${bt} leaves room to test below it`);
+  for (const [credit, ok] of [[0.6 * bt - 0.1, false], [exact - 0.01, false], [exact, true]] as const) {
+    p.digCredit = credit;
+    onDig(r.sim, p, { t: 'dig', on: true, x: 1, y, z });
+    assert.equal(onEdit(r.sim, p, { t: 'edit', seq: r.seq(), k: 0, x: 1, y, z, id: B.stone }), ok, `credit ${credit} of a ${bt} s break`);
+  }
+  assert.ok(near(p.digCredit, 0), 'the accepted break spent exactly what it needed');
+});
+
 test('the dig is held to the fastest time the hand had during it, and to the ground and dry air', () => {
   const r = rig(), { sim, p } = r, x = 1, y = GROUND - 1, z = 0;
   hold(p, PICK, 1, 0); p.inv.slots[1] = { k: 'stick', n: 1 }; p.inv.touch();
