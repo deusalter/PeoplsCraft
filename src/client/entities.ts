@@ -300,8 +300,8 @@ export class EntityStore implements Bodies, Ghosts {
   connect(s: Session): void {
     const net = this.net = new Net(s.local);
     s.onSnapshot((b) => { const snap = decodeSnapshot(b); if (snap) this.onSnapshot(snap); });
-    s.on('welcome', (m) => { this.clearNet(); net.slot = m.you.slot; net.dim = m.dim; net.last = -1; net.head = null; net.offs.length = net.devs.length = 0; net.prevMs = -1;
-      const now = this.clock(); net.est = m.tick; net.offs.push({ ms: now, off: m.tick - now * TPMS }); });
+    // the welcome's tick starts the estimate; only snapshot arrivals move it, since the welcome may have waited for storage
+    s.on('welcome', (m) => { this.clearNet(); net.slot = m.you.slot; net.dim = m.dim; net.last = -1; net.head = null; net.offs.length = net.devs.length = 0; net.prevMs = -1; net.est = m.tick; });
     s.on('tp', (m) => { if (m.dim !== net.dim) { this.clearNet(); net.dim = m.dim; } });
     s.on('pl', (m) => { if (m.del) for (const slot of m.del) { const tr = net.players.get(slot); if (tr) { tr.v.active = false; net.players.delete(slot); } } });
     s.on('rtt', (m) => { const rt = this.clock() - m.c; if (rt >= 0 && rt < 10000) net.half = net.half ? net.half + (rt * TPMS / 2 - net.half) * 0.25 : rt * TPMS / 2; });
