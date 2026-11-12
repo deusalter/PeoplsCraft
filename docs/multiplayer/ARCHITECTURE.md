@@ -892,20 +892,29 @@ export class SimHost {
 // Services the host composes; their files are owned by different lanes in stage 2.
 // src/net/hostchunks.ts
 export class ChunkService {
-  constructor(sim: Sim, edits: EditStore);
+  constructor(sim: Sim, edits: EditStore, viewMax: number);   // the host's `opt.viewMax`: what 4.7 adds SUB_RANGE and SUB_KEEP to
   onChunks(c: Conn, p: SimPlayer, m: C2S & { t: 'chunks' }): void;
   onRealmChange(c: Conn): void;                 // drop every subscription of the connection (also on every bind)
   onBlock(dim: number, x: number, y: number, z: number, id: number, rev: number): void;   // called by Realm.setBlock
   tick(c: Conn, p: SimPlayer): void;            // start queued loads; once per second drop out-of-range subscriptions
-  flush(c: Conn): void;                         // sends pending `b`, `gh`, and `ce` within CE_BYTES (4.7)
+  flushLive(c: Conn): void;                     // the pending `b`, then the pending `gh`
+  flushCe(c: Conn): void;                       // one `ce` within CE_BYTES, while `c.buffered` allows (4.7)
 }
 // src/net/hostsnap.ts
 export class SnapService implements Sink {
   constructor(sim: Sim);
   attach(c: Conn, p: SimPlayer): void; detach(c: Conn): void;
-  flush(c: Conn, tick: number): void;           // state messages, `fx`, then the snapshot on this connection's tick
+  flushState(c: Conn): void;                    // the state messages queued for this connection, in the order the sink took them
+  flushFx(c: Conn): void;                       // the tick's `fx`, if it holds an event
+  flushSnap(c: Conn, tick: number): void;       // the snapshot, if this is the connection's tick and `c.buffered` allows (6.3)
 }
 ```
+
+The send order of 4.1 runs through both services, so neither has one `flush`. `SimHost` calls, for each
+connection in join order: `snap.flushState(c)`, `chunks.flushLive(c)`, `snap.flushFx(c)`,
+`chunks.flushCe(c)`, `snap.flushSnap(c, tick)`. A service writes to a `Conn` inside these calls and nowhere
+else: `Sink.send` and `Sink.broadcast` queue for `flushState`, `Realm.setBlock` queues for `flushLive`, an
+answer to `chunks.full` waits for `flushCe`. A call with nothing to send sends nothing.
 
 ### 3.8 Client session and the interfaces between client modules
 
@@ -992,8 +1001,8 @@ action does `seq = inv.nextSeq()`, `inv.internal(seq, ...)` where the action use
 - The sender may drop a snapshot instead of queueing it (backpressure, 6.3). Snapshots therefore carry
   complete state for everything in them and no events. Events travel in `fx` and are never dropped.
 - Per tick and per connection the host sends, in this order: reliable state messages produced by the
-  tick, the `b` batch, the `fx` batch, the paced `ce` batch (4.7), then the snapshot if this is the
-  connection's snapshot tick.
+  tick, the `b` batch (and a `gh` behind it, when there is one), the `fx` batch, the paced `ce` batch
+  (4.7), then the snapshot if this is the connection's snapshot tick. 3.7 names the call for each.
 - No compression (`perMessageDeflate: false`). Largest inbound JSON accepted: 16 KB. Largest inbound
   binary: 64 bytes. Violations close the connection with `error proto`.
 
@@ -1475,6 +1484,8 @@ Subscription, client side (`ClientVoxels` + `World`)
 Subscription, host side (`ChunkService`)
 
 - Within one `chunks` message `unsub` is applied before `sub`, then `full`.
+- `viewMax` is the host's (`SimHost`'s `opt.viewMax`, the number `welcome.cfg` carries), handed to the
+  service's constructor (3.7); the `Sim` does not hold it.
 - A `sub` is accepted when `dim` is the player's realm and the chunk is within `viewMax + 4` chunks
   (Chebyshev) of the chunk of the stored position; otherwise it is ignored. Accepting records
   `subs[key] = n` (replacing an older nonce, and making the chunk "wanted" again even if its `ce` was
@@ -1749,8 +1760,8 @@ the world stands still behind every loading screen (join, dimension crossing, re
 is what today's `Game.tick` does by returning while `!ready`, and it is one of the three things the
 determinism promise of 10.1 rests on.
 
-`flush`: per connection: queued state messages, `b`, `fx`, the paced `ce`, then the snapshot on its
-tick. Between steps, never inside one: `host.save()` when a save is due (8.1).
+`flush`: per connection: queued state messages, `b` and `gh`, `fx`, the paced `ce`, then the snapshot on
+its tick: the five calls of 3.7, in that order. Between steps, never inside one: `host.save()` when a save is due (8.1).
 
 Clock drivers. Real: a timer loop that accumulates `env.now()` deltas and runs at most 5 steps per
 wake (today's cap in `runFrame`); if it falls further behind it drops the backlog and logs. Manual:
@@ -2605,6 +2616,9 @@ and then frozen; for the rest of stage 2 these files change only through the int
   are settled there: `DigHost.onDig` (what `dig` reports; `Interact` alone knows it), `InvChannel.flushSel`,
   `EditHost` (lane B's predicted place, door and door toggle, called from lane D's `secondary`), `Bodies`
   and `Ghosts` (lane C's entity store, asked by lane B's placement and lane D's shot).
+- The two host services of 3.7, which integration's `host.ts` composes and calls: lane A's `ChunkService`
+  (`viewMax` as its third constructor argument, `flushLive`, `flushCe`) and lane C's `SnapService`
+  (`flushState`, `flushFx`, `flushSnap`). The five flush calls interleave to the send order of 4.1 (D29).
 - Beside the two test files named above, `scripts/tests/hooks.test.ts` (the entity sims' events and wire ids,
   `InlineSource`, `MemStorage`, the three rules) and `scripts/tests/session.test.ts` (`pump`, `act`, `move`).
 - A lane builds beside what runs: until integration, `Game` still constructs the `Sim` on `WorldStore`, and the
@@ -3138,6 +3152,20 @@ leaving creative. Console only.
 (d) When flight is taken back, the moves the client sent before it heard carry a `flying` flag that no
 longer counts; at 24 blocks a second they can overdraw the budget of a body on foot and cost one
 correction.
+
+D29. Stage 2.0 (3.7, 4.1, 4.7, 6.1, 11). The host services, as lanes A and C must build them. Two things in
+3.7 could not be built as written, and each lane would have had to settle them alone.
+(a) One `flush` per service cannot give the send order of 4.1 and 6.1 (state, `b`, `fx`, `ce`, snapshot):
+`b` and `ce` are the chunk service's and stand on either side of `fx`, which is the snapshot service's, as
+are the state messages before and the snapshot after. `ChunkService.flush` is now `flushLive` and
+`flushCe`; `SnapService.flush` is `flushState`, `flushFx` and `flushSnap`; `SimHost` calls the five in
+order for each connection. So that the order holds whatever the step did, a service writes to a
+connection only inside those calls.
+(b) `gh` had no place in the order. It goes out in `flushLive`, behind the tick's `b`: both are news of
+chunks whose `ce` the connection has been sent. A chunk whose `ce` is still to come gets the hash in it.
+(c) `ChunkService` takes `viewMax` as a third constructor argument. 4.7 measures both of its ranges from
+it, and it was only in `SimHost`'s `opt`: `SimOptions` has `cheats`, `maxPlayers`, `solo` and `manual`,
+and `sim/sim.ts` is not lane A's to change. The `Sim` still has no use for it.
 
 ---
 
