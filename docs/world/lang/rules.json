@@ -140,11 +140,11 @@
       "affixes": [
         {"word":"-kāra","makes":"one who does or makes X","ex":[["kumbha","-kāra"],"Kumbakār"]},
         {"word":"-śālā","makes":"place of X, under a roof","ex":[["loha","-śālā"],"Lohasāl"]},
-        {"word":"-deśa","makes":"place of X, a country","ex":[["tṛṇa","-deśa"],"Tanades"]},
+        {"word":"-deśa","makes":"place of X, a country","ex":[["maru","-deśa"],"Marudes"]},
         {"word":"-maya","makes":"thing made of X","ex":[["śilā","-maya"],"Silamaya"]},
         {"word":"-ka","makes":"little X","ex":[["kumbha","-ka"],"Kumbak"]},
         {"word":"mahā","makes":"great X","ex":[["mahā","kūpa"],"Mahakūp"]},
-        {"word":"-gaṇa","makes":"a host of X","ex":[["pakṣin","-gaṇa"],"Pakkigan"]}
+        {"word":"-gaṇa","makes":"a host of X","ex":[["vana","-gaṇa"],"Vanagan"]}
       ]
     },
     "sand": {
@@ -276,7 +276,7 @@
       "join": {
         "mode": "loose",
         "say": "Each word is worn down by itself first and the two are then set side by side, describing word first. Every long vowel of the first word is short. The first word keeps its old stem vowel, which falls before a vowel. An ending (a word written with a leading hyphen) is joined the old way, before the changes run.",
-        "ex": [[["vālukā","bhūmi"],"Balugabūmi"],[["kāca","śakala"],"Kasashagala"],[["loha","-kāra"],"Lohagāra"]],
+        "ex": [[["dāru","deśa"],"Darudesha"],[["maru","jana"],"Maruzana"],[["loha","-kāra"],"Lohagāra"]],
         "tight": [["[aāiīuū]\\+(?={V})",""],["ā\\+","a"],["ī\\+","i"],["ū\\+","u"],["\\+",""]],
         "first": [["ā","a"],["ī","i"],["ū","u"]],
         "between": [["[aiu]\\+(?={V})",""],["\\+",""]]

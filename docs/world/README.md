@@ -14,8 +14,12 @@ This folder is the world bible. It describes a world and gives the cause of ever
 8. `08-for-the-game.md`. An index in tables: what each kill opens and loses, what each country shows, what is proposed, and the changes the bible asks of the game.
 9. `borrowed.md`. Every element taken from an existing fictional world, how it stands there, and how the game uses it. These elements may not be changed.
 10. `invented.md`. Every element made for the game, and why the game needed it. These may be changed, with a reason.
+11. `languages.md`. Which tongue names which kind of thing, the sounds of the two born tongues and the ordered changes that made them, and how to make a new name and check it. The rules, the script and the root list are in `lang/`.
+12. `glossary.md`. Every display name in the game: its meaning, its roots, who named the thing and why, what other peoples call it, the old name and the internal key. It opens with a one-page guide. It is written by `lang/glossary.mjs` and is never edited by hand.
+13. `names.json`. The same names as data, one entry for each internal key, with the rule for the names the game puts together and the letters the font needs. `node lang/derive.mjs --check names.json` checks it.
+14. `names-apply.md`. Where each name goes in the game's source, and every sentence outside the data tables that carries an old name.
 
-Until the naming pass, game things are called by plain description or by their internal keys in code font (`altar3`, `boss:3`, `dim:1`). Keys are save-file identifiers and never change.
+The chapters call game things by plain description or by their internal keys in code font (`altar3`, `boss:3`, `dim:1`). Keys are save-file identifiers and never change. The name the game shows for a key is in `glossary.md`.
 
 ## Rules for writing anything in this world
 

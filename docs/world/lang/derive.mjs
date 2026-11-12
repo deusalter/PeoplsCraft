@@ -148,7 +148,9 @@ const affixWords = () => {
 // tongue is hearth, sand, cutters (Sanskrit proper: every word of `from` must be in roots.json),
 // frame (a term whose spelling borrowed.md fixes) or plain (English). `limit` overrides the
 // 18-character limit, for a boss bar. `other` may hold the same thing's names in other tongues,
-// each an entry of the same shape without a key.
+// each an entry of the same shape without a key. `byHand` marks one of the two forms of
+// languages.md L.9, which are cut by hand and not derived. `same` names the entry (kind:key)
+// that is the same thing under another key: without it, one name of a tongue on two entries fails.
 function check(path) {
   const data = JSON.parse(readFileSync(path, 'utf8'));
   const { index } = loadRoots(join(HERE, 'roots.json'));
@@ -164,7 +166,7 @@ function check(path) {
       console.log(`FAIL ${id}: ${msg}`);
     };
     if ([...e.name].length > limit) fail(`"${e.name}" is ${[...e.name].length} characters, limit ${limit}`);
-    if (e.tongue === 'plain' || e.tongue === 'frame') return;
+    if (e.tongue === 'plain' || e.tongue === 'frame' || e.byHand) return;
     if (!e.from) return fail('a name in a tongue needs a "from" list');
     const flat = e.from.flat().filter((x) => typeof x === 'string');
     for (const w of flat) {
@@ -187,11 +189,20 @@ function check(path) {
     }
     if (got !== e.name) fail(`stored "${e.name}", derived "${got}" from ${JSON.stringify(e.from)}`);
   };
+  const used = new Map();
   for (const e of entries) {
-    const id = e.key ?? e.name;
+    const id = e.kind ? `${e.kind}:${e.key}` : (e.key ?? e.name);
     const limit = e.limit ?? RULES.limits.inventory;
     one(e, id, limit);
     for (const o of e.other ?? []) one(o, `${id} (${o.tongue})`, o.limit ?? limit);
+    if (e.personal) one(e.personal, `${id} (personal)`, limit);
+    if (e.tongue === 'plain' || e.tongue === 'frame' || e.name === '') continue;
+    const first = used.get(e.name);
+    if (!first) used.set(e.name, { id, same: e.same });
+    else if (e.same !== first.id && first.same !== id) {
+      bad++;
+      console.log(`FAIL ${id}: "${e.name}" is also the name of ${first.id}`);
+    }
   }
   console.log(`${seen} derived names checked, ${bad} problem${bad === 1 ? '' : 's'}`);
   process.exit(bad ? 1 : 0);
