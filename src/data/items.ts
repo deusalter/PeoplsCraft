@@ -65,15 +65,15 @@ mat('hide', 'Hide', 'hide', 0xa8703c, 0x6a4420);
 mat('bone', 'Bone', 'bone', 0xece6d2, 0xb0a890);
 mat('iron_bar', 'Iron Bar', 'ingot', 0xd4d6dc, undefined);
 mat('gold_bar', 'Gold Bar', 'ingot', 0xf4cb3a, undefined, 1);
-mat('lumenite', 'Hīrak', 'gem', 0x4fe6e0, undefined, 2, 'A cold-burning gem from the deep stone.');
-mat('mana_crystal', 'Crystal', 'gem', 0x4f86f6, undefined, 1, 'Hums faintly. The core of every spell focus.');
+mat('lumenite', 'Hīrak', 'gem', 0x4fe6e0, undefined, 2, 'A clear gem from the deep rock. It gives a cold light.');
+mat('mana_crystal', 'Crystal', 'gem', 0x4f86f6, undefined, 1, 'Old lees, set hard. The head of every staff.');
 mat('cinder_bar', 'Jalit Bar', 'ingot', 0xff7a2a, undefined, 2);
 mat('umbrite_bar', 'Antar Bar', 'ingot', 0x9a5af0, undefined, 3, '', 0xd8a0ff);
 mat('noctrium_bar', 'Tala Bar', 'ingot', 0x1f9e8a, undefined, 3, '', 0xb6ff8a);
 mat('aether_bar', 'Ākās Bar', 'ingot', 0x4fb6f6, undefined, 4, '', 0xffffff);
 mat('prism_bar', 'Patik Bar', 'ingot', 0xf6a0f0, undefined, 4);
 mat('eclipse_bar', 'Gahan Bar', 'ingot', 0x7a3ad0, undefined, 5, '', 0xffb45a);
-mat('weave', 'Crystal Fiber', 'cloth', 0x6a4ab8, 0xc8a0ff, 1, 'Fiber spun around a mana crystal.');
+mat('weave', 'Crystal Fiber', 'cloth', 0x6a4ab8, 0xc8a0ff, 1, 'Fiber laid round a crystal.');
 mat('effigy', 'Carved Bone', 'idol', 0xece6d2, 0x2f8a7a, 1, 'A little carved thing that something answers to.');
 // creature drops
 mat('gel', 'Jelly', 'orb', 0x7ad6a0, 0x3f8a5a);
@@ -88,12 +88,12 @@ mat('spore_sac', 'Spore Sac', 'orb', 0x8af0d8, 0x3f8f86, 2);
 mat('moth_dust', 'Moth Dust', 'dust', 0xc8a0ff, 0xf0e0ff, 2);
 mat('rift_scale', 'Vihanga Scale', 'scale', 0x9ab6ff, 0x4a5ab0, 3);
 mat('shard', 'Shard', 'gem', 0xf4f0ff, undefined, 3);
-mat('ash_token', 'Mūda', 'coin', 0x8a8a92, 0x4a4a52, 1, 'Carried by the Ashen Host. Traders will take them.');
+mat('ash_token', 'Mūda', 'coin', 0x8a8a92, 0x4a4a52, 1, 'Glass from under a sand-country fire. A night inside the light at any of their fires.');
 mat('moon_sliver', 'Moon Sliver', 'fang', 0xfff0d0, 0xd0b070, 3);
 // boss drops
-mat('heartroot', 'Vanahar Remains', 'root', 0x6ae05a, 0x8a5f3c, 2, 'Still beating. Lets a bench bind trinkets together.');
-mat('scorched_core', 'Maruhar Remains', 'orb', 0xff7a2a, 0x5a1a0a, 3, 'Hot enough to smelt cindrite.');
-mat('warden_sigil', 'Kankāl Remains', 'sigil', 0x6ab8f6, 0x2a3a5a, 3, 'The key the Pale Warden was set to guard.');
+mat('heartroot', 'Vanahar Remains', 'root', 0x6ae05a, 0x8a5f3c, 2, 'It still moves. On a bench it loosens two worked pieces far enough to join them.');
+mat('scorched_core', 'Maruhar Remains', 'orb', 0xff7a2a, 0x5a1a0a, 3, 'Bedded in a ring of deep rock, it loosens Jalit ore.');
+mat('warden_sigil', 'Kankāl Remains', 'sigil', 0x6ab8f6, 0x2a3a5a, 3, 'A piece of Kankāl.');
 mat('queen_spore', 'Guhamāt Remains', 'orb', 0x4ae6b8, 0x6a3f9a, 4, 'Feeds a kiln that burns without heat.');
 mat('storm_plume', 'Jīmūt Remains', 'feather', 0x9ab6ff, 0xf4f8ff, 4, 'Crackles. Points upward no matter how you hold it.');
 mat('prism_heart', 'Ratan Remains', 'gem', 0xf4f0ff, undefined, 5, 'Splits light, heat and ore alike.');
@@ -125,18 +125,18 @@ add('void_arrow', 'Antar Arrow', { t: 'arrow', a: 0x9a5af0, b: 0x2a2040 }, { amm
 add('prism_arrow', 'Patik Arrow', { t: 'arrow', a: 0xf6a0f0, b: 0xd0d0f0 }, { ammoDmg: 22, rarity: 4, tags: ['arrow'] });
 // placers and summoning items
 add('door', 'Door', { t: 'door', a: 0xa77a44 }, { stack: 16, use: 'door' });
-add('hollow_gate_kit', 'Hollow Gate', { t: 'gate', a: 0x8a4af0, b: 0x1e1830 }, { stack: 1, rarity: 3, use: 'gate1', desc: 'Raises a gate to the Gloomroot Hollows where you place it.' });
-add('rift_gate_kit', 'Island Gate', { t: 'gate', a: 0xf6c64a, b: 0x6a6078 }, { stack: 1, rarity: 4, use: 'gate2', desc: 'Raises a gate to the Skyrift where you place it.' });
+add('hollow_gate_kit', 'Hollow Gate', { t: 'gate', a: 0x8a4af0, b: 0x1e1830 }, { stack: 1, rarity: 3, use: 'gate1', desc: 'Raises a gate to the hollow where you place it.' });
+add('rift_gate_kit', 'Island Gate', { t: 'gate', a: 0xf6c64a, b: 0x6a6078 }, { stack: 1, rarity: 4, use: 'gate2', desc: 'Raises a gate to the islands where you place it.' });
 const summon = (n: number, key: string, name: string, t: string, a: number, b: number, rarity: number, desc: string): void =>
   add(key, name, { t, a, b }, { stack: 20, rarity, use: 'summon' + n, desc });
-summon(1, 'verdant_idol', 'Vanahar Likeness', 'idol', 0x6ae05a, 0x8a5f3c, 1, 'Offer at a Rootbound Altar to wake the Mossback Colossus.');
-summon(2, 'sunken_lure', 'Maruhar Lure', 'lure', 0xf6b83a, 0xdcc88c, 2, 'Offer at a Sunken Altar to call up the Dune Maw.');
-summon(3, 'warden_bell', 'Kankāl Bell', 'bell', 0x6ab8f6, 0x5a6274, 2, 'Ring at a Warden Altar. Something will answer.');
-summon(4, 'spore_censer', 'Guhamāt Smoker', 'censer', 0x4ae6b8, 0x3f4f5c, 3, 'Burn at a Mycelial Altar to draw out the Sporemother.');
-summon(5, 'storm_kite', 'Jīmūt Kite', 'kite', 0x9ab6ff, 0x4a5a8a, 3, 'Fly from a Tempest Altar to challenge the Tempest Regent.');
-summon(6, 'prism_lens', 'Ratan Lens', 'lens', 0xf4f0ff, 0xb9b0d6, 4, 'Set on a Prism Altar to focus the Luminarch.');
-summon(7, 'eclipse_mask', 'Kuranga Mask', 'mask', 0xd86af6, 0x1e1830, 4, 'Wear before an Eclipse Altar at night. The Moonbound Hart will see you.');
-summon(8, 'cairn_key', 'Cairn Key', 'key', 0xffd27a, 0x5a6274, 5, 'Opens the First Cairn. There is no closing it again.');
+summon(1, 'verdant_idol', 'Vanahar Likeness', 'idol', 0x6ae05a, 0x8a5f3c, 1, 'Lay it on a Vanahar Altar. Vanahar comes up to it.');
+summon(2, 'sunken_lure', 'Maruhar Lure', 'lure', 0xf6b83a, 0xdcc88c, 2, 'Lay it on a Maruhar Altar. Maruhar comes up to it.');
+summon(3, 'warden_bell', 'Kankāl Bell', 'bell', 0x6ab8f6, 0x5a6274, 2, 'Lay it on a Kankāl Altar. Kankāl comes up to it.');
+summon(4, 'spore_censer', 'Guhamāt Smoker', 'censer', 0x4ae6b8, 0x3f4f5c, 3, 'Lay it on a Guhamāt Altar. Guhamāt comes to the smoke.');
+summon(5, 'storm_kite', 'Jīmūt Kite', 'kite', 0x9ab6ff, 0x4a5a8a, 3, 'Fly it from a Jīmūt Altar. Jīmūt comes to it.');
+summon(6, 'prism_lens', 'Ratan Lens', 'lens', 0xf4f0ff, 0xb9b0d6, 4, 'Lay it on a Ratan Altar. Ratan comes to it.');
+summon(7, 'eclipse_mask', 'Kuranga Mask', 'mask', 0xd86af6, 0x1e1830, 4, 'Lay it on a Kuranga Altar at night. Kuranga comes up to it.');
+summon(8, 'cairn_key', 'Cairn Key', 'key', 0xffd27a, 0x5a6274, 5, 'Lay it on the Cairn. Nihān comes up through the base to take it.');
 
 // ---- accessories ----
 const acc = (key: string, name: string, t: string, a: number, b: number, rarity: number, stats: Stats, desc: string): void =>
@@ -152,7 +152,7 @@ acc('iron_bracer', 'Arm Guard', 'bracer', 0xd4d6dc, 0x8a5f34, 1, { def: 3 }, '+3
 acc('briar_bracer', 'Thorned Guard', 'bracer', 0x6a8a3a, 0xd4d6dc, 2, { def: 4, thorns: 0.4 }, '+4 defense. Attackers take 40% of the damage they deal.');
 acc('warriors_band', 'Arm Ring', 'ring', 0xe5544b, 0xd4d6dc, 1, { melee: 0.08 }, '+8% melee damage.');
 acc('marksman_lens', 'Eyeglass', 'lens', 0x7fd66b, 0xf4cb3a, 1, { ranged: 0.08, crit: 0.04 }, '+8% ranged damage, +4% critical chance.');
-acc('sages_ring', 'Crystal Ring', 'ring', 0x5aa9ff, 0xf4cb3a, 1, { magic: 0.08, mana: 20 }, '+8% magic damage, +20 mana.');
+acc('sages_ring', 'Crystal Ring', 'ring', 0x5aa9ff, 0xf4cb3a, 1, { magic: 0.08, mana: 20 }, '+8% crystal-work damage, +20 mana.');
 acc('binders_whistle', 'Whistle', 'whistle', 0x2f8a7a, 0xece6d2, 2, { minions: 1 }, '+1 minion.');
 acc('duelists_sigil', 'Knuckle Band', 'sigil', 0xffa13c, 0xd4d6dc, 3, { dmg: 0.09, crit: 0.05 }, '+9% all damage, +5% critical chance.');
 acc('heart_locket', 'Locket', 'amulet', 0xe5544b, 0xf4cb3a, 1, { hp: 20 }, '+20 maximum health.');
@@ -168,11 +168,11 @@ acc('reach_gauntlet', 'Long Glove', 'bracer', 0xf2c14e, 0x4a4e5a, 2, { reach: 1.
 acc('mossheart_sprig', 'Vanahar Sprig', 'root', 0x6ae05a, 0xe5544b, 2, { regen: 1, hp: 15 }, 'Health regenerates faster. +15 health.');
 acc('maw_fang', 'Maruhar Tooth', 'fang', 0xf6b83a, 0xdcc88c, 3, { crit: 0.1 }, '+10% critical chance.');
 acc('wardens_aegis', 'Kankāl Plate', 'shield', 0x6ab8f6, 0x5a6274, 3, { def: 8, knockRes: 0.6 }, '+8 defense and you barely budge when struck.');
-acc('mycelial_crown', 'Guhamāt Cap', 'crown', 0x4ae6b8, 0x6a3f9a, 4, { minions: 1, summon: 0.12 }, '+1 minion, +12% summon damage.');
+acc('mycelial_crown', 'Guhamāt Cap', 'crown', 0x4ae6b8, 0x6a3f9a, 4, { minions: 1, summon: 0.12 }, '+1 minion, +12% totem damage.');
 acc('tempest_feather', 'Jīmūt Feather', 'feather', 0x9ab6ff, 0xfff0a0, 4, { speed: 0.22, noFall: 1, atkSpeed: 0.08 }, '+22% speed, +8% attack speed, no fall damage.');
-acc('prism_core', 'Ratan Crystal', 'gem', 0xf4f0ff, 0xf6a0f0, 5, { magic: 0.16, manaRegen: 4, mana: 40 }, '+16% magic damage, +40 mana, faster mana regeneration.');
+acc('prism_core', 'Ratan Crystal', 'gem', 0xf4f0ff, 0xf6a0f0, 5, { magic: 0.16, manaRegen: 4, mana: 40 }, '+16% crystal-work damage, +40 mana, faster mana regeneration.');
 acc('eclipse_shard', 'Kuranga Tine', 'fang', 0xd86af6, 0x1e1830, 5, { dmg: 0.14, crit: 0.06 }, '+14% all damage, +6% critical chance.');
-acc('sovereign_light', 'Cairn Gem', 'crown', 0xffd27a, 0xffffff, 6, { dmg: 0.12, def: 8, hp: 40, mana: 40, speed: 0.1, regen: 1 }, 'The cairn remembers you. Everything, a little better.');
+acc('sovereign_light', 'Cairn Gem', 'crown', 0xffd27a, 0xffffff, 6, { dmg: 0.12, def: 8, hp: 40, mana: 40, speed: 0.1, regen: 1 }, 'A piece of the housing with its gem in it. Everything, a little better.');
 
 // ---- generated gear ----
 const TOOL: [string, ToolKind, string, number][] = [['pickaxe', 'pick', 'Pick', 0.5], ['axe', 'axe', 'Axe', 0.75], ['shovel', 'shovel', 'Shovel', 0.4]];
@@ -243,8 +243,8 @@ export function setBonus(set: string): { stats: Stats; text: string } | null {
   switch (st as Style) {
     case 'melee': return { stats: { melee: p, def: 2 + ti }, text: `+${pct}% melee damage, +${2 + ti} defense` };
     case 'ranged': return { stats: { ranged: p, crit: 0.04 + ti * 0.005 }, text: `+${pct}% ranged damage, +${Math.round((0.04 + ti * 0.005) * 100)}% critical chance` };
-    case 'magic': return { stats: { magic: p, mana: 20 + ti * 10, manaRegen: 1 + ti * 0.3 }, text: `+${pct}% magic damage, +${20 + ti * 10} mana` };
-    case 'summon': return { stats: { summon: p, minions: ti >= 6 ? 2 : 1 }, text: `+${pct}% summon damage, +${ti >= 6 ? 2 : 1} minion${ti >= 6 ? 's' : ''}` };
+    case 'magic': return { stats: { magic: p, mana: 20 + ti * 10, manaRegen: 1 + ti * 0.3 }, text: `+${pct}% crystal-work damage, +${20 + ti * 10} mana` };
+    case 'summon': return { stats: { summon: p, minions: ti >= 6 ? 2 : 1 }, text: `+${pct}% totem damage, +${ti >= 6 ? 2 : 1} minion${ti >= 6 ? 's' : ''}` };
   }
   return null;
 }
@@ -271,6 +271,8 @@ export const MODIFIERS: Modifier[] = [
 export const MOD_BY_KEY = new Map(MODIFIERS.map((m) => [m.key, m]));
 
 export interface Item { k: string; n: number; m?: string }
+/** 'a' or 'an' for a name, counting the marked vowels Ā Ī Ū as vowels. */
+export const article = (name: string): string => (/^[AEIOUĀĪŪ]/i.test(name) ? 'an' : 'a');
 export const itemName = (it: Item): string => (it.m ? MOD_BY_KEY.get(it.m)!.name + ' ' : '') + item(it.k).name;
 export const itemRarity = (it: Item): number => Math.max(0, Math.min(6, item(it.k).rarity + (it.m ? MOD_BY_KEY.get(it.m)!.rar : 0)));
 /** Roll a modifier for an item that can carry one. `chance` is the odds of getting any at all. */

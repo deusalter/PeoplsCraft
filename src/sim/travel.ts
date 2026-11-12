@@ -1,5 +1,5 @@
 // Moving a player between places the client has to load: dimension crossings, the way home, landing.
-import { SEA } from '../core/constants';
+import { DIM_NAMES, SEA } from '../core/constants';
 import { B, BLOCKS, T_LIQUID, T_OPAQUE, T_SOLID } from '../data/blocks';
 import { DIMS } from '../data/dims';
 import { buildGate } from './gates';
@@ -47,7 +47,7 @@ export function travel(sim: Sim, p: SimPlayer, to: 0 | 1 | 2, home = false): voi
   else if (ret) b.teleport(ret[0] + 0.5, ret[1] + 0.1, ret[2] + 0.5);
   else { b.teleport(px + 0.5, 120, pz + 0.5); p.arriving = to; }
   if (to !== 0) sim.addFlag('dim:' + to);
-  sendTp(sim, p, true, to === 0 ? 'Returning to the Overworld' : `Crossing into ${DIMS[to].name}`);
+  sendTp(sim, p, true, to === 0 ? 'Returning to the living ground' : `Crossing to ${DIM_NAMES[to]}`);
 }
 
 /** Find footing after arriving somewhere new, and raise a return gate if the player came by portal. */

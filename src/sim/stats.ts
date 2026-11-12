@@ -8,7 +8,7 @@ export const ATTR_DESC: Record<Attr, string> = {
   str: '+2% melee damage and +1% mining speed per point',
   agi: '+1.5% ranged damage, +0.5% critical chance and +0.4% speed per point',
   vit: '+6 health and +0.25 defense per point',
-  arc: '+2% magic and summon damage, +6 mana per point',
+  arc: '+2% crystal-work and totem damage, +6 mana per point',
 };
 export const BUFFS: Record<string, { name: string; stats: Stats }> = {
   ironbark: { name: 'Toughened', stats: { def: 6 } },

@@ -366,8 +366,8 @@ type EventState = SharedState['events'];
 export function eventLabel(ev: EventState): string {
   switch (ev.a) {
     case 'raid': return `Night raid  ${ev.k} / ${ev.g}`;
-    case 'ashen': return `The Ashen Host  ${ev.k} / ${ev.g}`;
-    case 'moon': return 'The Hollow Moon is risen';
+    case 'ashen': return `Sand March  ${ev.k} / ${ev.g}`;
+    case 'moon': return 'Amāvassa';
     default: return '';
   }
 }

@@ -172,7 +172,7 @@ export function tickPlayer(sim: Sim, p: SimPlayer, dt: number): void {
   if (b.y < (p.dim === 2 ? 20 : -16) && !st.dead) {
     if (p.dim === 2 && !p.modes.creative) {
       st.hurtT = 0; hit(st.damage(st.maxHp * 0.35, rnd, true), 'void');
-      if (st.dead) onDeath(sim, p, 'void'); else { b.teleport(p.safe[0], p.safe[1] + 0.2, p.safe[2]); sendTp(sim, p, false); sim.sink.emit({ p: p.slot }, ['t', 'The Rift throws you back.', '#c8d0ff']); }
+      if (st.dead) onDeath(sim, p, 'void'); else { b.teleport(p.safe[0], p.safe[1] + 0.2, p.safe[2]); sendTp(sim, p, false); sim.sink.emit({ p: p.slot }, ['t', 'You are back on the last footing.', '#c8d0ff']); }
     } else { b.teleport(b.x, 220, b.z); sendTp(sim, p, false); }
   }
   st.tick(dt, inv, b.sprinting);

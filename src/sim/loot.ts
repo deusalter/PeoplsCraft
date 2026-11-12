@@ -31,7 +31,7 @@ export function onMobKilled(realm: Realm, m: Mob, by: SimPlayer | null): void {
   sim.events.onKill(m);
   if (d.boss) {
     sim.addFlag('boss:' + d.boss.n);
-    sim.sink.emit({ dim: realm.dim }, ['n', `${d.name} has fallen`, d.boss.n === 8 ? 'The first light is yours' : 'Check the guide for what this unlocks', '#ffe27a']);
+    sim.sink.emit({ dim: realm.dim }, ['n', `${d.name} has fallen`, d.boss.n === 8 ? '' : 'Check the guide for what this unlocks', '#ffe27a']);
     sim.sink.emit({ dim: realm.dim }, ['s', 'levelup', 1, 1]); sim.sink.emit({ dim: realm.dim }, ['k', 0.6]);
     realm.burst(BURST.bossDeath, m.x, m.y + m.h * 0.5, m.z, defIndex(m.def));
     onBossGone(realm, m, true);

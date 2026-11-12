@@ -70,7 +70,7 @@ const INIT: BlockInit[] = [
   { key: 'mud', name: 'Mud', tex: 'mud', hard: 0.5, tool: 'shovel', sound: 'dirt' },
   { key: 'snowy_grass', name: 'Snowy Turf', tex: ['snow', 'dirt', 'snowy_side'], hard: 0.6, tool: 'shovel', sound: 'snow', drops: [['dirt', 1, 1, 1]] },
   rock('scoria', 'Scoria', 2),
-  rock('nightglass', 'Black Glass', 14, 4, { sound: 'glass', desc: 'Volcanic glass. Only a Lumenite pick bites into it.' }),
+  rock('nightglass', 'Black Glass', 14, 4, { sound: 'glass', desc: 'Glass from the deepest rock. Only a Hīrak pick bites into it.' }),
   { key: 'water', name: 'Water', tex: 'water', shape: 'liquid', mat: 'translucent', atten: 2, tint: 3, liquid: 1, liqH: 14, hard: -1, drops: [], sound: 'liquid' },
   flow(7), flow(6), flow(5), flow(4), flow(3), flow(2), flow(1),
   { key: 'lava', name: 'Lava', tex: 'lava', shape: 'liquid', mat: 'opaque', atten: 0, liquid: 2, liqH: 14, light: [15, 9, 3], emissive: 150, hard: -1, drops: [], sound: 'liquid', damage: 4 },

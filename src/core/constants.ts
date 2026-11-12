@@ -19,7 +19,7 @@ export const chunkKey = (cx: number, cz: number): number => (cx + 32768) * 65536
 
 export const DIM = { Overworld: 0, Hollows: 1, Rift: 2 } as const;
 export type DimId = 0 | 1 | 2;
-export const DIM_NAMES = ['Overworld', 'Gloomroot Hollows', 'The Skyrift'];
+export const DIM_NAMES = ['the living ground', 'the hollow', 'the islands'];
 
 export const GAME_TITLE = 'Peopls Craft';
 export const DAY_LENGTH = 1200;  // seconds per full day

@@ -19,8 +19,8 @@ export class EventSim {
     const sim = this.sim, ev = sim.shared.events, diff = sim.difficulty(), mobs = sim.realms[0].mobs, to = { dim: 0 };
     ev.a = kind; ev.k = 0; this.spawnT = 3;
     if (kind === 'raid') { ev.g = 10 + diff * 3; sim.sink.emit(to, ['n', 'A raid gathers in the dark', 'Hold until dawn or break them', '#ff9a8a']); sim.sink.emit(to, ['s', 'horn', 1, 1]); mobs.pressure = 1; }
-    else if (kind === 'ashen') { ev.g = 18 + diff * 6; sim.sink.emit(to, ['n', 'The Ashen Host marches', 'Defeat them to break the invasion', '#ffb86a']); sim.sink.emit(to, ['s', 'horn', 1, 1]); mobs.pressure = 1; ev.l = Math.floor(sim.shared.clock); }
-    else { sim.sink.emit(to, ['n', 'The Hollow Moon rises', 'Strange things walk tonight', '#ff8ad0']); sim.sink.emit(to, ['s', 'bell', 1, 1]); mobs.pressure = 0.8; }
+    else if (kind === 'ashen') { ev.g = 18 + diff * 6; sim.sink.emit(to, ['n', 'A march from the sand country', 'Beat them off before dusk', '#ffb86a']); sim.sink.emit(to, ['s', 'horn', 1, 1]); mobs.pressure = 1; ev.l = Math.floor(sim.shared.clock); }
+    else { sim.sink.emit(to, ['n', 'Amāvassa', 'The moon is dark tonight', '#ff8ad0']); sim.sink.emit(to, ['s', 'bell', 1, 1]); mobs.pressure = 0.8; }
   }
   end(won: boolean): void {
     const sim = this.sim, ev = sim.shared.events, kind = ev.a, realm = sim.realms[0], mobs = realm.mobs, to = { dim: 0 };
@@ -30,11 +30,11 @@ export class EventSim {
     if (won) {
       const coins = (kind === 'ashen' ? 60 : 25) * (1 + sim.difficulty());
       for (const p of realm.players) { p.inv.coins += coins; p.inv.touch(); gainXp(sim, p, 40 + sim.difficulty() * 30); }
-      sim.sink.emit(to, ['n', kind === 'ashen' ? 'The Ashen Host is broken' : 'The raid is broken', `+${coins} coins`, '#b8f070']);
+      sim.sink.emit(to, ['n', kind === 'ashen' ? 'The march is beaten off' : 'The raid is broken', `+${coins} coins`, '#b8f070']);
       sim.sink.emit(to, ['s', 'levelup', 1, 1]);
       if (kind === 'ashen') { sim.addFlag('event:ashen'); for (const p of realm.players) { const left = p.inv.add({ k: 'ash_token', n: 4 + sim.difficulty() * 2 }); if (left) dropItem(sim, p, { k: 'ash_token', n: left }); } }
       sim.addFlag('event:' + kind);
-    } else sim.sink.emit(to, ['n', kind === 'raid' ? 'Dawn scatters the raid' : 'The Host withdraws', '', '#c8d0e8']);
+    } else sim.sink.emit(to, ['n', kind === 'raid' ? 'Dawn scatters the raid' : 'The march turns for home', '', '#c8d0e8']);
     for (const m of mobs.list) if (m.active && m.event && !m.boss) mobs.remove(m);
   }
   onKill(m: Mob): void {

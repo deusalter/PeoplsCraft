@@ -87,7 +87,7 @@ export class NpcSim {
   /** One-line status for a bed, shown when a player right-clicks it. */
   status(x: number, y: number, z: number, dim: number): string {
     const h = this.homes.find((q) => q.x === x && q.y === y && q.z === z);
-    if (dim !== 0) return 'Townsfolk only settle in the Overworld.';
+    if (dim !== 0) return 'Townsfolk settle only on the living ground.';
     if (h?.npc) return `${NPCS.find((n) => n.key === h.npc)!.name} lives here.`;
     const bad = this.check(x, y, z);
     if (bad) return bad;

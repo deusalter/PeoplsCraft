@@ -20,7 +20,7 @@ export type WinMode = 'inv' | 'station' | 'chest' | 'forge' | 'shop' | 'guide';
 type WinOpts = { station?: string; chest?: Slot[]; forge?: BlockEnt; shop?: NpcDef };
 
 const STAT_TEXT: Record<string, [string, boolean]> = {
-  melee: ['melee damage', true], ranged: ['ranged damage', true], magic: ['magic damage', true], summon: ['summon damage', true], dmg: ['damage', true], crit: ['critical chance', true],
+  melee: ['melee damage', true], ranged: ['ranged damage', true], magic: ['crystal-work damage', true], summon: ['totem damage', true], dmg: ['damage', true], crit: ['critical chance', true],
   def: ['defense', false], hp: ['maximum health', false], mana: ['maximum mana', false], manaRegen: ['mana regeneration', false], regen: ['health regeneration', false], speed: ['movement speed', true],
   jump: ['jump height', true], minions: ['minion slot', false], mining: ['mining speed', true], atkSpeed: ['attack speed', true], knockRes: ['knockback resistance', true], pickup: ['pickup range', false],
   thorns: ['damage reflected', true], dodge: ['dodge chance', true], luck: ['luck', true], swim: ['swim speed', true], reach: ['reach', false],
@@ -576,7 +576,7 @@ export class Windows {
     let h = `<div class="nm" style="color:${RARITY[r].color}">${esc(itemName(s))}</div><div class="ty">${RARITY[r].name} · ${kind}</div>`;
     if (d.weapon) {
       const wpn = d.weapon, [dmg, dps] = this.weaponNums(s);
-      h += `<div class="ln">${dmg} ${wpn.style} damage${wpn.minion ? ' per hit' : ''}</div>`;
+      h += `<div class="ln">${dmg} ${STYLE_INFO[wpn.style].label.toLowerCase()} damage${wpn.minion ? ' per hit' : ''}</div>`;
       if (!wpn.minion) h += `<div class="ln">${wpn.rate.toFixed(1)} attacks per second · ${dps} damage per second</div>`;
       if (wpn.mana) h += `<div class="ln">Uses ${wpn.mana} mana</div>`;
       if (wpn.ammo) h += `<div class="ln">Uses arrows</div>`;
@@ -622,8 +622,8 @@ export class Windows {
 function npcLine(g: Game, n: NpcDef): string {
   if (n.key === 'wayfinder') {
     const moon = moonIn(g.flags, g.clock), r = Math.random();
-    if (moon >= 0 && r > 0.85) return moon === 0 ? 'The Hollow Moon turns tonight. Moonspawn carry the slivers.' : `The Hollow Moon turns in ${moon} night${moon > 1 ? 's' : ''}.`;
-    if (r < 0.6) return 'Next: ' + QUESTS[g.quests.index].hint;
+    if (moon >= 0 && r > 0.85) return moon === 0 ? 'Amāvassa is tonight. The Chandasāvak carry the slivers.' : `Amāvassa is in ${moon} night${moon > 1 ? 's' : ''}.`;
+    if (r < 0.6 && QUESTS[g.quests.index].hint) return 'Next: ' + QUESTS[g.quests.index].hint;
   }
   return n.lines[(Math.random() * n.lines.length) | 0];
 }
