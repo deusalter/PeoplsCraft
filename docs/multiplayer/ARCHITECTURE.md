@@ -2854,6 +2854,15 @@ thrown stack and the whole inventory, container, shop and attribute state agreed
 exists from this step and is the third compile of `npm run check` (D20 (a) expected it with stage 4):
 it includes `server` and `scripts`, of which only the tests exist yet.
 
+D26. Stage 1, read again against `8187558` (2.3, 3.3, 4.3, 6.1). Where the one-thread build still differed
+from the old tree in a way D20 to D25 do not name, and what was done about each.
+(a) `actions.talk` makes no distance test. The "within 5 blocks" of 4.3 is a check of the `talk` message
+and arrives with `Sim.handle` (D21 (b)), as the reach check of `use` does. Made in `actions.talk` from
+the feet of the player to the feet of the townsperson (`5 + hw`), it refused a click the client's ray
+allows: 4 blocks from the eye with 0.15 of padding reaches a townsperson standing up to about 5.8 blocks
+above the player, the prompt said "Right-click: trade", and the click went on to place the held block.
+When the check arrives it has to pass everything that ray can reach.
+
 ---
 
 ## 14. Review log

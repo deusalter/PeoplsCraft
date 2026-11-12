@@ -178,8 +178,8 @@ export function trySummon(sim: Sim, p: SimPlayer, n: number, x: number, y: numbe
 }
 /** Right-click on a townsperson: open their shop. */
 export function talk(sim: Sim, p: SimPlayer, mobId: number): boolean {
-  const m = sim.realms[p.dim].mobs.byId(mobId), n = m ? npcOf(m.def.key) : undefined, b = p.body;
-  if (!m || !n || Math.hypot(m.x - b.x, m.y - b.y, m.z - b.z) > 5 + m.hw) return false;
+  const m = sim.realms[p.dim].mobs.byId(mobId), n = m ? npcOf(m.def.key) : undefined;
+  if (!m || !n) return false;
   m.talk = 6;
   p.window = { mode: 'shop', npc: n.key, mob: m.id, sold: [] }; sim.sink.send(p.slot, { t: 'open', mode: 'shop', npc: n.key });
   return true;
