@@ -2866,6 +2866,26 @@ When the check arrives it has to pass everything that ray can reach.
 reads the movement multipliers and before `interact.tick` reads reach, attack rate and break time. The
 sync of the player's step (D21 (d)) stays. With only that one, the body and the hand used the derived
 stats of a tick earlier after a pickup, a thrown stack or a change of the held slot.
+(c) The creature clock. `Sim.time` is `tick * STEP` (3.3), and the boss and minion code reads it where it
+read `Game.time`: the hover bob, the burrower's weave and jaw, a minion's idle orbit, and the 1.2 s and
+0.4 s throttles of the cast sound and the footfall. `Game.time` was the frame clock: it started at 0 with
+the page, ran on through a pause and a loading screen, and had one value for all the ticks of a catch-up
+frame. The sim's clock moves one `STEP` per step and comes back with the saved tick. The motions keep
+their shape at another phase, and the throttles count simulated time. No rule, draw or save reads it.
+(d) A player who stops being active between two steps is neither ticked nor hurt in the next (6.1,
+step 4). In `Game.tick` whatever followed the Recall Stone in that tick still ran. With the client's half
+ahead of the step (D21 (d)), a recall that has to load (the bed outside the meshed area, no bed, or
+another realm) skips that one step for the player: 1/60 s of hunger, regeneration, buff and portal
+timers, and anything a creature or a shot at the destination would have dealt in it.
+(e) `event <kind>` typed in the Hollow or the Rift. The command acts on the world (7.10) and events
+belong to the Overworld (7.5): the banner and the horn or bell go to the Overworld, the pressure is set
+on realm 0, and with nobody there the event ends unseen on the next step. In `Game` the one HUD and the
+one `MobSystem` were the caller's, so the same command showed the start banner, gave the dimension the
+caller stood in one tick of event pressure and then showed the end banner. Console and harness only.
+(f) The 30% roll that decides whether a lit forge puffs is a draw of `shared.rnd` in `tickForge`, where
+its `Math.random` sat (D21 (j)): the sim decides and emits burst 11. The particle draws of D21 (j) are
+the ones `fxplay.ts` makes to shape a burst. The roll is made on every block tick, as before: up to 4
+puffs a second for one forge and 1.2 on average, where 4.6 says at most 2.
 
 ---
 
