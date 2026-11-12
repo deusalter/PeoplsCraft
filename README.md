@@ -107,8 +107,10 @@ Design notes worth knowing before changing things:
   and what the hands do, shows a break, a placement or an inventory change at once and takes the
   host's word when it differs, and draws creatures from the host's snapshots. Today the host runs in
   the page's own thread and the two are joined by `net/loopback.ts`, with the game's frame stepping
-  the host; nothing in `game.ts` imports the simulation. The co-op plan moves the host into a worker
-  for solo play and into a Node server for friends, on the same messages.
+  the host. The client shares rules and tables with the simulation (`sim/rules.ts`, `sim/invops.ts`,
+  the physics) but reaches the running one only through its session: no client file but `dev.ts`
+  imports `sim/sim.ts`. The co-op plan moves the host into a worker for solo play and into a Node
+  server for friends, on the same messages.
 - **Inventory ops.** A click in a window does not move an item. The window sends an op
   (`click`, `quick`, `book`, `buy` ...) and `applyOp` in `sim/invops.ts` carries it out or refuses it,
   returning the sound and the line to show. A refused op changes nothing.
