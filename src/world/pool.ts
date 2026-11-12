@@ -31,6 +31,8 @@ export class WorkerPool {
       this.workers.push(w); this.idle.push(i); this.jobOf.push(0);
     }
   }
+  /** Workers for chunk jobs beside the solo simulation's own worker, which takes one core more than a host's client. */
+  static soloSize(cores = navigator.hardwareConcurrency || 4): number { return Math.max(2, Math.min(6, cores - 3)); }
   get idleCount(): number { return this.idle.length; }
   get busy(): number { return this.size - this.idle.length; }
   /** `cb` receives the worker's reply, or null if the job threw. */
