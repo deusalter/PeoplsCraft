@@ -2862,6 +2862,10 @@ the feet of the player to the feet of the townsperson (`5 + hw`), it refused a c
 allows: 4 blocks from the eye with 0.15 of padding reaches a townsperson standing up to about 5.8 blocks
 above the player, the prompt said "Right-click: trade", and the click went on to place the held block.
 When the check arrives it has to pass everything that ray can reach.
+(b) `Game.tick` calls `stats.sync` itself, where it always did: after the hotbar and drop keys, before it
+reads the movement multipliers and before `interact.tick` reads reach, attack rate and break time. The
+sync of the player's step (D21 (d)) stays. With only that one, the body and the hand used the derived
+stats of a tick earlier after a pickup, a thrown stack or a change of the held slot.
 
 ---
 

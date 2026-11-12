@@ -418,6 +418,8 @@ export class Game implements InteractHost, Sink {
     if (sel !== inv.sel) this.op({ o: 'sel', i: sel });
     if (inp.hit('KeyH') && inp.locked) this.quickHeal();
     if (inp.hit('KeyQ')) this.op({ o: 'dropHeld', all: inp.down('ControlLeft') || inp.down('ControlRight') });
+    // the body and the hand read derived stats below: fold in what the keys above and the last step changed
+    st.sync(inv);
     p.moveMult = (1 + st.d.speed) * (p.inWater ? 1 + st.d.swim : 1); p.jumpMult = Math.sqrt(1 + st.d.jump); p.extraJumps = st.d.extraJump;
     p.autoJump = this.cfg.settings.autoJump; p.canFly = me.modes.creative && this.cfg.settings.flyToggle;
     p.frozen = st.dead || me.arriving >= 0;
