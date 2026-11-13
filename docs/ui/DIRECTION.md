@@ -1587,7 +1587,7 @@ A world event (Night raid, Sand March, Amāvassa) is the same with a thin strip 
 
 ### 5.19 Book
 
-For the journal and the codex. 292 by 180. The cover is a margin of leather 6 deep, built as a slab is with its own tones: the outline with its corners left out; a light edge two deep on the top and left (`timber.lt`, then `timber.sh`) and a dark edge two deep of `timber.pit` on the bottom and right, `timber.dk` on the diagonal where they meet; two rows of `timber.dk`; then a lip of `timber.sh` one unit deep round the pages. The block of pages starts 6 in with a line of `root.0` round it; a page is `clay.lt`, and under the pages two rows of leaves show, `clay.sh` then `clay.face`. The gutter is the middle 8 columns: two of shade either side of a fold of four, `clay.face`, `clay.sh`, `clay.dk`, `clay.pit`, `clay.pit`, `clay.dk`, `clay.sh`, `clay.face`.
+For the journal and the codex. 292 by 180. The cover is a margin of leather 6 deep, built as a slab is with its own tones: the outline with its corners left out; a light edge two deep on the top and left (`timber.lt`, then `timber.sh`) and a dark edge two deep of `timber.pit` on the bottom and right, `timber.dk` on the diagonal where they meet; two rows of `timber.dk`; then a lip of `timber.sh` one unit deep round the pages. The block of pages starts 6 in with a line of `root.0` round it; a page is `clay.lt`. The edges of the leaves show three deep along each page's outer side and along the foot of both, `clay.face`, `clay.lt`, `clay.sh` from the outside in, so that the outer bottom corners read as a stack of pages. The gutter is the middle 16 columns: on each page two flat bands of darker parchment 3 wide, `clay.face` then `clay.sh`, toward a fold of four, `clay.dk`, `clay.pit`, `clay.pit`, `clay.dk`. Two flat cream rectangles in a brown frame read as a two-column panel, not as a book opened.
 
 **Tabs** mark the sections, as on a slab (5.7), cut from the cover's leather: 24 wide at a pitch of 23 along the cover's top edge from its left corner, each carrying the 16 by 16 mark of its section, its name as its tooltip. The open one rises 21 and is joined to the cover, in the cover's tones (`timber.lt` and `timber.sh` light edges, `timber.dk` face, `timber.pit` dark edge); the others rise 18, flat `timber.pit` with a light row and column of `timber.sh`, and lighten to `timber.dk` under the pointer. A colour alone never tells the sections apart. The top left corner of the book, its first tab open and its second not:
 
@@ -1635,48 +1635,24 @@ For the journal and the codex. 292 by 180. The cover is a margin of leather 6 de
 
 **Text on a page** is ink. A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
 
-**The ribbon** of the open section lies in the gutter, the section's colour kept here and nowhere else: 8 wide, outlined, its colour with its right column in the colour's dark tone, from the cover's row 1 down 27 and then cut in a V over 3 rows. The gutter with the ribbon of Creatures:
+**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, ending 8 left of the gutter's first column. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one:
 
 ```
-     0         1         2
-     01234567890123456789012345
-  0  KKKKKKKKKKKKKKKKKKKKKKKKKK
-  1  ffffffKRRRRRqKffffffffffff
-  2  ttttttKRRRRRqKtttttttttttt
-  3  UUUUUUKRRRRRqKUUUUUUUUUUUU
-  4  UUUUUUKRRRRRqKUUUUUUUUUUUU
-  5  ttttttKRRRRRqKtttttttttttt
-  6  KKKKKKKRRRRRqKKKKKKKKKKKKK
-  7  LLLLLLKRRRRRqKLLLLLLLLLLLL
-  8  LLLLLLKRRRRRqKLLLLLLLLLLLL
-  9  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 10  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 11  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 12  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 13  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 14  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 15  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 16  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 17  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 18  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 19  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 20  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 21  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 22  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 23  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 24  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 25  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 26  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 27  LLLLLLKRRRRRqKLLLLLLLLLLLL
- 28  LLLLLLKRRKKRqKLLLLLLLLLLLL
- 29  LLLLLLKRKZZKqKLLLLLLLLLLLL
- 30  LLLLLLKKDZZDKKLLLLLLLLLLLL
- 31  LLLLLLFSDZZDSFLLLLLLLLLLLL
- 32  LLLLLLFSDZZDSFLLLLLLLLLLLL
- 33  LLLLLLFSDZZDSFLLLLLLLLLLLL
- 34  LLLLLLFSDZZDSFLLLLLLLLLLLL
+     0         1
+     0123456789012
+  0  KKKKKKKKKKKKK
+  1  KccdK..KccdK.
+  2  KccdK..KccdK.
+  ..
+ 11  KccdK..KccdK.
+ 12  KcKdK..KccdK.
+ 13  KK.KK..KccdK.
+ 14  .......KccdK.
+ 15  .......KccdK.
+ 16  .......KcKdK.
+ 17  .......KK.KK.
 ```
-`. nothing  D clay.dk  f timber.lt  F clay.face  K root.0  L clay.lt  q blood.dk  R blood  S clay.sh  t timber.sh  U timber.dk  Z clay.pit`
+`. nothing  c the section's colour  d its dark tone  K root.0   (row 0 is the cover's bottom outline)`
 
 **Page arrows**, 16 by 7, in ink at the bottom outer corners of the pages (12 from the outer edge, 161 down from the book's top); `blood.dk` when hovered; not drawn when there is no page that way. Page numbers are in the small face, `ink.faded`, centred under each page, the cell at y 162. A page's text stops at y 158. The bottom right corner with its arrow:
 
@@ -2867,15 +2843,15 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19). Anchor: cen
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | X0 | book | 0 | 0 | 292 | 180 | the book |
-| X1 | tabs | 0 | -21 | 116 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Creatures (a beast's head), Matter (a bar), Places (the map), Peoples (a bust), Old things (a gilt relic). The open section's ribbon lies in the gutter in its colour: blood, ember, growth, arm, violet.lt |
-| X2 | text | 12 | 10 | 126 | 10 | heading of the section |
-| X3 | slots | 12 | 24 | 126 | 126 | entry slots sunk in the page (ramp clay, floor clay.sh), seven to a row, as many rows as the spread has entries and seven rows at most; a row it does not fill ends in empty slots, and no row is drawn below the last entry. Under the last row, 4 below, two lines in ink say what the spread holds ("What lives up here, filled in as met."). A kind not yet seen shows its silhouette: the flat mask of its own 16 by 16 picture in clay.face on the clay.sh floor (clay.lt under the pointer): the picture's body without its root.0 outline (outline units clear of the body on all eight sides, an antenna or a string, stay), with only holes of one unit drawn round on all four sides closed, so legs, ears, tails, wings and the notch at the neck keep their units; no picture's mask may be a convex blob; a kind seen shows its icon |
+| X1 | tabs | 0 | -21 | 116 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Creatures (a beast's head), Matter (a bar), Places (the map), Peoples (a bust), Old things (a gilt relic). Each section's ribbon hangs from the book's foot in its colour (5.19): blood, ember, growth, arm, violet.lt |
+| X2 | text | 12 | 10 | 126 | 10 | heading of the section, and right-aligned to the page's edge in faded ink how many of its entries are known ("1 of 8") where it stands 6 clear of the heading |
+| X3 | slots | 12 | 24 | 126 | 126 | entry slots sunk in the page (ramp clay, floor clay.sh), seven to a row (four when the spread has eight or fewer, as the eight have), and exactly as many slots as the spread has entries: an empty slot promised more to find than there is. The chosen slot carries a frame of ember 2 deep that stands a unit out of the slot, over its neighbours' edges. Under the last row, 4 below, two lines in ink say what the spread holds ("What lives up here, filled in as met."). A kind not yet seen shows its silhouette: the flat mask of its own 16 by 16 picture in clay.face on the clay.sh floor (clay.lt under the pointer): the picture's body without its root.0 outline (outline units clear of the body on all eight sides, an antenna or a string, stay), with only holes of one unit drawn round on all four sides closed, so legs, ears, tails, wings and the notch at the neck keep their units; no picture's mask may be a convex blob; a kind seen shows its icon |
 | X4 | turn | 12 | 161 | 16 | 7 | page back |
 | X5 | text | 154 | 10 | 126 | 10 | the name, in ink |
-| X6 | text | 154 | 20 | 126 | 20 | how it is said and whose word it is, in faded ink, wrapped onto a second line when it needs one; what follows moves down by that line |
-| X7 | well | 154 | 32 | 24 | 24 | picture well, dark: the 16 by 16 picture at 4, 3 standing on four rows of the ground tile; a kind not yet seen stands there as the flat mask of its picture in root.3. A well larger than its picture is a dark box with a speck in it, and the interface draws no icon at another size (3) |
-| X8 | rows | 182 | 32 | 98 | 30 | the facts, in order where (arm.dk, a link), when, what it leaves: each wrapped onto two lines when it needs them rather than cut, three lines in all, the last fact keeping at least one |
-| X9 | text | 154 | 66 | 126 | 92 | 4 under the taller of the well and the facts: the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not, to the page's foot at y 158 |
+| X6 | text | 154 | 20 | 126 | 20 | whose word the name is and what it means, said as a sentence in faded ink ("The Householders' word for darkness"), wrapped onto a second line when it needs one; left out where the name is the plain word, and what follows moves up |
+| X7 | well | 154 | 32 | 24 | 24 | picture well sunk in the parchment: clay.dk along its top and left, salt along its bottom and right, a floor of clay.face, the 16 by 16 picture at 4, 4; a kind not yet seen stands there as the flat mask of its picture in clay.sh. A dark well on the page clashed with the parchment |
+| X8 | rows | 182 | 32 | 98 | 30 | the facts, one line each, three at most: a label in faded ink and its value in ink ("Found: anywhere", "When: at night", "Drops: Shade Flesh"; for matter "Grade" in the grade's colour and "Burns"). A bare value in blue read as a link that led nowhere |
+| X9 | text | 154 | 66 | 126 | 92 | 4 under the taller of the well and the facts, for matter first "Used in" and "Made from" in faded ink, each over a row of slots in the clay of the page with what it goes into and what it is made of ("Made from: nothing yet" with no row when nothing makes it); then: the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not, to the page's foot at y 158 |
 | X10 | turn | 264 | 161 | 16 | 7 | page on |
 
 - **Shows.** What the crew has met, shared by everyone on the server. Each entry fills in by the four steps of chapter 8.9 of the world bible; a step not reached is a blank rule, never a row of question marks.
@@ -3896,7 +3872,7 @@ Taken where the direction is silent, in its spirit. Builders may rely on them.
 
 **Rows written on a page.** A row of a list on a page (steps, bounties, the crew) is ink on the page: hovered, its floor is `clay.face`; chosen, its words in full ink with a rule of `clay.dk` one unit thick under them, one unit below the baseline and only as wide as the words (a step's title, a bounty's task, a crew member's name), and no floor, since a filled bar across the page reads as a selection in a web list; with keyboard focus, a frame of salt. A player on a page is their 2 by 7 flag beside their name in ink.
 
-**The codex.** An entry slot is the clay slot with a floor of `clay.sh`, its silhouette `clay.face` (`clay.sh` while hovered). The picture well holds the 16 by 16 picture standing on a strip of the ground tile at its foot. The four steps run on without gaps, a rule of `clay.sh` standing for each one not known, cut with `…` at the box's foot. The first short fact is where, in `arm.dk`.
+**The codex.** An entry slot is the clay slot with a floor of `clay.sh`, its silhouette `clay.face` (`clay.sh` while hovered). The picture well is a hollow in the parchment with the 16 by 16 picture in its middle. The four steps run on without gaps, a rule of `clay.sh` standing for each one not known, cut with `…` at the box's foot. Each fact is a label in `ink.faded` and its value in ink.
 
 **The chart.** Ground is known by chunks of 32 strides that a way walked passed within 56 strides of, so that what is known has square edges. Its marks are 7 by 7 like the compass's: one's own arrow, redrawn for each of four quarters rather than turned, a known altar, a raised gate and the mouth. A part may take `move`, the pointer moving to another unit over it, which is how the chart says what is under the pointer.
 

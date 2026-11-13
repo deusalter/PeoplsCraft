@@ -1,14 +1,15 @@
 // The codex and bestiary (section 6, Codex and bestiary): what the crew has met, shared by everyone on the server. The
 // left page is a grid of entries sunk in the page; the right tells the chosen one, step by step of what is known.
-import { GROUND } from '../art/ground';
 import { SLOT } from '../art/slot';
-import { box } from '../font/wrap';
+import { measure, rightX } from '../font/measure';
+import { box, cut } from '../font/wrap';
 import type { KeyEv, Live, Node, Screen } from '../node';
-import type { Colour } from '../palette';
 import { type Ribbon, BOOK_H, BOOK_TABS, BOOK_W, PAGE_BOTTOM, PAGE_TEXT, book, pageHeading } from '../parts/book';
 import { ring, sunk } from '../parts/common';
 import { centred } from '../scale';
 import { CODEX, type Entry, type Section } from '../sample/codex';
+import { THINGS } from '../sample/play-items';
+import { PATTERNS, fits } from '../sample/play-patterns';
 import type { Surface } from '../surface';
 import { firstFocus, go, inkLine } from './books-common';
 import type { NamedScreen } from './index';
@@ -32,8 +33,11 @@ const RIBBONS: Ribbon[] = [
   { id: 'cx.rb.old', colour: 'violet.lt', dark: 'violet.dk', name: 'Old things', icon: 'old' },
 ];
 const PW = 126, COLS = 7, CELLS = 49;
-/** The picture well: a 16 by 16 picture standing on four rows of the ground tile, one unit of floor round it. */
+/** The picture well: a parchment hollow sunk in the page, the 16 by 16 picture in its middle. */
 const WELL = 24;
+
+/** Columns of a spread's grid: a short chapter (the eight) stands in rows of four, so that no empty cell promises more. */
+const colsFor = (n: number) => (n <= 8 ? 4 : COLS);
 
 /** An entry slot sunk in the page (X3): the clay slot with a floor of `clay.sh`; a kind not yet seen shows its flat mask in `clay.face`. */
 function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolean): void {
@@ -41,8 +45,7 @@ function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolea
   const hot = !!e && live.hover;
   s.fill(1, 1, 16, 16, hot && e.seen ? 'clay.face' : 'clay.sh');
   if (!e) return;
-  if (chosen) ring(s, 1, 1, 16, 16, 'salt');
-  else if (live.focus) ring(s, 1, 1, 16, 16, 'salt');
+  if (live.focus && !chosen) ring(s, 1, 1, 16, 16, 'salt');
   if (e.seen) s.icon(e.icon, 1, 1);
   else s.silhouette(e.icon, 1, 1, hot ? 'clay.lt' : 'clay.face', hot ? 'clay.lt' : 'clay.face');
 }
@@ -66,11 +69,37 @@ function steps(e: Entry, creature: boolean, top: number): Node {
   };
 }
 
+/** A row of slots on a page, each with its thing's name for a tooltip; at most seven fit the page. */
+function slotRow(y: number, keys: string[]): Node[] {
+  return keys.slice(0, 7).map((k, i) => {
+    const t = THINGS.get(k);
+    return {
+      x: i * 18, y, w: 18, h: 18, takes: true,
+      tip: () => ({ lines: [{ text: t?.name ?? k, c: 'salt' as const }] }),
+      paint: (s: Surface, live: Live) => {
+        s.nine(SLOT, 0, 0, 18, 18, 'clay');
+        s.fill(1, 1, 16, 16, live.hover ? 'clay.face' : 'clay.sh');
+        if (t) s.icon(t.icon, 1, 1);
+      },
+    };
+  });
+}
+
+/** The first thing that answers a pattern's want: `#planks` is shown as the oak's planks. */
+const shown = (want: string) => (want[0] === '#' ? [...THINGS.keys()].find((k) => fits(want, k)) ?? want : want);
+
+/** What a piece of matter goes into, and what it is made from (the first pattern that makes it), as keys. */
+function uses(key: string): { into: string[]; from: string[] } {
+  const into = PATTERNS.filter((p) => (p.in ?? []).some(([w]) => fits(w, key)) || Object.values(p.key ?? {}).some((w) => fits(w, key))).map((p) => p.out);
+  const maker = PATTERNS.find((p) => p.out === key);
+  const from = maker ? [...new Set([...(maker.in ?? []).map(([w]) => w), ...Object.values(maker.key ?? {})])].map(shown) : [];
+  return { into: [...new Set(into)], from };
+}
+
 /**
- * The right page (X5 to X9): the name, the word under it on up to two lines, the picture well 24 square at the left
- * holding the 16 by 16 picture on four rows of the ground tile, the facts in the column beside it (where, in arm.dk as
- * a link; when; what it leaves), each wrapped onto a second line only when it needs one, three lines in all; then the
- * steps at the page's full width to its foot.
+ * The right page (X5 to X9): the name, whose word it is under it on up to two lines, the picture well 24 square at the
+ * left, sunk in the parchment, the facts in the column beside it (each a grey label and its value in ink), then for
+ * matter what it goes into and what it is made from as rows of slots, and the steps at the page's full width to its foot.
  */
 function rightPage(e: Entry | undefined, creature: boolean): Node[] {
   if (!e) return [];
@@ -86,27 +115,34 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
   kids.push({
     x: 0, y, w: WELL, h: WELL,
     paint: (s) => {
-      sunk(s, 0, 0, WELL, WELL, 'clay');
-      s.tile(GROUND, 1, WELL - 5, WELL - 2, 4);
-      if (known) s.icon(e.icon, 4, WELL - 5 - 16); else s.silhouette(e.icon, 4, WELL - 5 - 16, 'root.3', 'root.3');
+      sunk(s, 0, 0, WELL, WELL, 'clay', 'clay.face');
+      s.fill(0, 0, WELL - 1, 1, 'clay.dk'); s.fill(0, 1, 1, WELL - 2, 'clay.dk');
+      if (known) s.icon(e.icon, 4, 4); else s.silhouette(e.icon, 4, 4, 'clay.sh', 'clay.sh');
     },
   });
   let fy = 0;
   if (known && e.facts) {
     const FX = WELL + 4, FW = PW - FX;
-    const facts = e.facts.slice(0, 3);
-    facts.forEach((f, i) => {
-      const text = typeof f === 'string' ? f : f.text;
-      const c: Colour = typeof f === 'string' ? (i === 0 ? 'arm.dk' : 'ink') : f.c;
-      const room = 3 - fy / 10 - (facts.length - 1 - i);
-      if (room < 1) return;
-      const b = box(text, FW, Math.min(2, room));
+    for (const f of e.facts.slice(0, 3)) {
+      if (fy + 10 > 30) break;
+      const label = `${f.label}: `, lw = measure(label);
+      const value = cut(f.text, FW - lw);
       const at = fy;
-      kids.push({ x: FX, y: y + at, w: FW, h: b.h, paint: (s) => { for (const l of b.lines) s.text(l.text, 0, l.y, c); } });
-      fy += b.h;
-    });
+      kids.push({ x: FX, y: y + at, w: FW, h: 10, paint: (s) => { s.text(label, 0, 0, 'ink.faded'); s.text(value, lw, 0, f.c ?? 'ink'); } });
+      fy += 10;
+    }
   }
   y += Math.max(WELL, fy) + 4;
+  if (known && e.uses) {
+    const u = uses(e.key);
+    const row = (title: string, keys: string[]) => {
+      kids.push(inkLine(0, y, PW, keys.length ? title : `${title}: nothing yet`, 'ink.faded'));
+      y += 11;
+      if (keys.length) { kids.push(...slotRow(y, keys)); y += 22; } else y += 3;
+    };
+    row('Used in', u.into);
+    row('Made from', u.from);
+  }
   if (known) kids.push(steps(e, creature, y));
   else if (creature) kids.push(steps({ ...e, steps: [] }, true, y));
   return kids;
@@ -118,18 +154,30 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
   const creature = sec.key === 'creatures';
   const entries = sp.entries.slice(0, CELLS);
   firstFocus(ui, 'codex', null);
+  const seen = entries.filter((e) => e.seen).length;
+  const tally = `${seen} of ${entries.length}`;
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: sp.heading })];
-  // Only the rows the spread fills are drawn, so a short chapter is a short grid with its two lines under it.
-  const rows = Math.max(1, Math.ceil(entries.length / COLS));
-  for (let i = 0; i < rows * COLS; i++) {
+  // How many are known stands at the heading's right, where it fits beside the heading with 6 to spare.
+  if (measure(sp.heading) + 6 + measure(tally) <= PW) {
+    left.push({ x: 0, y: 0, w: PW, h: 10, paint: (s) => { s.text(tally, rightX(tally, PW - 1), 0, 'ink.faded'); } });
+  }
+  // Only the cells the spread has are drawn, so a short chapter is a short grid with its two lines under it.
+  const cols = colsFor(entries.length);
+  const rows = Math.max(1, Math.ceil(entries.length / cols));
+  for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
     left.push({
-      id: e ? `cx.entry.${i}` : undefined, x: (i % COLS) * 18, y: 14 + Math.floor(i / COLS) * 18, w: 18, h: 18,
-      takes: !!e, focus: !!e,
-      on: e ? { down: () => v.onChoose(i) } : undefined,
-      tip: e ? () => ({ lines: [{ text: e.seen ? e.name : creature ? 'Not yet met' : 'Not yet found', c: e.seen ? 'salt' : 'root.4' }] }) : undefined,
+      id: `cx.entry.${i}`, x: (i % cols) * 18, y: 14 + Math.floor(i / cols) * 18, w: 18, h: 18,
+      takes: true, focus: true,
+      on: { down: () => v.onChoose(i) },
+      tip: () => ({ lines: [{ text: e.seen ? e.name : creature ? 'Not yet met' : 'Not yet found', c: e.seen ? 'salt' : 'root.4' }] }),
       paint: (s, live) => paintEntry(s, e, live, i === v.chosen),
     });
+  }
+  // The chosen cell: a frame of ember 2 deep standing a unit out of the cell, drawn over its neighbours' edges.
+  if (v.chosen >= 0 && v.chosen < entries.length) {
+    const cx = (v.chosen % cols) * 18, cy = 14 + Math.floor(v.chosen / cols) * 18;
+    left.push({ x: cx - 1, y: cy - 1, w: 20, h: 20, paint: (s) => { ring(s, 0, 0, 20, 20, 'ember'); ring(s, 1, 1, 18, 18, 'ember'); } });
   }
   const blurb = box(sp.blurb, PW, 2);
   left.push({ x: 0, y: 14 + rows * 18 + 4, w: PW, h: blurb.h, paint: (s) => { for (const l of blurb.lines) s.text(l.text, 0, l.y, 'ink'); } });
@@ -161,7 +209,7 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
         if (e.key >= '1' && e.key <= '5') { v.onSection(Number(e.key) - 1); return true; }
         if (e.key === 'PageUp' && v.spread > 0) { v.onSpread(v.spread - 1); return true; }
         if (e.key === 'PageDown' && v.spread < sec.spreads.length - 1) { v.onSpread(v.spread + 1); return true; }
-        const d: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -COLS, ArrowDown: COLS };
+        const d: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols };
         if (d[e.key] !== undefined) { move(d[e.key]); return true; }
       },
     },
