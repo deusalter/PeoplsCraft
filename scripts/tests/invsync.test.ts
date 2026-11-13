@@ -15,7 +15,7 @@ import { boxOf, endWindow, invOp, onOp, onTalk, onUse, revalidate, stOf } from '
 import type { Fx, Scope, Sink } from '../../src/sim/fx';
 import { Inventory, type Slot, canAfford, recipeFits } from '../../src/sim/inventory';
 import type { InvOp, SlotRef } from '../../src/sim/invops';
-import type { SimPlayer } from '../../src/sim/player';
+import { type SimPlayer, toRecord } from '../../src/sim/player';
 import type { RealmStore } from '../../src/sim/realm';
 import { goods } from '../../src/sim/rules';
 import { Sim } from '../../src/sim/sim';
@@ -553,6 +553,20 @@ test('the inventory client keeps the mirrors: st reconciles, stats and the snaps
   // a new connection starts everything again
   link.push(welcome()); session.pump();
   assert.equal(c.nextSeq(), 1); assert.equal(c.recallT, 0);
+});
+
+test('a reload keeps the modes and the recall cooldown, and a creative player comes back in flight (D36 (o))', () => {
+  const r = rig();
+  r.p.modes = { creative: true, hidden: true, god: true, fly: false }; r.p.recallT = 40; r.p.body.flying = false;
+  const rec = JSON.parse(JSON.stringify(toRecord(r.p, 0)));
+  const back = rig().sim.join('c', 'C', rec, true);
+  assert.deepEqual([back.modes, back.recallT], [{ creative: true, hidden: true, god: true, fly: false }, 40]);
+  const link = fakeLink(), session = new Session(link.tr), c = new InvClient(session, () => r.sim.flags), flight: boolean[] = [];
+  c.onFlight = (on) => flight.push(on);
+  link.push(welcome()); link.push(r.sim.statsNow(back));
+  session.pump();
+  assert.deepEqual(flight, [true], 'the first stats after the welcome puts the body in flight');
+  assert.equal(c.recallT, 40);
 });
 
 test('the hands: a shot, a swing, a station, a meal and a gate kit each leave as their message, with what they use up taken at once', () => {

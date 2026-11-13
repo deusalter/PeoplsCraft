@@ -3569,6 +3569,14 @@ drawn until the player came within 48, where the game before the wire showed the
 there to bound the bytes a link carries; the in-page loopback carries none, and a snapshot still holds at most
 the creature pool of 320 within `ENCODE_R`. Own minions, owned drops and the realm rule are unchanged, and a
 server keeps the table of 6.4 as written.
+(o) What a solo player can notice: the modes and the recall cooldown outlast a reload. `PlayerRecord` holds
+`modes` and `recallT` (3.5, 8.1), 7.10 saves `modes.fly` "like the other modes", and 4.3 has the first `stats`
+after a `welcome` put a creative or granted player in flight; `Sim.join` restores both. The game before the wire
+kept neither: every load came back in survival, standing, with `god` and `hidden` off and the Recall Stone ready.
+Now a world saved in creative opens in creative with the body flying, `god` and `hidden` hold, and a Recall Stone
+used before quitting is still cooling. Keeping the old reset for solo alone would have the sim ignore fields of
+the record it wrote, and a player's record would load differently in a solo world and on a server, so the code
+is left as the sections give it. A legacy world still comes in with default modes and `recallT` 0 (8.4 step 2).
 
 ---
 
