@@ -1,5 +1,5 @@
 import { FRAMED_PLATE, HARM_PLATE } from '../art/slab';
-import { SMALL_SHADOWED } from '../font/face';
+import { SMALL } from '../font/face';
 import { centreX, clock, measure } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { Node } from '../node';
@@ -132,7 +132,7 @@ export function statusFrame(o: StatusOpts): Node {
       s.icon(o.icon, 1, 1);
       if (last && !blinkOn(live.t)) return;
       const t = clock(o.seconds);
-      s.text(t, centreX(t, 0, 18, SMALL_SHADOWED), 20, last ? 'blood.lt' : 'salt', true, SMALL_SHADOWED);
+      s.text(t, centreX(t, 0, 18, SMALL), 20, last ? 'blood.lt' : 'salt', true, SMALL);
     },
   };
 }
