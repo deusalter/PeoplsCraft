@@ -3782,6 +3782,19 @@ and a systemd unit (`ExecStart` runs `node dist/server/main.js` so that `SIGTERM
 `StateDirectory=peopls-craft` so that `/var/lib/peopls-craft` exists and belongs to `User=`). The systemd lines were not run on Linux.
 The storage's notices of D39 (w) still reach only the log.
 
+D42. Stage 4, repairs after an independent check (8.1, 10.1, 11).
+(a) A new world on the server was first written by the timed save, so a `kill -9` inside its first `--save-interval`
+left only `server.lock`, and the next start made another world with another random seed. The server now commits the
+new world once, right after `SimHost.start` (which says so in `madeWorld`) and before it listens, and refuses to start
+when that commit fails. Solo and the tests' hosts are unchanged. A crash in the first minute still loses what was done
+in it, as 8.1 says; it no longer loses the world.
+(b) Scenario `basic` looked for its site only on ground the bot could walk to, and walked blindly 24 blocks at a time
+when there was none; seed `28194513` spawns on a steep slope above a river, the walk went into the water, and the run
+gave up after six tries. When no site is in reach it now levels a pad where Ada stands with the `fill` of 10.1 (stone,
+then one layer of dirt, then air 14 high, 9 by 9), as golden and closetab level theirs, and every check runs on it
+unchanged. The walk is gone. The three `fill` commands are spaced 400 ms apart because the five commands before them
+empty the `cmd` bucket of 4.1.
+
 ---
 
 ## 14. Review log

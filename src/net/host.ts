@@ -89,13 +89,16 @@ export class SimHost {
   private changeTimer: unknown = null; private seenRev = new WeakMap<SimPlayer, number>(); private seenFlags = -1; private seenQuest = -1;
   private saveFailed = false;
 
+  /** `start` made a new world: until a save, the storage holds nothing of it, not even its seed. */
+  madeWorld = false;
+
   constructor(private env: HostEnv, private storage: Storage, private source: ChunkSource, readonly opt: HostOptions) {}
 
   /** Open the world (or make a new one), build the simulation, start the clock. */
   async start(): Promise<void> {
     const o = this.opt, env = this.env;
     let world = await this.storage.open();
-    if (!world) world = this.newWorld();
+    if (!world) { world = this.newWorld(); this.madeWorld = true; }
     this.edits = new EditMaps(this.storage, world.palettes);
     this.sim = new Sim(world, { cheats: o.cheats, maxPlayers: o.maxPlayers, solo: !!o.solo, manual: o.clock === 'manual' }, {
       sink: { emit: (to, e) => this.snap.emit(to, e), send: (slot, m) => this.snap.send(slot, m), broadcast: (m) => this.snap.broadcast(m) },

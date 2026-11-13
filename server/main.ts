@@ -154,6 +154,11 @@ async function main(): Promise<number> {
     source.dispose();
     return 1;
   }
+  // without this, a kill -9 before the first timed save would start a different world on the same folder
+  if (h.madeWorld) {
+    await h.save();
+    if (storage.saveFailing) { console.error(`the new world could not be written to ${f.data}`); await h.stop().catch(() => {}); return 1; }
+  }
 
   const clientDir = fileURLToPath(new URL('../client/', import.meta.url));
   const http = createHttp(clientDir, () => ({ server: true, name: h.sim.world.name, players: h.sim.online(), max: f.maxPlayers, password: f.password !== null, ...(f.harness ? { harness: true } : {}) }),

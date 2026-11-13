@@ -51,14 +51,18 @@ export default async function basic(ctx: Ctx): Promise<void> {
   ctx.check((await b.cmd(`give ${BUILD} 8`)).startsWith('gave'), 'Bram is given 8 planks');
   await Promise.all([a.until(() => a.count(BUILD) === 32 && a.count('chest') === 1, 5000, 'gifts'), b.until(() => b.count(BUILD) === 8, 5000, 'gifts')]);
 
-  // the nearest site, walking on along the ground a few times when there is none in reach
+  // the nearest site; on ground with none in reach (a steep slope, a strip of shore), a pad levelled where Ada stands
+  // with the `fill` of 10.1, as golden and closetab level theirs
   let site = findSite(a);
-  for (let i = 0; !site && i < 6; i++) {
-    const tx = a.body.x + 24 * Math.cos(i), tz = a.body.z + 24 * Math.sin(i);
-    ctx.log(`no flat open ground near ${a.body.x.toFixed(0)} ${a.body.z.toFixed(0)}: walking on`);
-    await Promise.all([a.goto(tx, tz, 20000).catch(() => {}), b.goto(tx + 2, tz, 20000).catch(() => {})]);
-    await Promise.all([a.loaded(), b.loaded()]);
-    site = findSite(a);
+  if (!site) {
+    const px = Math.floor(a.body.x), pz = Math.floor(a.body.z), pg = Math.round(a.body.y) - 1;
+    ctx.log(`no flat open ground in reach of ${px} ${pz}: levelling a pad at ground ${pg}`);
+    for (const [y0, y1, key] of [[pg - 3, pg - 1, 'stone'], [pg, pg, 'dirt'], [pg + 1, pg + 14, 'air']] as const) {
+      // the five commands above emptied the `cmd` bucket of 4.1, which refills at 5 a second and drops what is over
+      await a.wait(400);
+      ctx.check((await a.cmd(`fill ${px - 3} ${y0} ${pz - 4} ${px + 5} ${y1} ${pz + 4} ${key}`)) === 'filled', `the pad's ${key} is filled in`);
+    }
+    await a.until(() => (site = findSite(a)) !== null, 10000, 'the levelled pad').catch(() => {});
   }
   if (!site) throw new Error('no flat open ground found');
   const { x, z, g } = site;
