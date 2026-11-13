@@ -242,6 +242,30 @@ numbers also say:
   Whether this tree has more of them than the control, and if so whether a quiet machine has any, is
   not settled by these runs.
 
+The last commit of the stage (`dfc0549`, 2026-11-12). The same control and this tree turn about, seven
+pairs, on a steadier machine: the load was between 3.4 and 5.5 throughout. Each row is one flight of
+about 1,200 frames.
+
+| Pair | stage 0: sum (world + tick + render) | frame CPU mean / p95 / max | sim mean | this tree: sum (world + tick + render) | frame CPU mean / p95 / max | sim mean |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | 6.7 (1.5 + 1.0 + 4.2) | 2.02 / 3.7 / 4.4 | 0.08 | 6.8 (1.5 + 0.8 + 4.5) | 1.97 / 3.7 / 5.1 | 0.19 |
+| 2 | 6.5 (1.8 + 0.5 + 4.2) | 2.08 / 3.8 / 5.3 | 0.08 | 7.1 (2.1 + 0.9 + 4.1) | 2.05 / 3.8 / 4.6 | 0.20 |
+| 3 | 6.7 (1.8 + 0.4 + 4.5) | 2.03 / 3.7 / 4.7 | 0.08 | 6.9 (1.7 + 0.9 + 4.3) | 2.04 / 3.8 / 4.9 | 0.20 |
+| 4 | 7.1 (1.2 + 0.5 + 5.4) | 2.37 / 3.1 / 5.6 | 0.09 | 5.6 (1.3 + 0.7 + 3.6) | 1.85 / 2.6 / 4.7 | 0.18 |
+| 5 | 5.8 (1.2 + 0.8 + 3.8) | 1.93 / 3.1 / 3.9 | 0.08 | 6.5 (1.5 + 0.9 + 4.1) | 1.90 / 3.2 / 4.6 | 0.18 |
+| 6 | 6.0 (1.6 + 0.6 + 3.8) | 1.98 / 3.3 / 5.2 | 0.08 | 6.7 (1.5 + 1.0 + 4.2) | 1.93 / 3.5 / 4.7 | 0.18 |
+| 7 | 6.8 (1.9 + 0.5 + 4.4) | 2.02 / 3.6 / 4.5 | 0.08 | 6.0 (1.4 + 0.8 + 3.8) | 1.95 / 3.4 / 5.1 | 0.19 |
+
+| | runs | prof sum, median | frame CPU mean, median (range) | p95, median (range) | sim mean | worst tick, median |
+| --- | --- | --- | --- | --- | --- | --- |
+| stage 0 | 7 | 6.7 | 2.02 (1.93 to 2.37) | 3.6 (3.1 to 3.8) | 0.08 | 0.5 |
+| this tree | 7 | 6.7 | 1.95 (1.85 to 2.05) | 3.5 (2.6 to 3.8) | 0.19 | 0.9 |
+
+The median sums are equal, against a budget of 1.0 ms, and the mean frame is not above the control's.
+The tick is where it was on `be17010`: 0.11 ms more on the mean frame and 0.4 ms more on its worst.
+No frame of the fourteen flights took over 16.7 ms and none missed a refresh, so the long `render`
+frames of the busier evening above did not show on either tree here.
+
 What was changed on the way. As first built, two flights gave worst ticks of 4.3 and 2.0 ms and a
 mean of 0.25. Then: no transaction for a chunk that has no record; a chunk's light-giving cells found
 by the worker that generates it; one chunk taken in per step that runs the world; the workers fed
