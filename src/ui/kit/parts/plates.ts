@@ -83,17 +83,22 @@ export interface ReadoutOpts {
   /** The second line: `root.4`, or `blood.lt` when it says why the thing cannot be taken. */
   line?: string;
   refusal?: boolean;
+  /** With a refusal, the icon of the tool that would do, at the right end of the second line. */
+  needs?: string;
   /** For a creature, its life as a thin strip as wide as the name. */
   life?: number;
 }
 
 export function readout(o: ReadoutOpts): Node {
   const nw = measure(o.name);
-  const w = Math.max(nw, o.line ? measure(o.line) : 0) + 28;
+  const lw = o.line ? measure(o.line) : 0;
+  const needs = o.refusal && o.needs ? o.needs : null;
+  const w = Math.max(nw, lw + (needs ? 2 + 16 : 0)) + 28;
   return {
     x: o.cx - Math.floor(w / 2), y: o.y, w, h: 24,
     paint: (s) => {
       s.nine(PLATE, 0, 0, w, 24);
+      if (needs) s.icon(needs, 24 + lw + 2, 4);
       s.translate(3, 3);
       paintSlot(s, { ramp: 'dark', stack: { icon: o.icon, n: 1 } }, REST);
       s.translate(-3, -3);

@@ -190,12 +190,12 @@ Three rules follow and are used everywhere below.
 | Pause | A clay slab 216 by 144 centred over the dimmed world, its buttons in the same column |
 | The fall | The same column over the washed world |
 | HUD, bottom centre | Hotbar, practice strip, pips, level, name of the thing in hand: centred on the stage, measured up from its bottom edge |
-| HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at: centred on the stage, measured down from its top edge |
+| HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at and the prompt 6 under it: centred on the stage, measured down from its top edge |
 | HUD, top left | The crew |
 | HUD, left, above the pips | Chat |
 | HUD, top right | Status frames, then toasts under them |
 | HUD, right | The Guide's present step, then pickups, then "Saved" at the bottom right corner |
-| HUD, centre | Crosshair; the prompt 12 units under its centre |
+| HUD, centre | Crosshair |
 | Above everything | The tooltip, then the held stack, then the pointer |
 
 **Icon size.** The interface is designed for item icons of 16 by 16 units, one icon pixel to the unit, and never draws an icon at another size. The large result slot holds a 16 by 16 icon in a 24 by 24 floor. Until the icons are redrawn by hand, the game hands the kit a 16 by 16 reading of each present 32 by 32 icon (the top left pixel of every 2 by 2 block).
@@ -2064,7 +2064,7 @@ A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units eith
 
 ### 5.27 Readout of what is looked at
 
-A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the top of the stage under the compass. A dark slot at 3, 3 with the icon of the block or creature; the name's cell at 24, 2; the second line at 24, 12 in `root.4`, or in `blood.lt` when it says why the thing cannot be taken ("Needs an iron pick"). For a creature the second line is a thin strip of its life, 5 tall, as wide as the name.
+A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the top of the stage under the compass. A dark slot at 3, 3 with the icon of the block or creature; the name's cell at 24, 2; the second line at 24, 12. For a block the second line is worked out from the tool in hand: when it will break the block, its name and "will do" in `root.4` ("Iron pick will do"); only when it is too weak, what is needed in `blood.lt` ("Needs a Hīrak pick") with the 16 by 16 icon of the needed tool at 2 past the line's end, y 4, the plate widened to hold it. A townsperson's second line is their work in `root.4`. For a creature the second line is a thin strip of its life, 5 tall, as wide as the name. An icon drawn on this plate stands at least two ramp steps above `root.1`: a dark creature is drawn in `root.2` to `root.4`, never `root.1` to `root.3`.
 
 ```
      0         1         2         3         4         5         6         7         8         9         0         1     
@@ -2242,7 +2242,7 @@ Shared by every container: the pack is nine by three slots at x 8, the hotbar ro
 
 ### The HUD
 
-On a stage 427 by 240. A part in the left third keeps its distance from the stage's left edge, a part in the right third from the right edge, a part in the middle from the centre line; parts above y 60 keep their distance from the top, parts below y 180 from the bottom, the crosshair and prompt from the centre.
+On a stage 427 by 240. A part in the left third keeps its distance from the stage's left edge, a part in the right third from the right edge, a part in the middle from the centre line; parts above y 60 keep their distance from the top, parts below y 180 from the bottom, the crosshair from the centre.
 
 ```
                                          +-----------------------------------------------------------+
@@ -2302,7 +2302,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | H10 | text | 396 | 228 | 27 | 10 | "Saved", text face, for two seconds |
 | H11 | chat | 4 | 111 | 144 | 71 | chat: up to eight whole lines 10 tall, newest lowest, each on its own dark strip as wide as its text, wrapped at 141, wrapped rows 4 in. On this stage chat would reach the hotbar's column, so the newest ends at y 182; on a stage where it ends left of that column (480 wide and more) it comes down to 48 above the bottom. Fewer lines while the crew list stands above |
 | H12 | cross | 209 | 116 | 9 | 9 | crosshair, 9 by 9: salt plus, root.0 outline |
-| H13 | prompt | 163 | 132 | 100 | 14 | prompt: a key cap and a line on a strip of the chat wash 2 wider each side, centred on the crosshair, the cap's top 12 under its centre |
+| H13 | prompt | 163 | 56 | 100 | 14 | prompt: a key cap and what E does to the thing the readout names ("Talk"), on a strip of the chat wash 2 wider each side, centred on the stage 6 under the readout plate. There is one look target: the readout and the prompt always name the same thing, and no prompt is drawn when the thing cannot be used (a Tama, a block) |
 | H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour with shadow, for 1.6 s after a change, on a strip of the chat wash 2 wider than the name each side and 11 tall from its cell's top, so that growth.lt holds on noon grass |
 | H15 | text | 122 | 186 | 70 | 10 | second row, left: shield mark and defence, then the jar mark and lees carried |
 | H16 | pips | 223 | 187 | 81 | 9 | second row, right: ten arm pips, filling from the right |

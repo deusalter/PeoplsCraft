@@ -10,6 +10,20 @@ import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeigh
 import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crew, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
 import { type Stack, stackGrade, stackName, thing } from '../../sample/play-items';
+
+/** The pick each ore of the sample needs, and the picks in the order of what they break. */
+const ORE_NEEDS: Record<string, string> = { iron_ore: 'stone_pickaxe', gold_ore: 'iron_pickaxe', lumenite_ore: 'iron_pickaxe', cindrite_ore: 'lumenite_pickaxe' };
+const PICKS = ['wood_pickaxe', 'stone_pickaxe', 'iron_pickaxe', 'lumenite_pickaxe'];
+
+/** The readout's second line for a block: the held pick's word when it will do, else the pick it needs in blood. */
+function oreLine(ore: string, held: string | null): { line: string; refusal: boolean; needs?: string } {
+  const need = ORE_NEEDS[ore];
+  if (!need) return { line: 'Breaks by hand', refusal: false };
+  const have = held ? PICKS.indexOf(held) : -1;
+  const name = (k: string) => thing(k).name.replace(/ Pick$/, ' pick');
+  if (have >= PICKS.indexOf(need)) return { line: `${name(held!)} will do`, refusal: false };
+  return { line: `Needs ${/^[AEIOUĀĪŪ]/.test(name(need)) ? 'an' : 'a'} ${name(need)}`, refusal: true, needs: thing(need).icon };
+}
 import { STILL } from './common';
 
 /** Everyone on the sample server: seat 1 is the one who plays. */
@@ -38,8 +52,12 @@ export const CHAT: ChatLine[] = [
 export interface HudOpts {
   /** A great feeder up: the boss bar and a world event's strip under it. */
   boss?: boolean;
-  /** What is looked at, when no boss bar is up. */
-  look?: { icon: string; name: string; line?: string; refusal?: boolean; life?: number };
+  /**
+   * What the crosshair is on, when no boss bar is up: one thing, named once, by the readout and by the prompt under
+   * it. `use` is what E does to it, and no prompt is drawn when nothing can be done; `ore` is a block's key, and the
+   * readout's second line is worked out from the tool in hand.
+   */
+  look?: { icon: string; name: string; line?: string; life?: number; use?: string; ore?: string };
   /** A new arrival: the hotbar empty, every measure full, the Guide's first step, nobody near. */
   first?: boolean;
   /** The crew list is not drawn while chat is open or the roster is held. */
@@ -108,7 +126,19 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     out.push(bossBar({ x: L(cx - 91), y: 26, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
     out.push(bossBar({ x: L(cx - 91), y: 50, name: 'Night raid', f: 0.4, event: 'blood' }));
   } else if (o.look) {
-    out.push(readout({ cx: L(cx), y: 26, ...o.look }));
+    const lk = o.look;
+    const said = lk.ore ? oreLine(lk.ore, first ? null : BAR[0]?.key ?? null) : { line: lk.line, refusal: false };
+    out.push(readout({ cx: L(cx), y: 26, icon: lk.icon, name: lk.name, life: lk.life, ...said }));
+    // The prompt stands 6 under the readout and names what the readout names, so E can only mean one thing.
+    if (lk.use && o.prompt !== false) {
+      const cap = keycap({ x: 0, y: 0, label: 'E' });
+      const text = lk.use;
+      const w = cap.w + 4 + measure(text) + 1;
+      const x0 = L(cx - Math.floor(w / 2)), y0 = 26 + 24 + 6;
+      out.push({ x: x0 - 2, y: y0 - 1, w: w + 4, h: 16, paint: (s) => { s.wash(0, 0, w + 4, 16, 'root.0', 3); } });
+      out.push({ ...cap, x: x0, y: y0 });
+      out.push({ x: x0 + cap.w + 4, y: y0 + 2, w: measure(text) + 1, h: 11, paint: (s) => { s.text(text, 0, 0, 'salt', true); } });
+    }
   }
 
   const lowY = narrow ? 26 : 4;
@@ -124,7 +154,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     states.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + i * 20), y: lowY, ...s })));
     const toasts = [
       { frame: 'growth' as Colour, icon: 'ingot', title: 'Smelt iron', line: 'A step of the Guide' },
-      { frame: 'blood' as Colour, icon: 'gloomshade', title: 'A Night raid comes', line: 'Hold the doors till first light' },
+      { frame: 'blood' as Colour, icon: 'raid_skull', title: 'A Night raid comes', line: 'Hold the doors till first light' },
       { frame: GRADES[2].frame, icon: 'warden_bell', title: 'Kankāl Bell', line: 'Found in a Sealed Store' },
     ];
     // The column stands under the status frames. Where its left edge would come within 4 of the boss strips' end it
@@ -160,16 +190,6 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   }
 
   out.push(crosshair({ x: L(cx - 4), y: Math.floor(H / 2) - 4 }));
-  if (!o.boss && !first && o.prompt !== false) {
-    const cap = keycap({ x: 0, y: 0, label: 'E' });
-    const text = 'Talk to Kammār';
-    const w = cap.w + 4 + measure(text) + 1;
-    const x0 = L(cx - Math.floor(w / 2)), y0 = Math.floor(H / 2) + 12;
-    out.push({ x: x0 - 2, y: y0 - 1, w: w + 4, h: 16, paint: (s) => { s.wash(0, 0, w + 4, 16, 'root.0', 3); } });
-    out.push({ ...cap, x: x0, y: y0 });
-    out.push({ x: x0 + cap.w + 4, y: y0 + 2, w: measure(text) + 1, h: 11, paint: (s) => { s.text(text, 0, 0, 'salt', true); } });
-  }
-
   const inHand = first ? null : BAR[0]!;
   if (inHand) {
     const name = stackName(inHand), c = GRADES[stackGrade(inHand)].dark;
