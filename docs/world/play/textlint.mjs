@@ -20,9 +20,10 @@
 //   spaces     no space at either end, no two spaces together
 //   slots      every {slot} of the entry is in the text once, and no other {word}
 //   must       a word the entry requires is in the text (a townsperson's first line says peopl)
-//   old-name   no old name from names.json
+//   old-name   no old name from names.json, with or without an English plural
 //   spelling   every name of a born tongue spelled and capitalised as names.json has it, with no English plural
-//   banned     none of the banned words of README rules 6, 9 to 13, 16, 20 and 21, nor what plan.md H bans for the voice
+//   banned     none of the banned words of README rules 6, 9 to 13, 16, 20 and 21, nor what plan.md H bans for the voice; outside a
+//              born or sand mouth, nothing on the surfaces of 4.13 says a stone is lit
 //   pattern    none of the banned turns of sentence (a count of the dead, a set-up knocked down, a placeholder name)
 //
 // No dependencies. Node 18 or later.
@@ -63,9 +64,16 @@ const BANNED_VOICE = {
 // By surface: checked against entries whose surface id starts with the key.
 const BANNED_SURFACE = {
   'fall': [['README rule 20: no text writes an arrival\'s death', ['die', 'died', 'dead', 'death', 'slain', 'slay', 'kill', 'killed', 'perish', 'perished', 'corpse', 'grave']]],
-  'banner': [['4.10: no text says a stone is lit by a kill', ['lit', 'relit', 'rekindled', 'light']]],
+  'banner': [['4.10: no text says a stone is lit by a kill; a banner says no light at all', ['light']]],
   'eight.': [['README rule 19: the eight are animals: they do not speak, guard, watch or wait for anyone', ['speaks', 'spoke', 'guards', 'guard', 'watches', 'awaits', 'waits', 'remembers', 'judges', 'welcomes', 'greets', 'her', 'hers', 'his', 'him', 'she', 'he']]],
 };
+// Where the strings of 4.13 live (banners, the eight, item descriptions, the journal): no text but a born or a sand mouth says a
+// stone is lit (4.10, 8.10). Lit, relit and rekindled are refused outright there; light, as a word, in any sentence that names a stone.
+// Born and sand mouths may say lit, because to them it means held (5.2).
+const STONE_LIT_SURFACES = ['banner', 'eight.', 'item.desc', 'task.'];
+const STONE_LIT = ['4.10: no text says a stone is lit by a kill', ['lit', 'relit', 'rekindled', 'rekindle', 'relight', 'relights', 'unlit']];
+const STONE_WORD = /\b(stones?|altars?|cairns?|housings?|base)\b/i;
+const LIGHT_WORD = /\b(light|lights|lighted|lighting)\b/i;
 // The baits: the born's verbs for them belong only in a born mouth (4.2). Checked on item.desc of these keys.
 const BAIT_KEYS = ['verdant_idol', 'sunken_lure', 'warden_bell', 'spore_censer', 'storm_kite', 'prism_lens', 'eclipse_mask', 'cairn_key'];
 const BAIT_VERBS = ['4.2: every bait is laid on its stone; wake, call, ring, burn, focus, wear and open are the born\'s account', ['wake', 'call', 'ring', 'burn', 'focus', 'wear', 'open', 'offer', 'summon', 'challenge']];
@@ -102,6 +110,7 @@ const ALL = wordMap(BANNED_ALL);
 const VOICE = Object.fromEntries(Object.entries(BANNED_VOICE).map(([v, l]) => [v, wordMap(l)]));
 const SURF = Object.entries(BANNED_SURFACE).map(([p, l]) => [p, wordMap(l)]);
 const BAIT = wordMap([BAIT_VERBS]);
+const LIT = new Map(STONE_LIT[1].map((w) => [w, [w, STONE_LIT[0]]]));
 const WORD = /[A-Za-zĀāĪīŪū]+(?:'[a-z]+)?/g;
 const ALLOWED = /^[ -~Āāīū]*$/;
 
@@ -184,12 +193,13 @@ export function lint(surfaces, names, files, only = null) {
       // old names
       for (const o of olds) {
         const single = !/\s/.test(o.old), plain = PLAIN_OLD.has(o.old);
-        const re = new RegExp(`(^|[^A-Za-zĀāĪīŪū])${esc(o.old)}(?![A-Za-zĀāĪīŪū])`, single && !plain ? 'gi' : 'g');
+        // an English plural of an old name is the old name: Gloomshades, Wardstones
+        const re = new RegExp(`(^|[^A-Za-zĀāĪīŪū])${esc(o.old)}(?:e?s)?(?![A-Za-zĀāĪīŪū])`, single && !plain ? 'gi' : 'g');
         let m;
         while ((m = re.exec(body))) {
           const at = m.index + m[1].length;
           if (plain && (at === 0 || /[.?:]\s*$/.test(body.slice(0, at)))) continue;   // an ordinary word starting a sentence
-          bad(file, key, 'old-name', `"${body.slice(at, at + o.old.length)}" is the old name of ${o.key}; the name is "${o.name}"`); break;
+          bad(file, key, 'old-name', `"${body.slice(at, m.index + m[0].length)}" is the old name of ${o.key}; the name is "${o.name}"`); break;
         }
       }
       // names of the born tongues
@@ -202,12 +212,15 @@ export function lint(surfaces, names, files, only = null) {
       // the command line answers with the words a player types, which are code
       const lists = e.surface === 'cmd' ? [] : [ALL, VOICE[e.voice], ...SURF.filter(([p]) => e.surface.startsWith(p) && !(p === 'eight.' && e.voice === 'born')).map(([, m]) => m)];
       if (e.surface === 'item.desc' && BAIT_KEYS.includes(e.key)) lists.push(BAIT);
+      const litHere = e.voice !== 'born' && e.voice !== 'sand' && STONE_LIT_SURFACES.some((p) => e.surface.startsWith(p));
+      if (litHere) lists.push(LIT);
       const told = new Set();
       for (const w of body.match(WORD) ?? []) {
         const lw = fold(w.replace(/'[a-z]+$/, '')), lwFull = fold(w);
         for (const m of lists) { const hit = m?.get(lw) ?? m?.get(lwFull); if (hit && !told.has(hit[0])) { told.add(hit[0]); bad(file, key, 'banned', `"${w}": ${hit[1]}`); } }
       }
       for (const [why, re] of PATTERNS) { const m = re.exec(body); if (m && !(e.voice === 'label' && m[0] === '...')) bad(file, key, 'pattern', `"${m[0].trim()}": ${why}`); }
+      if (litHere) for (const sentence of body.split(/[.?;:]/)) { const l = LIGHT_WORD.exec(sentence), st = STONE_WORD.exec(sentence); if (l && st) { bad(file, key, 'banned', `"${l[0]}" in a sentence about a "${st[0]}": ${STONE_LIT[0]} (4.10)`); break; } }
       if (e.voice !== 'born' && e.voice !== 'sand' && /\bfirst light\b/i.test(body)) bad(file, key, 'banned', '"first light": the hour a holder lifts the hand, a householder\'s phrase (5.2); say dawn');
     }
   }
@@ -231,12 +244,16 @@ function selftest() {
     'eight.intro:h': ent('eight.intro', 'h', 'sight', 80, { assign: 'creatures' }),
     'site.sight:i': ent('site.sight', 'i', 'sight', 90, { assign: 'sites' }),
     'gear.desc:j': ent('gear.desc', 'j', 'note', 80, { assign: 'items-a' }),
+    'eight.line:k': ent('eight.line', 'k', 'sight', 60, { assign: 'creatures' }),
+    'task.how:l': ent('task.how', 'l', 'label', 160),
+    'task.said:m': ent('task.said', 'm', 'born', 130),
   } };
   const good = {
-    'system.json': { 'toast:a': 'The pack is full.', 'toast:b': '{name} has moved in.', 'banner:c': 'Packs come up at dusk', 'fall:d': 'The drop was too long for the body.' },
+    'system.json': { 'toast:a': 'The pack is full.', 'toast:b': '{name} has moved in.', 'banner:c': 'Packs come up at dusk', 'fall:d': 'The drop was too long for the body.',
+      'task.how:l': 'Lay the key on the stone. Lamps stand round the base.', 'task.said:m': 'A stone is lit while one of us sits at it, peopl.' },
     'people.json': { 'folk.housed:e': ['Put it on the table, away from the pot.', 'I buy anything, peopl.'], 'fire.say:f': ['Nothing of ours draws.'], 'folk.meet:e': 'You have a room and a light, peopl. I will hold here.' },
     'items-b.json': { 'item.desc:g': 'A tooth of Maruhar. Harder than its plates.', 'item.desc:warden_bell': 'Lay it on a Kankāl Altar. Kankāl comes up to it.' },
-    'creatures.json': { 'eight.intro:h': 'Roots come up through the paving.' },
+    'creatures.json': { 'eight.intro:h': 'Roots come up through the paving.', 'eight.line:k': 'It goes back down into the base.' },
     'items-a.json': { 'gear.desc:j': 'Flint on a shaft, fletched with grouse feather.' }, 'sites.json': { 'site.sight:i': 'Single dressed stones run out from the shore and stop.' },
   };
   const run = (change) => {
@@ -258,7 +275,7 @@ function selftest() {
     ['missing', 'a key left out', (f) => { delete f['system.json']['banner:c']; }],
     ['unknown', 'a key that is in no surface', (f) => { f['system.json']['toast:zzz'] = 'Text.'; }],
     ['owner', 'a key in another writer\'s file', (f) => { f['people.json']['toast:a'] = f['system.json']['toast:a']; delete f['system.json']['toast:a']; }],
-    ['twice', 'a key written twice in one file', (f, raw) => raw.set('system.json', '{"toast:a":"The pack is full.","toast:a":"No room.","toast:b":"{name} has moved in.","banner:c":"Packs come up at dusk","fall:d":"The drop was too long for the body."}')],
+    ['twice', 'a key written twice in one file', (f, raw) => { const o = f['system.json']; raw.set('system.json', '{"toast:a":"No room.",' + JSON.stringify(o).slice(1)); }],
     ['shape', 'a string where a list is wanted', (f) => { f['people.json']['folk.housed:e'] = 'One line.'; }],
     ['shape', 'too few lines in a list', (f) => { f['people.json']['folk.housed:e'] = ['One line only.']; }],
     ['shape', 'the same line twice in a list', (f) => { f['people.json']['folk.housed:e'] = ['I buy anything.', 'I buy anything.']; }],
@@ -272,6 +289,8 @@ function selftest() {
     ['must', 'a first meeting that does not say peopl (8.10)', (f) => { f['people.json']['folk.meet:e'] = 'You have a room and a light. I will hold here.'; }],
     ['old-name', 'an old name of a creature (Gloomshade)', (f) => { f['items-b.json']['item.desc:g'] = 'What a Gloomshade leaves in the pot.'; }],
     ['old-name', 'an old name in lower case (wardstone)', (f) => { f['items-b.json']['item.desc:g'] = 'Cut from wardstone.'; }],
+    ['old-name', 'an old name with an English plural (Gloomshades)', (f) => { f['items-b.json']['item.desc:g'] = 'Gloomshades came at dusk.'; }],
+    ['old-name', 'an old name with an English plural in lower case (wardstones)', (f) => { f['items-b.json']['item.desc:g'] = 'Two wardstones, set.'; }],
     ['old-name', 'an old name of two words (Guest Bed)', (f) => { f['system.json']['toast:a'] = 'Place a Guest Bed.'; }],
     ['spelling', 'a born name without its marks (Kankal)', (f) => { f['items-b.json']['item.desc:warden_bell'] = 'Lay it on a Kankal Altar.'; }],
     ['spelling', 'a born name without its capital (tama)', (f) => { f['items-b.json']['item.desc:g'] = 'What a tama leaves in the pot.'; }],
@@ -285,6 +304,10 @@ function selftest() {
     ['banned', 'a householder speaking of the game (level)', (f) => { f['people.json']['folk.housed:e'][0] = 'Come back at a higher level.'; }],
     ['banned', 'a sand-country mouth saying altar', (f) => { f['people.json']['fire.say:f'] = ['Leave the altar alone.']; }],
     ['banned', 'a banner that says a stone is lit', (f) => { f['system.json']['banner:c'] = 'The cairns are lit'; }],
+    ['banned', 'a line of the eight that says a stone is lit (eight.line, 4.10)', (f) => { f['creatures.json']['eight.line:k'] = 'The stone is lit again.'; }, '4.10'],
+    ['banned', 'a journal line that says a kill lights a stone (task.how, 4.10)', (f) => { f['system.json']['task.how:l'] = 'Kill it and the stone is lit.'; }, '4.10'],
+    ['banned', 'a journal line that says a kill lights the stones, as a verb (task.how, 4.10)', (f) => { f['system.json']['task.how:l'] = 'Kill it to light the stones again.'; }, '4.10'],
+    ['banned', 'an item line that says a stone is relit (item.desc, 4.10)', (f) => { f['items-b.json']['item.desc:g'] = 'The cairns are relit with it.'; }, '4.10'],
     ['banned', 'a line at a fall that writes a death (rule 20)', (f) => { f['system.json']['fall:d'] = 'The drop killed the body.'; }],
     ['banned', 'a bait described with a born verb (ring)', (f) => { f['items-b.json']['item.desc:warden_bell'] = 'Ring it at a Kankāl Altar.'; }],
     ['banned', 'a great feeder given a sex and a will (rule 19)', (f) => { f['creatures.json']['eight.intro:h'] = 'It guards the stone.'; }],
