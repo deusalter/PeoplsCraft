@@ -1,4 +1,5 @@
-// The shop (section 6): what one householder sells, what was just sold to them, and the pack to sell from. A row buys
+// The shop (section 6): what one householder sells under the Buy tab, what was sold to them this visit under Sell
+// back, and the pack to sell from. A row buys
 // one, Shift and a press buys ten; Shift and a press on a pack slot sells the stack, and a thing worth keeping asks
 // for the same press again within two and a half seconds.
 import { count, measure, rightX } from '../font/measure';
@@ -6,7 +7,7 @@ import { box, cut } from '../font/wrap';
 import type { Node, TipLine, Ui } from '../node';
 import { GRADES } from '../palette';
 import { ring, sunk } from '../parts/common';
-import { slab } from '../parts/slab';
+import { type TabSpec, tabbedSlab } from '../parts/tabs';
 import { ROW_H, TRACK_W, paintThumb } from '../parts/well';
 import { type Stack, stackGrade, stackName, stackTip, thing } from '../sample/play-items';
 import { Bench, overWorld, packBlock, place } from './play/common';
@@ -47,7 +48,7 @@ const KEEPERS: Record<string, Keeper> = {
   },
 };
 
-interface State { k: Keeper; hand: Hand; bench: Bench | null; pending: { id: string; t: number } | null }
+interface State { k: Keeper; hand: Hand; bench: Bench | null; pending: { id: string; t: number } | null; tab: number }
 const states = new Map<string, State>();
 
 function open(id: string): State {
@@ -62,7 +63,7 @@ function open(id: string): State {
     }),
     bar: store(9, { 0: { key: 'iron_pickaxe', n: 1 }, 1: { key: 'iron_sword', n: 1 }, 2: { key: 'iron_bow', n: 1 }, 3: { key: 'arrow', n: 28 }, 6: { key: 'salve', n: 2 }, 7: { key: 'recall_stone', n: 1 } }),
   }, { route: (p) => [p.store === 'pack' ? 'bar' : 'pack'] });
-  st = { k: { ...k, sold: k.sold.map((s) => ({ ...s })) }, hand, bench: null, pending: null };
+  st = { k: { ...k, sold: k.sold.map((s) => ({ ...s })) }, hand, bench: null, pending: null, tab: 0 };
   states.set(id, st);
   return st;
 }
@@ -81,7 +82,7 @@ function precious(s: Stack): boolean {
 }
 
 function purse(k: Keeper): number { return k.token ? k.muda : k.lees; }
-function priceText(k: Keeper, n: number): string { return k.token ? `${count(n)} Mūda` : `${count(n)} {lees}`; }
+function priceText(k: Keeper, n: number): string { return k.token ? `${count(n)} {muda}` : `${count(n)} {lees}`; }
 
 function buy(st: State, g: Good, n: number, fromSold: boolean): boolean {
   const k = st.k;
@@ -100,18 +101,21 @@ function buy(st: State, g: Good, n: number, fromSold: boolean): boolean {
   return bought > 0;
 }
 
-interface Row { id: string; head?: string; good?: Good; sold?: boolean; n?: number }
+interface Row { id: string; good: Good; sold?: boolean; n?: number }
 
-/** The shop's well: rows 18 tall, a grey row heading what was sold this visit, the price at the right with its mark. */
+/** Rows the well shows at once. */
+const WELL_ROWS = 6;
+
+/**
+ * The shop's well: rows 18 tall, the price at the right with its mark. Under Sell back each row is a thing sold this
+ * visit, at what was paid for it and with the turned arrow before the price.
+ */
 function goodsWell(st: State, ui: Ui): Node {
   const k = st.k, b = st.bench!;
-  const rows: Row[] = [];
-  if (k.sold.length) {
-    rows.push({ id: 'shop.head', head: 'Sold just now' });
-    for (const s of k.sold) rows.push({ id: `shop.sold.${s.key}.${s.mod ?? ''}`, good: s, sold: true, n: s.n });
-  }
-  for (const g of k.goods) rows.push({ id: `shop.good.${g.key}`, good: g });
-  const w = 160, h = 74, fw = w - 2, fh = h - 2;
+  const rows: Row[] = st.tab === 1
+    ? k.sold.map((s) => ({ id: `shop.sold.${s.key}.${s.mod ?? ''}`, good: s, sold: true, n: s.n }))
+    : k.goods.map((g) => ({ id: `shop.good.${g.key}`, good: g }));
+  const w = 160, h = WELL_ROWS * ROW_H + 2, fw = w - 2, fh = h - 2;
   const fits = rows.length * ROW_H <= fh;
   const rw = fits ? fw : fw - TRACK_W;
   const visible = Math.floor(fh / ROW_H);
@@ -120,8 +124,7 @@ function goodsWell(st: State, ui: Ui): Node {
   const setTop = (v: number) => ui.setScroll('shop.well', Math.min(maxTop, Math.max(0, v)));
   const kids: Node[] = rows.map((r, i): Node => {
     const y = (i - top) * ROW_H;
-    if (r.head) return { id: r.id, x: 0, y, w: rw, h: ROW_H, paint: (s) => { s.text(r.head!, 20, 4, 'root.4', true); } };
-    const g = r.good!;
+    const g = r.good;
     const can = purse(k) >= g.price;
     const st0: Stack = { key: g.key, n: 1, mod: g.mod };
     return {
@@ -132,7 +135,7 @@ function goodsWell(st: State, ui: Ui): Node {
         else if (live.hover && can) s.fill(0, 0, rw, ROW_H, 'root.2');
         if (live.focus) ring(s, 0, 0, rw, ROW_H, 'salt');
         s.icon(thing(g.key).icon, 1, 1, can ? 'full' : 'flat', 'root.4');
-        const price = priceText(k, g.price);
+        const price = (r.sold ? '{back} ' : '') + priceText(k, g.price);
         const px = rightX(price, rw - 3);
         s.text(price, px, 4, can ? 'salt' : 'blood.lt', true);
         let name = stackName(st0);
@@ -141,7 +144,7 @@ function goodsWell(st: State, ui: Ui): Node {
       },
       tip: () => {
         const extra: TipLine[] = [{ text: can ? `${priceText(k, g.price)} each` : `${priceText(k, g.price)}: you carry ${count(purse(k))}`, c: can ? 'growth.lt' : 'blood.lt' }];
-        return stackTip(st0, '{lmb} buy one   Shift {lmb} buy ten', extra);
+        return stackTip(st0, r.sold ? '{lmb} buy one back   Shift {lmb} buy ten back' : '{lmb} buy one   Shift {lmb} buy ten', extra);
       },
       on: {
         down: (e) => {
@@ -171,8 +174,14 @@ function goodsWell(st: State, ui: Ui): Node {
       },
     });
   }
+  if (!rows.length) {
+    kids.push({ x: 0, y: 0, w: fw, h: fh, paint: (s) => {
+      const t = box('Nothing sold yet. Shift {lmb} a thing in the pack to sell it.', fw - 12, 3);
+      for (const l of t.lines) s.text(l.text, 6, 5 + l.y, 'root.4', true);
+    } });
+  }
   return {
-    id: 'shop.wellbox', x: 8, y: 40, w, h,
+    id: 'shop.wellbox', x: 8, y: 18, w, h,
     paint: (s) => sunk(s, 0, 0, w, h, 'clay'),
     on: { wheel: (e) => { setTop(top + e.notches); return true; } },
     kids: [{ x: 1, y: 1, w: fw, h: fh, clip: true, kids }],
@@ -198,18 +207,19 @@ function sell(st: State, store: string, i: number): void {
   b.ui.cue('put');
 }
 
+const SLAB_W = 176, SLAB_H = 227;
+
 function build(ui: Ui, id: string): Node {
   const st = open(id);
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
   const b = st.bench, k = st.k;
-  const lees = `{lees} ${count(k.lees)}`;
-  const muda = k.token ? `${count(k.muda)} Mūda   ` : '';
-  const says = box(k.says, 160, 2);
+  // Only what this keeper takes is shown, so the purse and every price carry the same mark.
+  const purseText = k.token ? `${count(k.muda)} {muda}` : `${count(k.lees)} {lees}`;
   const main: Node[] = [
-    { x: rightX(muda + lees, 168), y: 6, w: measure(muda + lees), h: 10, paint: (s) => { s.text(muda + lees, 0, 0, 'ink'); } },
-    { x: 8, y: 18, w: 160, h: 20, paint: (s) => { for (const l of says.lines) s.text(l.text, 0, l.y, 'ink'); } },
+    { x: rightX(purseText, 168), y: 6, w: measure(purseText), h: 10, paint: (s) => { s.text(purseText, 0, 0, 'ink'); } },
+    { x: 8, y: 6, w: measure(k.name) + 1, h: 10, takes: true, tip: () => ({ lines: [{ text: k.name, c: 'salt' }, { text: k.says, c: 'root.4' }], delay: 0.4 }) },
     goodsWell(st, ui),
-    ...packBlock(b, 'clay', 119, 130, {
+    ...packBlock(b, 'clay', 132, 143, {
       each: (store, i) => {
         const s = st.hand.stores[store][i];
         const asking = !!st.pending && st.pending.id === `${store}.${i}` && ui.t - st.pending.t < 2.5;
@@ -221,8 +231,15 @@ function build(ui: Ui, id: string): Node {
       },
     }),
   ];
-  const win = place(ui, 176, 214);
-  return overWorld(ui, win, [slab({ x: 0, y: 0, w: 176, h: 214, ramp: 'clay', title: k.name, titleRoom: measure(muda + lees) + 8, kids: main })], {
+  const tabs: TabSpec[] = [
+    { id: 'shop.tab.buy', icon: thing(k.goods[0].key).icon, name: 'Buy' },
+    { id: 'shop.tab.back', icon: k.sold[0] ? thing(k.sold[0].key).icon : 'pack', name: 'Sell back' },
+  ];
+  const win = place(ui, SLAB_W, SLAB_H);
+  return overWorld(ui, win, [tabbedSlab({
+    id: 'shop.slab', x: 0, y: 0, w: SLAB_W, h: SLAB_H, ramp: 'clay', title: k.name, titleRoom: measure(purseText) + 8, kids: main,
+    edge: 'left', tabs, chosen: st.tab, onTab: (i) => { st.tab = i; ui.cue('tab'); ui.invalidate(); },
+  })], {
     outside: () => { st.hand.dropHeld(); b.after(); },
   });
 }

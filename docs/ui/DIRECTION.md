@@ -370,7 +370,7 @@ In each sheet the first line names the glyph, `#` is ink, and the last line is i
 
 **Marks.** The macron is 3 units wide on the accent row for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
 
-**Symbols.** 13 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
+**Symbols.** 15 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
 
 ```
 tofu   lees     check    cross  right  left   up     down   step  shield   lmb      rmb      mmb      
@@ -385,6 +385,19 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 .....  .......  .......  .....  .....  .....  .....  .....  ...   .......  .......  .......  .......
 .....  .......  .......  .....  .....  .....  .....  .....  ...   .......  .......  .......  .......
 5      7        7        5      5      5      5      5      3     7        7        7        7
+
+muda     back
+.......  .......
+.#####.  ..#....
+##...##  .##....
+#..#..#  #######
+#.###.#  .##...#
+#..#..#  ..#...#
+##...##  ......#
+.#####.  ..#####
+.......  .......
+.......  .......
+7        7
 
 ```
 
@@ -403,8 +416,10 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 | `{lmb}` | 7 |
 | `{rmb}` | 7 |
 | `{mmb}` | 7 |
+| `{muda}` | 7 |
+| `{back}` | 7 |
 
-`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence.
+`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence.
 
 **Shadow.** Text on a dark plate, on the ground tile, on a button or on the world has a shadow: the same glyphs one unit right and one unit down in `root.0`, drawn first. Text on a light face (a slab, a page, a key cap) has none. The shadow is always `root.0` and never a darker copy of the text's colour, so that the palette stays closed.
 
@@ -2723,63 +2738,65 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 
 ### Shop
 
-Size 176 by 214. Material: clay. Anchor: centre of the screen.
+Size 176 by 227, with two tabs standing 21 out of its left edge. Material: clay. Anchor: centre of the screen, the tabs left out of the centring.
 
 ```
-#==========================================================#
-#  "H1"                            "H2"                    #
-#                                                          #
-#  "H3"                                                    #
-#                                                          #
-#                                                          #
-#                                                          #
-#  +---------------------------------------------------+   #
-#  | H4 well                                           |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  |                                                   |   #
-#  +---------------------------------------------------+   #
-#                                             +--------+   #
-#  "H5"                                       +-H6-----+   #
-#                                                          #
-#  .----..----..----..----..----..----..----..----..----.  #
-#  |H7  ||    ||    ||    ||    ||    ||    ||    ||    |  #
-#  '----''----''----''----''----''----''----''----''----'  #
-#  .----..----..----..----..----..----..----..----..----.  #
-#  |    ||    ||    ||    ||    ||    ||    ||    ||    |  #
-#  '----''----''----''----''----''----''----''----''----'  #
-#  .----..----..----..----..----..----..----..----..----.  #
-#  |    ||    ||    ||    ||    ||    ||    ||    ||    |  #
-#  '----''----''----''----''----''----''----''----''----'  #
-#  .----..----..----..----..----..----..----..----..----.  #
-#  |H8  ||    ||    ||    ||    ||    ||    ||    ||    |  #
-#  '----''----''----''----''----''----''----''----''----'  #
-#                                                          #
-#                                                          #
-#==========================================================#
-```
++------+==========================================================#
+|T1    |#  "H1"                                            "H2"    #
++------+#  +---------------------------------------------------+   #
+|T2    |#  | H4 well, six rows                                 |   #
++------+#  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  |                                                   |   #
+        #  +---------------------------------------------------+   #
+        #                                             +--------+   #
+        #  "H5"                                       +-H6-----+   #
+        #                                                          #
+        #  .----..----..----..----..----..----..----..----..----.  #
+        #  |H7  ||    ||    ||    ||    ||    ||    ||    ||    |  #
+        #  '----''----''----''----''----''----''----''----''----'  #
+        #  .----..----..----..----..----..----..----..----..----.  #
+        #  |    ||    ||    ||    ||    ||    ||    ||    ||    |  #
+        #  '----''----''----''----''----''----''----''----''----'  #
+        #  .----..----..----..----..----..----..----..----..----.  #
+        #  |    ||    ||    ||    ||    ||    ||    ||    ||    |  #
+        #  '----''----''----''----''----''----''----''----''----'  #
+        #  .----..----..----..----..----..----..----..----..----.  #
+        #  |H8  ||    ||    ||    ||    ||    ||    ||    ||    |  #
+        #  '----''----''----''----''----''----''----''----''----'  #
+        #                                                          #
+        #==========================================================#
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| H0 | slab | 0 | 0 | 176 | 214 | clay slab |
-| H1 | text | 8 | 6 | 80 | 10 | the townsperson's name |
-| H2 | text | 104 | 6 | 64 | 10 | lees carried, right-aligned to x 168; beside it the count of Mūda when the Deserter deals |
-| H3 | text | 8 | 18 | 160 | 20 | what they say, two lines at most, in ink, no quotation marks |
-| H4 | well | 8 | 40 | 160 | 74 | dark well of four list rows 18 tall, scroll track at its right: icon, name in the colour of its grade, price right-aligned with the jar mark. Things sold this visit come first under a grey row "Sold just now" |
-| H5 | text | 8 | 119 | 40 | 10 | "Pack" |
-| H6 | button | 138 | 116 | 30 | 12 | "Sort" |
-| H7 | slots | 8 | 130 | 162 | 54 | the pack, nine by three |
-| H8 | slots | 8 | 188 | 162 | 18 | the hotbar row, four units below the pack |
+| H0 | slab | 0 | 0 | 176 | 227 | clay slab |
+| T1 | tab | -21 | 0 | 24 | 24 | "Buy": the keeper's first good as its icon; chosen when the shop opens |
+| T2 | tab | -18 | 23 | 24 | 24 | "Sell back": the icon of the last thing sold this visit, or the pack |
+| H1 | text | 8 | 6 | 80 | 10 | the keeper's name; its tooltip gives what they say, in root.4 |
+| H2 | text | 104 | 6 | 64 | 10 | the one coin this keeper takes, right-aligned to x 168: "12 {lees}", or "38 {muda}" when the Deserter deals. Two purses side by side, one a mark and one a word, left the buyer to guess which the shop took |
+| H4 | well | 8 | 18 | 160 | 110 | dark well of six list rows 18 tall, scroll track at its right: icon, name in the colour of its grade, price right-aligned with the same mark as H2. Under Sell back each row is a thing sold this visit at what was paid for it, its price led by `{back}`; with nothing sold the well says "Nothing sold yet. Shift {lmb} a thing in the pack to sell it." in root.4. A grey heading row among the goods read as a thing that could not be bought |
+| H5 | text | 8 | 132 | 40 | 10 | "Pack" |
+| H6 | button | 138 | 129 | 30 | 12 | "Sort" |
+| H7 | slots | 8 | 143 | 162 | 54 | the pack, nine by three |
+| H8 | slots | 8 | 201 | 162 | 18 | the hotbar row, four units below the pack |
 
-- **Shows.** What one householder sells, what was just sold to them, and the pack to sell from. A price the buyer cannot meet is drawn in blood.lt and its row in grey.
+- **Shows.** What one householder sells, under Buy; what was sold to them this visit, to buy back, under Sell back; and the pack to sell from. A price the buyer cannot meet is drawn in blood.lt and its row in grey.
 - **Clickable.** A row buys one; shift and click buys ten. Shift and click on a pack slot sells the stack; a thing of grade Island or higher, a bait or a Recall Stone asks for the same click again within two and a half seconds (the slot takes the refusal frame and the tooltip says "Again to sell").
-- **Keys.** Tab walks: rows, pack, hotbar, "Sort". Up and Down move along the rows and scroll the well. Enter buys.
+- **Keys.** Tab walks: the two tabs, rows, pack, hotbar, "Sort". Up and Down move along the rows and scroll the well. Enter buys.
 - **First.** Focus on the first row.
 
 ### Journal: the Guide, bounties and standing
