@@ -2383,7 +2383,7 @@ The pack is the main slab, 176 by 182, with one row of tabs standing 21 above it
 | M10 | slots | 143 | 98 | 162 | 54 | the pack, nine by three |
 | M11 | slots | 143 | 156 | 162 | 18 | the hotbar row, four units below the pack |
 
-**States chosen.** The body panel shows instead a well 120 by 84 at 8, 16 with the large figure standing on the ground tile and a framed state beside the part of the body it sits on, then a row 19 tall to each state from y 104: its frame, its name at x 22 on the row's top, and under the name, at y 11, the time left in the small face. The panel is 136 wide so that a name up to 97 units stands whole; with the time beside the name, the most urgent state's name was the one cut.
+**States chosen.** The body panel shows instead a well 120 by 80 at 8, 16 with the large figure standing alone on the ground tile, centred, and nothing laid over it: frames set beside the body's parts floated on the dark at no fixed place. Under it a row 20 tall to each state from y 100: its frame 18 by 18 at 0, 1 with the state's icon, its name at x 22 in `growth.dk` for a state that helps and `blood.dk` for one that harms, wrapped to two lines at most and never cut while the panel has room, and the time left in the text face, `ink.faded` (`blood.dk` under ten seconds), right-aligned to x 128 on the name's first line. A name of one line stands at y 5, level with the middle of its frame.
 
 **Making chosen.** No panel stands at the left; the main slab's left is x 0 and the recipe panel's is x 175:
 
@@ -3636,7 +3636,7 @@ The HUD's chat with its entry (5.23): twelve lines ending where closed chat ends
 
 ### States of a body (to come)
 
-The States tab of the pack (the second of its four). The upper part is a well 96 by 84 at 8, 16 holding the large figure of 5.29 standing on the ground tile; a state marks the part of the body it sits in with its status icon (the arm for an overdriven arm, the trunk for spore in a wound, the back for remains carried). Under the well, list rows 18 tall on the slab: status icon in its frame, the state's name in ink, the time left right-aligned, and in the tooltip what ends it. The six kinds of harm are not shown on the body; each is a 9 by 9 mark beside a number wherever a tooltip gives harm (an edge, a weight, a flame, the loosening, a fall, the sun), and a creature's entry in the codex lists the kinds it yields to and the kinds it turns.
+The States tab of the pack (the second of its four). The upper part is a well holding the large figure of 5.29 standing alone on the ground tile. Under the well, list rows 20 tall on the slab, as the pack's States tab above draws them: status icon in its frame, the state's name in the colour of what it does, the time left right-aligned, and in the tooltip what ends it. The six kinds of harm are not shown on the body; each is a 9 by 9 mark beside a number wherever a tooltip gives harm (an edge, a weight, a flame, the loosening, a fall, the sun), and a creature's entry in the codex lists the kinds it yields to and the kinds it turns.
 
 ### Keys and stores (to come)
 

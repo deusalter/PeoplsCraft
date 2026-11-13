@@ -2,9 +2,8 @@
 // the pack, and the recipe panel of what two hands can make fastened to the right. Under 400 units of width the
 // panels leave the sides and the main slab carries three side tabs: Pack, Body, Making.
 import { FRAMED_PLATE } from '../art/slab';
-import { SMALL } from '../font/face';
 import { clock, count, measure, rightX } from '../font/measure';
-import { cut } from '../font/wrap';
+import { box, cut } from '../font/wrap';
 import type { Node, Ui } from '../node';
 import { frameWell } from '../parts/well';
 import { progressArrow } from '../parts/gauges';
@@ -171,34 +170,33 @@ const STATES_LIST: { icon: string; name: string; good: boolean; seconds: number;
   { icon: 'spore_sac', name: 'Spore in a wound', good: false, seconds: 38, part: 'body', ends: 'A salve ends it' },
 ];
 
-/** The States tab: the figure in a well with each state marked where it sits, and a row for each under it. */
+/**
+ * The States tab: the figure alone in a well, standing on the ground, and under it one row 20 tall to each state: its
+ * framed icon, its name in the colour of what it does to the body, wrapped to two lines rather than cut, and the time
+ * left right-aligned on the row's first line. Icons laid on the figure itself floated on the dark at no fixed place.
+ */
 function statesParts(st: PackState): Node[] {
   const wear = st.hand.stores.wear;
   const tones = { head: materialTones(wear[0]), body: materialTones(wear[1]), legs: materialTones(wear[2]) };
-  const ww = BODY_W - 16, wh = 84, ground = 8;
-  const fig = FIGURE_SIZE.large, fx = 10, fy = wh - 2 - ground - fig.h + 1;
-  const marks: Record<Part, number> = { head: fy + 1, body: fy + 12, legs: fy + 32 };
+  const ww = BODY_W - 16, wh = 80, ground = 8;
+  const fig = FIGURE_SIZE.large, fx = Math.floor((ww - 2 - fig.w) / 2), fy = wh - 2 - ground - fig.h + 1;
   const out: Node[] = [frameWell({
     x: 8, y: 16, w: ww, h: wh, host: 'clay',
-    kids: [
-      floor(0, wh - 2 - ground, ww - 2, ground, fx + Math.floor(fig.w / 2)),
-      figure(fx, fy, 'large', tones),
-      ...STATES_LIST.map((s, i): Node => ({
-        x: 50 + (i % 2) * 20, y: marks[s.part] + (i > 1 ? 20 : 0), w: 18, h: 18,
-        paint: (sf) => { sf.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: s.good ? 'growth' : 'blood' }); sf.icon(s.icon, 1, 1); },
-      })),
-    ],
+    kids: [floor(0, wh - 2 - ground, ww - 2, ground, fx + Math.floor(fig.w / 2)), figure(fx, fy, 'large', tones)],
   })];
   STATES_LIST.forEach((s, i) => {
-    const y = 104 + i * 19, rw = BODY_W - 16;
+    const y = 100 + i * 20, rw = BODY_W - 16;
+    const time = clock(s.seconds);
+    const nameW = rw - 22 - measure(time) - 4;
+    const name = box(s.name, nameW, 2);
     out.push({
-      id: `states.row.${i}`, x: 8, y, w: rw, h: 18, takes: true,
+      id: `states.row.${i}`, x: 8, y, w: rw, h: 20, takes: true,
       paint: (sf) => {
-        sf.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: s.good ? 'growth' : 'blood' });
-        sf.icon(s.icon, 1, 1);
-        // The time stands under the name, so a long name is never cut to make room for it.
-        sf.text(cut(s.name, rw - 23), 22, 0, 'ink');
-        sf.text(clock(s.seconds), 22, 11, s.seconds <= 10 ? 'blood.dk' : 'ink.faded', false, SMALL);
+        sf.nine(FRAMED_PLATE, 0, 1, 18, 18, { tint: s.good ? 'growth' : 'blood' });
+        sf.icon(s.icon, 1, 2);
+        const one = name.lines.length === 1;
+        for (const l of name.lines) sf.text(l.text, 22, (one ? 5 : 0) + l.y, s.good ? 'growth.dk' : 'blood.dk');
+        sf.text(time, rightX(time, rw), one ? 5 : 0, s.seconds <= 10 ? 'blood.dk' : 'ink.faded');
       },
       tip: () => ({ lines: [{ text: s.name, c: s.good ? 'growth.lt' : 'blood.lt' }, { text: s.ends, c: 'root.4' }], delay: 0 }),
     });
