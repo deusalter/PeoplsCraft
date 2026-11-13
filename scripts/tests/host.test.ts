@@ -10,7 +10,7 @@ import { ClientVoxels, VoxChunk } from '../../src/net/clientvoxels';
 import { SimHost } from '../../src/net/host';
 import { loopback } from '../../src/net/loopback';
 import type { C2SOf, S2C, S2COf } from '../../src/net/protocol';
-import { MV_GROUND } from '../../src/net/protocol';
+import { LOAD_CLOSE, MV_GROUND } from '../../src/net/protocol';
 import type { Transport } from '../../src/net/transport';
 import type { ChunkSource, GenResult } from '../../src/sim/chunksource';
 import { hashBlocks } from '../../src/sim/genjob';
@@ -500,4 +500,25 @@ test('"save now" during a commit already under way is answered by a commit that 
   assert.equal(heard(), before + 1);
   const hp = (storage.players.get('local')!.stats as { hp: number }).hp;
   assert.ok(hp > 0, `the stored player is risen (hp ${hp})`);
+});
+
+test('a connection that says hello and never `ready` loses its seat after LOAD_CLOSE, moves or not; one that is ready keeps it', async () => {
+  const r = await rig(false, new MemStorage(), 1), sim = r.host.sim, a = client(r.host, { local: false });
+  a.hello('Ada', 'a'.repeat(32));
+  await run(r, 3, a);
+  assert.equal(a.of('welcome').length, 1);
+  const p = [...sim.players.values()][0];
+  assert.ok(p.loading && sim.seated() === 1);
+  // a client that keeps its link alive with moves (dropped while loading, 4.5 step 1) and never says ready
+  for (let i = 0; i < LOAD_CLOSE * 60 + 30 && !a.closed.length; i++) { if (i % 3 === 0) a.s.move(); await run(r, 1, a); }
+  assert.deepEqual(a.closed, ['idle']);
+  assert.equal(a.of('error').at(-1)?.code, 'idle');
+  assert.ok(p.parked); assert.equal(sim.seated(), 0);
+  const b = client(r.host, { local: false });
+  b.hello('Bea', 'b'.repeat(32));
+  await run(r, 3, b);
+  assert.equal(b.of('welcome').length, 1, 'the seat is free again');
+  // a client that has said ready while the host is still landing it is not the one that is slow
+  await enter(r, b);
+  assert.equal(b.closed.length, 0);
 });

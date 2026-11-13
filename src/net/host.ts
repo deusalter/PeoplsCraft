@@ -19,7 +19,7 @@ import { EditMaps, SIM_RADIUS } from '../sim/voxels';
 import { Climate } from '../world/gen/climate';
 import { ChunkService } from './hostchunks';
 import { SnapService } from './hostsnap';
-import { BUF_SLOW, type C2S, type C2SOf, CHAT_PER_5S, CHUNKS_BURST, CHUNKS_PER_SEC, type ErrorCode, HELLO_WITHIN, IDLE_CLOSE, MOVE_BYTES, MSG_MOVE, PASSWORD_TRIES, PASSWORD_WINDOW,
+import { BUF_SLOW, type C2S, type C2SOf, CHAT_PER_5S, CHUNKS_BURST, CHUNKS_PER_SEC, type ErrorCode, HELLO_WITHIN, IDLE_CLOSE, LOAD_CLOSE, MOVE_BYTES, MSG_MOVE, PASSWORD_TRIES, PASSWORD_WINDOW,
   type PlayerInfo, PROTO, RATE, RATE_CLOSE, dataHash } from './protocol';
 import type { Conn, HostEnv } from './transport';
 import { checkC2S } from './validate';
@@ -50,6 +50,8 @@ interface Link {
   /** Steps at which `chunks` and `chat` messages arrived, inside their windows. */
   /** The `chunks` bucket: tokens, and the wall time (ms) they were counted at. */
   chunksN: number; chunksMs: number; chatAt: number[];
+  /** The step at which its player was last seen loading without a `ready`, -1 when it is not waiting for one. */
+  loadAt: number;
 }
 
 const STEP_MS = STEP * 1000;
@@ -126,7 +128,7 @@ export class SimHost {
   connect(c: Conn): void {
     const rate: Record<string, Bucket> = {};
     for (const k of Object.keys(RATE)) rate[k] = { n: RATE[k as keyof typeof RATE][1], over: -1 };
-    const l: Link = { c, p: null, inbox: [], closed: false, hello: false, rate, chunksN: CHUNKS_BURST, chunksMs: this.env.now(), chatAt: [] };
+    const l: Link = { c, p: null, inbox: [], closed: false, hello: false, rate, chunksN: CHUNKS_BURST, chunksMs: this.env.now(), chatAt: [], loadAt: -1 };
     this.links.push(l);
     c.onMessage = (m) => {
       if (l.closed) return;
@@ -374,7 +376,13 @@ export class SimHost {
       const l = this.links[i], p = l.p;
       if (!p || l.closed) continue;
       this.chunks.tick(l.c, p);
-      if (!p.local && !p.loading && sim.tick - p.lastMoveTick >= IDLE_CLOSE * 60) { this.bound.delete(p); sim.leave(p, 'bye'); this.kick(l, 'idle', 'No movement for 30 seconds.'); }
+      if (p.local) continue;
+      // counted in host steps: the moves of a loading client are dropped and its `lastMoveTick` says nothing of the wait
+      const waiting = p.loading && !p.clientReady;
+      if (!waiting) l.loadAt = -1;
+      else if (l.loadAt < 0) l.loadAt = this.steps;
+      if (!p.loading && sim.tick - p.lastMoveTick >= IDLE_CLOSE * 60) { this.bound.delete(p); sim.leave(p, 'bye'); this.kick(l, 'idle', 'No movement for 30 seconds.'); }
+      else if (waiting && this.steps - l.loadAt >= LOAD_CLOSE * 60) { this.bound.delete(p); sim.leave(p, 'bye'); this.kick(l, 'idle', 'The world did not finish loading in 2 minutes.'); }
     }
     try { if (sim.running()) sim.step(); else sim.prepare(); } catch (e) {
       this.stats.stepErrors++;

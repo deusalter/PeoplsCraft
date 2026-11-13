@@ -83,6 +83,9 @@ export const HELLO_WITHIN = 5, RTT_EVERY = 2, CLIENT_SILENCE = 6, WS_PING_EVERY 
 export const RTT_MAX_MS = 400;
 /** Seconds without a movement message after which a connection is closed with `idle`. */
 export const IDLE_CLOSE = 30;
+/** Seconds a client on a loading screen may go without saying `ready` before it is closed with `idle`: until then its
+ *  player holds a seat that the movement rule cannot free, since a loading client sends no moves. */
+export const LOAD_CLOSE = 120;
 
 /** Token buckets of the inbound rate caps, as [refill per second, burst]. Sockets only. `seq` covers `op`, `edit`,
  *  `use`, `item` and `fire` together; `chunks` has a bucket of its own in wall time (CHUNKS_PER_SEC, CHUNKS_BURST), and `chat`

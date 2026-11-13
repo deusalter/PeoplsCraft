@@ -3803,6 +3803,14 @@ second, every step sorted all of it, and each copy sent the chunk's `ce` once mo
 `hostchunks.ts` is now keyed by chunk, so a repeated `sub` replaces the entry and the queue never holds more chunks
 than the subscriptions; an `unsub` takes its chunk out of the queue too. A repeated `sub` still re-sends the chunk once,
 as 4.7 says.
+(b) A seat taken by a hello could be held for ever (4.2, 7.9). The `idle` close counts from the last move and is skipped
+while a player is loading, a loading client sends no moves, and a socket that answers the server's pings is never
+silent; so a client that said hello and never `ready` kept its player online and seated, and `maxPlayers` such
+connections filled the world. The host now also closes with `idle` a connection whose player has been loading without
+a `ready` for the current `tp` for `LOAD_CLOSE` (120 s, in `protocol.ts`), and parks the player as the 30 s rule does.
+It is counted in host steps from the step the wait was first seen, since moves sent while loading refresh
+`lastMoveTick` and are then dropped (4.5 step 1). A client that has said `ready` and waits for the host's own sim
+chunks is not counted. `idle` stays a code the client retries on, so a slow client that is closed starts again.
 
 ---
 
