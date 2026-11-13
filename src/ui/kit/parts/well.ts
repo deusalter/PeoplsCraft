@@ -1,0 +1,116 @@
+import { count, rightX } from '../font/measure';
+import { cut } from '../font/wrap';
+import type { Live, Node, Tip, Ui } from '../node';
+import type { Colour } from '../palette';
+import type { Surface } from '../surface';
+import { type Force, type Host, lv, ring, sunk } from './common';
+
+export const ROW_H = 18;
+export const TRACK_W = 6;
+const THUMB_MIN = 12;
+
+export interface RowSpec {
+  id: string;
+  icon?: string;
+  name: string;
+  /** A grade's colour or salt. */
+  colour?: Colour;
+  /** Right-aligned 3 from the row's right end. */
+  num?: number | string;
+  numColour?: Colour;
+  disabled?: boolean;
+  force?: Force;
+  tip?: (live: Live) => Tip | null;
+}
+
+/** Paints one row of a list on the well's floor (5.8). */
+export function paintRow(s: Surface, r: RowSpec, w: number, live: Live, chosen: boolean): void {
+  if (chosen) { s.fill(0, 0, w, ROW_H, 'root.3'); ring(s, 0, 0, w, ROW_H, 'salt'); }
+  else if (live.hover && !r.disabled) s.fill(0, 0, w, ROW_H, 'root.2');
+  if (live.focus && !chosen) ring(s, 0, 0, w, ROW_H, 'salt');
+  const off = r.disabled;
+  if (r.icon) s.icon(r.icon, 1, 1, off ? 'flat' : 'full', 'root.4');
+  let right = w - 3;
+  if (r.num !== undefined) {
+    const t = typeof r.num === 'number' ? count(r.num) : r.num;
+    const x = rightX(t, right);
+    s.text(t, x, 4, off ? 'root.4' : r.numColour ?? 'salt', true);
+    right = x - 5;
+  }
+  s.text(cut(r.name, right - 20 + 1), 20, 4, off ? 'root.4' : r.colour ?? 'salt', true);
+}
+
+export interface WellOpts {
+  id: string;
+  x: number; y: number; w: number; h: number;
+  host: Host;
+  rows: RowSpec[];
+  chosen?: number;
+  onChoose?: (i: number) => void;
+  /** Pins the thumb's hover, for the sheet. */
+  thumbForce?: Force;
+  ui: Ui;
+}
+
+/**
+ * A list in a well (5.8): sunk, `root.0` along the top and left, the host's light edge along the bottom and right, a
+ * floor of `root.1`, rows 18 tall moved by whole rows, and a scroll track of the floor's last 6 units when they do not fit.
+ */
+export function well(o: WellOpts): Node {
+  const fw = o.w - 2, fh = o.h - 2;
+  const fits = o.rows.length * ROW_H <= fh;
+  const rowW = fits ? fw : fw - TRACK_W;
+  const visible = Math.floor(fh / ROW_H);
+  const maxTop = Math.max(0, o.rows.length - visible);
+  const top = Math.min(maxTop, Math.max(0, o.ui.scroll(o.id)));
+  const setTop = (v: number) => { o.ui.setScroll(o.id, Math.min(maxTop, Math.max(0, v))); o.ui.invalidate(); };
+  const kids: Node[] = o.rows.map((r, i): Node => ({
+    id: r.id, x: 1, y: 1 + (i - top) * ROW_H, w: rowW, h: ROW_H,
+    takes: true, focus: !r.disabled,
+    paint: (s, live) => paintRow(s, r, rowW, lv(live, r.force), i === o.chosen),
+    tip: r.tip,
+    on: r.disabled ? undefined : { down: () => o.onChoose?.(i), wheel: (e) => { setTop(top + e.notches); return true; } },
+  }));
+  if (!fits) {
+    const trackH = fh;
+    const thumbH = Math.max(THUMB_MIN, Math.floor((trackH * visible) / o.rows.length));
+    const thumbY = maxTop ? Math.round(((trackH - thumbH) * top) / maxTop) : 0;
+    let dragFrom = top;
+    kids.push({
+      id: `${o.id}.track`, x: 1 + rowW, y: 1, w: TRACK_W, h: trackH, takes: true,
+      paint: (s, live) => {
+        const l = lv(live, o.thumbForce);
+        s.fill(0, 0, TRACK_W, trackH, 'root.0');
+        paintThumb(s, 0, thumbY, thumbH, l.hover || l.down);
+      },
+      on: {
+        down: (e) => { dragFrom = top; if (e.y < thumbY) setTop(top - visible); else if (e.y >= thumbY + thumbH) setTop(top + visible); },
+        drag: (e) => { if (e.phase !== 'end' && trackH > thumbH) setTop(dragFrom + Math.round((e.dy * maxTop) / (trackH - thumbH))); },
+        wheel: (e) => { setTop(top + e.notches); return true; },
+      },
+    });
+  }
+  return {
+    id: o.id, x: o.x, y: o.y, w: o.w, h: o.h,
+    paint: (s) => sunk(s, 0, 0, o.w, o.h, o.host),
+    kids: [{ x: 1, y: 1, w: fw, h: fh, clip: true, kids: kids.map((k) => ({ ...k, x: k.x - 1, y: k.y - 1 })) }],
+  };
+}
+
+/** The thumb (5.8): `root.3` with a top row of `root.4`, a bottom row of `root.2`, three grip rows of `root.1` at its middle. */
+export function paintThumb(s: Surface, x: number, y: number, h: number, hot: boolean): void {
+  s.fill(x, y, TRACK_W, h, hot ? 'root.4' : 'root.3');
+  s.fill(x, y, TRACK_W, 1, hot ? 'salt' : 'root.4');
+  s.fill(x, y + h - 1, TRACK_W, 1, 'root.2');
+  const m = Math.floor(h / 2);
+  for (const g of [m - 2, m, m + 2]) s.fill(x + 1, y + g, TRACK_W - 2, 1, 'root.1');
+}
+
+/** A well that frames something other than a list: the figure, a picture, a field, a chart. */
+export function frameWell(o: { x: number; y: number; w: number; h: number; host: Host; floor?: Colour; kids?: Node[] }): Node {
+  return {
+    x: o.x, y: o.y, w: o.w, h: o.h,
+    paint: (s) => sunk(s, 0, 0, o.w, o.h, o.host, o.floor),
+    kids: o.kids ? [{ x: 1, y: 1, w: o.w - 2, h: o.h - 2, clip: true, kids: o.kids }] : undefined,
+  };
+}

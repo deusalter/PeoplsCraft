@@ -2,6 +2,8 @@
 //
 //   node scripts/uishot.mjs --out <dir> [--screen <name>]
 //
+// `--screen parts` takes every sheet whose name is parts or starts with parts-.
+//
 // For each screen it writes <name>@2.png (960 by 540 at scale 2), <name>@4.png (1920 by 1080 at scale 4) and
 // <name>.zoom-<k>.png: the scale-1 drawing (480 by 270) enlarged eight times, in tiles no larger than 1600 by 1200.
 // One line per screen says what was written and what the pixel-grid check found in the two shots.
@@ -35,7 +37,9 @@ const ZOOM = 8, TILE_W = 1600, TILE_H = 1200;
 const env = await start();
 let code = 0;
 try {
-  const list = args.screen ? [args.screen] : await screens(env);
+  const all = await screens(env);
+  const list = args.screen ? all.filter((n) => n === args.screen || n.startsWith(`${args.screen}-`)) : all;
+  if (!list.length) throw new Error(`uishot: no screen ${args.screen}`);
   for (const name of list) {
     const parts = [], notes = [];
     for (const [scale, width, height] of [[2, 960, 540], [4, 1920, 1080]]) {

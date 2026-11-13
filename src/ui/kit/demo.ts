@@ -13,6 +13,9 @@ import { Root, heldStack } from './root';
 import { type IconImage, WORLD, BLEND, IMAGE } from './surface';
 import { paintTip, tipBox } from './tooltip';
 import { centred } from './scale';
+import { ITEMS } from './mock/icons';
+import { TAB_MARKS } from './art/icons';
+import { SHEETS } from './sheets';
 
 interface DemoScreen {
   title: string;
@@ -276,7 +279,6 @@ const partsScreen: DemoScreen = {
       paint: (s) => s.wash(0, 0, ui.w, ui.h, 'root.0', 2),
       kids: [{ x: Math.max(0, at.x), y: Math.max(0, at.y), w: W, h: H, kids }],
     };
-    if (fault === 'half') kids.push({ x: 10.5, y: 3, w: 8, h: 8, paint: (s) => s.fill(0, 0, 8, 8, 'blood') });
     return root;
   },
 };
@@ -310,7 +312,7 @@ const indexScreen: DemoScreen = {
   },
 };
 
-const SCREENS: Record<string, DemoScreen> = { index: indexScreen, type: typeScreen, parts: partsScreen };
+const SCREENS: Record<string, DemoScreen> = { index: indexScreen, type: typeScreen, ...SHEETS, sample: partsScreen };
 
 // ---- the page
 
@@ -325,11 +327,19 @@ document.body.style.background = strict ? HEX[COLOURS.indexOf('stone.pit')] : '#
 const ui = new Root({
   strict,
   scale: scaleParam ? Math.max(1, Math.floor(Number(scaleParam)) || 1) : 'auto',
-  icons: (k) => ICONS[k] ?? null,
+  icons: (k) => ITEMS[k] ?? TAB_MARKS[k] ?? ICONS[k] ?? null,
 });
 const errors: string[] = [];
 window.addEventListener('error', (e) => errors.push(String(e.message)));
-ui.mount('window', { build: (u) => screen.build(u), modal: true });
+ui.mount('window', {
+  build: (u) => {
+    const n = screen.build(u);
+    // A part on a half unit, which the kit must refuse to draw: the self-test of the pixel-grid check plants it.
+    if (fault === 'half') n.kids = [...(n.kids ?? []), { x: 10.5, y: 3, w: 8, h: 8, paint: (s) => s.fill(0, 0, 8, 8, 'blood') }];
+    return n;
+  },
+  modal: true,
+});
 
 /** What the scripts read: the grid the frame was drawn on, and the units that are not the palette's by design. */
 const hook = {
