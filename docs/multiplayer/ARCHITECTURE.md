@@ -3827,6 +3827,12 @@ copy is always written over it with a rename, so the file is never missing: unti
 stays in place and the next read repairs it again from the backup. A region that no backup holds is still renamed
 aside, since counting as unedited is then the result. This departs from the "Rename it" of the 8.1 table in that one
 way, which leaves the same files behind when nothing fails.
+(e) A player file had the same fault as (d) (8.1). It was renamed aside before the backup copy was written back, and
+when that write failed (a full disk) the copy was used from memory only; a stop or a power cut before the next commit
+that succeeded left no `players/<id>.json`, and the next join gave the player a fresh character with the backup still
+holding a good one. The bad player file is now copied to `.bad-<stamp>` and the backup copy written over it with a
+rename, so until that write succeeds the bad file stays and the next join repairs it again. A player that no backup
+holds is still renamed aside. The same departure from "Rename it" as (d).
 
 ---
 

@@ -411,6 +411,26 @@ function tests(): void {
     await st.close();
   });
 
+  test('a player file unreadable on a full disk: the backup copy is not lost to a stop before a commit succeeds', async () => {
+    const { dir, stamps } = await seeded('player-lost');
+    const notes: DiskNotice[] = [];
+    await writeFile(join(dir, 'players', 'p2.json'), '{"v":1,"id":"p2","inv":');
+    let st = await opened(dir, { io: new QuotaIO(0), notice: (n) => notes.push(n) });
+    assert.equal(((await st.loadPlayer('p2'))!.inv as { coins: number }).coins, stateAt(2).inv[2], 'used from memory');
+    await rejects(st.commit({ players: [playerRec(4, 1)], chunks: [] }), 'full');
+    await st.close();
+    st = await opened(dir, { notice: (n) => notes.push(n) });
+    const p = await st.loadPlayer('p2');
+    assert.ok(p, 'the next start finds the backup copy, not a fresh player');
+    assert.equal((p.inv as { coins: number }).coins, stateAt(2).inv[2]);
+    assert.equal(notes.length, 2); assert.equal(notes[1].from, stamps[1]);
+    await st.close();
+    st = await opened(dir);
+    assert.equal(((await st.loadPlayer('p2'))!.inv as { coins: number }).coins, stateAt(2).inv[2], 'written back once the disk has room');
+    assert.ok((await readdir(join(dir, 'players'))).some((n) => n.startsWith('p2.json.bad-')), 'the bad file is kept aside');
+    await st.close();
+  });
+
   test('a region file with a bad CRC, a bad magic or cut short: renamed aside, the backup copy that validates is used, chat is told', async () => {
     const { dir, stamps } = await seeded('region-bad');
     const notes: DiskNotice[] = [];

@@ -221,8 +221,9 @@ export class DiskStorage implements Storage {
       return this.run(() => this.repairPlayer(id, (e as Error).message));
     }
   }
-  /** 8.1: the file is renamed aside, the newest backup copy that reads takes its place (written back, so the next
-   *  start finds the same), or the player starts fresh. */
+  /** 8.1: the newest backup copy that reads takes the file's place (written back, so the next start finds the same),
+   *  or the player starts fresh. As for a region, the bad file is copied aside and stays until the copy has durably
+   *  replaced it: a missing player file reads as a new player. */
   private async repairPlayer(id: string, why: string): Promise<PlayerRecord | null> {
     const name = join('players', id + '.json');
     // a commit that ran while this waited wrote a good file; read that one
@@ -230,22 +231,23 @@ export class DiskStorage implements Storage {
       try { return parsePlayer(await readFile(this.path(name), 'utf8'), id); } catch { /* still bad: repair it */ }
     }
     const bad = `${name}.bad-${this.stamp()}`;
-    await rename(this.path(name), this.path(bad)).catch(() => {});
     const copy = await playerFromBackup(this.dir, id);
+    let kept = true;
     if (copy) {
+      await copyFile(this.path(name), this.path(bad)).catch(() => { kept = false; });
       try {
         await this.io.write(this.path(name + '.tmp'), JSON.stringify(copy.rec));
         await rename(this.path(name + '.tmp'), this.path(name));
         await syncDir(this.path('players'));
       } catch (e) {
         await unlink(this.path(name + '.tmp')).catch(() => {});
-        this.log('warn', `player ${id}: the backup copy could not be written back (${(e as Error).message}); it is used from memory`);
+        this.log('warn', `player ${id}: the backup copy could not be written back (${(e as Error).message}); it is used from memory, and the unreadable file stays in place to be repaired again`);
       }
-    }
+    } else await rename(this.path(name), this.path(bad)).catch(() => { kept = false; });
     const text = copy
       ? `Your saved character could not be read. It was put back as it was in the backup of ${copy.stamp}.`
       : 'Your saved character could not be read, and no backup holds it. You start afresh.';
-    this.log('error', `player ${id}: ${why}; moved to ${bad}; ${copy ? 'restored from backup ' + copy.stamp : 'no backup copy, starts fresh'}`);
+    this.log('error', `player ${id}: ${why}; ${kept ? `kept as ${bad}` : 'could not be kept aside'}; ${copy ? 'restored from backup ' + copy.stamp : 'no backup copy, starts fresh'}`);
     this.opt.notice?.({ kind: 'player', id, from: copy?.stamp ?? null, text });
     return copy?.rec ?? null;
   }
