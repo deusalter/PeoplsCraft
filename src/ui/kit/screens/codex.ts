@@ -32,6 +32,8 @@ const RIBBONS: Ribbon[] = [
   { id: 'cx.rb.old', colour: 'violet.lt', dark: 'violet.dk', name: 'Old things', icon: 'old' },
 ];
 const PW = 126, COLS = 7, CELLS = 49;
+/** The picture well: a 16 by 16 picture standing on four rows of the ground tile, one unit of floor round it. */
+const WELL = 24;
 
 /** An entry slot sunk in the page (X3): the clay slot with a floor of `clay.sh`; a kind not yet seen shows its silhouette. */
 function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolean): void {
@@ -65,9 +67,10 @@ function steps(e: Entry, creature: boolean, top: number): Node {
 }
 
 /**
- * The right page (X5 to X9): the name, the word under it on up to two lines, the picture well 56 square at the left,
- * the facts in the column beside it (where, in arm.dk as a link; when; what it leaves), each wrapped onto as many
- * lines as it needs rather than cut, five lines in all; then the steps at the page's full width to its foot.
+ * The right page (X5 to X9): the name, the word under it on up to two lines, the picture well 24 square at the left
+ * holding the 16 by 16 picture on four rows of the ground tile, the facts in the column beside it (where, in arm.dk as
+ * a link; when; what it leaves), each wrapped onto a second line only when it needs one, three lines in all; then the
+ * steps at the page's full width to its foot.
  */
 function rightPage(e: Entry | undefined, creature: boolean): Node[] {
   if (!e) return [];
@@ -81,30 +84,29 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
     y = 10 + b.h + 2;
   }
   kids.push({
-    x: 0, y, w: 56, h: 56,
+    x: 0, y, w: WELL, h: WELL,
     paint: (s) => {
-      sunk(s, 0, 0, 56, 56, 'clay');
-      // The thing stands on a strip of the ground tile at the foot of the picture.
-      s.tile(GROUND, 1, 43, 54, 12);
-      if (known) s.icon(e.icon, 20, 27); else s.icon(e.icon, 20, 27, 'flat', 'root.3');
+      sunk(s, 0, 0, WELL, WELL, 'clay');
+      s.tile(GROUND, 1, WELL - 5, WELL - 2, 4);
+      if (known) s.icon(e.icon, 4, WELL - 5 - 16); else s.silhouette(e.icon, 4, WELL - 5 - 16, 'root.3', 'root.0');
     },
   });
+  let fy = 0;
   if (known && e.facts) {
-    const FW = PW - 60;
-    let fy = 0;
+    const FX = WELL + 4, FW = PW - FX;
     const facts = e.facts.slice(0, 3);
     facts.forEach((f, i) => {
       const text = typeof f === 'string' ? f : f.text;
       const c: Colour = typeof f === 'string' ? (i === 0 ? 'arm.dk' : 'ink') : f.c;
-      const room = 5 - fy / 10 - (facts.length - 1 - i);
+      const room = 3 - fy / 10 - (facts.length - 1 - i);
       if (room < 1) return;
       const b = box(text, FW, Math.min(2, room));
       const at = fy;
-      kids.push({ x: 60, y: y + at, w: FW, h: b.h, paint: (s) => { for (const l of b.lines) s.text(l.text, 0, l.y, c); } });
+      kids.push({ x: FX, y: y + at, w: FW, h: b.h, paint: (s) => { for (const l of b.lines) s.text(l.text, 0, l.y, c); } });
       fy += b.h;
     });
   }
-  y += 60;
+  y += Math.max(WELL, fy) + 4;
   if (known) kids.push(steps(e, creature, y));
   else if (creature) kids.push(steps({ ...e, steps: [] }, true, y));
   return kids;

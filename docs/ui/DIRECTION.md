@@ -2858,9 +2858,9 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19). Anchor: cen
 | X4 | turn | 12 | 161 | 16 | 7 | page back |
 | X5 | text | 154 | 10 | 126 | 10 | the name, in ink |
 | X6 | text | 154 | 20 | 126 | 20 | how it is said and whose word it is, in faded ink, wrapped onto a second line when it needs one; what follows moves down by that line |
-| X7 | well | 154 | 32 | 56 | 56 | picture well, dark |
-| X8 | rows | 214 | 32 | 66 | 50 | the facts, in order where (arm.dk, a link), when, what it leaves: each wrapped onto two lines when it needs them rather than cut, five lines in all, the last fact keeping at least one |
-| X9 | text | 154 | 92 | 126 | 66 | the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not, to the page's foot at y 158 |
+| X7 | well | 154 | 32 | 24 | 24 | picture well, dark: the 16 by 16 picture at 4, 3 standing on four rows of the ground tile; a kind not yet seen stands there as a silhouette of root.3 with a root.0 edge. A well larger than its picture is a dark box with a speck in it, and the interface draws no icon at another size (3) |
+| X8 | rows | 182 | 32 | 98 | 30 | the facts, in order where (arm.dk, a link), when, what it leaves: each wrapped onto two lines when it needs them rather than cut, three lines in all, the last fact keeping at least one |
+| X9 | text | 154 | 66 | 126 | 92 | 4 under the taller of the well and the facts: the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not, to the page's foot at y 158 |
 | X10 | turn | 264 | 161 | 16 | 7 | page on |
 
 - **Shows.** What the crew has met, shared by everyone on the server. Each entry fills in by the four steps of chapter 8.9 of the world bible; a step not reached is a blank rule, never a row of question marks.
