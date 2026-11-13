@@ -98,7 +98,7 @@ The eight are animals (rule 19). The sand-country fighters are people: their ent
 
 Chapter 5 gives each townsperson's trade, belief and manner, with lines as a guide. Seven are `born`. Every entry of the Deserter is `sand`, whatever its surface. All eight say peopl to the face.
 
-### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (542 entries)
+### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (544 entries)
 
 | Surface | Key | What it is |
 | --- | --- | --- |

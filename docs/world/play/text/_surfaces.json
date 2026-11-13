@@ -339,7 +339,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 35
+   "entries": 36
   },
   "bed": {
    "about": "Answer of a bed or a room when it is checked",
@@ -395,7 +395,7 @@
    "voice": "label",
    "limit": 70,
    "assign": "system",
-   "entries": 57
+   "entries": 58
   },
   "stat": {
    "about": "Name of a bonus, as \"+8% <name>\"",
@@ -20528,6 +20528,21 @@
     "{speed}"
    ]
   },
+  "tip:need_more": {
+   "surface": "tip",
+   "key": "need_more",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 414,
+   "now": "Need {n} more",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the shop tooltip when the pack holds too little to pay; the code adds it after the price line"
+  },
   "tip:needs_n": {
    "surface": "tip",
    "key": "needs_n",
@@ -21365,6 +21380,23 @@
    "slots": [
     "{item}"
    ]
+  },
+  "toast:sold": {
+   "surface": "toast",
+   "key": "sold",
+   "needs": [],
+   "file": "src/sim/invops.ts",
+   "line": 230,
+   "now": "Sold {item} x{n} for {coins} coins",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "slots": [
+    "{item}",
+    "{n}",
+    "{coins}"
+   ],
+   "note": "a stack sold at a shop. Today the code writes the count after the name with \" x\" and writes no count for one, the join tip:needs_n also has; the line puts {n} where the count is read, and for one the code fills {n} {item} with the name alone"
   },
   "toast:stone_warm": {
    "surface": "toast",

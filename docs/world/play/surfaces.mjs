@@ -607,6 +607,8 @@ L('toast', 'salve_wait', CMB, 'Salves need ${Math.ceil(st.salveCd)}s more', { no
 L('toast', 'made_at', WIN, "'Made at the '", { now: 'Made at the {station}' });
 L('toast', 'made_n', WIN, 'Made ${q.n} ${item(r.out).name}', { now: 'Made {n} {item}' });
 L('toast', 'sell_again', WIN, "'Shift-click again to sell '", { now: 'Shift-click again to sell {item}' });
+L('toast', 'sold', OPS, 'Sold ${itemName(t)}', { now: 'Sold {item} x{n} for {coins} coins', slots: ['{item}', '{n}', '{coins}'], voice: 'label', limit: 90,
+  note: 'a stack sold at a shop. Today the code writes the count after the name with " x" and writes no count for one, the join tip:needs_n also has; the line puts {n} where the count is read, and for one the code fills {n} {item} with the name alone' });
 L('toast', 'pickup', HUD, '+${n} ${name}  (${total})', { now: '+{n} {item}  ({total})' });
 L('toast', 'no_burn', RULES, 'That does not burn', { note: 'a refusal shown as a toast when a thing that is no fuel is put under a furnace (src/sim/invops.ts)' });
 L('toast', 'no_smelt', RULES, 'That cannot be smelted', { note: 'a refusal shown as a toast when a thing no furnace works is put in one' });
@@ -723,6 +725,7 @@ for (const [k, needle, now] of [['kind.weapon', "' weapon'", '{style} weapon'], 
   ['kind.food', "'Food'", 'Food'], ['kind.block', "'Block'", 'Block'], ['kind.usable', "'Usable'", 'Usable'], ['kind.material', "'Material'", 'Material']])
   L('tip', k, WIN, needle, { now, limit: 24, note: k === 'kind.weapon' ? 'the kind of a weapon; {style} is the way of fighting' : 'the kind of a thing, put into {kind} of tip:kind' });
 L('tip', 'sells_each', WIN, 'for the stack)', { now: 'each ({total} for the stack)', note: 'follows tip:sells_for, with a space, when the stack holds more than one' });
+L('tip', 'need_more', WIN, 'Need ${cost - have} more', { now: 'Need {n} more', slots: ['{n}'], voice: 'label', limit: 70, note: 'the shop tooltip when the pack holds too little to pay; the code adds it after the price line' });
 L('tip', 'needs_n', WIN, '${n} × ${esc(name)}', { now: '{n} x {item} ({have})', note: 'one ingredient of a recipe and how many the pack holds; the multiplication sign is not in the font' });
 // where a thing comes from (src/data/sources.ts), under the description of a material and under a missing ingredient. Two are joined in code.
 for (const [k, needle, now, note] of [['src.smelt', "'Smelt '", 'Smelt {item}', '{item} is what goes into the furnace'], ['src.hand', 'Craft by hand', null, null],
