@@ -96,6 +96,8 @@ function cellDist(x: number, y: number, z: number, px: number, py: number, pz: n
 const inReach = (p: SimPlayer, x: number, y: number, z: number, extra: number): boolean => { const [ex, ey, ez] = eyeOf(p); return cellDist(x, y, z, ex, ey, ez) <= rules.reach(p.stats, p.modes) + extra; };
 /** A shop stays open while its townsperson is alive and this near. */
 const SHOP_R = 7, TALK_R = 5;
+/** Seconds a townsperson stands still and faces the player after a `talk`, renewed while its shop is open. */
+const TALK_HOLD = 6;
 /** Is the open window still there (5.2)? A ready chunk, the block with its use, the entity of its kind, the player within
  *  reach + 2; for a shop the townsperson alive and within 7 blocks. */
 export function resolve(sim: Sim, p: SimPlayer): boolean {
@@ -115,7 +117,13 @@ export function resolve(sim: Sim, p: SimPlayer): boolean {
 }
 /** The once-a-second check of an open window: one that is gone ends as op `close` ends it, and an `st` with `box: null` is due. */
 export function revalidate(sim: Sim, p: SimPlayer): boolean {
-  if (!p.window || resolve(sim, p)) return true;
+  const w = p.window;
+  if (!w) return true;
+  if (resolve(sim, p)) {
+    // a townsperson stands to trade for as long as a shop of theirs is open, so that it is the player who ends it
+    if (w.mode === 'shop') sim.realms[p.dim].mobs.byId(w.mob!)!.talk = TALK_HOLD;
+    return true;
+  }
   endWindow(sim, p);
   return false;
 }
@@ -280,7 +288,7 @@ export function trySummon(sim: Sim, p: SimPlayer, n: number, x: number, y: numbe
 export function talk(sim: Sim, p: SimPlayer, mobId: number): boolean {
   const m = sim.realms[p.dim].mobs.byId(mobId), n = m ? npcOf(m.def.key) : undefined;
   if (!m || !n) return false;
-  m.talk = 6;
+  m.talk = TALK_HOLD;
   setWindow(sim, p, { mode: 'shop', npc: n.key, mob: m.id, sold: [] }); announce(sim, p, { t: 'open', mode: 'shop', npc: n.key });
   return true;
 }

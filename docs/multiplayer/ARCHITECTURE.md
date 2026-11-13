@@ -1192,7 +1192,7 @@ Client to host
 | `dig` | `on`, `x`, `y`, `z` | mining starts on a block, changes block, or stops | `p.dig = on ? {x, y, z, id: the block there, bt: breakTimeMin(id, p), t0: tick} : null` (4.7, dig budget); fx `dg` to others within 48 |
 | `edit` | `seq`, `k` (0 break, 1 place, 2 door), `x`, `y`, `z`, `id` | the client predicted a block edit | 4.7 validation; on refusal `rej`. Always answered: by the `b` of the change or by `rej` |
 | `use` | `seq`, `x`, `y`, `z`, `id` | right-click on a block whose `use` is set (not sneaking) | active, ready sim chunk, reach and id check, then `actions.useBlock`; on refusal `rej` |
-| `talk` | `id` (mob id) | right-click on a townsperson | within 5 blocks: `window = {mode: 'shop', npc, mob: id, sold: []}`, `m.talk = 6`, send `st {box}` and `open` |
+| `talk` | `id` (mob id) | right-click on a townsperson | within 5 blocks: `window = {mode: 'shop', npc, mob: id, sold: []}`, `m.talk = 6` (renewed every second while the shop is open, D36 (f)), send `st {box}` and `open` |
 | `item` | `seq`, `slot`, `at?: [x, y, z]`, `ax?: boolean` | consumable used (right-click or H), recall stone, gate kit placed at `at` | `actions.consume`, recall (`goHome`), or `gates.buildGate` after `gateFits` |
 | `atk` | `id`, `d: [dx, dy, dz]` | the client's melee ray hit creature `id` and its own cooldown allowed a swing | `actions.attack` (7.3): action credit, reach from the position just sent |
 | `fire` | `seq`, `o: [x, y, z]`, `d: [dx, dy, dz]` | ranged, magic or summon weapon used | `actions.fire` (7.3) |
@@ -3492,6 +3492,12 @@ join and filled only while active, while the client's `atkCd` and `useCd` start 
 cooldown of the loading screen lifting played its sound and did nothing, and a meal eaten within 0.35 s came
 back on the next `st`. The time spent loading is time the player could not act in, so the cap given at the
 arrival is no more than standing idle for that time would have given.
+(f) A townsperson stands still for as long as a shop of theirs is open (5.2). The once-a-second check renews
+`m.talk = 6` while the shop resolves. The `talk` held the townsperson for 6 s only; then it walked up to 8
+blocks from its home and the 7 blocks of D34 (c) ended the shop under the player's hands, with the pointer lock
+asked back without a click. Today's game kept a shop open whatever the townsperson did; now the townsperson
+waits, which a solo player sees as a trader who does not walk away mid-trade. Walking away from it still ends
+the shop at 7 blocks.
 
 ---
 

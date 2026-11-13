@@ -307,6 +307,27 @@ test('talk opens the shop of a townsperson within reach of the eye, and nobody e
   assert.equal(onTalk(sim, p, { t: 'talk', id: npc.id }), false, 'too far');
 });
 
+test('a townsperson whose shop is open stands to trade: the shop stays open however long the player browses', () => {
+  const r = rig(), { sim, p, q } = r, realm = sim.realms[0];
+  p.local = true; q.local = true;
+  // at the edge of talking reach, home a little further out: its walks would take it past the shop's 7 blocks
+  const npc = realm.mobs.spawn('n_wayfinder', 0.5, GROUND, 4.5)!;
+  npc.home = [0, GROUND, 6];
+  assert.equal(onTalk(sim, p, { t: 'talk', id: npc.id }), true);
+  let far = 0;
+  for (let i = 0; i < 60 * 60; i++) {
+    sim.step();
+    if (Math.hypot(npc.x - 0.5, npc.z - 4.5) > 0.5) far++;
+    if (!p.window) break;
+  }
+  assert.equal(p.window?.mode, 'shop', 'still open after a minute');
+  assert.equal(far, 0, 'and its townsperson did not wander off');
+  // the shop ended, the townsperson goes about its day again
+  invOp(sim, p, p.ackSeq, { o: 'close' });
+  for (let i = 0; i < 60 * 60; i++) sim.step();
+  assert.ok(Math.hypot(npc.x - 0.5, npc.z - 4.5) > 0.5, 'walks once nobody is trading');
+});
+
 test('a consumable draws on the use credit: one per 0.35 s, bunched by up to ACT_SURPLUS', () => {
   const r = rig(), { sim, p } = r;
   hold(p, 'apple', 20, 3); p.stats.hunger = 2;
