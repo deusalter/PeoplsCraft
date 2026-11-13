@@ -3737,3 +3737,25 @@ Taken where the direction is silent, in its spirit. Builders may rely on them.
 **Small choices.** A hit turns the crosshair into four ticks two units long, outlined like the cross. A banner's text is clipped inside its frame so that a descender's shadow cannot notch it. A node's ranks stand on a scrap of `root.0` so that a link passing under them does not run through the figures. The roster writes the level as a bare number and a distance with an `M`. The silhouette in a hovered slot is drawn in `face`, since the hovered floor is `sh`. A row that cannot be used draws its icon flat in `root.4`. A password field draws its dots at a pitch of 4. A toast's first line takes the light tone of its frame (`growth.lt` for growth, `blood.lt` for blood, salt for `root.4`, a grade's frame as it is). The thumb of a track sunk in a slab is the slider's handle cut to 6 wide, its grip in the third column.
 
 **Sheets and pictures.** The kit page's sheets of parts are `parts`, `parts-controls`, `parts-gauges`, `parts-hud`, `parts-plates`, `parts-book` and `parts-icons`; `uishot --screen parts` takes them all. The mock screens use 24 sample items drawn in the palette (`mock/icons.ts`); the interface's own marks, for tabs that open a page and for the states of a slot, are in `art/icons.ts`.
+
+**Screens of the books set.** Each screen of section 6 is a file under `screens/` that exports `SCREENS`, a list of named screens; `screens/index.ts` gathers every such file, and every `ICONS` a file under `sample/` exports, so that a screen is added without editing a shared list. A screen's hard cases are screens of their own named after it (`worlds-empty`, `join-taken`, `codex-unseen`), so that `uishot --screen worlds` takes them all. A press that would open another screen in the game opens that mock screen on the kit page.
+
+**Full-screen menus.** A menu's table is written for 427 by 240. Its parts are moved so that the table's x of 113 is the left of the 200-wide column centred on the screen, and its y is measured from the top of a block 240 tall centred on the screen; the build line alone stands at the screen's own bottom left.
+
+**Windows on a short screen.** A window with tabs is centred with its tabs left out, then moved as little as it takes for the tabs to stand 3 units inside the screen; on a screen 240 tall the settings, the tree and the map therefore stand 24 from the top.
+
+**The caret** stays lit for 1.5 s after its field takes focus or its text changes, then blinks, as carets do while one types.
+
+**Lists.** A well may hold rows taller than 18 (the worlds' rows of 36, two lines), paint a row's own content over the floor and frame it draws, take a second press or Enter on the chosen row as "use", and say one grey line when it holds no rows. Up and Down on a focused row move the choice and keep it in the well.
+
+**Rows written on a page.** A row of a list on a page (steps, bounties, the crew) is ink on the page: hovered, its floor is `clay.face`; chosen, `clay.sh`; with keyboard focus, a frame of salt. A player on a page is their 2 by 7 flag beside their name in ink.
+
+**The codex.** An entry slot is the clay slot with a floor of `clay.sh`, its silhouette `clay.face` (`clay.sh` while hovered). The picture well holds the 16 by 16 picture standing on a strip of the ground tile at its foot. The four steps run on without gaps, a rule of `clay.sh` standing for each one not known, cut with `…` at the box's foot. The first short fact is where, in `arm.dk`.
+
+**The chart.** Ground is known by chunks of 32 strides that a way walked passed within 56 strides of, so that what is known has square edges. Its marks are 7 by 7 like the compass's: one's own arrow, redrawn for each of four quarters rather than turned, a known altar, a raised gate and the mouth. A part may take `move`, the pointer moving to another unit over it, which is how the chart says what is under the pointer.
+
+**The tree** pans no further than its farthest node and a margin of 8. On the tree screen the crew's side tabs start 14 down, clear of the first job's tab.
+
+**Pictures of the books** (creatures, the eight, sites, peoples, old things, the bed and the mouth) were drawn as masks of materials and shaded by the rule for raised shapes: a unit whose neighbour above or to the left is not of its material takes the material's light tone, one whose neighbour below or to the right is not takes its dark tone, the rest its face, and every empty unit beside the shape is `root.0`. Only the shaded rows are kept in the kit.
+
+**Moving samples** (the loading channel, the Recall Stone's cooling) hold still for their first three seconds, so that a shot taken as the page opens is the frame the grid check models.
