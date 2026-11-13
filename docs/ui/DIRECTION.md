@@ -2108,6 +2108,8 @@ A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the t
 
 **Title mark**, 187 by 36. The text face's own "Peopls Craft" with every unit of a glyph made a block 3 by 3, then cut at one unit: a unit of the letter is `salt` where it faces up or left, `clay.sh` where it faces down or right, `clay.lt` elsewhere; under the letter a drop 2 units deep of `clay.pit`; `root.0` round all of it. It is one pixel map and is never scaled.
 
+**Raised letters**, for the one line of a screen that stands on a wash with no window ("You fell"): the text face with every unit of a glyph made a block 2 by 2, the whole line then lit as one raised shape: a unit with open ground above or to its left is `salt`, one with open ground below or to its right `clay.sh`, the rest `clay.lt`, and every unit of ground touching it, corners included, `root.0`. A line is twice the text face's width plus 2 by 22. It is built from the glyphs, never by scaling a drawing of text.
+
 ```
      0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7         8      
      0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456
@@ -3417,7 +3419,7 @@ Size 248 by 206. Material: clay. Anchor: as Settings.
 
 ### The screen at a fall
 
-Size 427 by 240. Material: the world under a flat wash of blood.dk at half strength; a dark plate. Anchor: the whole screen.
+Size 427 by 240. Material: the world under a flat wash of blood.dk at half strength, and no window: the fall is not a container and the wash is its ground, as in the tradition. Anchor: the column 200 wide, y from the top of the block 240 tall centred on the screen.
 
 ```
 +==============================================================================================================================================+
@@ -3430,25 +3432,25 @@ Size 427 by 240. Material: the world under a flat wash of blood.dk at half stren
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
+"                                                          "D1 raised"                                                                         "
 "                                                                                                                                              "
-"                                   #====================================================================#                                     "
-"                                   # "D1"                                                               #                                     "
-"                                   #                                                                    #                                     "
-"                                   # "D2"                                                               #                                     "
-"                                   #                                                                    #                                     "
-"                                   # "D3"                                                               #                                     "
-"                                   #                                                                    #                                     "
-"                                   #                                                                    #                                     "
-"                                   # +-----------------------------------------------------------------+#                                     "
-"                                   # | D4 button                                                       |#                                     "
-"                                   # +-----------------------------------------------------------------+#                                     "
-"                                   #                                                                    #                                     "
-"                                   # +-----------------------------------------------------------------+#                                     "
-"                                   # | D5 button                                                       |#                                     "
-"                                   # +-----------------------------------------------------------------+#                                     "
-"                                   #                                                                    #                                     "
-"                                   #                                                                    #                                     "
-"                                   #====================================================================#                                     "
+"                                                                                                                                              "
+"                                                                                                                                              "
+"                                                               "D2"                                                                           "
+"                                                                                                                                              "
+"                                                               "D3"                                                                           "
+"                                                                                                                                              "
+"                                                                                                                                              "
+"                                    +------------------------------------------------------------------+                                      "
+"                                    | D4 button                                                        |                                      "
+"                                    +------------------------------------------------------------------+                                      "
+"                                                                                                                                              "
+"                                    +------------------------------------------------------------------+                                      "
+"                                    | D5 button                                                        |                                      "
+"                                    +------------------------------------------------------------------+                                      "
+"                                                                                                                                              "
+"                                                                                                                                              "
+"                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
@@ -3465,12 +3467,11 @@ Size 427 by 240. Material: the world under a flat wash of blood.dk at half stren
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| D0 | plate | 109 | 66 | 208 | 104 | dark plate with a blood frame |
-| D1 | text | 113 | 72 | 200 | 10 | "You fell", centred, salt |
-| D2 | text | 113 | 84 | 200 | 10 | what did it, centred, root.4: "to a Tama", "from a height", "to hunger" |
-| D3 | text | 113 | 96 | 200 | 10 | what was shed, centred: the jar mark and "14 shed in the wood"; left out when nothing was |
-| D4 | button | 113 | 116 | 200 | 20 | "Rise again" |
-| D5 | button | 113 | 140 | 200 | 20 | "Save and leave"; on a server "Leave" |
+| D1 | raised | 175 | 56 | 78 | 22 | "You fell" in raised letters (5.28), centred on the column |
+| D2 | text | 113 | 86 | 200 | 10 | what did it, centred, salt with shadow: "to a Tama", "from a height", "to hunger" |
+| D3 | text | 113 | 98 | 200 | 10 | what was shed, centred, salt with shadow: the jar mark and "14 shed in the wood"; left out when nothing was |
+| D4 | button | 113 | 118 | 200 | 20 | "Rise again" |
+| D5 | button | 113 | 142 | 200 | 20 | "Save and leave"; on a server "Leave" |
 
 - **Shows.** The wash comes up in three steps over 0.3 s; the buttons are disabled for 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and the chat stay drawn over the wash.
 - **Clickable.** The two buttons.

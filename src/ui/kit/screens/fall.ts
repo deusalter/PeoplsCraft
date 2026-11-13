@@ -1,11 +1,12 @@
-// The screen at a fall (section 6): the world under a flat wash of blood.dk that comes up in three steps, a dark plate
-// framed in blood saying what did it and what was shed, and two buttons that wake after 0.8 s so that a blow in
-// flight cannot press one. With friends near, their name tags and chat stay drawn over the wash.
+// The screen at a fall (section 6): the world under a flat wash of blood.dk that comes up in three steps; on it, with
+// no window, "You fell" in raised letters at the top third, what did it and what was shed under it, and two buttons
+// that wake after 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and chat stay
+// drawn over the wash.
+import { raised } from '../art/raised';
 import { centreX, count } from '../font/measure';
 import type { Node, Ui } from '../node';
 import { button } from '../parts/button';
 import { chat, nameTag } from '../parts/plates';
-import { plate } from '../parts/slab';
 import { since } from './play/common';
 import type { NamedScreen } from './index';
 
@@ -25,15 +26,18 @@ function build(ui: Ui, id: string): Node {
   const awake = t >= 0.8;
   const quarters = t < 0.1 ? 1 : 2;
   const col = Math.floor((ui.w - 200) / 2), top = Math.floor((ui.h - 240) / 2);
-  const px = col - 4, py = top + 66;
-  const line = (y: number, text: string, c: 'salt' | 'root.4'): Node => ({
-    x: 4, y, w: 200, h: 11, paint: (s) => { s.text(text, centreX(text, 0, 200), 0, c, true); },
+  const title = raised('You fell');
+  const line = (y: number, text: string): Node => ({
+    x: col, y: top + y, w: 201, h: 11, paint: (s) => { s.text(text, centreX(text, 0, 200), 0, 'salt', true); },
   });
-  const kids: Node[] = [line(6, 'You fell', 'salt'), line(18, f.by, 'root.4')];
-  if (f.shed) kids.push(line(30, `{lees} ${count(f.shed)} shed in ${f.where}`, 'salt'));
+  const kids: Node[] = [
+    { x: col + Math.floor((200 - title.w) / 2), y: top + 56, w: title.w, h: title.h, paint: (s) => s.map(title, 0, 0) },
+    line(86, f.by),
+  ];
+  if (f.shed) kids.push(line(98, `{lees} ${count(f.shed)} shed in ${f.where}`));
   kids.push(
-    button({ id: 'fall.rise', x: 4, y: 50, w: 200, label: 'Rise again', disabled: !awake, onPress: () => { fellAt = ui.t; ui.invalidate(); } }),
-    button({ id: 'fall.leave', x: 4, y: 74, w: 200, label: f.server ? 'Leave' : 'Save and leave', disabled: !awake, onPress: () => ui.cue('press') }),
+    button({ id: 'fall.rise', x: col, y: top + 118, w: 200, label: 'Rise again', disabled: !awake, onPress: () => { fellAt = ui.t; ui.invalidate(); } }),
+    button({ id: 'fall.leave', x: col, y: top + 142, w: 200, label: f.server ? 'Leave' : 'Save and leave', disabled: !awake, onPress: () => ui.cue('press') }),
   );
   const over: Node[] = [];
   if (f.server) {
@@ -58,7 +62,7 @@ function build(ui: Ui, id: string): Node {
     paint: (s) => s.wash(0, 0, ui.w, ui.h, 'blood.dk', quarters),
     on: { key: (e) => { if (e.key === 'Enter' && awake) { fellAt = ui.t; ui.invalidate(); return true; } return e.key === 'Escape'; } },
     takes: true,
-    kids: [...over, plate({ x: px, y: py, w: 208, h: 104, frame: 'blood', kids })],
+    kids: [...over, ...kids],
   };
 }
 
