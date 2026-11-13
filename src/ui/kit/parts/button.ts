@@ -53,13 +53,24 @@ function bevel(s: Surface, w: number, h: number, light: Colour, light2: Colour |
 }
 
 /**
+ * The frame of a button the keys are on and the pointer is not: the outline in runs of two, `salt` then `root.0`,
+ * counted from each corner, so that focus is never read as the solid `salt` of a hovered button.
+ */
+function dashedOutline(s: Surface, w: number, h: number): void {
+  outline(s, 0, 0, w, h, 'root.0');
+  for (let i = 1; i < w - 1; i++) if (((i - 1) >> 1) % 2 === 0) { s.fill(i, 0, 1, 1, 'salt'); s.fill(w - 1 - i, h - 1, 1, 1, 'salt'); }
+  for (let j = 1; j < h - 1; j++) if (((j - 1) >> 1) % 2 === 0) { s.fill(0, j, 1, 1, 'salt'); s.fill(w - 1, h - 1 - j, 1, 1, 'salt'); }
+}
+
+/**
  * A small button inside a window, in the ramp of the slab it stands on (5.6): a raised piece of that slab, `hi` on its
  * first row and column, `sh` and `dk` on its last, the label in ink. Hovered, its face lightens to `lt`; pressed, the
  * bevel turns over; disabled, it is a flat `sh` with the label faded.
  */
 function paintSlabButton(s: Surface, w: number, h: number, label: string, live: Live, disabled: boolean, ramp: Ramp): void {
   const pressed = !disabled && live.down && live.hover;
-  outline(s, 0, 0, w, h, !disabled && live.focus && !live.hover ? 'salt' : 'root.0');
+  if (!disabled && live.focus && !live.hover) dashedOutline(s, w, h);
+  else outline(s, 0, 0, w, h, 'root.0');
   let drop = 0;
   if (disabled) {
     s.fill(1, 1, w - 2, h - 2, tone(ramp, 'sh'));
@@ -70,7 +81,7 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
     bevel(s, w, h, tone(ramp, 'hi'), null, tone(ramp, live.hover ? 'lt' : 'face'), tone(ramp, 'sh'), tone(ramp, 'dk'));
   }
   const t = cut(label, w - 4);
-  if (t) s.text(t, centreX(t, 0, w), Math.floor((h - 9) / 2) + drop, disabled ? 'ink.faded' : 'ink');
+  if (t) s.text(t, centreX(t, 0, w) + drop, Math.floor((h - 9) / 2) + drop, disabled ? 'ink.faded' : 'ink');
 }
 
 /**
@@ -79,9 +90,11 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
  */
 export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, ramp?: Ramp): void {
   if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp); return; }
-  const hot = !disabled && (live.hover || live.focus);
   const pressed = !disabled && live.down && live.hover;
-  outline(s, 0, 0, w, h, hot ? 'salt' : 'root.0');
+  // Hovered, the outline is solid salt; with the keys on it and not the pointer, dashed; pressed into the slab, root.0.
+  if (!disabled && !pressed && live.hover) outline(s, 0, 0, w, h, 'salt');
+  else if (!disabled && !pressed && live.focus) dashedOutline(s, w, h);
+  else outline(s, 0, 0, w, h, 'root.0');
   const tall = h >= 20;
   let text: Colour = 'salt', shadow = true, drop = 0;
   if (disabled) {
@@ -89,7 +102,8 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
     s.fill(1, h - 2, w - 2, 1, 'stone.dk');
     text = 'root.4'; shadow = false;
   } else if (pressed) {
-    // Sunk: shade under the top lip, the light caught on the lower one, the label still lit as hovered.
+    // Sunk: shade under the top lip, the light caught on the lower one, the label still lit as hovered and moved a
+    // unit down and right with the face.
     bevel(s, w, h, 'stone.pit', 'stone.dk', 'stone.sh', 'stone.lt', null);
     text = 'ember.hi';
     drop = 1;
@@ -100,7 +114,7 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
   if (tall && !disabled) grain(s, w, h, pressed);
   const t = cut(label, w - 4);
   const tx = centreX(t, 0, w), ty = Math.floor((h - 9) / 2);
-  s.text(t, tx, ty + drop, text, shadow);
+  s.text(t, tx + drop, ty + drop, text, shadow);
 }
 
 /** A button (5.6). It shows pressed while held over it and acts when the press comes up over it. */
@@ -141,7 +155,7 @@ export function iconButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'> & { size?: n
       const l = lv(live, o.force);
       paintButton(s, n, n, '', l, o.disabled, o.ramp);
       const drop = !o.disabled && l.down && l.hover ? 1 : 0;
-      const x = Math.floor((n - o.mark.w) / 2), y = Math.floor((n - 2 - o.mark.h) / 2) + drop;
+      const x = Math.floor((n - o.mark.w) / 2) + drop, y = Math.floor((n - 2 - o.mark.h) / 2) + drop;
       s.map(o.mark, x, y);
     },
     tip: o.tip ?? (() => ({ lines: [{ text: o.name, c: 'salt' }, ...(o.says ? [{ text: o.says, c: 'root.4' as const }] : [])], delay: 0.4 })),
