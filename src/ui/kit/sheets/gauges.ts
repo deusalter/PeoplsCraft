@@ -17,7 +17,7 @@ const PICK: Tip = {
   lines: [
     { text: 'Delver’s pick', c: GRADES[2].dark },
     { text: 'Deep, tool', c: 'root.4' },
-    { text: 'Breaks stone and the ores in it.', c: 'salt' },
+    { text: 'Breaks stone and ore.', c: 'salt' },
     { text: '+2 against stone', c: 'growth.lt' },
     { text: '-1 reach', c: 'blood.lt' },
     { text: 'Of the kiln set: 2 of 4', c: 'arm.lt' },
@@ -28,7 +28,7 @@ const PICK: Tip = {
 
 const NAMED: Tip = {
   frame: GRADES[6].frame, named: true,
-  lines: [{ text: 'The Kiln-Mother', c: GRADES[6].dark }, { text: 'Old, a lamp of the first comers', c: 'root.4' }],
+  lines: [{ text: 'The Kiln-Mother', c: GRADES[6].dark }, { text: 'Old, a lamp', c: 'root.4' }],
 };
 
 export const gaugesSheet: Sheet = {
@@ -48,7 +48,7 @@ export const gaugesSheet: Sheet = {
     kids.push(tipNode(76, 14, PICK));
     const pb = tipBox(PICK);
     kids.push(tipNode(76, 14 + pb.h + 4, NAMED));
-    kids.push(plate({ x: 76, y: 14 + pb.h + 4 + tipBox(NAMED).h + 4, w: 140, h: 28, frame: 'blood', kids: [salt(5, 3, 'A refusal'), salt(5, 14, '{cross} Not enough lees', 'blood.lt')] }));
+    kids.push(plate({ x: 76, y: 14 + pb.h + 4 + tipBox(NAMED).h + 4, w: 128, h: 28, frame: 'blood', kids: [salt(5, 3, 'A refusal'), salt(5, 14, '{cross} Not enough lees', 'blood.lt')] }));
     // The hollows that fill, sunk in each slab.
     const g = (ramp: 'clay' | 'timber' | 'stone', x: number, y: number, title: string, colour: Colour) => slab({
       x, y, w: 238, h: 84, ramp, title,

@@ -14,6 +14,11 @@ const NAMES: Record<string, string> = {
   pendant: 'Pendant', bait: 'Bait', key: 'Key', turf: 'Turf', brick: 'Brick', log: 'Log',
 };
 
+const TAB_NAMES: Record<string, string> = {
+  pack: 'Pack', body: 'Body', patterns: 'Patterns', guide: 'The Guide', bounty: 'Bounties',
+  standing: 'Standing', codex: 'Codex', map: 'Map', skills: 'Skills',
+};
+
 export const iconsSheet: Sheet = {
   title: 'Parts: icons',
   world: true,
@@ -34,8 +39,11 @@ export const iconsSheet: Sheet = {
     // Tab marks, for tabs and ribbons that open a page.
     const tabs = Object.keys(TAB_MARKS);
     kids.push(slab({
-      x: 0, y: 147, w: 302, h: 64, ramp: 'stone', title: 'Marks of tabs that open a page',
-      kids: tabs.map((t, i): Node => ({ x: 8 + i * 32, y: 20, w: 16, h: 36, kids: [{ x: 0, y: 0, w: 16, h: 16, paint: (s) => s.icon(t, 0, 0) }, ink(0, 20, t[0].toUpperCase() + t.slice(1, 4), 'ink.faded')] })),
+      x: 0, y: 147, w: 302, h: 84, ramp: 'stone', title: 'Marks of tabs that open a page',
+      kids: tabs.map((t, i): Node => ({
+        x: 8 + (i % 3) * 98, y: 18 + Math.floor(i / 3) * 20, w: 96, h: 18,
+        kids: [slot({ id: `tm.${t}`, x: 0, y: 0, ramp: 'stone', stack: { icon: t, n: 1 } }), ink(22, 5, TAB_NAMES[t] ?? t)],
+      })),
     }));
     // Marks of a state.
     const marks = Object.keys(STATE_MARKS);
@@ -44,8 +52,10 @@ export const iconsSheet: Sheet = {
       kids: [salt(5, 3, 'Marks of a state'), ...marks.map((m, i): Node => ({ x: 6 + i * 16, y: 20, w: 7, h: 7, paint: (s) => s.map(STATE_MARKS[m], 0, 0) })),
         salt(5, 32, 'Lock, alert, new, up, down', 'root.4')],
     }));
-    kids.push(salt(0, 216, 'Every icon is 16 units square, outlined in root.0'));
-    kids.push(salt(0, 228, 'and lit from the top left.'));
+    kids.push(salt(305, 186, 'Every icon is 16 units'));
+    kids.push(salt(305, 198, 'square, outlined in'));
+    kids.push(salt(305, 210, 'root-black and lit'));
+    kids.push(salt(305, 222, 'from the top left.'));
     return page(ui, kids);
   },
 };

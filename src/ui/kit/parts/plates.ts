@@ -252,12 +252,12 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
       o.members.forEach((m, i) => {
         const y = 18 + i * 13;
         head(s, m.seat, 6, y + 2);
-        s.text(cut(m.name, 128), 16, y, 'salt', true);
+        s.text(cut(m.name, 126), 16, y, 'salt', true);
         s.fill(16, y + 10, 100, 1, 'root.0');
         const n = Math.round(Math.min(1, Math.max(0, m.life)) * 100);
         if (n) s.fill(16, y + 10, n, 1, 'blood');
         s.text(cut(m.place, 90), 148, y, 'root.4', true);
-        const lv = `LV ${m.level}`;
+        const lv = String(m.level);
         s.text(lv, rightX(lv, 262, SMALL), y + 3, 'growth.lt', true, SMALL);
         if (m.metres !== undefined) {
           const d = `${count(m.metres)}M`;

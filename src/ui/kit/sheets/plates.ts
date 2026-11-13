@@ -20,7 +20,7 @@ export const platesSheet: Sheet = {
     const kids: Node[] = [];
     kids.push(compass({
       x: 0, y: 0, heading: 20, place: 'Hearth of Ash', night: 'Night 3',
-      marks: [{ kind: 'bed', deg: -30 }, { kind: 'guide', deg: 52 }, { kind: 'friend', seat: 3, deg: 8 }, { kind: 'fell', deg: 170 }],
+      marks: [{ kind: 'bed', deg: -30 }, { kind: 'guide', deg: 52 }, { kind: 'friend', seat: 3, deg: -62 }, { kind: 'fell', deg: 170 }],
     }));
     kids.push(readout({ cx: 91, y: 26, icon: 'ore', name: 'Lees-iron in stone', line: 'Needs an iron pick', refusal: true }));
     kids.push(readout({ cx: 91, y: 52, icon: 'log', name: 'Black root', line: 'Timber' }));

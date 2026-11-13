@@ -52,7 +52,7 @@ export const slotsSheet: Sheet = {
     // Silhouettes of empty slots, three to a row with their names.
     const sk: Node[] = [];
     SILS.forEach(([sil, name], i) => {
-      const cx = 8 + (i % 3) * 66, cy = 18 + Math.floor(i / 3) * 20;
+      const cx = 8 + (i % 3) * 62, cy = 18 + Math.floor(i / 3) * 20;
       sk.push(slot({ id: `sil.${i}`, x: cx, y: cy, ramp: 'clay', silhouette: sil }));
       sk.push(ink(cx + 22, cy + 5, name));
     });
