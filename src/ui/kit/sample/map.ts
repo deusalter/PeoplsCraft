@@ -1,26 +1,26 @@
 // Sample world for the map: the countries of the living ground drawn from a seed, where the crew has walked, its known
 // places, and the rooms of the sealed store one of the crew is inside. Coordinates are strides, x east and z south.
-import type { Colour } from '../palette';
+import type { MapKind } from '../art/chart';
 import { CREW } from './crew';
 
-export interface Country { key: string; name: string; tone: Colour }
+export interface Country { key: string; name: string; kind: MapKind }
 
-/** One flat tone of the palette to each kind of country (names.json biomes). */
+/** Each kind of country (names.json biomes) and the kind of ground the chart draws it as. */
 export const COUNTRIES: Record<string, Country> = {
-  ocean: { key: 'ocean', name: 'Samudda', tone: 'arm.dk' },
-  beach: { key: 'beach', name: 'Vela', tone: 'clay.face' },
-  plains: { key: 'plains', name: 'Yavas', tone: 'growth' },
-  palewood: { key: 'palewood', name: 'Davalavan', tone: 'growth.lt' },
-  forest: { key: 'forest', name: 'Vana', tone: 'growth.dk' },
-  bloomvale: { key: 'bloomvale', name: 'Kusum', tone: 'rose.lt' },
-  swamp: { key: 'swamp', name: 'Panka', tone: 'timber.sh' },
-  taiga: { key: 'taiga', name: 'Tusāravan', tone: 'stone.sh' },
-  tundra: { key: 'tundra', name: 'Hima', tone: 'salt' },
-  desert: { key: 'desert', name: 'Marudesha', tone: 'timber.hi' },
-  savanna: { key: 'savanna', name: 'Kāsa', tone: 'timber.lt' },
-  jungle: { key: 'jungle', name: 'Aranna', tone: 'cyan.dk' },
-  crags: { key: 'crags', name: 'Pabbat', tone: 'stone.face' },
-  peaks: { key: 'peaks', name: 'Sānu', tone: 'stone.lt' },
+  ocean: { key: 'ocean', name: 'Samudda', kind: 'water' },
+  beach: { key: 'beach', name: 'Vela', kind: 'sand' },
+  plains: { key: 'plains', name: 'Yavas', kind: 'grass' },
+  palewood: { key: 'palewood', name: 'Davalavan', kind: 'grass' },
+  forest: { key: 'forest', name: 'Vana', kind: 'forest' },
+  bloomvale: { key: 'bloomvale', name: 'Kusum', kind: 'grass' },
+  swamp: { key: 'swamp', name: 'Panka', kind: 'forest' },
+  taiga: { key: 'taiga', name: 'Tusāravan', kind: 'forest' },
+  tundra: { key: 'tundra', name: 'Hima', kind: 'snow' },
+  desert: { key: 'desert', name: 'Marudesha', kind: 'sand' },
+  savanna: { key: 'savanna', name: 'Kāsa', kind: 'sand' },
+  jungle: { key: 'jungle', name: 'Aranna', kind: 'forest' },
+  crags: { key: 'crags', name: 'Pabbat', kind: 'stone' },
+  peaks: { key: 'peaks', name: 'Sānu', kind: 'snow' },
 };
 
 function hash(x: number, z: number, seed: number): number {
@@ -58,6 +58,21 @@ export function countryAt(x: number, z: number): Country {
   if (m > 0.47) return C.palewood;
   if (m > 0.45) return C.bloomvale;
   return C.plains;
+}
+
+/** The houses of the settlements the crew knows, roofs 16 strides square on a grid of 24. */
+export const SETTLEMENTS = [{ name: 'Village', x: -110, z: -180, r: 52 }];
+
+/** What the chart draws at a place: a roof, or the kind of its country. */
+export function groundAt(x: number, z: number): MapKind {
+  for (const t of SETTLEMENTS) {
+    const dx = x - t.x, dz = z - t.z;
+    if (dx * dx + dz * dz > t.r * t.r) continue;
+    const gx = Math.floor((dx + 960) / 24), gz = Math.floor((dz + 960) / 24);
+    const ux = (dx + 960) % 24, uz = (dz + 960) % 24;
+    if (ux < 16 && uz < 16 && hash(gx, gz, SEED + 9) > 0.3) return 'settlement';
+  }
+  return countryAt(x, z).kind;
 }
 
 /** Where one stands and faces (0 north, 1 east, 2 south, 3 west). */

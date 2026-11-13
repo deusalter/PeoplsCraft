@@ -1,6 +1,6 @@
 // The world map (section 6, World map): a stone slab with a tab for each place the crew can chart, the chart in a well
 // that pans and zooms by whole steps, the known places in a list, and Travel where the world allows a crossing.
-import { ALTAR_MARK, GATE_MARK, MOUTH_MARK, OWN_ARROW } from '../art/chart';
+import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW } from '../art/chart';
 import { GROUND, GROUND_H, GROUND_W } from '../art/ground';
 import { HEADS } from '../art/heads';
 import { COMPASS_MARKS, PING } from '../art/marks';
@@ -12,7 +12,7 @@ import { type Colour, SEATS } from '../palette';
 import { button } from '../parts/button';
 import { frameWell, type RowSpec, well } from '../parts/well';
 import { tabbedSlab } from '../parts/tabs';
-import { CHUNK, type Place, countryAt, FELL, ME, PINGS, PLACES, STORE, WALK_RADIUS, WALKED } from '../sample/map';
+import { CHUNK, type Place, countryAt, FELL, groundAt, ME, PINGS, PLACES, STORE, WALK_RADIUS, WALKED } from '../sample/map';
 import type { Surface } from '../surface';
 import { firstFocus, go, placeWindow } from './books-common';
 import type { NamedScreen } from './index';
@@ -66,16 +66,31 @@ function nearWay(x: number, z: number): boolean {
   return false;
 }
 
-/** The living ground, a unit to `zoom` strides: one flat tone to each country, root.1 where no one has walked. */
+/**
+ * The living ground, a unit to `zoom` strides, drawn as a map is: each unit one of the eight kinds in its flat tone,
+ * ground not yet walked as parchment. A unit with a lower neighbour takes its kind's edge tone, so shores and cliffs
+ * are lines of one unit; parchment next to known ground takes `clay.sh`, the edge of what is charted.
+ */
 function paintGround(s: Surface, v: MapView): void {
   const z = v.zoom, cx = v.centre.x, cz = v.centre.z;
+  const gw = CW + 2, gh = CH + 2;
+  const kinds: MapKind[] = new Array(gw * gh);
+  for (let row = 0; row < gh; row++) {
+    for (let u = 0; u < gw; u++) {
+      const wx = cx + (u - 1 - CW / 2) * z, wz = cz + (row - 1 - CH / 2) * z;
+      kinds[row * gw + u] = walked(wx, wz) ? groundAt(wx, wz) : 'unknown';
+    }
+  }
+  const at = (u: number, row: number) => kinds[(row + 1) * gw + u + 1];
   for (let row = 0; row < CH; row++) {
     let run = 0, runC: Colour | null = null;
     for (let u = 0; u <= CW; u++) {
       let c: Colour | null = null;
       if (u < CW) {
-        const wx = cx + (u - CW / 2) * z, wz = cz + (row - CH / 2) * z;
-        c = walked(wx, wz) ? countryAt(wx, wz).tone : 'root.1';
+        const k = at(u, row);
+        const near = [at(u, row - 1), at(u - 1, row), at(u + 1, row), at(u, row + 1)];
+        const edge = k === 'unknown' ? near.some((n) => n !== 'unknown') : near.some((n) => n !== 'unknown' && MAP_HEIGHT[n] < MAP_HEIGHT[k]);
+        c = MAP_TONES[k][edge ? 1 : 0];
       }
       if (c !== runC) {
         if (runC) s.fill(u - run, row, run, 1, runC);

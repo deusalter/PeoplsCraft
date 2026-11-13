@@ -2940,7 +2940,7 @@ Size 312 by 212, with tabs standing 21 above. Material: stone. Anchor: centre of
 | W0 | slab | 0 | 0 | 312 | 212 | stone slab |
 | T1 | tab | 0 | -21 | 24 | 24 | top tabs: The Living Ground, The Hollow, The Islands, then one for each sealed store the crew is inside |
 | W1 | text | 8 | 6 | 120 | 10 | the place's name |
-| W2 | well | 8 | 18 | 212 | 170 | the chart: one unit to eight strides at the nearest zoom. Each kind of country is one flat tone of the palette; ground not yet walked is root.1. On it: one's own arrow, friends' heads in their colours, pings, the bed, the fall mark, known altars and gates |
+| W2 | well | 8 | 18 | 212 | 170 | the chart, drawn as a map is drawn, not as contours: one unit to 8, 4 (the first zoom) or 2 strides, each unit one of eight kinds in a fixed palette, face and edge: water `arm.dk`; sand `timber.hi`, `timber.face`; grass `growth`, `growth.dk`; forest `growth.dk`, `root.1`; roofs of a settlement `timber.sh`, `timber.pit`; stone `stone.face`, `stone.sh`; snow `salt`, `stone.lt`; ground not yet walked parchment, `clay.face`. The kinds stand in that order of height, and a unit with a lower neighbour takes its kind's edge tone, so that shores, cliffs and roofs are ringed by lines one unit wide; parchment beside known ground is `clay.sh`, the edge of what is charted. Countries are named under the pointer (W3), not coloured each their own. Marks are 7 by 7 and lit from the top left. On it: one's own arrow, friends' heads in their colours, pings, the bed, the fall mark, known altars and gates |
 | W3 | text | 8 | 194 | 170 | 10 | under the pointer: "X -104  Z 2210", then the country's name |
 | W4 | button | 190 | 192 | 14 | 14 | "-" |
 | W5 | button | 206 | 192 | 14 | 14 | "+" |

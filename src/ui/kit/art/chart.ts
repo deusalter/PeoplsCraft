@@ -1,4 +1,27 @@
+import type { Colour } from '../palette';
 import { type PixelMap, coded, pixmap } from '../pixmap';
+
+/** The eight kinds of ground a chart is drawn in, as a map is drawn: not every country, only what it is to walk on. */
+export type MapKind = 'water' | 'sand' | 'grass' | 'forest' | 'stone' | 'snow' | 'settlement' | 'unknown';
+
+/**
+ * The chart's palette, fixed: each kind's flat tone and the darker tone of its edge. A kind standing higher than its
+ * neighbour (land over water, stone over grass, a roof over the field round it) is ringed by one unit of its edge, the
+ * shore and cliff lines; ground not yet walked is parchment, ringed in `clay.sh` where it meets the known.
+ */
+export const MAP_TONES: Record<MapKind, readonly [face: Colour, edge: Colour]> = {
+  water: ['arm.dk', 'arm.dk'],
+  sand: ['timber.hi', 'timber.face'],
+  grass: ['growth', 'growth.dk'],
+  forest: ['growth.dk', 'root.1'],
+  stone: ['stone.face', 'stone.sh'],
+  snow: ['salt', 'stone.lt'],
+  settlement: ['timber.sh', 'timber.pit'],
+  unknown: ['clay.face', 'clay.sh'],
+};
+
+/** How high each kind stands, for the shore and cliff lines. */
+export const MAP_HEIGHT: Record<MapKind, number> = { water: 0, sand: 1, grass: 2, forest: 3, settlement: 4, stone: 5, snow: 6, unknown: -1 };
 
 // Marks on the map's chart, 7 by 7 like the compass's: a known altar, a raised gate, and one's own arrow in one's
 // seat colour, pointing the way one faces in four quarters.
