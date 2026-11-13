@@ -48,6 +48,8 @@ export interface HudOpts {
   chat?: boolean;
   /** Friends' tags and a ping in the world. */
   world?: boolean;
+  /** The prompt under the crosshair; not drawn while chat is open. */
+  prompt?: boolean;
 }
 
 const BAR: (Stack | null)[] = [
@@ -129,7 +131,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   if (o.chat !== false && !first) out.push(chat({ x: L(4), bottom: 170, lines: CHAT }));
 
   out.push(crosshair({ x: L(cx - 4), y: Math.floor(H / 2) - 4 }));
-  if (!o.boss && !first) {
+  if (!o.boss && !first && o.prompt !== false) {
     const cap = keycap({ x: 0, y: 0, label: 'E' });
     const text = 'Talk to Kammār';
     const w = cap.w + 4 + measure(text);
