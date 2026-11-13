@@ -27,7 +27,7 @@ const WORKS: Work[] = [
 ];
 
 /** The raised stones of a bed: their light edge, face and dark edge. */
-type Stones = [Colour, Colour, Colour];
+export type Stones = [Colour, Colour, Colour];
 
 interface Furnace {
   name: string;
@@ -116,7 +116,7 @@ function tick(st: State, ui: Ui): void {
 }
 
 /** Eight raised stones round the hollow of the bed, each lit on its top and left and dark on its bottom and right. */
-function bed(x: number, y: number, stones: Stones): Node {
+export function bed(x: number, y: number, stones: Stones): Node {
   const at = [[0, 0], [15, 0], [30, 0], [0, 15], [30, 15], [0, 30], [15, 30], [30, 30]];
   return {
     x, y, w: 42, h: 42,

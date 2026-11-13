@@ -38,7 +38,7 @@ function open(): State {
 }
 
 /** A cut line from a piece to the remains; lit in ember while the two pieces make something. */
-function line(x: number, y: number, w: number, lit: boolean): Node {
+export function line(x: number, y: number, w: number, lit: boolean): Node {
   return {
     x, y, w, h: 2,
     paint: (s) => { s.fill(0, 0, w, 1, lit ? 'ember' : 'timber.pit'); s.fill(0, 1, w, 1, lit ? 'ember.dk' : 'timber.hi'); },

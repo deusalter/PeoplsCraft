@@ -62,7 +62,7 @@ function rightLine(right: number, y: number, text: string, c: Colour, face = SMA
 }
 
 /** The Guide's present step: a dark plate with the chapter in grey, the step in salt, the count and where to go under it. */
-function tracker(x: number, y: number, chapter: string, step: string, have: string, where: string): Node {
+export function tracker(x: number, y: number, chapter: string, step: string, have: string, where: string): Node {
   return plate({
     x, y, w: 128, h: 44,
     kids: [{
