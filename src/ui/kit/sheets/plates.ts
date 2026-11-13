@@ -5,13 +5,14 @@ import { POINTER } from '../art/pointer';
 import type { Node } from '../node';
 import { chat, compass, crew, type Member, nameTag, paintEntry, ping, readout, roster } from '../parts/plates';
 import { heldStack } from '../root';
+import { SERVER, seat, strides } from '../sample/crew';
 import { type Sheet, page, salt } from './common';
 
-const MEMBERS: Member[] = [
-  { seat: 1, name: 'Tarun', life: 1, place: 'Hearth of Ash', level: 12, bars: 3 },
-  { seat: 3, name: 'Meghna', life: 0.55, place: 'Hearth of Ash', level: 9, metres: 42, bars: 2 },
-  { seat: 6, name: 'Isvaran of the long name', life: 0.2, place: 'The low field', level: 4, bars: 1 },
-];
+// Three of the one sample crew: oneself, a friend near, and the longest handle there can be.
+const MEMBERS: Member[] = [1, 3, 8].map((n) => {
+  const m = seat(n);
+  return { seat: m.seat, name: m.name, life: m.life, place: m.place, level: m.level, metres: strides(m), bars: m.bars, self: n === 1 };
+});
 
 export const platesSheet: Sheet = {
   title: 'Parts: plates of play',
@@ -19,16 +20,16 @@ export const platesSheet: Sheet = {
   build(ui) {
     const kids: Node[] = [];
     kids.push(compass({
-      x: 0, y: 0, heading: 20, place: 'Hearth of Ash', night: 'Night 3',
+      x: 0, y: 0, heading: 20, place: 'Yavas', night: 'Night 3',
       marks: [{ kind: 'bed', deg: -30 }, { kind: 'guide', deg: 52 }, { kind: 'friend', seat: 3, deg: -62 }, { kind: 'fell', deg: 170 }],
     }));
-    kids.push(readout({ cx: 91, y: 26, icon: 'ore', name: 'Lees-iron in stone', line: 'Needs an iron pick', refusal: true }));
-    kids.push(readout({ cx: 91, y: 52, icon: 'log', name: 'Black root', line: 'Timber' }));
-    kids.push(readout({ cx: 91, y: 78, icon: 'haunch', name: 'Sand hound', life: 0.6 }));
+    kids.push(readout({ cx: 91, y: 26, icon: 'ore', name: 'Iron Ore', line: 'Needs a stone pick', refusal: true }));
+    kids.push(readout({ cx: 91, y: 52, icon: 'log', name: 'Oak Log', line: 'Any axe will do' }));
+    kids.push(readout({ cx: 91, y: 78, icon: 'haunch', name: 'Tama', life: 0.6 }));
     // Name tags, pings and the marks of the compass.
     kids.push(salt(196, 0, 'Tags, pings, marks'));
-    kids.push(nameTag({ cx: 226, y: 14, name: 'Meghna', seat: 3, life: 0.55 }));
-    kids.push(nameTag({ cx: 300, y: 14, name: 'Potter Ilango' }));
+    kids.push(nameTag({ cx: 226, y: 14, name: seat(3).name, seat: 3, life: seat(3).life }));
+    kids.push(nameTag({ cx: 300, y: 14, name: 'Kammār' }));
     kids.push(ping({ cx: 360, y: 14, seat: 5, metres: 40 }));
     kids.push(ping({ cx: 380, y: 14, seat: 2 }));
     kids.push({
@@ -48,14 +49,14 @@ export const platesSheet: Sheet = {
     kids.push(chat({
       x: 0, bottom: 246,
       lines: [
-        { text: 'Meghna came in.' },
-        { seat: 3, from: 'Meghna', text: 'the kiln row is lit' },
-        { seat: 1, from: 'Tarun', text: 'bring lees, we are short of it for the long run of jars past the low field' },
+        { text: `${seat(3).name} joined ${SERVER}` },
+        { seat: 3, from: seat(3).name, text: 'the furnace is lit' },
+        { seat: 1, from: seat(1).name, text: 'bring coal, we are short of it for the long run of iron bars before the night raid' },
       ],
       open: true,
     }));
     kids.push({ x: 0, y: 252, w: 240, h: 14, paint: (s) => paintEntry(s, 240, 'on my way') });
-    kids.push(roster({ cx: 156, y: 110, server: 'Hearth of Ash', members: MEMBERS }));
+    kids.push(roster({ cx: 156, y: 110, server: SERVER, members: MEMBERS }));
     kids.push(salt(318, 112, 'The roster,'));
     kids.push(salt(318, 124, 'held open with Tab'));
     kids.push(salt(250, 230, 'Chat, open, with its entry'));

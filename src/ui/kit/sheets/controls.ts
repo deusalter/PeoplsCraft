@@ -70,7 +70,7 @@ export const controlsSheet: Sheet = {
       x: 0, y: 136, w: 202, h: 126, ramp: 'timber', title: 'Fields',
       kids: [
         field({ id: 'f.empty', x: 8, y: 18, w: 90, value: '', placeholder: 'Name', host: 'timber', ui }),
-        field({ id: 'f.full', x: 104, y: 18, w: 90, value: 'Hearth of Ash', host: 'timber', ui }),
+        field({ id: 'f.full', x: 104, y: 18, w: 90, value: 'Hearth on the Yavas', host: 'timber', ui }),
         field({ id: 'f.focus', x: 8, y: 36, w: 90, value: 'Kiln row', host: 'timber', show: { focus: true }, ui }),
         field({ id: 'f.sel', x: 104, y: 36, w: 90, value: 'Īshū kilns', host: 'timber', show: { focus: true, select: [0, 4] }, ui }),
         field({ id: 'f.ref', x: 8, y: 54, w: 90, value: 'No ~ here', host: 'timber', show: { refused: true }, ui }),
@@ -90,7 +90,7 @@ export const controlsSheet: Sheet = {
         keycap({ x: 8, y: 20, label: 'E' }), ink(20, 22, 'Pack'),
         keycap({ x: 52, y: 20, label: 'Shift' }), ink(52 + measure('Shift') + 9, 22, 'Send'),
         keycap({ x: 130, y: 20, label: 'Esc' }), ink(130 + measure('Esc') + 9, 22, 'Close'),
-        field({ id: 'f.menu', x: 8, y: 38, w: 160, h: 20, value: 'Hearth of Ash', host: 'stone', ui }),
+        field({ id: 'f.menu', x: 8, y: 38, w: 160, h: 20, value: 'Hearth on the Yavas', host: 'stone', ui }),
         checkbox({ id: 'c.st', x: 176, y: 42, on: true, label: 'Cheats', host: 'stone' }),
         ink(8, 62, 'A field 20 tall, as a menu has it', 'ink.faded'),
         slabTrack({ id: 'track.slab', x: 254, y: 18, h: 54, ramp: 'stone', top: 2, visible: 4, total: 9 }),
