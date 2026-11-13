@@ -3875,7 +3875,7 @@ Taken where the direction is silent, in its spirit. Builders may rely on them.
 
 **Lists.** A well may hold rows taller than 18 (the worlds' rows of 36, two lines), paint a row's own content over the floor and frame it draws, take a second press or Enter on the chosen row as "use", and say one grey line when it holds no rows. Up and Down on a focused row move the choice and keep it in the well.
 
-**Rows written on a page.** A row of a list on a page (steps, bounties, the crew) is ink on the page: hovered, its floor is `clay.face`; chosen, `clay.sh`; with keyboard focus, a frame of salt. A player on a page is their 2 by 7 flag beside their name in ink.
+**Rows written on a page.** A row of a list on a page (steps, bounties, the crew) is ink on the page: hovered, its floor is `clay.face`; chosen, its words in full ink with a rule of `clay.dk` one unit thick under them, one unit below the baseline and only as wide as the words (a step's title, a bounty's task, a crew member's name), and no floor, since a filled bar across the page reads as a selection in a web list; with keyboard focus, a frame of salt. A player on a page is their 2 by 7 flag beside their name in ink.
 
 **The codex.** An entry slot is the clay slot with a floor of `clay.sh`, its silhouette `clay.face` (`clay.sh` while hovered). The picture well holds the 16 by 16 picture standing on a strip of the ground tile at its foot. The four steps run on without gaps, a rule of `clay.sh` standing for each one not known, cut with `…` at the box's foot. The first short fact is where, in `arm.dk`.
 

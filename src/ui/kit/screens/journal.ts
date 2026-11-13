@@ -54,12 +54,14 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: ch.title })];
   ch.steps.forEach((st, i) => {
     const s = state(i);
+    const title = inkCut(st.title, PW - 11);
+    const chosen = i === v.step;
     left.push(pageRow({
-      id: `jr.step.${i}`, x: 0, y: 14 + i * 10, w: PW, h: 10, chosen: i === v.step, onChoose: () => v.onChoose(i),
+      id: `jr.step.${i}`, x: 0, y: 14 + i * 10, w: PW, h: 10, chosen, under: { x: 10, y: 9, w: measureInk(title) }, onChoose: () => v.onChoose(i),
       paint: (g) => {
         if (s === 'done') g.text('{check}', 1, 0, 'ink.faded');
         if (s === 'now') g.text('{step}', 3, 0, 'ink');
-        g.text(inkCut(st.title, PW - 11), 10, 0, s === 'now' ? 'ink' : 'ink.faded');
+        g.text(title, 10, 0, s === 'now' || chosen ? 'ink' : 'ink.faded');
       },
     }));
   });
@@ -91,12 +93,14 @@ function heads(g: Parameters<NonNullable<Node['paint']>>[0], seats: number[], ri
 function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: 'Bounties' })];
   v.bounties.forEach((b, i) => {
+    // The asker has the first line to itself; the takers' heads stand at the right end of the task's line.
+    const task = inkCut(b.task, b.took.length ? PW - 12 - (b.took.length - 1) * 11 - 21 : PW - 22);
+    const chosen = i === v.bounty;
     left.push(pageRow({
-      id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen: i === v.bounty, onChoose: () => v.onChoose(i),
+      id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen, under: { x: 21, y: 19, w: measureInk(task) }, onChoose: () => v.onChoose(i),
       paint: (g, live) => {
-        // The asker has the first line to itself; the takers' heads stand at the right end of the task's line.
         g.text(inkCut(b.asker, PW - 22), 21, 1, b.barred ? 'ink.faded' : 'ink');
-        g.text(inkCut(b.task, b.took.length ? PW - 12 - (b.took.length - 1) * 11 - 21 : PW - 22), 21, 10, 'ink.faded');
+        g.text(task, 21, 10, chosen ? 'ink' : 'ink.faded');
         heads(g, b.took, PW - 1, 10);
         g.translate(0, 1);
         paintSlot(g, { ramp: 'clay', stack: { icon: b.icon, n: b.n } }, live);
@@ -159,13 +163,14 @@ function peoplePage(p: People): Node[] {
 function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: 'Crew' })];
   v.crew.forEach((m, i) => {
+    const name = inkCut(m.name, PW - 32);
     left.push(pageRow({
-      id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, onChoose: () => v.onChoose(i),
+      id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, under: { x: 6, y: 10, w: measureInk(name) }, onChoose: () => v.onChoose(i),
       paint: (g) => {
         flag(g, m.seat, 1, 2);
         const lv = String(m.level);
         g.text(lv, PW - 2 - measureInk(lv), 1, m.online ? 'ink' : 'ink.faded');
-        g.text(inkCut(m.name, PW - 32), 6, 1, m.online ? 'ink' : 'ink.faded');
+        g.text(name, 6, 1, m.online ? 'ink' : 'ink.faded');
       },
     }));
   });
