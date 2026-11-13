@@ -16,7 +16,11 @@ import { SnapWriter } from './snapshot';
 import type { Conn } from './transport';
 
 /** One attached connection: its player, what waits to be sent to it, and what it has been told. */
-interface Link { c: Conn; p: SimPlayer; state: S2C[]; fx: Fx[]; known: Interest }
+/** `fxDim`, one per entry of `fx`: the realm the event belongs to, or -1 for one that is the player's wherever they are. */
+interface Link { c: Conn; p: SimPlayer; state: S2C[]; fx: Fx[]; fxDim: number[]; known: Interest }
+
+/** Events that name something of a realm's interest sets, whatever scope they were sent under. */
+const REALM_FX = new Set<Fx[0]>(['ps', 'pe', 'da', 'dn', 'dd', 'md', 'mk', 'dg', 'pg']);
 
 const HURT_TICKS = HURT_SECONDS / STEP;
 
@@ -45,20 +49,22 @@ export class SnapService implements Sink {
     this.detach(c);
     const known = new Interest();
     known.reset(p.dim);
-    this.links.push({ c, p, state: [], fx: [], known });
+    this.links.push({ c, p, state: [], fx: [], fxDim: [], known });
   }
   detach(c: Conn): void { const i = this.links.findIndex((l) => l.c === c); if (i >= 0) this.links.splice(i, 1); }
 
   // ---- Sink ----
   emit(to: Scope, ev: Fx): void {
+    const realm = 'dim' in to || REALM_FX.has(ev[0]);
+    const push = (l: Link): void => { l.fx.push(ev); l.fxDim.push(realm ? l.p.dim : -1); };
     switch (ev[0]) {
-      case 'ps': { const id = ev[1], x = ev[3], z = ev[5], own = 'p' in to; this.each(to, (l) => { if (l.known.takePs(id, x, z, l.p, own)) l.fx.push(ev); }); break; }
-      case 'pe': { const id = ev[1]; this.each(to, (l) => { if (l.known.takePe(id)) l.fx.push(ev); }); break; }
-      case 'da': { const id = ev[1], x = ev[5], z = ev[7]; this.each(to, (l) => { if (l.known.takeDa(id, x, z, l.p)) l.fx.push(ev); }); break; }
-      case 'dn': { const id = ev[1]; this.each(to, (l) => { if (l.known.knowsDrop(id)) l.fx.push(ev); }); break; }
-      case 'dd': { const id = ev[1]; this.each(to, (l) => { if (l.known.takeDd(id)) l.fx.push(ev); }); break; }
-      case 'md': { const id = ev[1]; this.each(to, (l) => { if (l.known.takeMd(id)) l.fx.push(ev); }); break; }
-      default: this.each(to, (l) => { l.fx.push(ev); });
+      case 'ps': { const id = ev[1], x = ev[3], z = ev[5], own = 'p' in to; this.each(to, (l) => { if (l.known.takePs(id, x, z, l.p, own)) push(l); }); break; }
+      case 'pe': { const id = ev[1]; this.each(to, (l) => { if (l.known.takePe(id)) push(l); }); break; }
+      case 'da': { const id = ev[1], x = ev[5], z = ev[7]; this.each(to, (l) => { if (l.known.takeDa(id, x, z, l.p)) push(l); }); break; }
+      case 'dn': { const id = ev[1]; this.each(to, (l) => { if (l.known.knowsDrop(id)) push(l); }); break; }
+      case 'dd': { const id = ev[1]; this.each(to, (l) => { if (l.known.takeDd(id)) push(l); }); break; }
+      case 'md': { const id = ev[1]; this.each(to, (l) => { if (l.known.takeMd(id)) push(l); }); break; }
+      default: this.each(to, push);
     }
   }
   send(slot: number, m: S2C): void { for (const l of this.links) if (l.p.slot === slot) l.state.push(m); }
@@ -78,7 +84,16 @@ export class SnapService implements Sink {
     }
   }
   /** A player in another realm than the sets were kept for has a client that has emptied its store (4.3, `tp`). */
-  private sync(l: Link): void { if (l.known.dim !== l.p.dim) l.known.reset(l.p.dim); }
+  private sync(l: Link): void {
+    if (l.known.dim === l.p.dim) return;
+    const old = l.known.dim;
+    l.known.reset(l.p.dim);
+    // what was queued for the realm just left would reach a client that has emptied its store for the new one, and stay there
+    if (!l.fxDim.includes(old)) return;
+    const fx: Fx[] = [], at: number[] = [];
+    for (let i = 0; i < l.fx.length; i++) if (l.fxDim[i] !== old) { fx.push(l.fx[i]); at.push(l.fxDim[i]); }
+    l.fx = fx; l.fxDim = at;
+  }
   private link(c: Conn): Link | null { for (const l of this.links) if (l.c === c) return l; return null; }
 
   // ---- the three calls of the send order (3.7): state, then (the chunk service's `b`), fx, (`ce`), snapshot ----
@@ -97,7 +112,7 @@ export class SnapService implements Sink {
     if ((this.sim.tick + c.id) % SWEEP_EVERY === 0) l.known.sweep(this.sim.realms[l.p.dim], l.p, l.fx);
     if (!l.fx.length) return;
     const q = l.fx;
-    l.fx = [];
+    l.fx = []; l.fxDim = [];
     c.send({ t: 'fx', l: q });
   }
   flushSnap(c: Conn, tick: number): void {

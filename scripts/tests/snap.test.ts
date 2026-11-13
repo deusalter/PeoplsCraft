@@ -25,6 +25,7 @@ import type { SimPlayer } from '../../src/sim/player';
 import { PROJ_KEYS } from '../../src/sim/projectiles';
 import type { RealmStore } from '../../src/sim/realm';
 import { Sim } from '../../src/sim/sim';
+import { travel } from '../../src/sim/travel';
 import type { ChunkSource } from '../../src/sim/chunksource';
 import { MemStorage, type WorldRecord } from '../../src/sim/storage';
 import { type BlockEnt, EditMaps } from '../../src/sim/voxels';
@@ -319,6 +320,22 @@ test('a player in another realm is told again from nothing: what it knew of the 
   assert.deepEqual(A.cl.fx.map((e) => e[0]), ['da']);
   assert.equal(A.cl.fx[0][2], 'torch');
   assert.ok(Bl.cl.fx.some((e) => e[0] === 'pe' && e[1] === shot.id));
+});
+
+test('fx queued for a realm the player leaves in the same step are not sent after the tp that empties the store', () => {
+  const h = host(), A = h.add('a', 0.5, 0.5), sim = h.sim, r0 = sim.realms[0];
+  // someone stays behind, so the Overworld goes on running
+  h.add('b', 300.5, 0.5);
+  // in one step a drop falls beside A, a toast is A's own, and then the portal takes A to the Hollow
+  r0.drops.spawn(1.5, GROUND + 0.2, 0.5, { k: 'stick', n: 1 }, 0, 0, 0, 0);
+  sim.sink.emit({ p: A.p.slot }, ['t', 'kept', '']);
+  sim.sink.emit({ dim: 0 }, ['s', 'chest', 1, 1]);
+  travel(sim, A.p, 1);
+  A.cl.fx.length = 0;
+  h.flush();
+  assert.ok(A.cl.msgs.some((m) => m.t === 'tp' && m.dim === 1));
+  assert.deepEqual(A.cl.fx.map((e) => e[0]), ['t'], 'the toast is the player\'s wherever it is; the drop and the sound were the old realm\'s');
+  assert.equal(A.cl.ents.drops.filter((v) => v.active).length, 0, 'no drop of the Overworld lies in the Hollow');
 });
 
 test('a shooter\'s ghost gives way to the ps that answers its fire, and is dropped after GHOST_SECONDS without one', () => {

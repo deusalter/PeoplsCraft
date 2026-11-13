@@ -1429,7 +1429,9 @@ client's `sprinting` flag.
 ### 4.6 fx events
 
 `fx.l` is an array of tuples; element 0 is the code. Scopes are resolved by the host; `k` (shake)
-arrives already scaled for the recipient.
+arrives already scaled for the recipient. An event belongs to a realm when it was sent to a realm's scope or
+its code is `ps`, `pe`, `da`, `dn`, `dd`, `md`, `mk`, `dg` or `pg`; one still queued for a player who has left
+that realm in the step is not sent (D36 (h)).
 
 | Code | Tuple | Meaning and scope |
 | --- | --- | --- |
@@ -3509,6 +3511,13 @@ out in the same step, right after the `st` that carries the `ack`. A bed set by 
 which waited for the next of the four looks a second: up to 15 ticks after the acknowledgement, and the client's
 spawn point (`game.spawn`) was still empty when the action had already been answered. The same held for a buff
 from a meal or a salve's cooldown. A `stats` that equals the last one sent is still not sent.
+(h) Events queued for a realm that the player leaves later in the same step are not sent (4.6). A connection's fx
+waited in one queue and were judged by realm only when emitted; the flush came after the `tp` that took the
+player to another realm, and the client, its entity store just emptied for the new realm, took a `da` of the old
+one and kept a drop in the new realm that no `dd` would ever end. Rain marks and projectiles of the old realm
+played the same way. Each queued event now carries the realm it belongs to, and the reset of a connection's
+interest sets for a new realm drops those of the old one; a toast or a pickup line, the player's own wherever
+they are, is kept.
 
 ---
 
