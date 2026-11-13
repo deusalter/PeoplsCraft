@@ -52,7 +52,10 @@ const TAKER = 11;
 function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
   const ch = v.chapters[v.chapter];
   const p = v.present;
-  const state = (i: number) => (v.chapter < p.chapter || (v.chapter === p.chapter && i < p.step) ? 'done' : v.chapter === p.chapter && i === p.step ? 'now' : 'later');
+  // The step after the present one, on this page or as the first of the next chapter.
+  const lastOfPresent = p.step === v.chapters[p.chapter].steps.length - 1;
+  const isNext = (i: number) => (v.chapter === p.chapter && i === p.step + 1) || (lastOfPresent && v.chapter === p.chapter + 1 && i === 0);
+  const state = (i: number) => (v.chapter < p.chapter || (v.chapter === p.chapter && i < p.step) ? 'done' : v.chapter === p.chapter && i === p.step ? 'now' : isNext(i) ? 'next' : 'later');
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: ch.title })];
   ch.steps.forEach((st, i) => {
     const s = state(i);
@@ -61,9 +64,10 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
     left.push(pageRow({
       id: `jr.step.${i}`, x: 0, y: 14 + i * 10, w: PW, h: 10, chosen, under: { x: 10, y: 9, w: measureInk(title) }, onChoose: () => v.onChoose(i),
       paint: (g) => {
-        if (s === 'done') g.text('{check}', 1, 0, 'ink.faded');
+        // Done, now, next and later differ by a mark and a tone together, never by the tone alone.
+        if (s === 'done') g.text('{check}', 1, 0, 'growth.dk');
         if (s === 'now') g.text('{step}', 3, 0, 'ink');
-        g.text(title, 10, 0, s === 'now' || chosen ? 'ink' : 'ink.faded');
+        g.text(title, 10, 0, s === 'now' || s === 'next' ? 'ink' : 'ink.faded');
       },
     }));
   });
@@ -208,7 +212,7 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
     inkLine(14, 24, PW - 14, m.online ? `In ${m.place}` : 'Not here now', m.online ? 'ink' : 'ink.faded'),
   ];
   if (m.seat === v.seat) right.push(inkLine(14, 34, PW - 14, 'You', 'ink.faded'));
-  else if (m.online && m.at) right.push(whereLine(14, 34, PW - 14, `${count(dist)} strides from you`, 1));
+  else if (m.online && m.at) right.push(whereLine(14, 34, PW - 14, `${count(dist)} m from you`, 1));
   right.push(inkLine(0, 48, PW, 'Worn'));
   WORN_SLOTS.forEach((sil, k) => {
     const icon = m.worn[k];
@@ -268,21 +272,20 @@ export const journalScreen: Screen<JournalView> = (v, ui) => {
   };
 };
 
-// The sample keeps the open page, the choices and who took what for as long as the page is open.
-const st = {
-  chapter: PRESENT.chapter, step: PRESENT.step, bounty: 0, member: 0,
-  bounties: BOUNTIES.map((b) => ({ ...b, took: [...b.took] })),
-};
-
-function sample(name: string, title: string, section: JournalSection): NamedScreen {
+// Each sample keeps its open page, the choices and who took what for as long as the page is open.
+function sample(name: string, title: string, section: JournalSection, present = PRESENT): NamedScreen {
   let sec = section;
+  const st = {
+    chapter: present.chapter, step: present.step, bounty: 0, member: 0,
+    bounties: BOUNTIES.map((b) => ({ ...b, took: [...b.took] })),
+  };
   return {
     name, title, world: true,
     build: (ui) => journalScreen({
-      section: sec, chapters: CHAPTERS, chapter: st.chapter, step: st.step, present: PRESENT,
+      section: sec, chapters: CHAPTERS, chapter: st.chapter, step: st.step, present,
       bounties: st.bounties, bounty: st.bounty, peoples: PEOPLES, crew: CREW, member: st.member, seat: 1,
       onSection: (s) => { sec = s; ui.invalidate(); },
-      onPage: (c) => { st.chapter = c; st.step = c === PRESENT.chapter ? PRESENT.step : 0; ui.invalidate(); },
+      onPage: (c) => { st.chapter = c; st.step = c === present.chapter ? present.step : 0; ui.invalidate(); },
       onChoose: (i) => {
         if (sec === 'guide') st.step = i; else if (sec === 'bounties') st.bounty = i; else if (sec === 'crew') st.member = i;
         ui.invalidate();
@@ -295,6 +298,7 @@ function sample(name: string, title: string, section: JournalSection): NamedScre
 
 export const SCREENS: NamedScreen[] = [
   sample('journal', 'Journal: the Guide', 'guide'),
+  sample('journal-later', 'Journal: the Guide further on, steps done, present, next and later', 'guide', { chapter: 1, step: 3, have: 0 }),
   sample('journal-bounties', 'Journal: bounties', 'bounties'),
   sample('journal-standing', 'Journal: standing', 'standing'),
   sample('journal-crew', 'Journal: the crew', 'crew'),
