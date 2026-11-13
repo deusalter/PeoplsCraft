@@ -87,9 +87,9 @@ export const controlsSheet: Sheet = {
     kids.push(slab({
       x: 206, y: 182, w: 268, h: 80, ramp: 'stone', title: 'Key caps and a menu field',
       kids: [
-        keycap({ x: 8, y: 20, label: 'E' }), ink(20, 20, 'Pack'),
-        keycap({ x: 52, y: 20, label: 'Shift' }), ink(52 + measure('Shift') + 9, 20, 'Send'),
-        keycap({ x: 130, y: 20, label: 'Esc' }), ink(130 + measure('Esc') + 9, 20, 'Close'),
+        keycap({ x: 8, y: 20, label: 'E' }), ink(20, 22, 'Pack'),
+        keycap({ x: 52, y: 20, label: 'Shift' }), ink(52 + measure('Shift') + 9, 22, 'Send'),
+        keycap({ x: 130, y: 20, label: 'Esc' }), ink(130 + measure('Esc') + 9, 22, 'Close'),
         field({ id: 'f.menu', x: 8, y: 40, w: 160, h: 16, value: 'Hearth of Ash', host: 'stone', ui }),
         checkbox({ id: 'c.st', x: 176, y: 42, on: true, label: 'Cheats', host: 'stone' }),
         ink(8, 62, 'A field 16 tall, as a menu has it', 'ink.faded'),

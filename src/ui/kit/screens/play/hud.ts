@@ -165,9 +165,9 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     const text = 'Talk to Kammār';
     const w = cap.w + 4 + measure(text) + 1;
     const x0 = L(cx - Math.floor(w / 2)), y0 = Math.floor(H / 2) + 12;
-    out.push({ x: x0 - 2, y: y0 - 1, w: w + 4, h: 14, paint: (s) => { s.wash(0, 0, w + 4, 14, 'root.0', 3); } });
+    out.push({ x: x0 - 2, y: y0 - 1, w: w + 4, h: 16, paint: (s) => { s.wash(0, 0, w + 4, 16, 'root.0', 3); } });
     out.push({ ...cap, x: x0, y: y0 });
-    out.push({ x: x0 + cap.w + 4, y: y0 + 1, w: measure(text) + 1, h: 11, paint: (s) => { s.text(text, 0, 0, 'salt', true); } });
+    out.push({ x: x0 + cap.w + 4, y: y0 + 2, w: measure(text) + 1, h: 11, paint: (s) => { s.text(text, 0, 0, 'salt', true); } });
   }
 
   const inHand = first ? null : BAR[0]!;

@@ -23,7 +23,7 @@ export interface ControlsView {
   onDone(): void;
 }
 
-const W = 248, H = 206, ROW = 13, ROWS_Y = 20, COL_W = 112, TEXT_X = 48;
+const W = 248, H = 206, ROW = 16, ROWS_Y = 20, COL_W = 112, TEXT_X = 48;
 
 /** A mouse 9 by 12 in the cap's own tones, its chosen button lit in ember. */
 function mouse(x: number, y: number, which: 'left' | 'right' | 'middle'): Node {
@@ -50,12 +50,12 @@ function rowNodes(b: Binding, x: number, y: number): Node[] {
   const out: Node[] = [];
   let at = x;
   for (const c of b.caps) {
-    const n = typeof c === 'string' ? keycap({ x: at, y, label: c }) : mouse(at, y, c.mouse);
+    const n = typeof c === 'string' ? keycap({ x: at, y, label: c }) : mouse(at, y + 1, c.mouse);
     out.push(n);
     // Caps of one row stand side by side sharing an outline column, as a run of keys on a board does.
     at += n.w - 1;
   }
-  out.push(ink(x + TEXT_X, y + 1, b.does, 'ink', COL_W - TEXT_X));
+  out.push(ink(x + TEXT_X, y + 2, b.does, 'ink', COL_W - TEXT_X));
   return out;
 }
 

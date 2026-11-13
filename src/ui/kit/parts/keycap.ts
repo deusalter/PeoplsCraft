@@ -2,18 +2,23 @@ import { TITLE_MARK } from '../art/title';
 import { measure } from '../font/measure';
 import type { Node } from '../node';
 
-/** A key cap (5.28): 12 tall, its label plus 6 wide, `stone.hi` top row, `stone.lt` face, two rows of `stone.sh`, ink. */
+export const KEYCAP_H = 14;
+
+/**
+ * A key cap (5.28): 14 tall, its label plus 6 wide. Outline, a `stone.hi` row, the `stone.lt` face with the label's
+ * cell at y 2 so its capitals stand on rows 3 to 9 with a clear row above them, two rows of `stone.dk`, outline.
+ */
 export function keycap(o: { x: number; y: number; label: string }): Node {
   const w = measure(o.label) + 6;
   return {
-    x: o.x, y: o.y, w, h: 12,
+    x: o.x, y: o.y, w, h: KEYCAP_H,
     paint: (s) => {
-      s.fill(1, 0, w - 2, 1, 'root.0'); s.fill(1, 11, w - 2, 1, 'root.0');
-      s.fill(0, 1, 1, 10, 'root.0'); s.fill(w - 1, 1, 1, 10, 'root.0');
+      s.fill(1, 0, w - 2, 1, 'root.0'); s.fill(1, 13, w - 2, 1, 'root.0');
+      s.fill(0, 1, 1, 12, 'root.0'); s.fill(w - 1, 1, 1, 12, 'root.0');
       s.fill(1, 1, w - 2, 1, 'stone.hi');
-      s.fill(1, 2, w - 2, 7, 'stone.lt');
-      s.fill(1, 9, w - 2, 2, 'stone.sh');
-      s.text(o.label, 3, 0, 'ink');
+      s.fill(1, 2, w - 2, 9, 'stone.lt');
+      s.fill(1, 11, w - 2, 2, 'stone.dk');
+      s.text(o.label, 3, 2, 'ink');
     },
   };
 }

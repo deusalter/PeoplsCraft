@@ -47,7 +47,7 @@ Three rules follow and are used everywhere below.
 | `stone.lt` | `#c3cab9` | `G` | light edge of a stone slab; top row of a button; face of a key cap |
 | `stone.face` | `#9da695` | `H` | face of a stone slab |
 | `stone.sh` | `#6f7a76` | `J` | button face; inner dark edge in stone; hovered slot floor |
-| `stone.dk` | `#4e585d` | `M` | slot floor in stone; tooling and lower edge of a button; blocks of the ground tile |
+| `stone.dk` | `#4e585d` | `M` | slot floor in stone; tooling and lower edge of a button and of a key cap; blocks of the ground tile |
 | `stone.pit` | `#323844` | `z` | dark edge in stone; disabled button face; joints of the ground tile |
 | `ink` | `#2b1f2e` | `I` | text on any light face |
 | `ink.faded` | `#5c4c56` | `i` | secondary and disabled text on a light face |
@@ -2123,25 +2123,27 @@ A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the t
 
 ### 5.28 Key cap, crosshair, banner, title mark
 
-**Key cap**, 12 tall, as wide as its label plus 6: `stone.hi` top row, `stone.lt` face, two rows of `stone.sh`, label in ink. Used in prompts and on the controls screen.
+**Key cap**, 14 tall, as wide as its label plus 6, so 2 units stand clear on each side of the label inside the outline: row 0 the outline, row 1 `stone.hi`, then the `stone.lt` face to row 10 with the label's cell at y 2 so that capitals and ascenders stand on rows 3 to 9 and never touch the top, rows 11 and 12 `stone.dk`, row 13 the outline. The label is in ink. Caps of one row stand side by side sharing an outline column. Used in prompts and on the controls screen.
 
 ```
-     0         1         2         3         4 
-     012345678901234567890123456789012345678901
-  0  .KKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKK.
-  1  KAAIIIIAAK...KAAAIIIIAIAAAAAIAAIIIAAAAAAAK
-  2  KGGIGGGGGK...KGGIGGGGGIGGGGGGGGIGGGGIGGGGK
-  3  KGGIGGGGGK...KGGIGGGGGIIIIGGIGIIIIGIIIIGGK
-  4  KGGIIIGGGK...KGGGIIIGGIGGGIGIGGIGGGGIGGGGK
-  5  KGGIGGGGGK...KGGGGGGIGIGGGIGIGGIGGGGIGGGGK
-  6  KGGIGGGGGK...KGGGGGGIGIGGGIGIGGIGGGGIGGGGK
-  7  KGGIIIIGGK...KGGIIIIGGIGGGIGIGGIGGGGGIIGGK
-  8  KGGGGGGGGK...KGGGGGGGGGGGGGGGGGGGGGGGGGGGK
-  9  KJJJJJJJJK...KJJJJJJJJJJJJJJJJJJJJJJJJJJJK
- 10  KJJJJJJJJK...KJJJJJJJJJJJJJJJJJJJJJJJJJJJK
- 11  .KKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKK.
+     0         
+     0123456789
+  0  .KKKKKKKK.
+  1  KAAAAAAAAK
+  2  KGGGGGGGGK
+  3  KGGIIIIGGK
+  4  KGGIGGGGGK
+  5  KGGIGGGGGK
+  6  KGGIIIGGGK
+  7  KGGIGGGGGK
+  8  KGGIGGGGGK
+  9  KGGIIIIGGK
+ 10  KGGGGGGGGK
+ 11  KMMMMMMMMK
+ 12  KMMMMMMMMK
+ 13  .KKKKKKKK.
 ```
-`. nothing  A stone.hi  G stone.lt  I ink  J stone.sh  K root.0`
+`. nothing  A stone.hi  G stone.lt  I ink  M stone.dk  K root.0`
 
 **Crosshair**, 9 by 9. A hit turns it for 0.14 s into four diagonal ticks of the same weight; a critical hit draws them in `ember.hi`.
 
@@ -3538,7 +3540,7 @@ Size 248 by 206. Material: clay. Anchor: as Settings.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | Y0 | slab | 0 | 0 | 248 | 206 | clay slab |
 | Y1 | text | 8 | 6 | 100 | 10 | "Controls" |
-| Y2 | rows | 8 | 20 | 112 | 160 | left column, rows 13 tall: a key cap, then what it does in ink at x 48 |
+| Y2 | rows | 8 | 20 | 112 | 160 | left column, rows 16 tall: a key cap (the mouse 1 lower), then what it does in ink at x 48 and the cap's text height |
 | Y3 | rows | 128 | 20 | 112 | 160 | right column, the same |
 | Y4 | button | 74 | 184 | 100 | 16 | "Done" |
 
