@@ -287,7 +287,8 @@ Where the stonework, the householders and the sand-country people disagree (2.8)
 ### D.2 The data
 
 - A step is a shared flag: `cx:<subject>.<step>`. A bestiary subject is the creature key (`cx:gelcap.kill`). Other subjects are `<kind>:<key>` (`cx:site:ruin.born`). Flags are in the world's saved state, are sent in `welcome`, and are sent to everyone when one is added (`ARCHITECTURE.md` 3.3, 7.6). Nothing new goes on the wire.
-- Counts of kills are one new field of the shared state, `kills`, from creature key to a number. It is saved with the world and is not sent: only the flag that a count opens is.
+- Counts of kills are one new field of the shared state, `kills`, from creature key to a number. It is saved with the world and is not sent: only the flag that a count opens is. It counts feeders and the five ordinary animals, and no person.
+- **Nobody counts the dead people (rule 12).** The three sand-country fighters, `ashen_raider`, `ashen_hexer` and `siege_brute`, are people. `kills` has no entry for them, no step opens on how many of them have died, and no line shows such a number. Two counts in play today count them, and both change. `src/sim/events.ts:43` adds one to `ev.k` for every creature of an attack killed. From step 4 a fighter killed adds nothing. In a `raid` the count is then of feeders. An `ashen` march has no feeders in it, so its count becomes the fighters who have come up: `ev.k` rises by one as each fighter of the march comes up, and the march is beaten off when `ev.k` has reached `ev.g` and no fighter of it is still standing. The rule for `siege_brute` at `events.ts:83` (`ev.k > ev.g * 0.5`) then reads: after half the march has come up. The HUD line of a march (`hud:event.ashen`, `src/client/invclient.ts:96`) shows the name of the march and no number. Test: a bot beats off a march: `kills` holds no key of the three, the HUD line holds no digit, and the march ends beaten off when the last fighter of its count is down.
 - A late joiner receives every flag on joining and opens the codex filled as far as the others have got. That is 7.7's rule.
 - When a step opens, everyone gets the toast `toast:codex_new` with the subject's name.
 - A step that has not opened shows `win:codex.closed` under its heading. A subject with no open step is not listed.
@@ -301,7 +302,7 @@ The same four events for every creature, and five for the eight.
 | --- | --- |
 | `sight` | A creature of the kind is within 16 strides of an active player and no opaque block lies between. For what forms on a totem: the first time one forms |
 | `kill` | One of the kind dies of harm a player did. For what forms on a totem: the first time one of that look kills a feeder |
-| `habit` | The shared count of kills reaches 12 for a kind that comes in packs or attacks (`gloomshade`, `thornling`, `gelcap`, `cave_skitter`, `stonegnawer`, `sporeling`, `moonspawn`, `ashen_raider`), 3 for the two that come only beside the eight, 6 for every other. For a totem animal, 10 kills made by that look |
+| `habit` | For a feeder: the shared count of kills reaches 12 for a kind that comes in packs or attacks (`gloomshade`, `thornling`, `gelcap`, `cave_skitter`, `stonegnawer`, `sporeling`, `moonspawn`), 3 for the two that come only beside the eight, 6 for every other feeder. For a totem animal, 10 feeders killed by that look. For the three sand-country fighters, no count: the first `ashen` march that ends, beaten off or turned for home, on which one of that kind was seen. For the five ordinary animals: 6 killed, since they are no feeders and no people |
 | `once` | The event in the table below |
 | `eight.sight` | The animal comes up at its stone |
 | `eight.kill` | `boss:<n>` is set |
@@ -342,12 +343,12 @@ The table gives, for each creature, whether the habit of chapter 7 is in play af
 | `dune_mite` | No. Write: it comes off the burrower when the burrower thrashes | `boss:2`'s animal withdraws while one is up |
 | `ashen_raider` | No. Write: a fighter with a blade | One dies during `raid`. A few follow the dusk packs in (7.4) |
 | `ashen_hexer` | Yes: he stands off and throws from 13 strides | A `mana_crystal` he dropped is picked up. It was taken from a store on the way, for the fire (7.4) |
-| `siege_brute` | No. Write: the biggest of them, slow, hard to knock back | One comes up after half of a march's count is met. He comes late (7.4) |
+| `siege_brute` | No. Write: the biggest of them, slow, hard to knock back | One comes up on a march after half its fighters have come up (D.2). He comes late (7.4). Nothing here counts the dead |
 | the nine on a totem | No. Write: it stays by the hand that carries its food and goes for feeders | The bearer falls while one of that look is out. It is gone when the bearer goes down (7.5) |
 
 `eight.once`, one event each: `b_colossus`, it charges a player who stands behind one of the six oaks; `b_maw`, a `dune_mite` is on the floor before the animal comes up; `b_warden`, it is killed while `gloomshade` it drew are still up; `b_sporemother`, a `sporeling` forms where a piece of cap landed; `b_regent`, the bait is laid within sight of a player holding a `storm_plume`; `b_luminarch`, a `shardling` forms on the floor at the last change; `b_hart`, it goes back down at dawn (C, row 11); `b_sovereign`, a player stands on the base after the kill.
 
-Bestiary entries for the three fighters are entries about people. They say what was seen and what a fallen fighter carried. They never count anyone (rule 12).
+Bestiary entries for the three fighters are entries about people. They say what was seen and what a fallen fighter carried. They never count anyone (rule 12), and no step of theirs opens on a count of their dead (D.2).
 
 ### D.4 The codex: subjects, steps, and what opens each
 
@@ -492,7 +493,7 @@ Before it, a dark night is a night like another. After it, the deep kind is on t
 | The ground | `moonspawn` on the ground and `lunar_howler` in the air on every dark night, about twenty hostile things near a person where there were fourteen. At dawn the sun undoes every one still up, the fliers too | in play; the fliers by step 4 (C, row 10) |
 | The ground | No `raid` falls on the dark night | in play |
 | The ground | The first gate, wherever the crew raises it. A bed marks nothing on the far side | in play |
-| The villages | The householder at the well is indoors on the dark night and says so (`walker.say:dark`) | step 4 (C, row 18) |
+| The villages | The householder met at the well at dusk holds a house through the night, as on any night, and on the dark night says so (`walker.say:dark`) | step 4 (C, row 18) |
 | The crew's houses | Posak moves in. Every townsperson has a line for the first trade after the kill (`folk.stage:<who>.3`) and lines for the dark night (`folk.dark`). In their mouths the peopls broke a seal (4.11). No banner says it | step 4, text |
 | The text | The banner for the night says the moon is dark, which is what is seen. The born's belief that it is hollow is in `codex.born` of `ground:moon` and in Desik's lines | step 4, text |
 | The text | `eight.loss:b_warden` opens at the first dawn after the first dark night: what the crew saw, in its own words | step 4 (D) |
@@ -699,7 +700,7 @@ Every name shown comes from `names.json`. This plan adds things with no name the
 
 1. Writers start now, from `text/README.md`. Nothing they write waits on a builder, except that `beast.habit` and `beast.once` follow D.3 as written.
 2. After the multiplayer merge, builders take C.1 first: nine changes, each with its test.
-3. Then A and B, which touch only `src/world/gen/` and the block and item tables. Run `surfaces.mjs` after the tables change: the eight blocks and two items move from its `PLANNED` lists to the source, and it stops until they are moved.
-4. Then D and the text loader: one module that reads the six files, looked up by `"<surface>:<key>"`, replacing the literals at the `file` and `line` each entry gives. A tooltip prints a piece's numbers from its `stats`, with the names of `stat`; the descriptions carry none, where today a trinket's description is its numbers.
+3. Then A and B, which touch only `src/world/gen/` and the block and item tables. Run `surfaces.mjs` after the tables change: the eight blocks and two items move from its `PLANNED` lists to the source, and it stops until they are moved. `guest_bed_held` needs no move: once the block table has it, the script folds it into the entry of `guest_bed`.
+4. Then D and the text loader: one module that reads the six files, looked up by `"<surface>:<key>"`, replacing the literals at the `file` and `line` each entry gives. A tooltip prints a piece's numbers from its `stats`, with the names of `stat`; the descriptions carry none, where today a trinket's description is its numbers. Three joins in code put on screen a glyph the font lacks, and the loader replaces them: `src/ui/windows.ts:584` joins the click hints with a middle dot, and `src/data/sources.ts:30` joins the two sources of an item with one (`tip:src.*`); both join with a comma and a space. `src/ui/windows.ts:624` writes a multiplication sign between a count and an ingredient, which `tip:needs_n` replaces. The same holds for every other literal of `_surfaces.json` whose `now` has a middle dot: the code that joins it writes a comma.
 5. Then C.2's step 4 rows and F.
 6. `surfaces.mjs --check` and `textlint.mjs` run with the other checks of the build.

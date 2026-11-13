@@ -1,7 +1,7 @@
 {
  "folk.why:wayfinder": "Moves into any room made ready for a holder.",
  "folk.why:provisioner": "Comes on word that one of us carries more coin than our hearths use.",
- "folk.why:smith": "An anvil brings her. Whoever works iron will want harder ore.",
+ "folk.why:smith": "Comes on word of an anvil. Whoever works iron will want harder ore.",
  "folk.why:apothecary": "Wants the fresh remains of Vanahar, and comes once it is dead.",
  "folk.why:tinker": "Has never seen a Joining Bench at work, and comes to ours.",
  "folk.why:runescribe": "A Line Frame brings this one. It means crystal out of the deep rock.",
@@ -492,7 +492,7 @@
  "folk.extra:wayfinder.next": "{said}",
 
  "walker.say:dusk": [
-  "I sit at this well tonight, peopl. Nothing comes up near my pot, if you want to stay close.",
+  "I sit at this well until dark, peopl. Then I take my pot into the nearest house and hold it.",
   "The crate in the end house has food in it. Fill it again when you pass.",
   "I walk by day and sit down wherever dusk finds me.",
   "Two pots this close would bring a pack, so I am the only one here.",

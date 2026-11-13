@@ -377,6 +377,9 @@ const SIGHT_BY_CREW = new Set(['stonegnawer', 'cave_skitter', 'rustbound', 'spor
 // ---- blocks: one entry for each block a player can hold or look up; states of one block share an entry ----
 const BLOCK_STATE = { furnace_lit: 'furnace', berry_bush_empty: 'berry_bush', hollow_portal: 'hollow_frame', rift_portal: 'rift_frame' };
 for (let n = 1; n <= 7; n++) BLOCK_STATE['water' + n] = 'water';
+// A state plan.md adds (C, row 17). It shares the entry of its block once the block table has it.
+const PLANNED_STATES = { guest_bed_held: 'guest_bed' };
+for (const [k, v] of Object.entries(PLANNED_STATES)) if (blockKeys.has(k)) BLOCK_STATE[k] = v;
 const DOORS = ['door_x', 'door_z', 'door_x_open', 'door_z_open'];
 const NEVER_SHOWN = new Map([['block:air', 'air is never named or described']]);
 for (const b of blocks) {
