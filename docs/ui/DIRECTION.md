@@ -725,6 +725,8 @@ The hover changes the floor under the icon and nothing else. It does not tint th
 
 **A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: its icon is drawn flat in `root.4`, so its outline still reads, and the lock of a locked slot stands over the cell's bottom right corner at 10, 10, where the count would be; no count is written. A half wash of `root.0` over the whole icon was tried first: on the dark floor a washed icon differed from a makeable one only a little in brightness. A cell of the list is sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.1`, `root.2` under the pointer.
 
+**The pattern laid out**, the one whose pieces now lie on the grid, is chosen in its list as a row is: its cell's floor is `root.3` and a frame of `root.4` one unit inside its 18 stands round the icon. It is not framed in `salt`, which says where the keys are; while the keys are on it the salt frame stands in place of the grey.
+
 **The large slot**, 26 by 26, for the result of a station. Floor 24 by 24; the icon at 5, 5.
 
 ```

@@ -153,7 +153,7 @@ function patternTip(h: Hand, p: Pattern, here: boolean, station: Station): Retur
  * A cell of the pattern list, sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its
  * bottom and right, a floor of the well's own `root.1`, or `root.2` under the pointer.
  */
-function paintCell(s: Surface, hover: boolean, empty = false): void {
+function paintCell(s: Surface, hover: boolean, empty = false, chosen = false): void {
   s.fill(0, 0, 17, 1, 'root.0');
   s.fill(0, 1, 1, 16, 'root.0');
   // An empty cell keeps a dimmer lower edge, so the filled cells stand forward of the page's empty places.
@@ -161,7 +161,7 @@ function paintCell(s: Surface, hover: boolean, empty = false): void {
   s.fill(17, 1, 1, 16, empty ? 'root.2' : 'root.3');
   s.fill(17, 0, 1, 1, 'root.1');
   s.fill(0, 17, 1, 1, 'root.1');
-  s.fill(1, 1, 16, 16, hover ? 'root.2' : 'root.1');
+  s.fill(1, 1, 16, 16, chosen ? 'root.3' : hover ? 'root.2' : 'root.1');
 }
 
 /** The cells of the patterns in a dark well, five to a row, moving by whole rows, with a track when they do not fit. */
@@ -174,6 +174,8 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
   const maxTop = Math.max(0, rows - visible);
   const top = Math.min(maxTop, Math.max(0, ui.scroll(sid)));
   const setTop = (v: number) => ui.setScroll(sid, Math.min(maxTop, Math.max(0, v)));
+  // The pattern the grid now holds is chosen: a lighter floor in a root.4 frame, since a salt frame means the keys.
+  const laid = here && o.grid ? gridMatch(b.hand, o.grid) : null;
   const kids: Node[] = list.map((p, i): Node => {
     const r = Math.floor(i / cols) - top, c = i % cols;
     const id = `${o.id}.cell.${p.out}`;
@@ -183,7 +185,8 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
       id, x: c * 18, y: r * 18, w: 18, h: 18, takes: true, focus: true,
       anim: b.refused(id),
       paint: (s, live) => {
-        paintCell(s, live.hover);
+        paintCell(s, live.hover, false, p === laid);
+        if (p === laid && !live.focus) ring(s, 1, 1, 16, 16, 'root.4');
         if (b.refused(id)) ring(s, 1, 1, 16, 16, 'blood');
         else if (live.focus) ring(s, 1, 1, 16, 16, 'salt');
         // A pattern the pack cannot afford is flat in root.4 with the lock where its count would stand: under a half
