@@ -190,7 +190,7 @@ Three rules follow and are used everywhere below.
 | --- | --- |
 | Container windows (pack, chest, stations, shop), book screens, tree, map, settings | Centred on the screen: `x = floor((Vw - w) / 2)`, `y = floor((Vh - h) / 2)`. Tabs above or to the left are not counted in `w` and `h`. The world behind is dimmed |
 | Title, worlds, new world, join, loading | The ground tile over the whole screen; content in a column 200 wide centred on x; y measured from the top of a block 240 tall that is centred on the screen |
-| Pause | A clay slab 216 by 144 centred over the dimmed world, its buttons in the same column |
+| Pause | A clay slab 216 by 146 centred over the dimmed world, its buttons in the same column |
 | The fall | The same column over the washed world |
 | HUD, bottom centre | Hotbar, practice strip, pips, level, name of the thing in hand: centred on the stage, measured up from its bottom edge |
 | HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at and the prompt 6 under it: centred on the stage, measured down from its top edge |
@@ -3132,7 +3132,7 @@ Size 427 by 240. Material: ground tile over the whole screen. Anchor: the whole 
 - **Shows.** The mark and four doors. No subtitle, no picture behind, no news.
 - **Clickable.** The four buttons.
 - **Keys.** Up and Down move the focus, Enter presses, W opens Worlds, J the join screen.
-- **First.** Focus drawn on "Worlds" (salt outline).
+- **First.** Focus on "Worlds", drawn (salt outline) once a key is pressed.
 
 ### World list
 
@@ -3331,7 +3331,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 ### Pause
 
-Size 427 by 240. Material: a clay slab 216 by 144 over the world under a half of `root.0`, the dim behind any window. Anchor: the slab centred on the screen.
+Size 427 by 240. Material: a clay slab 216 by 146 over the world under a half of `root.0`, the dim behind any window. Anchor: the slab centred on the screen.
 
 ```
 +==============================================================================================================================================+
@@ -3380,19 +3380,19 @@ Size 427 by 240. Material: a clay slab 216 by 144 over the world under a half of
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| S0 | slab | 105 | 48 | 216 | 144 | clay; title at 8, 6: "Paused", on a server "Menu", since the world goes on |
-| Z1 | text | 113 | 54 | 200 | 9 | the title, ink, no shadow (5.3) |
-| Z2 | text | 113 | 66 | 200 | 9 | the world's name, ink.faded |
-| Z3 | text | 113 | 76 | 200 | 9 | one line: "Saved", "Saving" in ink.faded, or why not in blood.dk; on a server, where it is and who is on, in ink.faded: "spark.local:8420, 8 of 8 here" |
-| Z4 | button | 113 | 90 | 200 | 20 | "Back to the game" |
-| Z5 | button | 113 | 114 | 200 | 20 | "Settings" |
-| Z6 | button | 113 | 138 | 200 | 20 | "Controls" |
-| Z7 | button | 113 | 162 | 200 | 20 | "Save and leave"; on a server "Leave" |
+| S0 | slab | 105 | 47 | 216 | 146 | clay; title at 8, 6: "Paused", on a server "Paused (the world runs on)": the same word, and why the world does not stop. With no Z3 line the slab is 10 shorter |
+| Z1 | text | 113 | 53 | 200 | 10 | the title, ink, no shadow (5.3) |
+| Z2 | text | 113 | 65 | 200 | 10 | the world's name, ink.faded |
+| Z3 | text | 113 | 75 | 200 | 10 | one line: "Saved", "Saving" in ink.faded, or why not in blood.dk; on a server, where it is and who is on, in ink.faded: "spark.local:8420, 8 of 8 here" |
+| Z4 | button | 113 | 93 | 200 | 20 | "Back to the game", 8 under the last line's cell; the buttons stand 4 apart and the last 8 over the slab's foot, as the sides are 8 |
+| Z5 | button | 113 | 117 | 200 | 20 | "Settings" |
+| Z6 | button | 113 | 141 | 200 | 20 | "Controls" |
+| Z7 | button | 113 | 165 | 200 | 20 | "Save and leave"; on a server "Leave" |
 
 - **Shows.** One clay slab titled like any window, the world and whether it is saved written on it at the top left, and four buttons in a column inside it. Not a bare column of buttons with grey lines centred over it.
 - **Clickable.** The buttons.
 - **Keys.** Esc goes back to the game. Up, Down, Enter.
-- **First.** Focus on "Back to the game".
+- **First.** Focus on "Back to the game", not drawn until a key moves it: a frame on open reads as a hovered button.
 
 ### Settings
 
@@ -3669,7 +3669,7 @@ A key is an item and lies in the pack; its empty place in a door's prompt uses t
 
 Spreading a held stack evenly by dragging with the left button is wanted and needs one new op; it is not drawn until then. When a window closes, what is held and what lies on a grid goes back to the pack.
 
-**Focus.** The pointer and the keys are equals. Tab and Shift-Tab walk the parts that take focus in reading order: within a slab from the top left, row by row; across slabs the main slab, then the right panel, then the left. The arrow keys move inside a grid or a list. Enter and Space press. Esc closes the topmost screen. Focus is drawn (a `salt` outline on a button, a `salt` frame inside a slot, a field, a row or a checkbox) only after a key has moved it, and stops being drawn when the pointer moves.
+**Focus.** The pointer and the keys are equals. Tab and Shift-Tab walk the parts that take focus in reading order: within a slab from the top left, row by row; across slabs the main slab, then the right panel, then the left. The arrow keys move inside a grid or a list. Enter and Space press. Esc closes the topmost screen. Focus is drawn (a `salt` outline on a button, a `salt` frame inside a slot, a field, a row or a checkbox) only after a key has moved it, and stops being drawn when the pointer moves. The focus a screen gives on opening (its "First") is not drawn: the first Tab or arrow key shows it where it stands rather than moving it on. A field given focus shows its caret at once.
 
 **Scrolling.** A list moves by whole rows. One notch of the wheel is one row. Dragging the thumb snaps to rows. A press on the track above or below the thumb moves one page. Moving focus to a row outside the well scrolls it into the well. The field of the tree and the chart pan by whole units.
 

@@ -14,11 +14,14 @@ export function go(name: string): void {
   location.search = p.toString();
 }
 
-/** Focus drawn on one part when a screen first opens, as its table's "First" line asks. */
+/**
+ * The part a screen's table names as "First" takes the focus when the screen first opens, but its frame is not drawn
+ * until a key moves it (section 7): a frame on open reads as a hovered button.
+ */
 export function firstFocus(ui: Ui, key: string, id: string | null): void {
   if (opened.has(key)) return;
   opened.add(key);
-  ui.focusOn(id, true);
+  ui.focusOn(id, false);
 }
 const opened = new Set<string>();
 

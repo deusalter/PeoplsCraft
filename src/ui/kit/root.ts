@@ -541,6 +541,8 @@ export class Root implements Ui {
 
   private useKey(k: KeyEv): boolean {
     const f = this.byId(this.focusId);
+    // Focus given on open is not drawn; the first Tab or arrow shows where it stands instead of moving it on.
+    if (f && !this.focusVisible && !f.n.field && (k.key === 'Tab' || k.key.startsWith('Arrow'))) { this.focusVisible = true; return true; }
     if (k.key === 'Tab') { this.walkFocus(k.shift ? -1 : 1); return true; }
     if (this.offer(f, k)) return true;
     if (this.hover && !this.same(this.hover, f) && this.offer(this.hover, k)) return true;

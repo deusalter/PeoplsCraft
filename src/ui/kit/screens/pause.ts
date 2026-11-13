@@ -10,7 +10,7 @@ import type { NamedScreen } from './index';
 
 export interface PauseView {
   world: string;
-  /** On a server the world goes on: the heading is "Menu" and the last door "Leave". */
+  /** On a server the world goes on: the heading says so and the last door is "Leave". */
   server: boolean;
   /** "Saved", "Saving", or why not, which is said in blood. */
   saved?: { text: string; ok: boolean };
@@ -24,18 +24,21 @@ export interface PauseView {
 
 export const pauseScreen: Screen<PauseView> = (v, ui) => {
   firstFocus(ui, 'pause', 'pause.back');
-  const W = 216, H = 144, X = 113 - 8, Y = 48;
+  // The lines end 10 under their cell's top; the buttons stand 8 under the last line, 4 apart, and 8 over the foot.
+  const second = v.crew ?? v.saved;
+  const top = (second ? 28 : 18) + 10 + 8;
+  const W = 216, H = top + 4 * 24 - 4 + 8, X = 113 - 8, Y = Math.floor((240 - H) / 2);
   const kids: Node[] = [
     line({ x: 8, y: 18, w: W - 16, text: v.world, c: 'ink.faded', shadow: false }),
-    button({ id: 'pause.back', x: 8, y: 42, w: 200, label: 'Back to the game', onPress: v.onBack }),
-    button({ id: 'pause.settings', x: 8, y: 66, w: 200, label: 'Settings', onPress: v.onSettings }),
-    button({ id: 'pause.controls', x: 8, y: 90, w: 200, label: 'Controls', onPress: v.onControls }),
-    button({ id: 'pause.leave', x: 8, y: 114, w: 200, label: v.server ? 'Leave' : 'Save and leave', onPress: v.onLeave }),
+    button({ id: 'pause.back', x: 8, y: top, w: 200, label: 'Back to the game', onPress: v.onBack }),
+    button({ id: 'pause.settings', x: 8, y: top + 24, w: 200, label: 'Settings', onPress: v.onSettings }),
+    button({ id: 'pause.controls', x: 8, y: top + 48, w: 200, label: 'Controls', onPress: v.onControls }),
+    button({ id: 'pause.leave', x: 8, y: top + 72, w: 200, label: v.server ? 'Leave' : 'Save and leave', onPress: v.onLeave }),
   ];
   if (v.crew) kids.push(line({ x: 8, y: 28, w: W - 16, text: `${v.crew.address}, ${v.crew.here} of ${v.crew.seats} here`, c: 'ink.faded', shadow: false }));
   if (v.saved) kids.push(line({ x: 8, y: 28, w: W - 16, text: v.saved.text, c: v.saved.ok ? 'ink.faded' : 'blood.dk', shadow: false }));
   return washedMenu(ui, 'pause', { c: 'root.0', quarters: 2 }, [
-    slab({ x: X, y: Y, w: W, h: H, ramp: 'clay', title: v.server ? 'Menu' : 'Paused', kids }),
+    slab({ x: X, y: Y, w: W, h: H, ramp: 'clay', title: v.server ? 'Paused (the world runs on)' : 'Paused', kids }),
   ], {
     on: { key: (e) => { if (e.key === 'Escape') { v.onBack(); return true; } } },
   });
