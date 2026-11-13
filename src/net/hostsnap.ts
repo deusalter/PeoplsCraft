@@ -47,7 +47,7 @@ export class SnapService implements Sink {
   /** A connection bound to its player: nothing it was told before counts any more (4.2, `bind`). */
   attach(c: Conn, p: SimPlayer): void {
     this.detach(c);
-    const known = new Interest();
+    const known = new Interest(this.sim.opt.solo);
     known.reset(p.dim);
     this.links.push({ c, p, state: [], fx: [], fxDim: [], known });
   }
@@ -77,7 +77,8 @@ export class SnapService implements Sink {
       else if ('p' in to) { if (p.slot !== to.p) continue; }
       else {
         if (p.dim !== to.dim || p.slot === to.not) continue;
-        if ('r' in to) { const b = p.body; if ((b.x - to.x) ** 2 + (b.y - to.y) ** 2 + (b.z - to.z) ** 2 > to.r * to.r) continue; }
+        // a solo world plays its positional fx from anywhere in the realm, as the game did before the wire (D21 (e))
+        if ('r' in to && !this.sim.opt.solo) { const b = p.body; if ((b.x - to.x) ** 2 + (b.y - to.y) ** 2 + (b.z - to.z) ** 2 > to.r * to.r) continue; }
       }
       this.sync(l);
       fn(l);

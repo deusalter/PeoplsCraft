@@ -28,6 +28,15 @@ export class Interest {
   /** Drop ids this connection was sent a `da` for and no `dd` yet. */
   readonly drops = new Set<number>();
   private next = new Set<number>();
+  // a solo world draws its whole realm, as the game did before the wire: no link to spare there
+  private readonly mobR: number; private readonly mobOut: number; private readonly bossR: number;
+  private readonly dropR: number; private readonly dropOut: number; private readonly projR: number;
+
+  /** `solo`: no radius applies, only the realm. */
+  constructor(solo = false) {
+    const r = (v: number): number => (solo ? Infinity : v);
+    this.mobR = r(MOB_R); this.mobOut = r(MOB_R_OUT); this.bossR = r(BOSS_R); this.dropR = r(DROP_R); this.dropOut = r(DROP_R_OUT); this.projR = r(PROJ_R);
+  }
 
   reset(dim: number): void { this.dim = dim; this.mobs.clear(); this.projs.clear(); this.drops.clear(); }
 
@@ -39,7 +48,7 @@ export class Interest {
     for (let i = 0; i < realm.mobs.hi; i++) {
       const m = l[i];
       if (!m.active || Math.abs(m.x - ox) > ENCODE_R || Math.abs(m.z - oz) > ENCODE_R) continue;
-      const r = m.boss ? BOSS_R : known.has(m.id) ? MOB_R_OUT : MOB_R;
+      const r = m.boss ? this.bossR : known.has(m.id) ? this.mobOut : this.mobR;
       if ((m.def.ai === 'minion' && m.owner === p.id) || within(m.x, m.z, b.x, b.z, r)) { out.push(m); next.add(m.id); }
     }
     this.next = known; this.mobs = next;
@@ -56,7 +65,7 @@ export class Interest {
 
   /** A `ps` that the scope lets this connection hear. `shooter`: it is the shooter's own, which it hears from anywhere. */
   takePs(id: number, x: number, z: number, p: SimPlayer, shooter: boolean): boolean {
-    if (this.projs.has(id) || (!shooter && !within(x, z, p.body.x, p.body.z, PROJ_R))) return false;
+    if (this.projs.has(id) || (!shooter && !within(x, z, p.body.x, p.body.z, this.projR))) return false;
     this.projs.add(id);
     return true;
   }
@@ -64,7 +73,7 @@ export class Interest {
   takePe(id: number): boolean { return this.projs.delete(id); }
   /** A `da` that the scope lets this connection hear. */
   takeDa(id: number, x: number, z: number, p: SimPlayer): boolean {
-    if (this.drops.has(id) || !within(x, z, p.body.x, p.body.z, DROP_R)) return false;
+    if (this.drops.has(id) || !within(x, z, p.body.x, p.body.z, this.dropR)) return false;
     this.drops.add(id);
     return true;
   }
@@ -85,7 +94,7 @@ export class Interest {
       const q = pl[i];
       if (!q.active) continue;
       if (projs.has(q.id)) live.add(q.id);
-      else if (within(q.x, q.z, b.x, b.z, PROJ_R)) { live.add(q.id); out.push(psOf(q, q.by === p.id)); }
+      else if (within(q.x, q.z, b.x, b.z, this.projR)) { live.add(q.id); out.push(psOf(q, q.by === p.id)); }
     }
     projs.clear(); for (const id of live) projs.add(id);
     live.clear();
@@ -94,8 +103,8 @@ export class Interest {
       if (!d.active) continue;
       const mine = !d.owner || d.owner === p.id;
       if (drops.has(d.id)) {
-        if (mine && within(d.x, d.z, b.x, b.z, DROP_R_OUT)) live.add(d.id); else out.push(['dd', d.id, 0]);
-      } else if (mine && within(d.x, d.z, b.x, b.z, DROP_R)) { live.add(d.id); out.push(daOf(d)); }
+        if (mine && within(d.x, d.z, b.x, b.z, this.dropOut)) live.add(d.id); else out.push(['dd', d.id, 0]);
+      } else if (mine && within(d.x, d.z, b.x, b.z, this.dropR)) { live.add(d.id); out.push(daOf(d)); }
     }
     drops.clear(); for (const id of live) drops.add(id);
     live.clear();

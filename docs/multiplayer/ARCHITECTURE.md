@@ -3556,6 +3556,19 @@ and that open closes its own handle. `storageReady` (`storage/idb.ts`) shows the
 on the loading screen, waits for `through` and tries again, so the menu opens with every world once the other tab
 is gone. A database of a newer build (`'version'`) is not waited for: the menu says that its worlds were saved by
 a newer version, where it said the browser blocks storage.
+(m) A solo world plays positional fx from anywhere in the player's realm (D21 (e), 6.4 "fx by scope"). The host
+held every `{dim, x, y, z, r}` scope to its radius, so a damage number on a creature shot from 40 blocks
+(`FLOAT_R` 32), the death burst of a boss killed from 70 (`BURST_R` 64) and the smoke of a forge 20 away
+(`SMOKE_R` 16) were dropped, where the game before the wire drew them all. `SnapService` now ignores the radius
+when `SimOptions.solo` is set; the realm and `not` still apply. A positional sound is silent past 34 blocks in
+`audio.play` either way. On a server every radius applies as the scopes give it.
+(n) A solo world tells its connection of every creature, drop and shot of the realm (6.4). `Interest` takes
+`solo`, under which `MOB_R`, `MOB_R_OUT`, `BOSS_R`, `DROP_R`, `DROP_R_OUT` and `PROJ_R` are infinite: a
+creature 90 blocks off (creatures live to 110) vanished at 88, and the drops of a kill 55 blocks away were not
+drawn until the player came within 48, where the game before the wire showed the whole realm. The radii are
+there to bound the bytes a link carries; the in-page loopback carries none, and a snapshot still holds at most
+the creature pool of 320 within `ENCODE_R`. Own minions, owned drops and the realm rule are unchanged, and a
+server keeps the table of 6.4 as written.
 
 ---
 

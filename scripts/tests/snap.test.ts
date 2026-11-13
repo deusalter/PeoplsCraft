@@ -79,11 +79,11 @@ const welcome = (slot: number, tick: number, dim = 0): S2C => ({ t: 'welcome', p
 interface Host { sim: Sim; store: Flat; snap: SnapService; links: { p: SimPlayer; c: Conn; cl: Client }[]; add(id: string, x: number, z: number): { p: SimPlayer; c: Conn; cl: Client };
   /** Run the five flush calls' three of this service for every connection at the current tick, then pump each client. */
   flush(): void; until(every: number, link: { c: Conn }): void }
-function host(): Host {
+function host(solo = false): Host {
   const store = new Flat();
   let snap: SnapService;
   const sink: Sink = { emit: (to, e) => snap.emit(to, e), send: (s, m) => snap.send(s, m), broadcast: (m) => snap.broadcast(m) };
-  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => {} });
+  const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: solo ? 1 : 8, solo, manual: true }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => {} });
   snap = new SnapService(sim);
   const h: Host = {
     sim, store, snap, links: [],
@@ -271,6 +271,25 @@ test('drop interest: told within 48, told it is gone beyond 64, its owner\'s alo
   for (let i = 0; i < SWEEP_EVERY; i++) { sim.tick++; h.flush(); }
   assert.equal(A.cl.fx.filter((e) => e[0] === 'da').length, 0);
   assert.equal(Bl.cl.fx.filter((e) => e[0] === 'da').length, 1, 'told once');
+});
+
+test('a solo world culls nothing by distance: creatures, drops, shots and positional fx of the whole realm are told, as before the wire', () => {
+  const h = host(true), A = h.add('a', 0.5, 0.5), realm = h.sim.realms[0], sim = h.sim;
+  const far = realm.mobs.spawn('woolback', 105.5, GROUND, 0.5)!;
+  realm.drops.spawn(55.5, GROUND + 0.2, 0.5, { k: 'stick', n: 2 }, 0, 0, 0, 0);
+  const shot = realm.proj.fire('wardenorb', 0.5, 70, 150.5, 0, 0, 1, 5, null)!;
+  realm.floater(40.5, GROUND + 1, 0.5, '7', '#fff', false);
+  realm.burst(3, 70.5, GROUND + 1, 0.5);
+  sim.sink.emit({ dim: 0, x: 20.5, y: GROUND, z: 0.5, r: 16 }, ['p', 9, 20.5, GROUND, 0.5, 0, 0]);
+  h.until(SNAP_EVERY, A); h.flush();
+  assert.ok(decodeSnapshot(A.cl.bins.at(-1)!)!.mobs.some((m) => m.id === far.id), 'a creature 105 away');
+  assert.equal(A.cl.fx.filter((e) => e[0] === 'da').length, 1, 'a drop 55 away');
+  assert.deepEqual(A.cl.fx.filter((e) => e[0] === 'ps').map((e) => e[1]), [shot.id], 'a shot 150 away');
+  assert.equal(A.cl.fx.filter((e) => e[0] === 'f').length, 1, 'a floater 40 away');
+  assert.equal(A.cl.fx.filter((e) => e[0] === 'p').length, 2, 'a burst 70 away and forge smoke 20 away');
+  A.p.body.x = 300;
+  for (let i = 0; i < SWEEP_EVERY; i++) { sim.tick++; h.flush(); }
+  assert.equal(A.cl.fx.filter((e) => e[0] === 'dd').length, 0, 'nor is a drop let go for being far');
 });
 
 test('projectile interest: the known set, the sweep that finds a player walking into a fight, and pe only where ps went', () => {
