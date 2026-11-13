@@ -849,7 +849,7 @@ A bar, a key, a piece to rework:
 
 A button 20 tall is dressed stone, on any slab and on the ground tile: these are the buttons of the menus. The classic button is 200 by 20; half is 98 by 20 (two with a gap of 4); the worlds screen uses 136 by 20. Inside windows a small button is 12, 14 or 16 tall and as wide as its label plus 10, and it is a raised piece of the slab it stands on, in that slab's ramp (below), so that a grey stone button is never pasted on clay or timber.
 
-Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall carries tooling: three to five chisel strokes, each 2 to 4 units long and one wide, level, rising or falling, in `stone.dk` with one unit of `stone.lt` under its lower end; and about one single pit of `stone.dk` to every 25 units of width. Their places come from a hash of the button's id (or its label), so no two buttons in a column carry the same marks and no lattice forms down a stack. Strokes stand only in the bands from x 3 to 30 and from `w - 30` to `w - 3`, at least 6 units apart, and nothing is cut inside the label's box widened by 2 units. The diagrams show one such draw. Smaller buttons have no tooling. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
+Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall carries tooling, the same on every button: level cuts 3 units long and 1 tall in `stone.dk`, each with one unit of `stone.lt` under its right end, on rows 4 and 13, 12 apart, starting at x 5 on row 4 and at x 11 on row 13, the last one ending at `w - 5` or before. Nothing is cut inside the label's box widened by 2 units. Tooling placed by chance read as noise and stray pixels; a fixed course of cuts reads as a dressed face. Smaller buttons have no tooling. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
 
 Normal and hovered. Hovered: the outline turns `salt`, the light row and column `stone.hi`, the label `ember.hi`. A button with keyboard focus has the `salt` outline and keeps its `salt` label.
 
@@ -859,19 +859,19 @@ Normal and hovered. Hovered: the outline turns `salt`, the light row and column 
   0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.....WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW.
   1  KGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGJK...WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJW
   2  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzW
-  3  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJMzW
-  4  KGJJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJJMzK...WAJJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJJMzW
-  5  KGJJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJJJMzK...WAJJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJJJMzW
-  6  KGJJJJJJJJJJJJWWWWJJWJJJJJJJJJJJJJJJJJGJJJJJJMzK...WAJJJJJJJJJJJJyyyyJJyJJJJJJJJJJJJJJJJJGJJJJJJMzW
+  3  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzW
+  4  KGJJJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMMMJMzK...WAJJJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMMMJMzW
+  5  KGJJJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGJMzK...WAJJJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGJMzW
+  6  KGJJJJJJJJJJJJWWWWJJWJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJyyyyJJyJJJJJJJJJJJJJJJJJJJJJJJJMzW
   7  KGJJJJJJJJJJJJWKKKWJWKJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKKKyJyKJJJJJJJJJJJJJJJJJJJJJJJMzW
   8  KGJJJJJJJJJJJJWKJJWKWKJWWWWJJWJJJWJJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKJJyKyKJyyyyJJyJJJyJJJJJJJJJJJMzW
-  9  KGJJJJJJJJMJJJWWWWJKWKJJKKKWJWKJJWKJJJJJJJJMJMzK...WAJJJJJJJJMJJJyyyyJKyKJJKKKyJyKJJyKJJJJJJJJMJMzW
+  9  KGJJJJJJJJJJJJWWWWJKWKJJKKKWJWKJJWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyyyyJKyKJJKKKyJyKJJyKJJJJJJJJJJMzW
  10  KGJJJJJJJJJJJJWKKKKJWKJJWWWWKWKJJWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKKKKJyKJJyyyyKyKJJyKJJJJJJJJJJMzW
  11  KGJJJJJJJJJJJJWKJJJJWKJWJKKWKWKJJWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKJJJJyKJyJKKyKyKJJyKJJJJJJJJJJMzW
  12  KGJJJJJJJJJJJJWKJJJJWWJJWWWWKJWWWWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKJJJJyyJJyyyyKJyyyyKJJJJJJJJJJMzW
- 13  KGJJJJJJMJJJJJJKJJJJJKKJJKKKKJJKKWKJJJJJJJJJJMzK...WAJJJJJJMJJJJJJKJJJJJKKJJKKKKJJKKyKJJJJJJJJJJMzW
- 14  KGJJJJJJJMJJJJJJJJJJJJJJJJJJJWWWWJKJJJJJJJMMJMzK...WAJJJJJJJMJJJJJJJJJJJJJJJJJJJyyyyJKJJJJJJJMMJMzW
- 15  KGJJJJJJJGJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJGJMzK...WAJJJJJJJGJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJGJMzW
+ 13  KGJJJJJJJJJJJJJKJJJJJKKJJKKKKJJKKWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJJKJJJJJKKJJKKKKJJKKyKJJJJJJJJJJMzW
+ 14  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJWWWWJKJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJyyyyJKJJJJJJJJJJMzW
+ 15  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJJJMzW
  16  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzW
  17  KGMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMzK...WAMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMzW
  18  KJzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK...WJzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzW
@@ -879,33 +879,33 @@ Normal and hovered. Hovered: the outline turns `salt`, the light row and column 
 ```
 `. nothing  A stone.hi  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  y ember.hi  z stone.pit`
 
-Pressed and disabled. Pressed: the bevel turns over: the first row and column `stone.pit` with a row and a column of `stone.dk` inside them, the last row and column `stone.dk`, and tooling and label drop one unit. Disabled: a flat face of `stone.pit` with one row of `stone.dk` at the bottom, label `root.4` with no shadow, no tooling.
+Pressed and disabled. Pressed (held under the pointer, so the outline stays `salt` and the label `ember.hi`): the bevel turns over: the first row and column `stone.pit` with a row and a column of `stone.dk` inside them, the last row and column `stone.lt`, where the lower lip of the sunk face catches the light, and tooling and label drop one unit. So pressed never looks like focused, which keeps its raised bevel and a `salt` label. Disabled: a flat face of `stone.pit` with one row of `stone.dk` at the bottom, label `root.4` with no shadow, no tooling.
 
 ```
      0         1         2         3         4         5         6         7         8         9        
      012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678
-  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
-  1  KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzJK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
-  2  KzMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
-  3  KzMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
-  4  KzMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
-  5  KzMJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
-  6  KzMJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJJJJJMK...KzzzzzzzzzzzzzggggzzgzzzzzzzzzzzzzzzzzzzzzzzzzzK
-  7  KzMJJJJJJJJJJJWWWWJJWJJJJJJJJJJJJJJJJJGJJJJJJJMK...KzzzzzzzzzzzzzgzzzgzgzzzzzzzzzzzzzzzzzzzzzzzzzzK
-  8  KzMJJJJJJJJJJJWKKKWJWKJJJJJJJJJJJJJJJJJJJJJJJJMK...KzzzzzzzzzzzzzgzzzgzgzzggggzzgzzzgzzzzzzzzzzzzzK
-  9  KzMJJJJJJJJJJJWKJJWKWKJWWWWJJWJJJWJJJJJJJJJJJJMK...KzzzzzzzzzzzzzggggzzgzzzzzzgzgzzzgzzzzzzzzzzzzzK
- 10  KzMJJJJJJJMJJJWWWWJKWKJJKKKWJWKJJWKJJJJJJJJMJJMK...KzzzzzzzzzzzzzgzzzzzgzzzggggzgzzzgzzzzzzzzzzzzzK
- 11  KzMJJJJJJJJJJJWKKKKJWKJJWWWWKWKJJWKJJJJJJJJJJJMK...KzzzzzzzzzzzzzgzzzzzgzzgzzzgzgzzzgzzzzzzzzzzzzzK
- 12  KzMJJJJJJJJJJJWKJJJJWKJWJKKWKWKJJWKJJJJJJJJJJJMK...KzzzzzzzzzzzzzgzzzzzggzzggggzzggggzzzzzzzzzzzzzK
- 13  KzMJJJJJJJJJJJWKJJJJWWJJWWWWKJWWWWKJJJJJJJJJJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzgzzzzzzzzzzzzzK
- 14  KzMJJJJJMJJJJJJKJJJJJKKJJKKKKJJKKWKJJJJJJJJJJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzggggzzzzzzzzzzzzzzK
- 15  KzMJJJJJJMJJJJJJJJJJJJJJJJJJJWWWWJKJJJJJJJMMJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
- 16  KzMJJJJJJGJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJGJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
- 17  KzJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMK...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
- 18  KJMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMK...KMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMK
- 19  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+  0  .WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW.....KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+  1  WzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzJW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+  2  WzMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+  3  WzMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+  4  WzMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+  5  WzMJJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMMMJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+  6  WzMJJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGJJGW...KzzzzzzzzzzzzzggggzzgzzzzzzzzzzzzzzzzzzzzzzzzzzK
+  7  WzMJJJJJJJJJJJyyyyJJyJJJJJJJJJJJJJJJJJJJJJJJJJGW...KzzzzzzzzzzzzzgzzzgzgzzzzzzzzzzzzzzzzzzzzzzzzzzK
+  8  WzMJJJJJJJJJJJyKKKyJyKJJJJJJJJJJJJJJJJJJJJJJJJGW...KzzzzzzzzzzzzzgzzzgzgzzggggzzgzzzgzzzzzzzzzzzzzK
+  9  WzMJJJJJJJJJJJyKJJyKyKJyyyyJJyJJJyJJJJJJJJJJJJGW...KzzzzzzzzzzzzzggggzzgzzzzzzgzgzzzgzzzzzzzzzzzzzK
+ 10  WzMJJJJJJJJJJJyyyyJKyKJJKKKyJyKJJyKJJJJJJJJJJJGW...KzzzzzzzzzzzzzgzzzzzgzzzggggzgzzzgzzzzzzzzzzzzzK
+ 11  WzMJJJJJJJJJJJyKKKKJyKJJyyyyKyKJJyKJJJJJJJJJJJGW...KzzzzzzzzzzzzzgzzzzzgzzgzzzgzgzzzgzzzzzzzzzzzzzK
+ 12  WzMJJJJJJJJJJJyKJJJJyKJyJKKyKyKJJyKJJJJJJJJJJJGW...KzzzzzzzzzzzzzgzzzzzggzzggggzzggggzzzzzzzzzzzzzK
+ 13  WzMJJJJJJJJJJJyKJJJJyyJJyyyyKJyyyyKJJJJJJJJJJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzgzzzzzzzzzzzzzK
+ 14  WzMJJJJJJJJJJJJKJJJJJKKJJKKKKJJKKyKJJJJJJJJJJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzggggzzzzzzzzzzzzzzK
+ 15  WzMJJJJJJJJJJJJJJJJJJJJJJJJJJyyyyJKJJJJJJJJJJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+ 16  WzMJJJJJJJJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJJJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+ 17  WzJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGW...KzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK
+ 18  WJGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGW...KMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMK
+ 19  .WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW.....KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
-`. nothing  g root.4  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
+`. nothing  g root.4  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  y ember.hi  z stone.pit`
 
 Small buttons in stone, 12, 14 and 16 tall, and the 12 by 12 "+" (on a column of rows 12 apart the "+" is 11 by 11, so that a unit stays clear between two):
 

@@ -20,60 +20,18 @@ export interface ButtonOpts {
   tip?: (live: Live) => Tip | null;
 }
 
-type Mark = readonly (readonly [number, number])[];
-
-// Chisel strokes 2 to 4 long at four angles; the last unit of each is its lower end.
-const STROKES: readonly Mark[] = [
-  [[0, 0], [1, 0]], [[0, 0], [1, 0], [2, 0]], [[0, 0], [1, 0], [2, 0], [3, 0]],
-  [[2, 0], [1, 1], [0, 2]], [[3, 0], [2, 0], [1, 1], [0, 1]], [[1, 0], [0, 1]],
-  [[0, 0], [1, 1], [2, 2]], [[0, 0], [1, 0], [2, 1], [3, 1]], [[0, 0], [1, 1]],
-];
-
-function hash(str: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
-
 /**
- * The tooling of a face 20 tall: three to five chisel strokes in `stone.dk`, each with a `stone.lt` unit under its
- * lower end, placed from the button's own key so that no two buttons in a column carry the same marks. They stand
- * only in the bands 3 to 30 units in from either end, at least 6 apart, and never inside the label's box widened by 2;
- * a few single pits are scattered over the rest of the face.
+ * The tooling of a face 20 tall, the same on every button: level cuts 3 long in `stone.dk` with a `stone.lt` unit
+ * under the right end of each, on rows 4 and 13, 12 apart, the lower row set 6 along from the upper. None is cut
+ * inside the label's box widened by 2.
  */
-function tooling(s: Surface, w: number, h: number, key: string, box: [number, number, number, number], drop: number): void {
-  let seed = hash(key) || 1;
-  const rnd = (n: number): number => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; seed >>>= 0; return seed % n; };
-  const want = 3 + rnd(3);
-  const placed: [number, number][] = [];
-  let marks = 0;
-  const bands = [[3, Math.min(30, w - 3)], [Math.max(3, w - 30), w - 3]];
-  for (let tries = 0; tries < 80 && marks < want; tries++) {
-    const mark = STROKES[rnd(STROKES.length)];
-    const band = bands[marks % 2];
-    const x0 = band[0] + rnd(Math.max(1, band[1] - band[0] - 3));
-    const y0 = 3 + rnd(h - 10);
-    const units = mark.map(([dx, dy]) => [x0 + dx, y0 + dy] as [number, number]);
-    const [lx, ly] = units[units.length - 1];
-    const all = [...units, [lx, ly + 1] as [number, number]];
-    const fits = all.every(([x, y]) => x >= 3 && x <= w - 4 && y >= 3 && y <= h - 4
-      && !(x >= box[0] && x < box[0] + box[2] && y >= box[1] && y < box[1] + box[3]));
-    const clear = placed.every(([px, py]) => all.every(([x, y]) => Math.max(Math.abs(x - px), Math.abs(y - py)) >= 6));
-    if (!fits || !clear) continue;
-    for (const [x, y] of units) s.fill(x, y + drop, 1, 1, 'stone.dk');
-    s.fill(lx, ly + 1 + drop, 1, 1, 'stone.lt');
-    for (const u of all) placed.push(u);
-    marks++;
-  }
-  // Single pits anywhere on the face, about one to every 25 units, clear of the strokes and the label.
-  const pits = Math.floor(w / 25);
-  for (let n = 0, tries = 0; n < pits && tries < 60; tries++) {
-    const x = 3 + rnd(w - 6), y = 3 + rnd(h - 7);
-    if (x >= box[0] && x < box[0] + box[2] && y >= box[1] && y < box[1] + box[3]) continue;
-    if (!placed.every(([px, py]) => Math.max(Math.abs(x - px), Math.abs(y - py)) >= 4)) continue;
-    s.fill(x, y + drop, 1, 1, 'stone.dk');
-    placed.push([x, y]);
-    n++;
+function tooling(s: Surface, w: number, box: [number, number, number, number], drop: number): void {
+  for (const [y, x0] of [[4, 5], [13, 11]] as const) {
+    for (let x = x0; x + 2 <= w - 5; x += 12) {
+      if (x + 3 > box[0] && x < box[0] + box[2]) continue;
+      s.fill(x, y + drop, 3, 1, 'stone.dk');
+      s.fill(x + 2, y + 1 + drop, 1, 1, 'stone.lt');
+    }
   }
 }
 
@@ -124,7 +82,7 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
  * Paints a button at the origin (5.6): dressed stone on menus and the ground tile, or, given the ramp of the slab it
  * stands on, a small button of that slab.
  */
-export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, key = label, ramp?: Ramp): void {
+export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, ramp?: Ramp): void {
   if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp); return; }
   const hot = !disabled && (live.hover || live.focus);
   const pressed = !disabled && live.down && live.hover;
@@ -136,7 +94,9 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
     s.fill(1, h - 2, w - 2, 1, 'stone.dk');
     text = 'root.4'; shadow = false;
   } else if (pressed) {
-    bevel(s, w, h, 'stone.pit', 'stone.dk', 'stone.sh', 'stone.dk', null);
+    // Sunk: shade under the top lip, the light caught on the lower one, the label still lit as hovered.
+    bevel(s, w, h, 'stone.pit', 'stone.dk', 'stone.sh', 'stone.lt', null);
+    text = 'ember.hi';
     drop = 1;
   } else {
     bevel(s, w, h, live.hover ? 'stone.hi' : 'stone.lt', null, 'stone.sh', 'stone.dk', 'stone.pit');
@@ -144,7 +104,7 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
   }
   const t = cut(label, w - 4);
   const tx = centreX(t, 0, w), ty = Math.floor((h - 9) / 2);
-  if (tall && !disabled) tooling(s, w, h, key, [tx - 2, ty - 2, measure(t) + 5, 14], drop);
+  if (tall && !disabled) tooling(s, w, [tx - 2, ty - 2, measure(t) + 5, 14], drop);
   s.text(t, tx, ty + drop, text, shadow);
 }
 
@@ -155,7 +115,7 @@ export function button(o: ButtonOpts): Node {
     id: o.id, x: o.x, y: o.y, w: o.w, h,
     focus: !o.disabled,
     takes: true,
-    paint: (s, live) => paintButton(s, o.w, h, o.label, lv(live, o.force), o.disabled, o.id ?? o.label, o.ramp),
+    paint: (s, live) => paintButton(s, o.w, h, o.label, lv(live, o.force), o.disabled, o.ramp),
     tip: o.tip,
     on: o.disabled ? undefined : { click: () => o.onPress?.() },
   };
@@ -184,7 +144,7 @@ export function iconButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'> & { size?: n
     takes: true,
     paint: (s, live) => {
       const l = lv(live, o.force);
-      paintButton(s, n, n, '', l, o.disabled, '', o.ramp);
+      paintButton(s, n, n, '', l, o.disabled, o.ramp);
       const drop = !o.disabled && l.down && l.hover ? 1 : 0;
       const x = Math.floor((n - o.mark.w) / 2), y = Math.floor((n - 2 - o.mark.h) / 2) + drop;
       s.map(o.mark, x, y);
