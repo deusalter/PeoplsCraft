@@ -198,7 +198,7 @@ Three rules follow and are used everywhere below.
 | HUD, centre | Crosshair |
 | Above everything | The tooltip, then the held stack, then the pointer |
 
-**Icon size.** The interface is designed for item icons of 16 by 16 units, one icon pixel to the unit, and never draws an icon at another size. The large result slot holds a 16 by 16 icon in a 24 by 24 floor. Until the icons are redrawn by hand, the game hands the kit a 16 by 16 reading of each present 32 by 32 icon (the top left pixel of every 2 by 2 block).
+**Icon size.** The interface is designed for item icons of 16 by 16 units, one icon pixel to the unit, and never draws an icon at another size. The large result slot holds a 16 by 16 icon in a 24 by 24 floor. Until the icons are redrawn by hand, the game hands the kit a 16 by 16 reading of each present 32 by 32 icon (the top left pixel of every 2 by 2 block). Every icon the kit draws for itself is its own silhouette, outlined in `root.0` and lit from the top left: no two things share an outline, and no thing is another's picture in other tones. A dozen things drawn as one shaded ball in a dozen colours, and every bar as one parallelogram recoloured, read as placeholder marbles. A bar is an ingot with a top face 2 deep and a stamp 3 by 1 on its front, each metal at its own length and height and in its own tones.
 
 ---
 
