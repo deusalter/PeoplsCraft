@@ -34,20 +34,20 @@ Three rules follow and are used everywhere below.
 | `salt` | `#f7f2e3` | `W` | white: text on dark and on the world; hottest edge of a clay slab; selector; outline of a hovered button; core of an earned link |
 | `clay.lt` | `#e3d7ba` | `L` | light edge of a clay slab; face of a page |
 | `clay.face` | `#c9b896` | `F` | face of a clay slab |
-| `clay.sh` | `#a68d6e` | `S` | inner dark edge of a clay slab; hovered slot floor; silhouettes; rules on a page |
-| `clay.dk` | `#7d6756` | `D` | slot floor in clay |
+| `clay.sh` | `#a68d6e` | `S` | inner dark edge of a clay slab; slot floor in clay; rules on a page |
+| `clay.dk` | `#7d6756` | `D` | silhouettes in an empty clay slot |
 | `clay.pit` | `#4f403c` | `Z` | dark edge of a clay slab and of its slots |
 | `timber.hi` | `#f0c98d` | `e` | hottest edge of a timber slab |
 | `timber.lt` | `#d7a265` | `f` | light edge of a timber slab |
 | `timber.face` | `#b98049` | `T` | face of a timber slab |
-| `timber.sh` | `#8f5a36` | `t` | inner dark edge in timber; hovered slot floor; the boards of a book |
-| `timber.dk` | `#663d2c` | `U` | slot floor in timber |
+| `timber.sh` | `#8f5a36` | `t` | inner dark edge in timber; slot floor in timber; the boards of a book |
+| `timber.dk` | `#663d2c` | `U` | silhouettes in an empty timber slot |
 | `timber.pit` | `#402625` | `X` | dark edge in timber |
 | `stone.hi` | `#e4e8dc` | `A` | hottest edge of a stone slab; top row of a hovered button and of a key cap |
 | `stone.lt` | `#c3cab9` | `G` | light edge of a stone slab; top row of a button; face of a key cap |
 | `stone.face` | `#9da695` | `H` | face of a stone slab |
-| `stone.sh` | `#6f7a76` | `J` | button face; inner dark edge in stone; hovered slot floor |
-| `stone.dk` | `#4e585d` | `M` | slot floor in stone; lower edge of a button and of a key cap |
+| `stone.sh` | `#6f7a76` | `J` | button face; inner dark edge in stone; slot floor in stone |
+| `stone.dk` | `#4e585d` | `M` | silhouettes in an empty stone slot; lower edge of a button and of a key cap |
 | `stone.pit` | `#323844` | `z` | dark edge in stone; disabled button face; the lip of a block of the ground tile |
 | `ink` | `#2b1f2e` | `I` | text on any light face |
 | `ink.faded` | `#5c4c56` | `i` | secondary and disabled text on a light face |
@@ -625,35 +625,35 @@ There is no title bar. A slab's title is text in `ink` at 8, 6, in sentence case
 
 ### 5.4 Slot
 
-18 by 18, holding a 16 by 16 icon at 1, 1. Sunk: `pit` along the top and left, `hi` along the bottom and right, `face` at the two corners where they meet, floor `dk`.
+18 by 18, holding a 16 by 16 icon at 1, 1. Sunk: `pit` along the top and left, `hi` along the bottom and right, `face` at the two corners where they meet, floor `sh`. The pit edge must stand well below the floor: on a floor of `dk` it sank into it, and at the 960-pixel size a grid read as pale lines ruled on the slab, a spreadsheet and not a field of wells. On `sh` each slot's dark top and left sits against its neighbour's light bottom and right, so the grid breaks into cells.
 
 ```
      0         1       
      012345678901234567
   0  666666666666666663
-  1  655555555555555551
-  2  655555555555555551
-  3  655555555555555551
-  4  655555555555555551
-  5  655555555555555551
-  6  655555555555555551
-  7  655555555555555551
-  8  655555555555555551
-  9  655555555555555551
- 10  655555555555555551
- 11  655555555555555551
- 12  655555555555555551
- 13  655555555555555551
- 14  655555555555555551
- 15  655555555555555551
- 16  655555555555555551
+  1  644444444444444441
+  2  644444444444444441
+  3  644444444444444441
+  4  644444444444444441
+  5  644444444444444441
+  6  644444444444444441
+  7  644444444444444441
+  8  644444444444444441
+  9  644444444444444441
+ 10  644444444444444441
+ 11  644444444444444441
+ 12  644444444444444441
+ 13  644444444444444441
+ 14  644444444444444441
+ 15  644444444444444441
+ 16  644444444444444441
  17  311111111111111111
 ```
-`. nothing  1 hi  3 face  5 dk  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
+`. nothing  1 hi  3 face  4 sh  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
 
 Slots stand in grids with no gap, so a grid of nine is 162 wide. The hotbar row of a pack stands 4 units below the three rows above it.
 
-States, left to right: hovered (floor `lt`, two steps above the plain floor, as the tradition's flat white lifts a hovered slot; one step, `sh`, was too near a filled slot's floor to tell the two apart; on a dark plate `root.3`, the silhouette then `root.4`); accepts the held stack (a frame of `growth` on the floor's edge; shown on equipment, fuel and ore slots while a fitting thing is held); refused (the same frame in `blood`, for 0.3 s after a click the game refuses); chosen (frame of `salt`: a slot picked out on a page or a sheet; the pack does not mark the hotbar cell in hand, since a thin salt frame there reads as a hover and the heavy selector belongs to the HUD); locked (floor `face`: a place that shows a thing built in and takes nothing). Colour alone does not tell a state: accepts and refused each carry a mark 7 by 7 over the floor's top right corner, at `x = size - 8`, `y = 1`, a check of `growth.lt` or a cross of `blood.lt` on a badge of `root.1` with a `root.0` outline whose corners are left out; locked carries a lock on the same badge (a shackle of `root.4` over a body of `ember.hi`, `ember.lt`, `ember`, `ember.dk` with a keyhole of `root.0`) at `x = size - 8`, `y = size - 8`, over the bottom right corner where a count would stand, since a locked place holds one built-in thing and no count; at the top left it sank into the icon's own outline.
+States, left to right: hovered (floor `lt`, as the tradition's flat white lifts a hovered slot; on a dark plate `root.3`, the silhouette then `root.4`); accepts the held stack (a frame of `growth` on the floor's edge; shown on equipment, fuel and ore slots while a fitting thing is held); refused (the same frame in `blood`, for 0.3 s after a click the game refuses); chosen (frame of `salt`: a slot picked out on a page or a sheet; the pack does not mark the hotbar cell in hand, since a thin salt frame there reads as a hover and the heavy selector belongs to the HUD); locked (floor `face`: a place that shows a thing built in and takes nothing). Colour alone does not tell a state: accepts and refused each carry a mark 7 by 7 over the floor's top right corner, at `x = size - 8`, `y = 1`, a check of `growth.lt` or a cross of `blood.lt` on a badge of `root.1` with a `root.0` outline whose corners are left out; locked carries a lock on the same badge (a shackle of `root.4` over a body of `ember.hi`, `ember.lt`, `ember`, `ember.dk` with a keyhole of `root.0`) at `x = size - 8`, `y = size - 8`, over the bottom right corner where a count would stand, since a locked place holds one built-in thing and no count; at the top left it sank into the icon's own outline.
 
 A slot carrying a frame (accepts, refused, chosen, or focus) steps its count in by one, its last column on x 14 and its lowest row on y 14, so that the count's shadow ends inside the frame and never runs through it.
 
@@ -675,24 +675,24 @@ A slot carrying a frame (accepts, refused, chosen, or focus) steps its count in 
      01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567
   0  666666666666666663..666666666666666663..666666666666666663..666666666666666663..666666666666666663
   1  622222222222222221..6NNNNNNNNNNNNNNNN1..6RRRRRRRRRRRRRRRR1..6WWWWWWWWWWWWWWWW1..633333333333333331
-  2  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  3  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  4  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  5  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  6  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  7  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  8  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  9  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 10  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 11  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 12  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 13  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 14  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 15  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  2  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+  3  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+  4  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+  5  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+  6  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+  7  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+  8  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+  9  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+ 10  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+ 11  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+ 12  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+ 13  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+ 14  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
+ 15  622222222222222221..6N44444444444444N1..6R44444444444444R1..6W44444444444444W1..633333333333333331
  16  622222222222222221..6NNNNNNNNNNNNNNNN1..6RRRRRRRRRRRRRRRR1..6WWWWWWWWWWWWWWWW1..633333333333333331
  17  311111111111111111..311111111111111111..311111111111111111..311111111111111111..311111111111111111
 ```
-`. nothing  1 hi  2 lt  3 face  5 dk  6 pit  N growth  R blood  W salt   (digits are tones of the host slab's ramp; shown in timber)`
+`. nothing  1 hi  2 lt  3 face  4 sh  6 pit  N growth  R blood  W salt   (digits are tones of the host slab's ramp; shown in timber)`
 
 The hover changes the floor under the icon and nothing else. It does not tint the icon.
 
@@ -702,27 +702,27 @@ The hover changes the floor under the icon and nothing else. It does not tint th
      0         1       
      012345678901234567
   0  666666666666666663
-  1  655555555555555551
-  2  655555555555555551
-  3  655555555555555551
-  4  655555555555555551
-  5  655555555555555551
-  6  655555555555555551
-  7  655555555555555551
-  8  655555555555555551
-  9  655555WWWW5555W551
- 10  65555W5KKKK55WWK51
- 11  65555WK55555W5WK51
- 12  65555WWWW55W5KWK51
- 13  65555WKKKW5WWWWW51
- 14  65555WK55WK5KKWKK1
- 15  655555WWWWK555WK51
- 16  6555555KKKK5555K51
+  1  644444444444444441
+  2  644444444444444441
+  3  644444444444444441
+  4  644444444444444441
+  5  644444444444444441
+  6  644444444444444441
+  7  644444444444444441
+  8  644444444444444441
+  9  644444WWWW4444W441
+ 10  64444W4KKKK44WWK41
+ 11  64444WK44444W4WK41
+ 12  64444WWWW44W4KWK41
+ 13  64444WKKKW4WWWWW41
+ 14  64444WK44WK4KKWKK1
+ 15  644444WWWWK444WK41
+ 16  6444444KKKK4444K41
  17  311111111111111111
 ```
-`. nothing  1 hi  3 face  5 dk  6 pit  K root.0  W salt   (digits are tones of the host slab's ramp; shown in timber)`
+`. nothing  1 hi  3 face  4 sh  6 pit  K root.0  W salt   (digits are tones of the host slab's ramp; shown in timber)`
 
-**A thing that is missing** (a pattern laid out that the pack cannot fill, a kind not yet seen in the codex) is drawn as its icon's silhouette in one flat tone, `sh` of the host ramp, never as a faded icon.
+**A thing that is missing** (a pattern laid out that the pack cannot fill, a kind not yet seen in the codex) is drawn as its icon's silhouette in one flat tone, `dk` of the host ramp, never as a faded icon.
 
 **A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: it keeps its whole icon, and over the cell's floor and icon lies a wash of `root.0` at a half; its count is `salt` with its shadow over the wash like any count. Where washes are drawn opaque the icon is drawn flat in `root.4` instead. A cell of the list is sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.1`, `root.2` under the pointer.
 
@@ -732,33 +732,33 @@ The hover changes the floor under the icon and nothing else. It does not tint th
      0         1         2     
      01234567890123456789012345
   0  66666666666666666666666663
-  1  65555555555555555555555551
-  2  65555555555555555555555551
-  3  65555555555555555555555551
-  4  65555555555555555555555551
-  5  65555555555555555555555551
-  6  65555555555555555555555551
-  7  65555555555555555555555551
-  8  65555555555555555555555551
-  9  65555555555555555555555551
- 10  65555555555555555555555551
- 11  65555555555555555555555551
- 12  65555555555555555555555551
- 13  65555555555555555555555551
- 14  65555555555555555555555551
- 15  65555555555555555555555551
- 16  65555555555555555555555551
- 17  65555555555555555555555551
- 18  65555555555555555555555551
- 19  65555555555555555555555551
- 20  65555555555555555555555551
- 21  65555555555555555555555551
- 22  65555555555555555555555551
- 23  65555555555555555555555551
- 24  65555555555555555555555551
+  1  64444444444444444444444441
+  2  64444444444444444444444441
+  3  64444444444444444444444441
+  4  64444444444444444444444441
+  5  64444444444444444444444441
+  6  64444444444444444444444441
+  7  64444444444444444444444441
+  8  64444444444444444444444441
+  9  64444444444444444444444441
+ 10  64444444444444444444444441
+ 11  64444444444444444444444441
+ 12  64444444444444444444444441
+ 13  64444444444444444444444441
+ 14  64444444444444444444444441
+ 15  64444444444444444444444441
+ 16  64444444444444444444444441
+ 17  64444444444444444444444441
+ 18  64444444444444444444444441
+ 19  64444444444444444444444441
+ 20  64444444444444444444444441
+ 21  64444444444444444444444441
+ 22  64444444444444444444444441
+ 23  64444444444444444444444441
+ 24  64444444444444444444444441
  25  31111111111111111111111111
 ```
-`. nothing  1 hi  3 face  5 dk  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
+`. nothing  1 hi  3 face  4 sh  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
 
 **A slot on a dark plate** (hotbar, toast, readout, the cells of a pattern list). Floor `root.0`, light edge `root.3`; hovered floor `root.2`.
 
@@ -788,28 +788,28 @@ The hover changes the floor under the icon and nothing else. It does not tint th
 
 ### 5.5 Silhouettes of empty slots
 
-An empty slot that takes one kind of thing shows that thing as a silhouette in `sh` on the floor. Nine exist. Head, body, legs:
+An empty slot that takes one kind of thing shows that thing as a silhouette in `dk` on the floor (`sh` under the pointer, on the hovered floor of `lt`). Nine exist. Head, body, legs:
 
 ```
      0         1         2         3         4         5       
      0123456789012345678901234567890123456789012345678901234567
   0  666666666666666663..666666666666666663..666666666666666663
-  1  655555555555555551..655555555555555551..655444444444444551
-  2  655555555555555551..655444555555444551..655444444444444551
-  3  655554444444455551..654444455554444451..655444444444444551
-  4  655544444444445551..654444444444444451..655444444444444551
-  5  655444444444444551..654444444444444451..655444445544444551
-  6  655444444444444551..654454444444454451..655444445544444551
-  7  655444444444444551..654454444444454451..654444445544444451
-  8  655444455554444551..655554444444455551..654444445544444451
-  9  655444555555444551..655554444444455551..654444445544444451
- 10  655444555555444551..655554444444455551..654444445544444451
- 11  655444555555444551..655554444444455551..655444445544444551
- 12  655444555555444551..655554444444455551..655544445544445551
- 13  655445555555544551..655554444444455551..655544445544445551
- 14  655555555555555551..655544444444445551..655544445544445551
- 15  655555555555555551..655555555555555551..655544445544445551
- 16  655555555555555551..655555555555555551..655555555555555551
+  1  644444444444444441..644444444444444441..644555555555555441
+  2  644444444444444441..644555444444555441..644555555555555441
+  3  644445555555544441..645555544445555541..644555555555555441
+  4  644455555555554441..645555555555555541..644555555555555441
+  5  644555555555555441..645555555555555541..644555554455555441
+  6  644555555555555441..645545555555545541..644555554455555441
+  7  644555555555555441..645545555555545541..645555554455555541
+  8  644555544445555441..644445555555544441..645555554455555541
+  9  644555444444555441..644445555555544441..645555554455555541
+ 10  644555444444555441..644445555555544441..645555554455555541
+ 11  644555444444555441..644445555555544441..644555554455555441
+ 12  644555444444555441..644445555555544441..644455554455554441
+ 13  644554444444455441..644445555555544441..644455554455554441
+ 14  644444444444444441..644455555555554441..644455554455554441
+ 15  644444444444444441..644444444444444441..644455554455554441
+ 16  644444444444444441..644444444444444441..644444444444444441
  17  311111111111111111..311111111111111111..311111111111111111
 ```
 `. nothing  1 hi  3 face  4 sh  5 dk  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
@@ -820,22 +820,22 @@ Trinket, what a furnace works, fuel:
      0         1         2         3         4         5       
      0123456789012345678901234567890123456789012345678901234567
   0  666666666666666663..666666666666666663..666666666666666663
-  1  655555555555555551..655555555555555551..655555555555555551
-  2  655555555555555551..655555555555555551..655555554555555551
-  3  655555544445555551..655555544445555551..655555554455555551
-  4  655555444444555551..655554444444455551..655555544455555551
-  5  655555544445555551..655544444444445551..655555544445555551
-  6  655555444444555551..655544444444444551..655555444445545551
-  7  655554455554455551..655444444444444551..655554444444545551
-  8  655544555555445551..655444444444444551..655554444444445551
-  9  655544555555445551..655444444444444451..655544444444444551
- 10  655544555555445551..654444444444444451..655544445444444551
- 11  655544555555445551..654444444444444451..655544455544444551
- 12  655554455554455551..655444444444444551..655544455544444551
- 13  655555444444555551..655544444444445551..655554455544445551
- 14  655555544445555551..655555555555555551..655555445444455551
- 15  655555555555555551..655555555555555551..655555555555555551
- 16  655555555555555551..655555555555555551..655555555555555551
+  1  644444444444444441..644444444444444441..644444444444444441
+  2  644444444444444441..644444444444444441..644444445444444441
+  3  644444455554444441..644444455554444441..644444445544444441
+  4  644444555555444441..644445555555544441..644444455544444441
+  5  644444455554444441..644455555555554441..644444455554444441
+  6  644444555555444441..644455555555555441..644444555554454441
+  7  644445544445544441..644555555555555441..644445555555454441
+  8  644455444444554441..644555555555555441..644445555555554441
+  9  644455444444554441..644555555555555541..644455555555555441
+ 10  644455444444554441..645555555555555541..644455554555555441
+ 11  644455444444554441..645555555555555541..644455544455555441
+ 12  644445544445544441..644555555555555441..644455544455555441
+ 13  644444555555444441..644455555555554441..644445544455554441
+ 14  644444455554444441..644444444444444441..644444554555544441
+ 15  644444444444444441..644444444444444441..644444444444444441
+ 16  644444444444444441..644444444444444441..644444444444444441
  17  311111111111111111..311111111111111111..311111111111111111
 ```
 `. nothing  1 hi  3 face  4 sh  5 dk  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
@@ -846,22 +846,22 @@ A bar, a key, a piece to rework:
      0         1         2         3         4         5       
      0123456789012345678901234567890123456789012345678901234567
   0  666666666666666663..666666666666666663..666666666666666663
-  1  655555555555555551..655555555555555551..655555555555555551
-  2  655555555555555551..655555555555555551..655555555555544551
-  3  655555555555555551..655555555555555551..655555555555444551
-  4  655555555555555551..655544445555555551..655555555554445551
-  5  655554444444445551..655445544555555551..655555555544455551
-  6  655544444444444551..655455554555555551..655555555444555551
-  7  655444444444444451..655455554444444451..655555554445555551
-  8  655444444444444451..655455554444444451..655555544455555551
-  9  654444444444444451..655445544555454551..655455444555555551
- 10  654444444444444551..655544445555454551..655444445555555551
- 11  654444444444444551..655555555555555551..655544455555555551
- 12  655555555555555551..655555555555555551..655444445555555551
- 13  655555555555555551..655555555555555551..654455445555555551
- 14  655555555555555551..655555555555555551..654555555555555551
- 15  655555555555555551..655555555555555551..655555555555555551
- 16  655555555555555551..655555555555555551..655555555555555551
+  1  644444444444444441..644444444444444441..644444444444444441
+  2  644444444444444441..644444444444444441..644444444444455441
+  3  644444444444444441..644444444444444441..644444444444555441
+  4  644444444444444441..644455554444444441..644444444445554441
+  5  644445555555554441..644554455444444441..644444444455544441
+  6  644455555555555441..644544445444444441..644444444555444441
+  7  644555555555555541..644544445555555541..644444445554444441
+  8  644555555555555541..644544445555555541..644444455544444441
+  9  645555555555555541..644554455444545441..644544555444444441
+ 10  645555555555555441..644455554444545441..644555554444444441
+ 11  645555555555555441..644444444444444441..644455544444444441
+ 12  644444444444444441..644444444444444441..644555554444444441
+ 13  644444444444444441..644444444444444441..645544554444444441
+ 14  644444444444444441..644444444444444441..645444444444444441
+ 15  644444444444444441..644444444444444441..644444444444444441
+ 16  644444444444444441..644444444444444441..644444444444444441
  17  311111111111111111..311111111111111111..311111111111111111
 ```
 `. nothing  1 hi  3 face  4 sh  5 dk  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
@@ -3880,7 +3880,7 @@ Taken where the direction is silent, in its spirit. Builders may rely on them.
 
 **Pips.** A half pip is the full pip's five lit columns beside the empty pip's other four. The rows that fill from the right take the lit columns on the right, but the pips themselves are not turned, so their light still comes from the top left.
 
-**Small choices.** A hit turns the crosshair into four ticks two units long, outlined like the cross. A banner's text is clipped inside its frame so that a descender's shadow cannot notch it. A node's ranks stand on a scrap of `root.0` so that a link passing under them does not run through the figures. The roster writes the level as a bare number and a distance with an `M`. The silhouette in a hovered slot is drawn in `face`, since the hovered floor is `sh`. A row that cannot be used draws its icon flat in `root.4`, except in the shop, where a good out of reach keeps its icon and its grade and only its price, in blood after a `{cross}`, says so. A password field draws its dots at a pitch of 4. A toast's first line takes the light tone of its frame (`growth.lt` for growth, `blood.lt` for blood, salt for `root.4`, a grade's frame as it is). The thumb of a track sunk in a slab is the slider's handle cut to 6 wide, its grip in the third column.
+**Small choices.** A hit turns the crosshair into four ticks two units long, outlined like the cross. A banner's text is clipped inside its frame so that a descender's shadow cannot notch it. A node's ranks stand on a scrap of `root.0` so that a link passing under them does not run through the figures. The roster writes the level as a bare number and a distance with an `M`. The silhouette in a hovered slot is drawn in `sh`, on the hovered floor of `lt`. A row that cannot be used draws its icon flat in `root.4`, except in the shop, where a good out of reach keeps its icon and its grade and only its price, in blood after a `{cross}`, says so. A password field draws its dots at a pitch of 4. A toast's first line takes the light tone of its frame (`growth.lt` for growth, `blood.lt` for blood, salt for `root.4`, a grade's frame as it is). The thumb of a track sunk in a slab is the slider's handle cut to 6 wide, its grip in the third column.
 
 **Sheets and pictures.** The kit page's sheets of parts are `parts`, `parts-controls`, `parts-gauges`, `parts-hud`, `parts-plates`, `parts-book` and `parts-icons`; `uishot --screen parts` takes them all. The mock screens use 24 sample items drawn in the palette (`mock/icons.ts`); the interface's own marks, for tabs that open a page and for the states of a slot, are in `art/icons.ts`.
 

@@ -90,15 +90,14 @@ export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live):
   const ramp = dark ? 'clay' : o.ramp as Ramp;
   if (dark) s.nine(DARK_SLOT, 0, 0, size, size);
   else s.nine(SLOT, 0, 0, size, size, ramp);
-  // The hovered floor is the ramp's light edge, two steps up from the floor, as the tradition's flat white over a slot
-  // lifts it; one step (`sh`) was too near the plain floor to tell a hovered slot from a filled one.
+  // The hovered floor is the ramp's light edge, as the tradition's flat white over a slot lifts it.
   if (o.mark === 'locked') s.fill(1, 1, f, f, dark ? 'root.2' : tone(ramp, 'face'));
   else if (live.hover) s.fill(1, 1, f, f, dark ? 'root.3' : tone(ramp, 'lt'));
   const framed = (!!o.mark && o.mark !== 'locked') || live.focus;
   if (o.mark && o.mark !== 'locked') ring(s, 1, 1, f, f, FRAME[o.mark]);
   else if (live.focus) ring(s, 1, 1, f, f, 'salt');
   const at = o.large ? 5 : 1;
-  const sil: Colour = dark ? (live.hover ? 'root.4' : 'root.3') : tone(ramp, live.hover ? 'face' : 'sh');
+  const sil: Colour = dark ? (live.hover ? 'root.4' : 'root.3') : tone(ramp, live.hover ? 'sh' : 'dk');
   if (o.stack) {
     s.icon(o.stack.icon, at, at);
     // Inside a frame the count and its shadow step in by one, so that the shadow ends inside the frame.
