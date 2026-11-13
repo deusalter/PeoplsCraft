@@ -4,9 +4,11 @@
 // closes the page a while after that last change without answering any prompt (the browser is not
 // asked to run `beforeunload`). Then a new page opens the world from the menu and looks.
 //
-//   npm run smoke -- closetab          4 s: both changes are there. 1 s: the world opens and is consistent
-//                                      (no item lost or doubled, the block there exactly when its cobble is gone).
-//                                      Also: hiding the tab saves, and "Save and quit to title" right after a change
+//   npm run smoke -- closetab          4 s: both changes are there, and again with the page's own `save` and `pause`
+//                                      not sent (Chrome hides a page it closes, and that alone would keep them).
+//                                      1 s: the world opens and is consistent (no item lost or doubled, the block there
+//                                      exactly when its cobble is gone). Also: a change is saved by itself 3 s later,
+//                                      hiding the tab saves at once, and "Save and quit to title" right after a change
 //                                      keeps it.
 //   npm run smoke -- closetab --r12    the table of risk R12: closed 1, 4 and 10 s after the change, with and
 //                                      without the tab hidden first, and with the page asked to run `beforeunload`
@@ -23,7 +25,7 @@ export async function run({ page, ctx, origin, log, extra, errors, args }) {
   const q = extra ? '?' + extra.slice(1) : '';
   let d = driver(page, log), cur = page, chest, gy, sx, sz;
   const cell = (dx, dy, dz) => [sx + dx, gy + dy, sz + dz];
-  let hiddenSaved = false, asked = false;
+  let changeSaved = false, hiddenSaved = false, asked = false;
 
   /** From the title menu of a fresh page, open the world and wait until it is in play. */
   const reopen = async (same = false) => {
@@ -67,21 +69,38 @@ export async function run({ page, ctx, origin, log, extra, errors, args }) {
     await d.ev(() => D.save());
   });
 
-  await d.step('hiding the tab saves', async () => {
+  await d.step('a change is saved by itself 3 s later', async () => {
     const r = await d.ev(async () => {
-      const was = T.game.lastSave;
+      // A timer that an earlier change started saves within 3 s, and a change made while it ran starts one more. After
+      // 3.2 s without a save the changes above have had theirs, and the time printed is this change's own.
+      let was;
+      do { was = T.game.lastSave; await T.run(3200); } while (T.game.lastSave !== was);
+      const t0 = Date.now();
       await T.cmd('give dirt 1');
-      const t0 = performance.now();
+      const saved = await T.until(() => T.game.lastSave > was, 4500);
+      return { saved, ms: T.game.lastSave - t0 };
+    });
+    if (!r.saved) throw new Error('nothing saved the change within 4.5 s of it');
+    log(`  saved ${(r.ms / 1000).toFixed(2)} s after the change`);
+    changeSaved = r.saved;
+  });
+
+  await d.step('hiding the tab saves at once', async () => {
+    const r = await d.ev(async () => {
+      // With a save a moment ago, the `pause` a hidden tab also sends is good for a save a second after that one, and the
+      // change's own timer for one in 3 s: only the `save` the page sends at hiding is answered inside half a second.
+      await D.save();
+      await T.cmd('give dirt 1');
+      const was = T.game.lastSave, t0 = Date.now();
       Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
       Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
       document.dispatchEvent(new Event('visibilitychange'));
-      // a save at most a second after the one before it, well inside the 3 s after the change
-      const saved = await T.until(() => T.game.lastSave > was, 2500), ms = performance.now() - t0;
+      const saved = await T.until(() => T.game.lastSave > was, 500), ms = T.game.lastSave - t0;
       delete document.hidden; delete document.visibilityState;
       document.dispatchEvent(new Event('visibilitychange'));
       return { saved, ms };
     });
-    if (!r.saved) throw new Error('hiding the tab did not save');
+    if (!r.saved) throw new Error('hiding the tab did not save within half a second');
     log(`  saved ${(r.ms / 1000).toFixed(2)} s after the tab was hidden`);
     hiddenSaved = r.saved;
   });
@@ -149,23 +168,26 @@ export async function run({ page, ctx, origin, log, extra, errors, args }) {
     if (results.some((r) => !r.consistent)) throw new Error('a world opened inconsistent');
     return undefined;
   }
+  const res = {};
   await d.step('close 4 s after the change', async () => {
-    const r = await trial(0, 4000);
-    results.push(r);
+    const r = res.after4 = await trial(0, 4000);
     if (!r.block || !r.stack || !r.consistent) throw new Error(`after 4 s: ${JSON.stringify(r)}`);
   });
+  await d.step('close 4 s after the change, nothing sent at the close', async () => {
+    const r = res.muted4 = await trial(3, 4000, { mute: true });
+    if (!r.block || !r.stack || !r.consistent) throw new Error(`after 4 s with the page's own save and pause not sent: ${JSON.stringify(r)}`);
+  });
   await d.step('close 1 s after the change', async () => {
-    const r = await trial(1, 1000);
-    results.push(r);
+    const r = res.after1 = await trial(1, 1000);
     if (!r.consistent) throw new Error(`after 1 s the world is not consistent: ${JSON.stringify(r)}`);
     log(`  after 1 s: block ${r.block ? 'kept' : 'lost'}, stack ${r.stack ? 'kept' : 'lost'} (block placed ${(r.placedBefore / 1000).toFixed(1)} s before the stack moved)`);
   });
   await d.step('quit to the title at once after the change', async () => {
-    const r = await trial(2, 0, { quit: true });
-    results.push(r);
+    const r = res.quit = await trial(2, 0, { quit: true });
     if (!r.block || !r.stack || !r.consistent) throw new Error(`after quitting to the title: ${JSON.stringify(r)}`);
   });
-  return { hiddenSaves: hiddenSaved, 'quit.noPrompt': !asked, 'quit.block': results[2].block, 'quit.stack': results[2].stack, 'after4.block': results[0].block, 'after4.stack': results[0].stack, 'after4.consistent': results[0].consistent, 'after1.consistent': results[1].consistent };
+  const { after4, muted4, after1, quit } = res;
+  return { changeSaves: changeSaved, hiddenSaves: hiddenSaved, 'quit.noPrompt': !asked, 'quit.block': quit.block, 'quit.stack': quit.stack, 'after4.block': after4.block, 'after4.stack': after4.stack, 'after4.consistent': after4.consistent, 'muted4.block': muted4.block, 'muted4.stack': muted4.stack, 'muted4.consistent': muted4.consistent, 'after1.consistent': after1.consistent };
 }
 
-export const expect = { hiddenSaves: true, 'quit.noPrompt': true, 'quit.block': true, 'quit.stack': true, 'after4.block': true, 'after4.stack': true, 'after4.consistent': true, 'after1.consistent': true };
+export const expect = { changeSaves: true, hiddenSaves: true, 'quit.noPrompt': true, 'quit.block': true, 'quit.stack': true, 'after4.block': true, 'after4.stack': true, 'after4.consistent': true, 'muted4.block': true, 'muted4.stack': true, 'muted4.consistent': true, 'after1.consistent': true };

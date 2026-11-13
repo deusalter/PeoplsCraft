@@ -507,9 +507,15 @@ timers can save:
 | 4 s | kept | kept |
 
 which is the bound of 8.2: up to 3 s of changes, lost together. The plain scenario (`npm run smoke -- closetab`)
-checks the 4 s case and the consistency of the 1 s case, that hiding the tab saves (0.1 s after it is hidden,
-well inside the 3 s), and that "Save and quit to title" pressed at once after a change keeps it, without a prompt.
-Passed three times in a row. The debounce stays at 3 s: nothing here shows it too long in practice.
+checks the 4 s case twice, closed as it is and with nothing sent at the close (only the second depends on the 3 s
+timer: the first is kept by the hiding alone), and the consistency of the 1 s case. It also checks that a change
+made with the tab in view is saved by itself (3.02 s after it), that hiding the tab saves at once (0.01 s after
+it is hidden, with a save a moment before, so that neither the save `pause` asks for, a second after that one,
+nor the 3 s timer can be what answered inside the half second allowed), and that "Save and quit to title" pressed
+at once after a change keeps it, without a prompt. Passed three times in a row. It fails with the page's `save`
+at hiding taken out, with that and the save `pause` asks for both taken out, and with the 3 s timer taken out
+(each tried on a scratch copy; without the timer both the save by itself and the 4 s case with nothing sent
+fail). The debounce stays at 3 s: nothing here shows it too long in practice.
 
 While measuring this, opening a world started the 3 s timer by itself (the player's inventory, read from its
 record, counted as a change) and saved for nothing; one trial kept a muted 1 s change that way. Fixed in the
