@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { type Batch, type ChunkRecord, type PlayerRecord, type Storage, StorageError, type WorldRecord } from '../src/sim/storage';
 import {
   type DiskIO, RESTORE_MARK, dropBackupTemps, errCode, exists, ioError, listBackups, newestGoodBackup, nodeIO, parsePlayer, parseWorld,
-  playerFromBackup, regionFromBackup, releaseLock, rotateBackups, stampOf, syncDir, takeBackup, takeLock,
+  playerFromBackup, regionFromBackup, releaseLock, restoreBackup, rotateBackups, stampOf, syncDir, takeBackup, takeLock,
 } from './backup';
 import { FormatError, decodeRegion, encodeRegion, localKey, parseRegionName, regionName, regionOf } from './region';
 
@@ -25,6 +25,8 @@ export interface DiskOptions {
   backupKeep?: number;
   log?: (level: 'info' | 'warn' | 'error', msg: string) => void;
   notice?: (n: DiskNotice) => void;
+  /** `--restore <stamp>`: put that backup in place (8.1, `restoreBackup`) before opening. */
+  restore?: string;
   /** The command printed when world.json does not read. */
   restoreCommand?: (dir: string, stamp: string) => string;
   /** Wall clock, milliseconds: backup and `.bad-` names. */
@@ -86,6 +88,10 @@ export class DiskStorage implements Storage {
   async open(): Promise<WorldRecord | null> {
     if (this.state !== 'new') throw new StorageError('io', 'open twice');
     try { await mkdir(this.dir, { recursive: true }); } catch (e) { throw ioError(e, 'make the data folder'); }
+    if (this.opt.restore) {
+      const { pre } = await restoreBackup(this.dir, this.opt.restore, { io: this.io, now: this.now });
+      this.log('info', `restored backup ${this.opt.restore}; the files it replaced are in ${join(this.dir, pre)}`);
+    }
     await takeLock(this.dir);
     try {
       const world = await this.boot();

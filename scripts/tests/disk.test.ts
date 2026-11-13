@@ -323,10 +323,19 @@ function tests(): void {
     await rm(join(dir, 'world.json'));
     await rejects(new DiskStorage(dir, quiet).open(), 'corrupt');
 
+    // `--restore` as the server takes it: restored, then opened
+    const logs: string[] = [];
+    await rejects(new DiskStorage(dir, { ...quiet, restore: stamps[1] }).open(), 'corrupt');
+    const st = new DiskStorage(dir, { ...quiet, log: (_l, m) => logs.push(m), restore: stamps[0], now: () => Date.UTC(2026, 10, 13, 11, 0, 0) });
+    assert.equal(((await st.open())!.state as unknown as { tick: number }).tick, 1);
+    await st.close();
+    assert.ok(logs.some((m) => m.includes('pre-restore-20261113-110000')), logs.join('; '));
+    assert.equal(await verify(dir), 1);
+    await writeFile(join(dir, 'world.json'), 'garbage again');
     const { pre } = await restoreBackup(dir, stamps[0], { now: () => Date.UTC(2026, 10, 13, 12, 0, 0) });
     assert.equal(pre, join('backups', 'pre-restore-20261113-120000'));
     assert.ok(await exists(join(dir, pre, 'players', 'p0.json')), 'the files it replaced are kept');
-    assert.ok(!(await exists(join(dir, pre, 'world.json'))), 'world.json was already gone');
+    assert.equal(await readFile(join(dir, pre, 'world.json'), 'utf8'), 'garbage again', 'the unreadable world is kept');
     assert.equal(await verify(dir), 1, 'back as backup 1 held it');
     assert.ok((await listBackups(dir)).every((b) => !b.startsWith('pre-')), 'pre-restore folders are not rotated');
   });
