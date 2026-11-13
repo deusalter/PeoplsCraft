@@ -170,9 +170,9 @@ function slotGrid(id: string, cols: number, rows: number, ramp: Ramp, fill: (i: 
       tip: () => item ? {
         frame: GRADES[item.grade].frame,
         lines: [
-          { text: item.icon === 'block' ? 'Turf of the low field' : item.icon === 'ingot' ? 'Bar of lees-iron' : 'Shard of the Hollow', c: GRADES[item.grade].dark },
+          { text: item.icon === 'block' ? 'Turf' : item.icon === 'ingot' ? 'Iron Bar' : 'Shard', c: GRADES[item.grade].dark },
           { text: `${GRADES[item.grade].name} grade, ${item.icon === 'shard' ? 'stone' : 'material'}`, c: 'root.4' },
-          { text: 'Laid in a kiln it gives one bar.', c: 'salt' },
+          { text: 'Used in making.', c: 'salt' },
           { text: '{lmb} take   {rmb} take half', c: 'root.4' },
         ],
       } : null,
@@ -202,7 +202,7 @@ const SAMPLE = (i: number) => {
   return { icon: ['block', 'ingot', 'shard', 'block', 'ingot'][k], n: [64, 1, 3, 0, 12][k] || 1, grade: [0, 1, 3, 0, 6][k] };
 };
 
-let fieldValue = 'Hearth of Ash';
+let fieldValue = 'Hearth on the Yavas';
 
 function demoField(ui: Ui, id: string, x: number, y: number, w: number): Node {
   return {
@@ -244,10 +244,10 @@ const partsScreen: DemoScreen = {
     const at = centred(ui.w, ui.h, W, H);
     const tipSample = {
       frame: GRADES[2].frame,
-      lines: [{ text: 'Delver’s pick', c: GRADES[2].dark }, { text: 'Deep grade, tool', c: 'root.4' as Colour }, { text: '+12% speed in stone', c: 'growth.lt' as Colour }, { text: 'Cracks under iron', c: 'blood.lt' as Colour }],
+      lines: [{ text: 'Keen Hīrak Pick', c: GRADES[2].dark }, { text: 'Deep grade, tool', c: 'root.4' as Colour }, { text: '+12% speed in stone', c: 'growth.lt' as Colour }, { text: '-1 reach', c: 'blood.lt' as Colour }],
     };
     const tb = tipBox(tipSample);
-    const named = { frame: GRADES[6].frame, named: true, lines: [{ text: 'The Kiln-Mother', c: GRADES[6].dark }, { text: 'Old, a lamp', c: 'root.4' as Colour }] };
+    const named = { frame: GRADES[6].frame, named: true, lines: [{ text: 'Cairn Lamp', c: GRADES[6].dark }, { text: 'Old, a lamp', c: 'root.4' as Colour }] };
     const nb = tipBox(named);
     const ramps: Ramp[] = ['clay', 'timber', 'stone'];
     const kids: Node[] = ramps.map((r, i) => slab(i * 122, 0, 120, 78, r, [

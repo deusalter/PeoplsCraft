@@ -15,20 +15,20 @@ function tipNode(x: number, y: number, tip: Tip): Node {
 const PICK: Tip = {
   frame: GRADES[2].frame,
   lines: [
-    { text: 'Delver’s pick', c: GRADES[2].dark },
-    { text: 'Deep grade, tool', c: 'root.4' },
-    { text: 'Breaks stone and ore.', c: 'salt' },
-    { text: '+2 against stone', c: 'growth.lt' },
-    { text: '-1 reach', c: 'blood.lt' },
-    { text: 'Of the kiln set: 2 of 4', c: 'arm.lt' },
-    { text: 'Cut at the Īshū kilns.', c: 'root.4' },
+    { text: 'Dense Hīrak Cuirass', c: GRADES[2].dark },
+    { text: 'Deep grade, body', c: 'root.4' },
+    { text: 'Worn on the body.', c: 'salt' },
+    { text: '+8 defence', c: 'growth.lt' },
+    { text: '-5% speed', c: 'blood.lt' },
+    { text: 'Of the Plate set: 2 of 3', c: 'arm.lt' },
+    { text: 'Forged at the Anvil.', c: 'root.4' },
     { text: '{lmb} take  {rmb} half', c: 'root.4' },
   ],
 };
 
 const NAMED: Tip = {
   frame: GRADES[6].frame, named: true,
-  lines: [{ text: 'The Kiln-Mother', c: GRADES[6].dark }, { text: 'Old, a lamp', c: 'root.4' }],
+  lines: [{ text: 'Cairn Lamp', c: GRADES[6].dark }, { text: 'Old, a lamp', c: 'root.4' }],
 };
 
 export const gaugesSheet: Sheet = {
@@ -70,15 +70,15 @@ export const gaugesSheet: Sheet = {
     kids.push(g('timber', 236, 87, 'The Line Frame', 'arm'));
     // A station's row, as the furnaces have it: what is worked, the flame, the arrow, the result.
     kids.push(slab({
-      x: 236, y: 174, w: 238, h: 88, ramp: 'stone', title: 'Kiln',
+      x: 236, y: 174, w: 238, h: 88, ramp: 'stone', title: 'Stone Furnace',
       kids: [
         slot({ id: 'k.in', x: 40, y: 20, ramp: 'stone', stack: { icon: 'ore', n: 6 } }),
         burnGauge({ x: 43, y: 41, f: 0.7, ramp: 'stone' }),
         slot({ id: 'k.fuel', x: 40, y: 58, ramp: 'stone', silhouette: 'fuel', mark: 'accepts' }),
         progressArrow({ x: 72, y: 40, f: 0.45, ramp: 'stone' }),
         slot({ id: 'k.out', x: 104, y: 34, ramp: 'stone', large: true, stack: { icon: 'ingot', n: 3 } }),
-        ink(140, 42, 'Laid in'),
-        ink(140, 52, 'a kiln', 'ink.faded'),
+        ink(140, 42, 'Iron Bar'),
+        ink(140, 52, 'Smelting', 'ink.faded'),
       ],
     }));
     return page(ui, kids);
