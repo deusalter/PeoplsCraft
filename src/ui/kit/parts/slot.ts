@@ -1,5 +1,4 @@
 import { SILHOUETTES, type SilhouetteName } from '../art/silhouettes';
-import { STATE_MARKS } from '../art/icons';
 import { DARK_SLOT, LARGE_SLOT_SIZE, SLOT, SLOT_SIZE } from '../art/slot';
 import { coded } from '../pixmap';
 import { SMALL } from '../font/face';
@@ -52,8 +51,8 @@ export function paintCount(s: Surface, n: number, right: number, bottom: number,
 const FRAME: Record<Exclude<SlotMark, 'locked'>, Colour> = { accepts: 'growth', refused: 'blood', chosen: 'salt' };
 
 // The marks that say a slot's state in shape as well as colour (5.4): a cross for refused and a check for accepts, on
-// a dark badge 7 by 7 over the floor's top right corner so that they read over any icon; the lock, 7 by 7, at the top
-// left over the icon.
+// a dark badge 7 by 7 over the floor's top right corner so that they read over any icon; the lock, 7 by 7, over the
+// bottom right corner, where a count would stand: a locked place holds one built-in thing and has no count.
 const CROSS = coded([
   '.KKKKK.',
   'KrkkkrK',
@@ -72,6 +71,16 @@ const CHECK = coded([
   'KkkkkkK',
   '.KKKKK.',
 ], 'slot.accepts');
+// The lock on the same badge: a grey shackle over an ember body with its keyhole, so that it reads over a pale icon.
+const LOCK = coded([
+  '.KKKKK.',
+  'KkgggkK',
+  'KkgkgkK',
+  'KyooOuK',
+  'KooKOuK',
+  'KuuuuuK',
+  '.KKKKK.',
+], 'slot.locked');
 
 /** Paints a slot at 0, 0 of the surface's origin. */
 export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live): void {
@@ -81,20 +90,24 @@ export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live):
   const ramp = dark ? 'clay' : o.ramp as Ramp;
   if (dark) s.nine(DARK_SLOT, 0, 0, size, size);
   else s.nine(SLOT, 0, 0, size, size, ramp);
+  // The hovered floor is the ramp's light edge, two steps up from the floor, as the tradition's flat white over a slot
+  // lifts it; one step (`sh`) was too near the plain floor to tell a hovered slot from a filled one.
   if (o.mark === 'locked') s.fill(1, 1, f, f, dark ? 'root.2' : tone(ramp, 'face'));
-  else if (live.hover) s.fill(1, 1, f, f, dark ? 'root.2' : tone(ramp, 'sh'));
+  else if (live.hover) s.fill(1, 1, f, f, dark ? 'root.3' : tone(ramp, 'lt'));
+  const framed = (!!o.mark && o.mark !== 'locked') || live.focus;
   if (o.mark && o.mark !== 'locked') ring(s, 1, 1, f, f, FRAME[o.mark]);
   else if (live.focus) ring(s, 1, 1, f, f, 'salt');
   const at = o.large ? 5 : 1;
-  const sil: Colour = dark ? 'root.3' : tone(ramp, live.hover ? 'face' : 'sh');
+  const sil: Colour = dark ? (live.hover ? 'root.4' : 'root.3') : tone(ramp, live.hover ? 'face' : 'sh');
   if (o.stack) {
     s.icon(o.stack.icon, at, at);
-    paintCount(s, o.stack.n, size - 3, size - 3);
+    // Inside a frame the count and its shadow step in by one, so that the shadow ends inside the frame.
+    paintCount(s, o.stack.n, size - (framed ? 4 : 3), size - (framed ? 4 : 3));
   } else if (o.missing) s.icon(o.missing, at, at, 'flat', sil);
   else if (o.silhouette) s.draw(SILHOUETTES[o.silhouette], at, at, { flat: sil });
   if (o.mark === 'refused') s.map(CROSS, size - 8, 1);
   else if (o.mark === 'accepts') s.map(CHECK, size - 8, 1);
-  else if (o.mark === 'locked') s.map(STATE_MARKS.lock, 1, 1);
+  else if (o.mark === 'locked') s.map(LOCK, size - 8, size - 8);
 }
 
 /** A slot (5.4): 18 by 18 holding a 16 by 16 icon at 1, 1, sunk in its slab or on a dark plate. */

@@ -239,7 +239,9 @@ function mainParts(st: PackState, b: Bench, upper: boolean): Node[] {
   }
   out.push(
     stackGrid(b, { store: 'pack', x: 8, y: 98, cols: 9, rows: 3, ramp: 'clay' }),
-    stackGrid(b, { store: 'bar', x: 8, y: 156, cols: 9, rows: 1, ramp: 'clay', each: (i) => (i === 0 ? { mark: 'chosen' } : {}) }),
+    // The cell in hand is not marked here: a thin salt frame on it read as a hover, and the HUD's heavy selector is
+    // the HUD's own; the tradition's pack shows the hotbar row plain.
+    stackGrid(b, { store: 'bar', x: 8, y: 156, cols: 9, rows: 1, ramp: 'clay' }),
   );
   return out;
 }

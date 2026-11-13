@@ -653,7 +653,9 @@ There is no title bar. A slab's title is text in `ink` at 8, 6, in sentence case
 
 Slots stand in grids with no gap, so a grid of nine is 162 wide. The hotbar row of a pack stands 4 units below the three rows above it.
 
-States, left to right: hovered (floor `sh`); accepts the held stack (a frame of `growth` on the floor's edge; shown on equipment, fuel and ore slots while a fitting thing is held); refused (the same frame in `blood`, for 0.3 s after a click the game refuses); chosen (frame of `salt`: the hotbar slot in hand, as seen in the pack); locked (floor `face`: a place that shows a thing built in and takes nothing). Colour alone does not tell a state: accepts and refused each carry a mark 7 by 7 over the floor's top right corner, at `x = size - 8`, `y = 1`, a check of `growth.lt` or a cross of `blood.lt` on a badge of `root.1` with a `root.0` outline whose corners are left out; locked carries the lock of the marks of a state (7 by 7) at 1, 1 over the icon.
+States, left to right: hovered (floor `lt`, two steps above the plain floor, as the tradition's flat white lifts a hovered slot; one step, `sh`, was too near a filled slot's floor to tell the two apart; on a dark plate `root.3`, the silhouette then `root.4`); accepts the held stack (a frame of `growth` on the floor's edge; shown on equipment, fuel and ore slots while a fitting thing is held); refused (the same frame in `blood`, for 0.3 s after a click the game refuses); chosen (frame of `salt`: a slot picked out on a page or a sheet; the pack does not mark the hotbar cell in hand, since a thin salt frame there reads as a hover and the heavy selector belongs to the HUD); locked (floor `face`: a place that shows a thing built in and takes nothing). Colour alone does not tell a state: accepts and refused each carry a mark 7 by 7 over the floor's top right corner, at `x = size - 8`, `y = 1`, a check of `growth.lt` or a cross of `blood.lt` on a badge of `root.1` with a `root.0` outline whose corners are left out; locked carries a lock on the same badge (a shackle of `root.4` over a body of `ember.hi`, `ember.lt`, `ember`, `ember.dk` with a keyhole of `root.0`) at `x = size - 8`, `y = size - 8`, over the bottom right corner where a count would stand, since a locked place holds one built-in thing and no count; at the top left it sank into the icon's own outline.
+
+A slot carrying a frame (accepts, refused, chosen, or focus) steps its count in by one, its last column on x 14 and its lowest row on y 14, so that the count's shadow ends inside the frame and never runs through it.
 
 ```
      0         1     
@@ -672,25 +674,25 @@ States, left to right: hovered (floor `sh`); accepts the held stack (a frame of 
      0         1         2         3         4         5         6         7         8         9       
      01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567
   0  666666666666666663..666666666666666663..666666666666666663..666666666666666663..666666666666666663
-  1  644444444444444441..6NNNNNNNNNNNNNNNN1..6RRRRRRRRRRRRRRRR1..6WWWWWWWWWWWWWWWW1..633333333333333331
-  2  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  3  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  4  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  5  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  6  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  7  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  8  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
-  9  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 10  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 11  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 12  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 13  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 14  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 15  644444444444444441..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
- 16  644444444444444441..6NNNNNNNNNNNNNNNN1..6RRRRRRRRRRRRRRRR1..6WWWWWWWWWWWWWWWW1..633333333333333331
+  1  622222222222222221..6NNNNNNNNNNNNNNNN1..6RRRRRRRRRRRRRRRR1..6WWWWWWWWWWWWWWWW1..633333333333333331
+  2  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  3  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  4  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  5  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  6  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  7  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  8  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+  9  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+ 10  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+ 11  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+ 12  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+ 13  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+ 14  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+ 15  622222222222222221..6N55555555555555N1..6R55555555555555R1..6W55555555555555W1..633333333333333331
+ 16  622222222222222221..6NNNNNNNNNNNNNNNN1..6RRRRRRRRRRRRRRRR1..6WWWWWWWWWWWWWWWW1..633333333333333331
  17  311111111111111111..311111111111111111..311111111111111111..311111111111111111..311111111111111111
 ```
-`. nothing  1 hi  3 face  4 sh  5 dk  6 pit  N growth  R blood  W salt   (digits are tones of the host slab's ramp; shown in timber)`
+`. nothing  1 hi  2 lt  3 face  5 dk  6 pit  N growth  R blood  W salt   (digits are tones of the host slab's ramp; shown in timber)`
 
 The hover changes the floor under the icon and nothing else. It does not tint the icon.
 
