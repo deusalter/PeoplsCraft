@@ -98,7 +98,7 @@ function build(ui: Ui): Node {
   const stage = ui.layout.stage;
   if (!st.focused && !STILL) { st.focused = true; setTimeout(() => ui.focusOn(ENTRY), 0); }
   const shown = st.back ? st.lines.slice(0, -st.back) : st.lines;
-  const bottom = chatBottom(stage.h), wrapAt = chatWrap(stage.w);
+  const bottom = chatBottom(stage.w, stage.h), wrapAt = chatWrap(stage.w);
   const lines = chat({ x: 0, bottom, lines: shown, open: true, wrap: wrapAt });
   const W = stage.w - 8;
   return {

@@ -1426,7 +1426,7 @@ A thing that is cooling (a salve, the Recall Stone) has the cooling wash over it
 
 ### 5.17 Toast
 
-A dark plate 160 by 32 with a frame that says what kind it is: `growth` for a step of the Guide, a grade's colour for a thing found, `blood` for a warning, `root.4` otherwise. A dark slot at 6, 7 with the icon at 7, 8; the first line's cell at 30, 5 in the frame's `lt` tone; the second at 30, 16 in `root.4`. It slides in from the stage's right edge 16 units a frame, stays 5 s, and slides out the same way. Three at most, at a pitch of 34. Its left 100 units (the rest is face and frame):
+A dark plate 140 by 32 with a frame that says what kind it is: `growth` for a step of the Guide, a grade's colour for a thing found, `blood` for a warning, `root.4` otherwise. A dark slot at 6, 7 with the icon at 7, 8; the first line's cell at 30, 5 in the frame's `lt` tone; the second at 30, 16 in `root.4`. The first line is cut with `…` at 104; the second wraps onto a third rather than being cut, and the plate grows to 42 to hold it, cut with `…` only after that third line. It slides in from the stage's right edge 16 units a frame, stays 5 s, and slides out the same way. Two at most, 2 apart, in a column 4 from the stage's right edge under the status frames (y 32). While a boss bar is up, and the column's left edge would come within 4 units of the strips' right end (`cx + 91 + 4`), the column starts at y 74, under the second strip, so that neither covers the other. A toast that would run into the Guide's step waits. Its left 100 units (the rest is face and frame):
 
 ```
      0         1         2         3         4         5         6         7         8         9         
@@ -1777,7 +1777,7 @@ A held stack is its icon centred on the pointer's place (at -8, -8) with its cou
 
 ### 5.23 Chat
 
-Lines are 10 tall, newest lowest, at the left of the stage with the newest line's bottom 58 above the stage's bottom, over the row of defence and lees. Under each line a strip of the chat wash as wide as the line's text and shadow plus one unit either side (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server is all `stone.lt`. Text wraps at 150, or at half the stage less 64 when that is less, so that chat always ends left of the prompt under the crosshair. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, as wide as the stage less 8, over the hotbar, as the tradition puts it: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
+Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its wash ends left of the hotbar's column (x `cx - 91`, 1 unit clear), the newest line's bottom is 48 above the stage's bottom, level with the top of the hotbar's measures and clear of the life count; on a narrower stage it is 58 above, over the row of defence and lees. Under each line a strip of the chat wash as wide as the line's text and shadow plus one unit either side (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server is all `stone.lt`. Text wraps at 141, so that chat with its wash is 144 wide (x 4 to 148 on a stage 480 wide, left of the hotbar's column and far from the crosshair), or at half the stage less 64 when that is less. A line that wraps continues 4 units in, its strip starting there too, so that a wrapped row is not read as a new speaker. Only whole lines show: when the oldest line will not fit, all of it is left out. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, as wide as the stage less 8, over the hotbar, as the tradition puts it: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
 
 ```
      0         1         2         3         4         5         6         7         8         9         0
@@ -2203,23 +2203,23 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
  | H5 party                    |                                                                            | H6 status                     |
  |                             |         "H2"                                                               |                               |
  |                             |         +-----------------------------------------------------------+      +-------------------------------+
- |                             |         | H3 boss                                      +---------------------------------------------------+
- |                             |         +----------------------------------------------| H7 toast                                          |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- |                             |                                                        |                                                   |
- +-----------------------------+                                                        |                                                   |
- +--------------------------------------------------+                                   |                                                   |
- | H11 chat                                         |                                   |                                                   |
- |                                                  |                 +-+               |                                                   |
- |                                                  |                 +-+               |                                                   |
- |                                                  |                                   +---------------------------------------------------+
+ |                             |         | H3 boss                                                   |
+ |                             |         |                                                           |
+ |                             |         |                                                           |
+ |                             |         |                                                           |
+ |                             |         +-----------------------------------------------------------+
+ |                             |
+ |                             |                                                              +---------------------------------------------+
+ |                             |                                                              | H7 toast                                    |
+ |                             |                                                              |                                             |
+ |                             |                                                              |                                             |
+ |                             |                                                              |                                             |
+ +-----------------------------+                                                              +---------------------------------------------+
+ +--------------------------------------------------+
+ | H11 chat                                         |
+ |                                                  |                 +-+
+ |                                                  |                 +-+
+ |                                                  |
  |                                                  | +-------------------------------+
  |                                                  | +-H13 prompt--------------------+           +-----------------------------------------+
  |                                                  |                                             | H8 tracker                              |
@@ -2249,11 +2249,11 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | H4 | readout | 150 | 26 | 126 | 24 | what you look at; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
 | H5 | party | 4 | 4 | 92 | 105 | the crew: one row 15 tall to each friend online, up to seven: head, name, a life strip 41 by 4 under the name |
 | H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 20, from the right edge leftward, the time left under each in the small face |
-| H7 | toast | 263 | 32 | 160 | 100 | toasts, 160 by 32, pitch 34, three at most, sliding in from the right |
+| H7 | toast | 283 | 74 | 140 | 32 | toasts, 140 by 32 (42 when the second line wraps), 2 apart, two at most, sliding in from the right. On this stage the column would reach under the strips, so while a boss bar is up it starts at y 74 and one shows; otherwise it starts at y 32 under the status frames |
 | H8 | tracker | 295 | 138 | 128 | 44 | the present step of the Guide: a dark plate; chapter in root.4, step in salt, count and where-to under it |
 | H9 | feed | 327 | 186 | 96 | 40 | pickups: lines 10 tall, newest lowest, right-aligned: "+3 Rubble (12)" in the grade's colour |
 | H10 | text | 396 | 228 | 27 | 10 | "Saved", text face, for two seconds |
-| H11 | chat | 4 | 111 | 153 | 71 | chat: up to eight lines 10 tall, newest lowest, the newest ending at y 182, each on its own dark strip as wide as its text, wrapped at 150 so that it ends left of the prompt; fewer lines while the crew list stands above |
+| H11 | chat | 4 | 111 | 144 | 71 | chat: up to eight whole lines 10 tall, newest lowest, each on its own dark strip as wide as its text, wrapped at 141, wrapped rows 4 in. On this stage chat would reach the hotbar's column, so the newest ends at y 182; on a stage where it ends left of that column (480 wide and more) it comes down to 48 above the bottom. Fewer lines while the crew list stands above |
 | H12 | cross | 209 | 116 | 9 | 9 | crosshair, 9 by 9: salt plus, root.0 outline |
 | H13 | prompt | 163 | 132 | 100 | 14 | prompt: a key cap and a line on a strip of the chat wash 2 wider each side, centred on the crosshair, the cap's top 12 under its centre |
 | H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour, for 1.6 s after a change |
@@ -2270,7 +2270,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 - **Keys.** 1 to 9 and the wheel choose a hotbar cell. Enter or T opens chat. Tab holds the roster open. V sets a ping. E, G and M open the pack, the journal and the map.
 - **First.** A new arrival sees the hotbar empty with its first cell chosen, ten life pips, ten hunger pips, ten arm pips, the compass, and the first step of the Guide at the right.
 - **Floating numbers** over a struck creature are the text face with shadow, `salt` for a blow, `ember.hi` for a critical one with an exclamation mark after it, `growth.lt` for mending. They rise by whole units and are cut after 0.85 s.
-- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; toasts start at y 54 and two show at most; the Guide's step is one line, its title, right-aligned at y 126; pickups stand above the arm row, three lines at most, from y 150.
+- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; toasts start at y 54, or under the strips while a boss bar is up, and two show at most; the Guide's step is one line, its title, right-aligned at y 126; pickups stand above the arm row, three lines at most, from y 150.
 - **A blow from a side** shows as a wedge 9 by 5 of `blood` with a `root.0` outline, 40 units from the centre toward the side it came from, in one of eight directions, for 1 s.
 
 ### Pack, with the body panel and the patterns made by hand

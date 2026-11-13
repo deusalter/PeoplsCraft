@@ -6,7 +6,7 @@ import type { Node, Ui } from '../../node';
 import { type Colour, GRADES } from '../../palette';
 import { keycap } from '../../parts/keycap';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
-import { bossBar, statusFrame, toast } from '../../parts/notices';
+import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
 import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crew, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
 import { type Stack, stackGrade, stackName, thing } from '../../sample/play-items';
@@ -76,11 +76,18 @@ export function tracker(x: number, y: number, chapter: string, step: string, hav
   });
 }
 
-/** The bottom of the newest chat line: above the row of defence and lees that stands over the life pips. */
-export function chatBottom(stageH: number): number { return stageH - 58; }
-
-/** Where chat wraps on a stage: 150 when wide, and always clear of the prompt centred under the crosshair. */
+/** Where chat wraps on a stage: 141 when wide, and always clear of the prompt centred under the crosshair. */
 export function chatWrap(stageW: number): number { return Math.min(CHAT_WRAP, Math.floor(stageW / 2) - 64); }
+
+/**
+ * The bottom of the newest chat line. When chat with its wash ends left of the hotbar's column, it comes down to 48
+ * above the stage's bottom, level with the top of the hotbar's measures and clear of the life count; on a stage too
+ * narrow for that it stands above the row of defence and lees.
+ */
+export function chatBottom(stageW: number, stageH: number): number {
+  const clear = 4 + chatWrap(stageW) + 3 <= Math.floor(stageW / 2) - 91 - 1;
+  return stageH - (clear ? 48 : 58);
+}
 
 export function hud(ui: Ui, o: HudOpts): Node[] {
   const st = ui.layout.stage;
@@ -117,10 +124,21 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     states.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + i * 20), y: lowY, ...s })));
     const toasts = [
       { frame: 'growth' as Colour, icon: 'ingot', title: 'Smelt iron', line: 'A step of the Guide' },
-      { frame: GRADES[2].frame, icon: 'warden_bell', title: 'Kankāl Bell', line: 'Found in a Sealed Store' },
       { frame: 'blood' as Colour, icon: 'gloomshade', title: 'A Night raid comes', line: 'Hold the doors till first light' },
-    ].slice(0, narrow ? 2 : 3);
-    toasts.forEach((t, i) => out.push(toast({ x: R(4 + 160), y: (narrow ? 54 : 32) + i * 34, ...t })));
+      { frame: GRADES[2].frame, icon: 'warden_bell', title: 'Kankāl Bell', line: 'Found in a Sealed Store' },
+    ];
+    // The column stands under the status frames. Where its left edge would come within 4 of the boss strips' end it
+    // starts under the strips instead, so that neither covers the other; it never runs into the Guide's step.
+    const tx = R(4 + TOAST_W);
+    const clash = o.boss && tx < L(cx + 91 + 4);
+    let ty = clash ? 50 + 22 + 2 : lowY + 28;
+    const floor = (narrow ? 126 : 138) - 2;
+    for (const t of toasts.slice(0, TOAST_MOST)) {
+      const h = toastHeight(t);
+      if (ty + h > floor) break;
+      out.push(toast({ x: tx, y: ty, ...t }));
+      ty += h + TOAST_GAP;
+    }
   }
 
   if (narrow) out.push(rightLine(R(4), 126, first ? 'Gather wood' : 'Smelt iron', 'salt', TEXT));
@@ -138,7 +156,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
 
   if (o.chat !== false && !first) {
     const top = showCrew ? lowY + friends.length * CREW_ROW + 2 : 4;
-    out.push(chat({ x: L(4), bottom: chatBottom(H), lines: CHAT, wrap: chatWrap(W), most: Math.floor((chatBottom(H) - top) / 10) }));
+    out.push(chat({ x: L(4), bottom: chatBottom(W, H), lines: CHAT, wrap: chatWrap(W), most: Math.floor((chatBottom(W, H) - top) / 10) }));
   }
 
   out.push(crosshair({ x: L(cx - 4), y: Math.floor(H / 2) - 4 }));

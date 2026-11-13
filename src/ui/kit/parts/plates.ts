@@ -174,25 +174,34 @@ export interface ChatOpts {
   lines: ChatLine[];
   /** Open, twelve lines show; closed, eight. */
   open?: boolean;
-  /** Where lines wrap: 150 on a wide stage, less on a narrow one, so that chat keeps clear of the prompt (5.23). */
+  /** Where lines wrap: 141 on a wide stage, so that chat with its wash is 144 wide; less on a narrow one (5.23). */
   wrap?: number;
   /** The most lines that may show, fewer than the eight or twelve when the crew list stands above. */
   most?: number;
 }
 
-/** Where chat lines wrap on a wide stage: they end left of the prompt under the crosshair. */
-export const CHAT_WRAP = 150;
+/** Where chat lines wrap on a wide stage: with the wash, chat is 144 wide and ends left of the hotbar's column. */
+export const CHAT_WRAP = 141;
+
+/** A wrapped line starts this far in, so that it is not read as a new speaker. */
+export const CHAT_INDENT = 4;
 
 interface Run { text: string; c: Colour }
+interface Row { indent: number; runs: Run[] }
 
-/** A chat line's runs, wrapped: the name in its colour, a colon in `root.4`, 3 units, the text in salt. */
-function chatRows(l: ChatLine, at: number): Run[][] {
-  if (!l.from) return wrap(l.text, at).map((w) => [{ text: w.text, c: 'stone.lt' }]);
+/** A chat line's rows, wrapped: the name in its colour, a colon in `root.4`, 3 units, the text in salt. */
+function chatRows(l: ChatLine, at: number): Row[] {
+  const more = (text: string, c: Colour): Row[] => wrap(text, at - CHAT_INDENT).map((w) => ({ indent: CHAT_INDENT, runs: [{ text: w.text, c }] }));
+  if (!l.from) {
+    const first = wrap(l.text, at);
+    const rest = first.slice(1).map((w) => w.text).join(' ');
+    return [{ indent: 0, runs: [{ text: first[0]?.text ?? '', c: 'stone.lt' }] }, ...(rest ? more(rest, 'stone.lt') : [])];
+  }
   const head = measure(l.from) + 1 + measure(':') + 3;
   const first = wrap(l.text, at - head);
-  const rows: Run[][] = [[{ text: l.from, c: SEATS[(l.seat ?? 8) - 1] }, { text: ':', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'salt' }]];
+  const rows: Row[] = [{ indent: 0, runs: [{ text: l.from, c: SEATS[(l.seat ?? 8) - 1] }, { text: ':', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'salt' }] }];
   const rest = first.slice(1).map((w) => w.text).join(' ');
-  if (rest) for (const w of wrap(rest, at)) rows.push([{ text: w.text, c: 'salt' }]);
+  if (rest) rows.push(...more(rest, 'salt'));
   return rows;
 }
 
@@ -211,20 +220,27 @@ function runsWidth(runs: Run[]): number {
 
 /**
  * Chat (5.23): lines 10 tall, newest lowest, each on a strip of the chat wash at three quarters, as wide as its text
- * and shadow plus one unit either side; the text starts 1 in. The wash is strong enough that the grey lines of the
+ * and shadow plus one unit either side; the text starts 1 in, and a wrapped line's strip 4 further. The wash is strong enough that the grey lines of the
  * server read on a noon sky. The entry is not part of this: it stands at the bottom of the screen (6, Chat, open).
  */
 export function chat(o: ChatOpts): Node {
   const at = o.wrap ?? CHAT_WRAP;
-  const rows = o.lines.flatMap((l) => chatRows(l, at)).slice(-Math.min(o.most ?? 99, o.open ? 12 : 8));
+  // Whole lines only: a wrapped line's indented rows never show without the row that names its speaker.
+  const most = Math.min(o.most ?? 99, o.open ? 12 : 8);
+  const rows: Row[] = [];
+  for (let i = o.lines.length - 1; i >= 0; i--) {
+    const r = chatRows(o.lines[i], at);
+    if (rows.length + r.length > most) break;
+    rows.unshift(...r);
+  }
   const h = rows.length * 10;
   return {
     x: o.x, y: o.bottom - h, w: at + 3, h,
     paint: (s) => {
       rows.forEach((r, i) => {
         const y = i * 10;
-        s.wash(0, y, runsWidth(r) + 3, 10, 'root.0', 3);
-        paintRuns(s, r, 1, y);
+        s.wash(r.indent, y, runsWidth(r.runs) + 3, 10, 'root.0', 3);
+        paintRuns(s, r.runs, r.indent + 1, y);
       });
     },
   };

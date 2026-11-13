@@ -1,7 +1,7 @@
 import { FRAMED_PLATE } from '../art/slab';
 import { SMALL } from '../font/face';
 import { centreX, clock, measure } from '../font/measure';
-import { cut } from '../font/wrap';
+import { box, cut } from '../font/wrap';
 import type { Node } from '../node';
 import type { Colour } from '../palette';
 import { paintStrip } from './hud';
@@ -20,9 +20,13 @@ export function frameText(frame: Colour): Colour {
   }
 }
 
-export const TOAST_W = 160;
+export const TOAST_W = 140;
 export const TOAST_H = 32;
-export const TOAST_PITCH = 34;
+/** The gap between two toasts in the column. */
+export const TOAST_GAP = 2;
+/** The most toasts shown at once; the rest wait. */
+export const TOAST_MOST = 2;
+const TOAST_TEXT = TOAST_W - 36;
 
 export interface ToastOpts {
   x: number; y: number;
@@ -35,18 +39,27 @@ export interface ToastOpts {
   slide?: number;
 }
 
-/** A toast (5.17): a framed dark plate 160 by 32, a dark slot at 6, 7, its first line at 30, 5, its second at 30, 16. */
+/** A toast's height: 32, or 42 when its second line wraps onto a third. */
+export function toastHeight(o: Pick<ToastOpts, 'line'>): number {
+  return o.line && box(o.line, TOAST_TEXT, 2).lines.length > 1 ? TOAST_H + 10 : TOAST_H;
+}
+
+/**
+ * A toast (5.17): a framed dark plate 140 wide, a dark slot at 6, 7, its first line at 30, 5, its second at 30, 16.
+ * The second line wraps onto a third rather than being cut, and the plate grows 10 to hold it.
+ */
 export function toast(o: ToastOpts): Node {
   const dx = o.slide ?? 0;
+  const h = toastHeight(o);
   return {
-    x: o.x + dx, y: o.y, w: TOAST_W, h: TOAST_H,
+    x: o.x + dx, y: o.y, w: TOAST_W, h,
     paint: (s) => {
-      s.nine(FRAMED_PLATE, 0, 0, TOAST_W, TOAST_H, { tint: o.frame });
+      s.nine(FRAMED_PLATE, 0, 0, TOAST_W, h, { tint: o.frame });
       s.translate(6, 7);
       paintSlot(s, { ramp: 'dark', stack: o.icon ? { icon: o.icon, n: 1 } : null }, REST);
       s.translate(-6, -7);
-      s.text(cut(o.title, TOAST_W - 36), 30, 5, frameText(o.frame), true);
-      if (o.line) s.text(cut(o.line, TOAST_W - 36), 30, 16, 'root.4', true);
+      s.text(cut(o.title, TOAST_TEXT), 30, 5, frameText(o.frame), true);
+      if (o.line) for (const l of box(o.line, TOAST_TEXT, 2).lines) s.text(l.text, 30, 16 + l.y, 'root.4', true);
     },
   };
 }
