@@ -14,7 +14,8 @@
 //      ends with no entry stops the script.
 //   2. Entries for sentences that are literals in the code (toasts, banners, prompts, menus, errors). Each is
 //      listed below with the file it is in and the text it has now. A literal that is no longer in its file
-//      stops the script: the source moved, and the list has to follow it.
+//      stops the script: the source moved, and the list has to follow it. A literal written in several places records each in `at`.
+//      A literal the multiplayer job has put on main and this tree lacks is read from main with git and marked `branch: "main"`.
 //   3. Entries that have no text in the game yet: the sites, found things, codex subjects, townsfolk
 //      situations and task lines that plan.md adds. Their keys are the constants in the PLANNED section.
 //

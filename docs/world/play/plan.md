@@ -2,7 +2,7 @@
 
 The world bible is finished and the game shows almost none of it. This plan says what step 4 puts on the ground, in the windows and in every sentence, so that a crew of up to eight meets the causes of chapter 1 by playing. Writers work from it and from `text/README.md`. Builders work from it once the multiplayer code is merged.
 
-Section numbers without a letter point to the bible (`docs/world/`). Keys in code font are internal keys and never change. A stride is one piece of ground. `SEA` is the height of the one water, 96. File and line numbers are those of this worktree.
+Section numbers without a letter point to the bible (`docs/world/`). Keys in code font are internal keys and never change. A stride is one piece of ground. `SEA` is the height of the one water, 96. File and line numbers are those of this worktree, except where `_surfaces.json` marks an entry `branch: "main"`.
 
 Three rules run through every section.
 
