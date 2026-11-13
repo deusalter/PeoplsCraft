@@ -1,4 +1,5 @@
 // The world list (section 6, World list): the worlds saved in this browser in a well on the ground tile, four doors.
+import { worldPreview } from '../art/preview';
 import { cut } from '../font/wrap';
 import type { Screen } from '../node';
 import { button } from '../parts/button';
@@ -27,8 +28,9 @@ function row(w: WorldRow, i: number): RowSpec {
   return {
     id: `worlds.row.${i}`, name: w.name,
     body: (s, rw) => {
-      s.text(cut(w.name, rw - 12), 6, 7, 'salt', true);
-      s.text(cut(`seed ${w.seed}, last played ${w.played}, level ${w.level}`, rw - 12), 6, 19, 'root.4', true);
+      s.map(worldPreview(w.seed), 2, 2);
+      s.text(cut(w.name, rw - 44), 38, 7, 'salt', true);
+      s.text(cut(`seed ${w.seed}, last played ${w.played}, level ${w.level}`, rw - 44), 38, 19, 'root.4', true);
     },
   };
 }
@@ -42,7 +44,7 @@ export const worldsScreen: Screen<WorldsView> = (v, ui) => {
     line({ x: 73, y: 8, w: 100, text: 'Worlds', c: 'salt', shadow: true }),
     well({
       id: 'worlds.list', x: 73, y: 22, w: 280, h: 146, host: 'ground', ui, rowH: ROW_H,
-      rows: v.worlds.map(row), chosen: any ? v.chosen : undefined, empty: 'No world yet',
+      rows: v.worlds.map(row), chosen: any ? v.chosen : undefined, empty: 'No world yet', emptyHint: 'New world raises one',
       onChoose: v.onChoose, onUse: v.onPlay,
     }),
     button({ id: 'worlds.play', x: 73, y: 176, w: 136, label: 'Play', disabled: !w, onPress: () => v.onPlay(v.chosen) }),

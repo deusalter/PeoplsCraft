@@ -1,4 +1,4 @@
-import { count, rightX } from '../font/measure';
+import { centreX, count, rightX } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Live, Node, Tip, Ui } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
@@ -58,8 +58,10 @@ export interface WellOpts {
   rowH?: number;
   /** A second press on a row, or Enter on the chosen one. */
   onUse?: (i: number) => void;
-  /** Said in the well, grey, when it holds no rows. */
+  /** Said in the middle of the well, in salt, when it holds no rows. */
   empty?: string;
+  /** A second line under `empty`, grey: what to do about it. */
+  emptyHint?: string;
   ui: Ui;
 }
 
@@ -98,8 +100,15 @@ export function well(o: WellOpts): Node {
     },
   }));
   if (!o.rows.length && o.empty) {
-    const t = o.empty;
-    kids.push({ x: 1, y: 1, w: fw, h: Math.min(fh, RH), paint: (s) => s.text(cut(t, fw - 8), 4, Math.floor((Math.min(fh, RH) - 9) / 2), 'root.4', true) });
+    const t = cut(o.empty, fw - 8), hint = o.emptyHint ? cut(o.emptyHint, fw - 8) : null;
+    const ty = Math.floor((fh - (hint ? 22 : 10)) / 2);
+    kids.push({
+      x: 1, y: 1, w: fw, h: fh,
+      paint: (s) => {
+        s.text(t, centreX(t, 0, fw), ty, 'salt', true);
+        if (hint) s.text(hint, centreX(hint, 0, fw), ty + 12, 'root.4', true);
+      },
+    });
   }
   if (!fits) {
     const trackH = fh;
