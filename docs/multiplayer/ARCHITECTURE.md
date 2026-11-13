@@ -1755,6 +1755,8 @@ st arrives:    if st.inv present:  base.inv = st.inv
 - The host sends `st` in the same tick it advanced `ackSeq`, even when nothing changed (`{t: 'st', ack}`),
   so a refused op is corrected within one round trip.
 - A container snapshot goes to every viewer in the tick it changed, each with that viewer's own `ack`.
+- An acknowledged `close` takes the box from the client's base, so an `st` whose `ack` covers a `close` carries
+  the box of any window open on the host after it, even one whose contents are the same as last sent (D36 (i)).
 - Hotbar selection. Digits and the wheel change `view.inv.sel` at once and set `pendingSel`; no op is
   sent yet (a spinning wheel would otherwise send 60 ops a second). `pendingSel` is flushed as one `sel`
   op by `session.act` in front of any action (4.5), in front of any other op, and otherwise with the
@@ -3518,6 +3520,12 @@ one and kept a drop in the new realm that no `dd` would ever end. Rain marks and
 played the same way. Each queued event now carries the realm it belongs to, and the reset of a connection's
 interest sets for a new realm drops those of the old one; a toast or a pickup line, the player's own wherever
 they are, is kept.
+(i) A container closed and opened again in one host step reaches the client with its box (5.3). `stOf` left `box`
+out whenever its JSON equalled the last one built, and a `close` op did not change that record, while the client
+lets its box go on the acknowledgement of a `close`. A chest closed and clicked again with the two messages in one
+step was opened on the host and on nothing here: the `open` found no box and the client sent `close` again. A
+shop with nothing sold stood open with no window under it, so every sale was predicted as refused. The host now
+forgets the box it sent when it takes a `close` op.
 
 ---
 

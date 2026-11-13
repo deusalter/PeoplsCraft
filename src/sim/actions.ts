@@ -146,7 +146,8 @@ function setWindow(sim: Sim, p: SimPlayer, w: NonNullable<SimPlayer['window']>):
 
 // ---- the inventory snapshot ----------------------------------------------------------------------
 
-/** What the client was last sent: the inventory and the box as JSON ('' nothing open, 'station' a station), and the ack. */
+/** What the client was last sent: the inventory and the box as JSON ('' nothing open, 'station' a station, 'closed' let go by
+ *  a `close` op), and the ack. */
 const SENT = new WeakMap<SimPlayer, { inv: string; box: string; ack: number }>();
 /** The open container as it travels; null for a station, for no window, and for a container that is gone. */
 export function boxOf(sim: Sim, p: SimPlayer): BoxWire | null {
@@ -530,5 +531,7 @@ export function onFire(sim: Sim, p: SimPlayer, m: C2SOf<'fire'>): number {
 /** `op`: its fields beside `t` and `seq` are the op. */
 export function onOp(sim: Sim, p: SimPlayer, m: C2SOf<'op'>): OpResult {
   const { t: _t, seq, ...op } = m;
+  // the client lets its box go when this close is acknowledged, so a window opened again after it is news, whatever it holds
+  if (op.o === 'close') { const s = SENT.get(p); if (s) s.box = 'closed'; }
   return invOp(sim, p, seq, op as InvOp);
 }

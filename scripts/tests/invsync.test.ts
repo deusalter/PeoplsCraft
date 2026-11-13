@@ -639,6 +639,32 @@ test('the Guide over a chest: tidy keeps the window on both sides, ops act as wi
   same(r, 'after Back');
 });
 
+test('a close and a new open of the same container in one host step: the st carries the box, and the window stands', () => {
+  const r = rig(), { sync, p, up } = r, v = sync.view;
+  openBox(r, CHEST);
+  assert.equal(v.box?.kind, 'chest');
+  // the chest has not changed since the last st; the close and the use behind it reach the host together
+  sync.send({ o: 'close' });
+  up.push({ t: 'use', seq: sync.nextSeq(), x: CHEST[0], y: CHEST[1], z: CHEST[2], id: r.store.getBlock(...CHEST) });
+  r.serve();
+  assert.equal(p.window?.mode, 'chest');
+  r.deliver();
+  assert.equal(v.box?.kind, 'chest', 'the open that follows finds the box');
+  assert.equal(v.window?.mode, 'chest');
+  same(r, 'after the reopen');
+  // the same for a shop with nothing sold: close, then talk to the same townsperson
+  sync.send({ o: 'close' }); r.flush();
+  up.push({ t: 'talk', id: r.npc }); r.flush();
+  assert.equal(v.window?.mode, 'shop');
+  sync.send({ o: 'close' });
+  up.push({ t: 'talk', id: r.npc });
+  r.serve(); r.deliver();
+  assert.equal(p.window?.mode, 'shop');
+  assert.equal(v.window?.mode, 'shop', 'the shop stands here as well');
+  assert.equal(v.box?.kind, 'shop');
+  same(r, 'after the shop reopened');
+});
+
 test('the HUD reads the world event as the wire carries it: the label, the bar and the moon\'s tint, with no field of the host\'s own', () => {
   const r = rig(), ev = r.sim.shared.events;
   // what the `event` message carries: a, k and g, without the day of the last march the host keeps beside them
