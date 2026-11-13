@@ -1,6 +1,6 @@
 // The world map (section 6, World map): a stone slab with a tab for each place the crew can chart, the chart in a well
 // that pans and zooms by whole steps, the known places in a list, and Travel where the world allows a crossing.
-import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_LIT, MAP_SHALLOWS, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW } from '../art/chart';
+import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_LIT, MAP_SHALLOWS, MAP_SHORE, MAP_TEXTURE, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW, type Texture } from '../art/chart';
 import { GROUND, GROUND_H, GROUND_W } from '../art/ground';
 import { HEADS } from '../art/heads';
 import { COMPASS_MARKS, PING } from '../art/marks';
@@ -71,7 +71,9 @@ function nearWay(x: number, z: number): boolean {
  * The living ground, drawn at one scale: cells of 2 by 2 units, each one of the eight kinds in its flat tone, ground not
  * yet walked as parchment. A cell whose neighbour above or to the left stands lower takes its kind's lit tone, one whose
  * neighbour below or to the right stands lower its edge tone, so that rises read lit from the top left; water beside
- * land is the shallows, a band one cell wide. Where parchment meets the known a rule of one unit of root.0 runs along it.
+ * land is the shallows, a band one cell wide, with a line of surf one unit wide where it touches the land. Each face
+ * carries its kind's marks on a grid fixed to the world (grass tufts, grains of sand, crowns of trees, ripples), so that
+ * a fill reads as ground. Where parchment meets the known a rule of one unit of root.0 runs along it.
  */
 const CELL = 2;
 function paintGround(s: Surface, v: MapView): void {
@@ -86,6 +88,9 @@ function paintGround(s: Surface, v: MapView): void {
   }
   const at = (u: number, row: number) => kinds[(row + 1) * gw + u + 1];
   const lower = (n: MapKind, k: MapKind) => n !== 'unknown' && MAP_HEIGHT[n] < MAP_HEIGHT[k];
+  const land = (n: MapKind) => n !== 'unknown' && n !== 'water';
+  // Whether a cell shows its kind's plain face, which alone takes marks.
+  const plain = new Uint8Array(nw * nh);
   for (let row = 0; row < nh; row++) {
     let run = 0, runC: Colour | null = null;
     for (let u = 0; u <= nw; u++) {
@@ -94,10 +99,11 @@ function paintGround(s: Surface, v: MapView): void {
         const k = at(u, row);
         const up = at(u, row - 1), left = at(u - 1, row), down = at(u, row + 1), right = at(u + 1, row);
         if (k === 'unknown') c = MAP_TONES.unknown[0];
-        else if (k === 'water') c = [up, left, down, right].some((n) => n !== 'unknown' && n !== 'water') ? MAP_SHALLOWS : MAP_TONES.water[0];
+        else if (k === 'water') c = [up, left, down, right].some(land) ? MAP_SHALLOWS : MAP_TONES.water[0];
         else if (lower(up, k) || lower(left, k)) c = MAP_LIT[k];
         else if (lower(down, k) || lower(right, k)) c = MAP_TONES[k][1];
         else c = MAP_TONES[k][0];
+        if (k !== 'unknown' && c === MAP_TONES[k][0]) plain[row * nw + u] = 1;
       }
       if (c !== runC) {
         if (runC) s.fill((u - run) * CELL, row * CELL, run * CELL, CELL, runC);
@@ -106,10 +112,37 @@ function paintGround(s: Surface, v: MapView): void {
       run++;
     }
   }
+  // The marks, on a grid of the world's units so that they move with the ground as it pans.
+  const ox = Math.round(cx / v.zoom) - CW / 2, oy = Math.round(cz / v.zoom) - CH / 2;
+  const fits = (k: MapKind, x: number, y: number) => {
+    if (x < 0 || y < 0 || x >= CW || y >= CH) return false;
+    const u = Math.floor(x / CELL), row = Math.floor(y / CELL);
+    return at(u, row) === k && plain[row * nw + u] === 1;
+  };
+  for (const [k, t] of Object.entries(MAP_TEXTURE) as [MapKind, Texture][]) {
+    const gy0 = Math.floor(oy / t.py) - 1, gy1 = Math.ceil((oy + CH) / t.py);
+    for (let gy = gy0; gy <= gy1; gy++) {
+      const shift = ((gy % 2) + 2) % 2 ? Math.floor(t.px / 2) : 0;
+      const gx0 = Math.floor((ox - shift) / t.px) - 1, gx1 = Math.ceil((ox + CW - shift) / t.px);
+      for (let gx = gx0; gx <= gx1; gx++) {
+        const x = gx * t.px + shift - ox, y = gy * t.py - oy;
+        if (!t.mark.every(([dx, dy]) => fits(k, x + dx, y + dy))) continue;
+        for (const [dx, dy, c] of t.mark) s.fill(x + dx, y + dy, 1, 1, c);
+      }
+    }
+  }
   for (let row = 0; row < nh; row++) {
     for (let u = 0; u < nw; u++) {
-      if (at(u, row) !== 'unknown') continue;
       const x = u * CELL, y = row * CELL;
+      const k = at(u, row);
+      if (k === 'water') {
+        if (land(at(u, row - 1))) s.fill(x, y, CELL, 1, MAP_SHORE);
+        if (land(at(u, row + 1))) s.fill(x, y + CELL - 1, CELL, 1, MAP_SHORE);
+        if (land(at(u - 1, row))) s.fill(x, y, 1, CELL, MAP_SHORE);
+        if (land(at(u + 1, row))) s.fill(x + CELL - 1, y, 1, CELL, MAP_SHORE);
+        continue;
+      }
+      if (k !== 'unknown') continue;
       if (at(u, row - 1) !== 'unknown') s.fill(x, y, CELL, 1, 'root.0');
       if (at(u, row + 1) !== 'unknown') s.fill(x, y + CELL - 1, CELL, 1, 'root.0');
       if (at(u - 1, row) !== 'unknown') s.fill(x, y, 1, CELL, 'root.0');

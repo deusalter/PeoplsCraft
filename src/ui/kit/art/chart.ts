@@ -86,3 +86,29 @@ export const MOUTH_MARK = coded([
   'KHJJJMK',
   '.KKKKK.',
 ], 'chart.mouth');
+
+/**
+ * The marks a kind of ground carries on its face, so that a fill reads as a material and not as a flat colour: one
+ * mark at each point of a grid fixed to the world, every other row moved half a pitch along, each unit a tone. A mark is
+ * drawn only where the whole of it falls on that kind's face, never over a shore, an edge or another kind.
+ */
+export interface Texture { px: number; py: number; mark: readonly (readonly [x: number, y: number, c: Colour])[] }
+
+export const MAP_TEXTURE: Partial<Record<MapKind, Texture>> = {
+  // A tuft: a v of growth.dk, 3 wide and 2 tall.
+  grass: { px: 8, py: 6, mark: [[0, 0, 'growth.dk'], [2, 0, 'growth.dk'], [1, 1, 'growth.dk']] },
+  // A grain of darker sand.
+  sand: { px: 6, py: 6, mark: [[0, 0, 'clay.sh']] },
+  // A crown 5 by 4 seen from above: growth, its top left unit lit, its foot and right side in the shade of root.1.
+  forest: { px: 7, py: 7, mark: [
+    [1, 0, 'growth.lt'], [2, 0, 'growth'], [3, 0, 'growth'],
+    [0, 1, 'growth.lt'], [1, 1, 'growth'], [2, 1, 'growth'], [3, 1, 'growth'], [4, 1, 'growth'],
+    [0, 2, 'growth'], [1, 2, 'growth'], [2, 2, 'growth'], [3, 2, 'growth'], [4, 2, 'root.1'],
+    [1, 3, 'root.1'], [2, 3, 'root.1'], [3, 3, 'root.1'],
+  ] },
+  // A ripple: a dash of arm.lt 3 long.
+  water: { px: 8, py: 6, mark: [[0, 0, 'arm.lt'], [1, 0, 'arm.lt'], [2, 0, 'arm.lt']] },
+};
+
+/** The line of surf along a shore: the unit of the shallows that touches the land. */
+export const MAP_SHORE: Colour = 'clay.lt';
