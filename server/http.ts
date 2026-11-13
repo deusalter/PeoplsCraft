@@ -5,7 +5,7 @@ import { type IncomingMessage, type Server, type ServerResponse, createServer } 
 import { extname, join, normalize, sep } from 'node:path';
 
 /** What the title menu asks before it offers to join (2.3). */
-export interface Info { server: true; name: string; players: number; max: number; password: boolean }
+export interface Info { server: true; name: string; players: number; max: number; password: boolean; harness?: true }
 
 const TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',

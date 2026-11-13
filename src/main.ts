@@ -110,6 +110,8 @@ async function boot(): Promise<void> {
   // `&name=` joins it at once.
   const forced = q.get('server');
   const here = forced === null ? await serverHere() : null;
+  // `window.T` on a server join: in development, or on the page of a server started with `--harness`
+  const devTools = import.meta.env.DEV || (here ?? (forced !== null ? await serverHere() : null))?.harness === true;
   const join = (j: JoinChoice): (() => void) => {
     const url = here && !j.address ? ownSocket() : serverUrl(j.address, location);
     if (!url) { setTimeout(() => menu.join('That is not an address. Type it as host:port, for example 192.168.1.20:8080.')); return () => {}; }
@@ -126,7 +128,7 @@ async function boot(): Promise<void> {
         // the simulation is the server's: every core but the page's own may mesh
         const pool = new WorkerPool(Math.max(2, Math.min(6, cores - 2)));
         game = new Game(canvas, ui, { session, settings, pool, canSave: true });
-        installDevTools(game, { ask: () => Promise.reject(new Error('the simulation runs on the server')) });
+        if (devTools) installDevTools(game, { ask: () => Promise.reject(new Error('the simulation runs on the server')) });
         game.start();
       } else if (m.t === 'error' && !RETRY_CODES.includes(m.code)) { stop(); menu.join(m.msg); }
     };

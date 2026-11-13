@@ -31,6 +31,9 @@ export interface Ctx {
   /** A check: recorded, and the run fails when one does not hold. */
   check(ok: boolean, what: string): void;
   log(line: string): void;
+  /** Stop the server with SIGTERM, as an operator does, and start it again on the same folder; `url` and `direct`
+   *  then name the new one. Resolves with the exit code of the stop. */
+  restart(): Promise<number | null>;
   /** The server's output so far. */
   serverLog(): string;
   alive(): boolean;
@@ -77,18 +80,32 @@ async function runOnce(name: string, scenario: Scenario, lag: boolean, keep: boo
   const checks: [boolean, string][] = [], bots: Bot[] = [];
   const t0 = performance.now();
   const say = (l: string): void => console.log(`  ${((performance.now() - t0) / 1000).toFixed(1).padStart(6)}s  ${l}`);
-  const server = await startServer(join(data, 'world'), seed !== null ? ['--seed', seed] : []);
+  const world = join(data, 'world'), extra = seed !== null ? ['--seed', seed] : [];
+  let server = await startServer(world, extra);
   let proxy: LagProxy | null = null;
-  if (lag) { const u = new URL(server.base); proxy = await startLagProxy({ host: u.hostname, port: Number(u.port) }); }
+  const lagOn = async (): Promise<void> => { const u = new URL(server.base); proxy = await startLagProxy({ host: u.hostname, port: Number(u.port) }); };
+  if (lag) await lagOn();
   const get = async <T>(path: string): Promise<T> => { const r = await fetch(server.base + path); if (!r.ok) throw new Error(`${path}: ${r.status}`); return (await r.json()) as T; };
+  const earlier: string[] = [];
   const ctx: Ctx = {
-    url: proxy ? `127.0.0.1:${proxy.port}` : server.base, direct: server.base, lag,
+    get url() { return proxy ? `127.0.0.1:${proxy.port}` : server.base; },
+    get direct() { return server.base; },
+    lag,
     bot: (b) => { bots.push(b); return b; },
     stats: (last) => get<Stats>('/stats' + (last ? `?last=${last}` : '')),
     hash: (dim, cx0, cz0, cx1, cz1) => get<Record<string, string>>(`/hash?dim=${dim}&cx0=${cx0}&cz0=${cz0}&cx1=${cx1}&cz1=${cz1}`),
     check: (ok, what) => { checks.push([ok, what]); say(`${ok ? 'ok  ' : 'FAIL'} ${what}`); },
     log: say,
-    serverLog: () => server.logs.join(''),
+    restart: async () => {
+      if (proxy) { await proxy.close(); proxy = null; }
+      const rc = await stopServer(server);
+      earlier.push(...server.logs);
+      server = await startServer(world, extra);
+      if (lag) await lagOn();
+      say(`server restarted: ${server.base}`);
+      return rc;
+    },
+    serverLog: () => earlier.join('') + server.logs.join(''),
     alive: () => server.proc.exitCode === null,
   };
   console.log(`scenario ${name}${lag ? ' through the lag proxy' : ''}, run ${i + 1}: server ${server.base}, data ${data}`);
@@ -101,15 +118,15 @@ async function runOnce(name: string, scenario: Scenario, lag: boolean, keep: boo
       `in ${Object.entries(w.bytesIn).map(([k, v]) => `${k} ${v}`).join(' ')}  out ${w.bytesOut}`);
     b.close();
   }
-  if (proxy) { say(`lag proxy: ${proxy.stats.segments} segments, ${proxy.stats.stalls} stalled`); await proxy.close(); }
-  const errs = server.logs.join('').split('\n').filter((l) => / error /.test(l));
+  if (proxy) { const p: LagProxy = proxy; say(`lag proxy: ${p.stats.segments} segments, ${p.stats.stalls} stalled`); await p.close(); }
+  const errs = ctx.serverLog().split('\n').filter((l) => / error /.test(l));
   const rc = await stopServer(server);
   ctx.check(rc === 0, `the server stopped cleanly on SIGTERM (exit ${rc})`);
   if (errs.length) say('server errors:\n' + errs.slice(0, 20).join('\n'));
   if (!keep) rmSync(data, { recursive: true, force: true });
   const failed = checks.filter((c) => !c[0]);
   console.log(`scenario ${name} run ${i + 1}: ${failed.length ? `FAILED (${failed.length} of ${checks.length} checks)` : `passed (${checks.length} checks)`} in ${((performance.now() - t0) / 1000).toFixed(1)} s\n`);
-  if (failed.length) console.log(server.logs.join('').split('\n').slice(-40).join('\n'));
+  if (failed.length) console.log(ctx.serverLog().split('\n').slice(-40).join('\n'));
   return !failed.length;
 }
 

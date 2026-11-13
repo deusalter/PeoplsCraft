@@ -3755,6 +3755,33 @@ segment and everything behind it, so the stream stays in order.
 (h) No scenario of this stage failed for a defect in the server or the shared code: `basic` (three runs on random
 seeds, and two through the lag proxy) and `abuse` (three runs) passed with zero `rej` and zero corrections on every bot.
 
+D41. Stage 4, integration (2.2, 4.1, 8.1, 10.1, 10.2, 11). What the stage's checks found, and what was built to pass them.
+(a) 10.1 says `T` works on a `?server=` join; the stage's check says no page has `window.T` unless the server was started
+with `--harness`. Both hold this way: a server started with `--harness` adds `harness: true` to its `GET /info` answer (a
+field 2.3's `{server, name, players, max, password}` does not list), and a page joined to a server installs `window.T` only
+in a development build or when the page's own server says `harness`. `T.ask` on a server join still rejects.
+(b) Golden on the server ("smoke `golden` passes against the server from a non-localhost address over plain http", 11):
+`npm run smoke -- golden --server` builds the client and the server into `out/smoke/`, starts the server on every
+interface with `--harness --cheats --seed golden` and a fresh folder under `.claude/mp-work/pad/smoke/`, and opens
+`http://<the first non-internal IPv4>:<port>/?server=<same>&name=Golden`; `--server http://h:p` uses one already running.
+The script and `scripts/golden/baseline.json` are the solo ones. Where the solo script reads the simulation through
+`T.ask`, its server mode asks three read-only questions the server answers under `--harness` beside `/hash` and `/stats`:
+`/ent?dim&x&y&z` (`{ent: {kind, data} | null}`), `/mobs?dim` (the active creatures) and `/homes`; its pokes (`caps`,
+`clearmobs`, `fill`) are the commands of 10.1, sent at most one per 220 ms, since 4.1 drops `cmd` over 5 a second.
+No question runs code sent by the page. `T.lib` (`BLOCKS`, `raycast`, `newRayHit`) gives a script the modules a
+production bundle does not serve under `/src/`; golden reads them there in every mode.
+(c) Scenario `basic` also restarts the server: Bram places one more block, and with both bots still connected the
+runner stops the server with SIGTERM and starts it again on the same folder (`Ctx.restart()`). Both bots come back with
+their tokens; the check is the same position, the same pack slot by slot, that block, and every chunk round the site
+hashing as before on the host and on Ada. A server that does not save on SIGTERM fails it.
+(d) A seed showed `goto` walking into a wall: the path dropped from a column into one whose cells at the old height were
+solid (leaves over a slope), which a body cannot walk through. `Bot.flood` now takes a drop only when the column it
+enters is open from the old feet down to the new ones. A walk that times out names where the body stood.
+(e) D39 (w), the README's hosting section: written, with the flags, how a stop saves, the exit codes, the restore steps
+and a systemd unit (`ExecStart` runs `node dist/server/main.js` so that `SIGTERM` reaches Node, `TimeoutStopSec=60`,
+`StateDirectory=peopls-craft` so that `/var/lib/peopls-craft` exists and belongs to `User=`). The systemd lines were not run on Linux.
+The storage's notices of D39 (w) still reach only the log.
+
 ---
 
 ## 14. Review log

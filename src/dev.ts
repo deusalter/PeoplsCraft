@@ -1,8 +1,9 @@
 // Developer / automated-test helpers, exposed as window.T. They drive the game in real time
 // even when the tab is in the background and requestAnimationFrame is throttled.
-import { B } from './data/blocks';
+import { B, BLOCKS } from './data/blocks';
 import type { Game } from './game';
 import { STEP } from './sim/clock';
+import { newRayHit, raycast } from './sim/physics';
 import type { Sim } from './sim/sim';
 
 /** `sim`: the simulation when it runs in this page. `ask(src, arg)`: run the function whose source is `src` as
@@ -14,6 +15,8 @@ export function installDevTools(game: Game, where: { sim?: Sim; ask: (src: strin
   const tick = (): Promise<void> => new Promise((r) => { ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
   const T = {
     game, B, sim,
+    /** What a script needs of the game's own modules, where no development server hands them out. */
+    lib: { BLOCKS, raycast, newRayHit },
     /** Find the y of the first solid block at or below `y`. */
     floor(x: number, y: number, z: number): number { while (y > 1 && game.world.getBlock(x, y, z) === 0) y--; return y; },
     /** Exactly one frame of one step, whatever the wall clock says. */

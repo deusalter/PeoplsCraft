@@ -88,6 +88,16 @@ function harness(h: SimHost, path: string, q: URLSearchParams): unknown {
     }
     return out;
   }
+  // what golden reads where the simulation runs (10.1's T.ask questions), as fixed read-only questions
+  if (path === '/ent' || path === '/mobs') {
+    const n = ['dim', 'x', 'y', 'z'].map((k) => Number(q.get(k))), realm = h.sim.realms[n[0]];
+    if (!Number.isInteger(n[0]) || !realm) return { error: `${path}?dim${path === '/ent' ? '&x&y&z' : ''}` };
+    if (path === '/mobs') return realm.mobs.list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss }));
+    if (n.some((v) => !Number.isInteger(v))) return { error: '/ent?dim&x&y&z' };
+    const e = realm.getEnt(n[1], n[2], n[3]);
+    return { ent: e ? { kind: e.kind, data: e.data } : null };
+  }
+  if (path === '/homes') return h.sim.shared.homes.map((o) => ({ x: o.x, y: o.y, z: o.z, npc: o.npc }));
   if (path === '/stats') {
     const t = h.stats.tickMs, steps = h.stepCount, last = Math.min(steps, t.length, Math.max(1, Number(q.get('last')) || t.length));
     const a: number[] = [];
@@ -146,7 +156,7 @@ async function main(): Promise<number> {
   }
 
   const clientDir = fileURLToPath(new URL('../client/', import.meta.url));
-  const http = createHttp(clientDir, () => ({ server: true, name: h.sim.world.name, players: h.sim.online(), max: f.maxPlayers, password: f.password !== null }),
+  const http = createHttp(clientDir, () => ({ server: true, name: h.sim.world.name, players: h.sim.online(), max: f.maxPlayers, password: f.password !== null, ...(f.harness ? { harness: true } : {}) }),
     f.harness ? (path, q) => harness(h, path, q) : undefined);
   const ws = attachWs(http, '/ws', env, (c) => h.connect(c));
   await new Promise<void>((ok, no) => { http.once('error', no); http.listen(f.port, f.host, () => { http.off('error', no); ok(); }); });

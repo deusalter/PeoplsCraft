@@ -23,6 +23,98 @@ block, a chest or your inventory, when you pause, when you switch away from the 
 title, and every 30 seconds while you walk. Closing the tab can therefore lose at most the last 3 seconds of
 building and the last 30 seconds of walking, and the world always opens as one consistent moment.
 
+## Hosting a server
+
+One machine runs the world; friends open it in their browser and play in it together. The server
+is plain Node (22 or newer) with nothing to install beside it and nothing it fetches from the internet.
+
+```bash
+npm install
+npm start -- --data ~/peopls-world          # builds when the sources changed, then serves on port 8080
+```
+
+`npm start` builds `dist/` when it is missing or older than the sources, then runs
+`node dist/server/main.js`; once built, `dist/` alone is enough to run it elsewhere
+(`node dist/server/main.js --data <dir>`). The first start makes a new world in the folder; every
+later start opens the same one.
+
+On your own network, friends open `http://<this machine's address>:8080/` (for example
+`http://192.168.1.20:8080/`), type a name and join. It is plain http, which is all a LAN needs; to
+play over the internet, forward the port on your router or put the server behind a TLS proxy.
+
+| Flag | Default | |
+| --- | --- | --- |
+| `--data <dir>` | required | the folder the world is kept in |
+| `--port`, `--host` | `8080`, `0.0.0.0` | where it listens (`--port 0`: any free port, named in the log) |
+| `--name`, `--seed` | `Peopls Craft`, random | used only when the folder holds no world yet |
+| `--password <text>` | none | asked of everyone who joins |
+| `--cheats` | off | lets every player use the command line |
+| `--max-players`, `--view-max` | `8`, `12` | |
+| `--save-interval <s>` | `60` | how often what changed is written to disk |
+| `--backup-interval <s>`, `--backup-keep <n>` | `1800`, `12` | backups under `<dir>/backups/` |
+| `--restore <stamp>` | | put a backup back, then run (below) |
+
+`--harness` is for the automated checks only: it answers questions about the world's insides on
+extra http paths and gives the page `window.T`. Do not start a server for friends with it.
+
+Stopping. Ctrl-C or `SIGTERM` tells everyone the server is stopping, saves the world, takes a
+backup if anything changed since the last one, and exits with code 0. A crash or a power cut loses
+at most the last `--save-interval` seconds; the world on disk is always one whole save, never half
+of one. Exit code 1 means the folder could not be opened or the last save failed (the disk was full
+or unwritable), 2 that the server stopped itself after 20 failed steps in a minute; each is logged. Two servers cannot open one
+folder: the second refuses while the first holds `server.lock`.
+
+### Restoring a backup
+
+1. Stop the server.
+2. List the backups: `ls <dir>/backups/`. Each is named by when it was taken, in UTC, as
+   `YYYYMMDD-HHMMSS`; the newest sorts last.
+3. Start once with the backup's stamp:
+   `npm start -- --data <dir> --restore 20261113-111402` (or
+   `node dist/server/main.js --data <dir> --restore 20261113-111402`). The current files are moved to
+   `<dir>/backups/pre-restore-<time>/` first, so a restore can itself be undone the same way, then
+   the backup is put in place and the server runs on it.
+4. From then on start without `--restore`: giving it again would restore the backup again.
+
+If `world.json` will not read, the server refuses to start and prints the newest backup that does
+and the exact command to restore it; it never picks one by itself. A restore cut short by a crash
+is finished by running the same command again. A damaged player or region file is set aside as
+`.bad-<time>` and replaced by its newest good backup copy without stopping.
+
+### Running it as a service (Linux, systemd)
+
+Save as `/etc/systemd/system/peopls-craft.service`, with your user and paths, then
+`sudo systemctl daemon-reload && sudo systemctl enable --now peopls-craft`. Logs:
+`journalctl -u peopls-craft -f`. (The unit and these three commands follow systemd's documented
+behaviour; they were not run on a Linux machine when this was written.)
+
+```ini
+[Unit]
+Description=Peopls Craft server
+After=network.target
+
+[Service]
+Type=simple
+User=peopls
+# makes /var/lib/peopls-craft and gives it to User
+StateDirectory=peopls-craft
+WorkingDirectory=/opt/peopls-craft
+ExecStart=/usr/bin/node /opt/peopls-craft/dist/server/main.js --data /var/lib/peopls-craft --port 8080
+# SIGTERM is the clean stop: it saves and backs up before exiting
+KillSignal=SIGTERM
+TimeoutStopSec=60
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Build once with `npm run build` in `/opt/peopls-craft` (and after every update) before starting the
+service; `ExecStart` runs the build, not `npm start`, so that a stop signal reaches Node directly.
+To restore under systemd, `systemctl stop peopls-craft`, run step 3 above by hand as the same user
+with Ctrl-C once it says it is listening, then `systemctl start peopls-craft`.
+
 ## Controls
 
 | Key | Action |
@@ -169,7 +261,8 @@ All content is data. Nothing below needs engine changes.
   run its host in the worker, `&det` to make two runs of one script step for step alike.
 - `window.T` drives the game without real input or `requestAnimationFrame`
   (`T.run(ms)`, `T.loaded()`, `T.step(n)`, `T.key`, `T.click`, `T.grab`, `T.cmd('give iron_sword')`;
-  `T.ask((sim, arg) => ...)` reads the simulation wherever it runs).
+  `T.ask((sim, arg) => ...)` reads the simulation wherever it runs). A page joined to a server has
+  `window.T` only in development or when that server was started with `--harness`, and `T.ask` only in solo.
   Background tabs throttle `requestAnimationFrame`, so automated checks must use these.
 - `T.showcase(['b_colossus', 'woolback'])` lines creatures up, frozen, on a platform, and
   `T.orbit(angle)` walks the camera round them.
@@ -179,7 +272,10 @@ All content is data. Nothing below needs engine changes.
   (`--solo` flies a world made in the title menu). `closetab` closes the tab 4 s and 1 s after a change and
   opens the world again, `det` runs one script twice and compares, `twotab` upgrades the database under an
   old tab, `solofar` checks that nothing far away is culled, `tpfar` times the worker's steps on far jumps.
-  Run them one at a time.
+  Run them one at a time. `npm run smoke -- golden --server` plays the same script on the Node server,
+  opened from this machine's LAN address over plain http, against the same baseline.
+- `npm run scenario -- basic` and `npm run scenario -- abuse` build the server, start it on a free port and
+  play headless bots on it (`--runs N`, `--lag` behind a delaying proxy, `--seed <text>`).
 - `?gallery` shows every block tile (as a 2x2 repeat, so seams show) and every item icon enlarged;
   `?gallery=tiles&scale=6` and `?gallery=icons` narrow it down.
 

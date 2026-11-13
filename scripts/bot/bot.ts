@@ -162,7 +162,10 @@ export class Bot {
       b.yaw = Math.atan2(-dx, -dz);
       if (d < 0.6 && Math.hypot(b.vx, b.vz) > 2) this.keys.release('KeyW'); else this.keys.press('KeyW');
       return false;
-    }, ms, `walk to ${x.toFixed(1)} ${z.toFixed(1)}`);
+    }, ms, `walk to ${x.toFixed(1)} ${z.toFixed(1)}`).catch((e: Error) => {
+      const b = this.body;
+      throw new Error(`${e.message}, stuck at ${b.x.toFixed(2)} ${b.y.toFixed(2)} ${b.z.toFixed(2)}`);
+    });
   }
   /** Cells (x, z) to walk through from where the body stands towards (tx, tz), or towards the reachable cell nearest it. */
   path(tx: number, tz: number): [number, number][] {
@@ -197,6 +200,10 @@ export class Bot {
         if (seen.has(k)) continue;
         const ny = standY(nx, nz, c.y);
         if (ny < 0 || (ny > c.y && !passable(c.x, c.y + 2, c.z))) continue;
+        // a drop walks in at the old height and falls: the column must be open from there down to the new feet
+        let open = true;
+        for (let y = ny + 2; y <= c.y + 1 && open; y++) open = passable(nx, y, nz);
+        if (!open) continue;
         seen.add(k); q.push({ x: nx, y: ny, z: nz, from: c });
       }
     }

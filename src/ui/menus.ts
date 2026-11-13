@@ -120,7 +120,11 @@ const line = (parent: HTMLElement, text: string): void => { el('div', '', parent
 export interface WorldChoice { id: string; name: string; seed: number; seedText: string }
 
 /** What a server answers at `GET ./info`. */
-export interface ServerInfo { server: true; name: string; players: number; max: number; password: boolean }
+export interface ServerInfo {
+  server: true; name: string; players: number; max: number; password: boolean;
+  /** Present only on a server started with `--harness`: its pages give the test harness `window.T`. */
+  harness?: true;
+}
 /** A server the title menu was asked to join. `address` as the player typed it, or the page's own origin. */
 export interface JoinChoice { address: string; name: string; password?: string }
 export interface JoinMenu {

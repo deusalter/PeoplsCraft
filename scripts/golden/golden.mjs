@@ -12,13 +12,24 @@
 /** Runs inside the page. R reads state; D does the few things a player has no input for. */
 export async function installHelpers() {
   const g = () => T.game;
-  // the dev server hands back the module instance the game itself loaded
-  const KEYS = (await import('/src/data/blocks.ts')).BLOCKS.map((b) => b.key);
-  const { raycast, newRayHit } = await import('/src/sim/physics.ts');
+  const KEYS = T.lib.BLOCKS.map((b) => b.key);
+  const { raycast, newRayHit } = T.lib;
   const hit = newRayHit();
   const P = () => g().player;
   /** `fn(realm, arg)` on the player's realm, where the simulation runs. */
   const inRealm = (fn, arg) => T.ask(new Function('return (sim, [d, a]) => (' + fn.toString() + ')(sim.realms[d], a)')(), [g().dim, arg]);
+  // joined to a server (`--server`): its harness answers the same questions, and the pokes are its commands
+  const remote = new URLSearchParams(location.search).has('server');
+  const get = async (path) => { const r = await fetch(path, { cache: 'no-store' }); if (!r.ok) throw new Error(`${path}: ${r.status}`); return r.json(); };
+  const entAt = (x, y, z) => (remote ? get(`/ent?dim=${g().dim}&x=${x}&y=${y}&z=${z}`).then((a) => a.ent) : inRealm((r, [x, y, z]) => { const e = r.getEnt(x, y, z); return e ? { kind: e.kind, data: e.data } : null; }, [x, y, z]));
+  const plain = (s) => (s ? { k: s.k, n: s.n } : null);
+  // a server drops commands over 5 a second (4.1): a script's run of them is paced under that
+  if (remote && !T.cmd.paced) {
+    const send = T.cmd;
+    let at = 0;
+    T.cmd = async (c) => { const wait = at + 220 - performance.now(); if (wait > 0) await T.run(wait); at = performance.now(); return send(c); };
+    T.cmd.paced = true;
+  }
   window.R = {
     id: (key) => T.B[key],
     key: (x, y, z) => KEYS[g().world.getBlock(x, y, z)] ?? String(g().world.getBlock(x, y, z)),
@@ -36,12 +47,12 @@ export async function installHelpers() {
     ready: () => g().ready && g().world.counts().waiting === 0,
     quest: () => g().quests.index,
     /** A block entity's slots as plain {k, n} (null where empty), or null when there is no entity. */
-    container: (x, y, z) => inRealm((r, [x, y, z]) => { const e = r.getEnt(x, y, z); return e && e.data.s ? e.data.s.map((s) => (s ? { k: s.k, n: s.n } : null)) : null; }, [x, y, z]),
-    ent: (x, y, z) => inRealm((r, [x, y, z]) => { const e = r.getEnt(x, y, z); return e ? { kind: e.kind, loot: e.data.loot ?? null, opened: !!e.data.s } : null; }, [x, y, z]),
-    forge: (x, y, z) => inRealm((r, [x, y, z]) => { const e = r.getEnt(x, y, z); if (!e || e.kind !== 'forge') return null; const d = e.data; return { s: d.s.map((s) => (s ? { k: s.k, n: s.n } : null)), burn: d.burn, prog: d.prog }; }, [x, y, z]),
-    mobs: () => inRealm((r) => r.mobs.list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss }))),
+    container: async (x, y, z) => { const e = await entAt(x, y, z); return e && e.data.s ? e.data.s.map(plain) : null; },
+    ent: async (x, y, z) => { const e = await entAt(x, y, z); return e ? { kind: e.kind, loot: e.data.loot ?? null, opened: !!e.data.s } : null; },
+    forge: async (x, y, z) => { const e = await entAt(x, y, z); if (!e || e.kind !== 'forge') return null; const d = e.data; return { s: d.s.map(plain), burn: d.burn, prog: d.prog }; },
+    mobs: () => (remote ? get(`/mobs?dim=${g().dim}`) : inRealm((r) => r.mobs.list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss })))),
     spawnPoint: () => g().spawn,
-    homes: () => T.ask((sim) => sim.npcs.homes.map((h) => ({ x: h.x, y: h.y, z: h.z, npc: h.npc }))),
+    homes: () => (remote ? get('/homes') : T.ask((sim) => sim.npcs.homes.map((h) => ({ x: h.x, y: h.y, z: h.z, npc: h.npc })))),
     winOpen: () => !document.querySelector('#win')?.classList.contains('hidden'),
     deathScreen: () => g().menu.dead,
     /** Highest block in a column and its key. */
@@ -70,12 +81,12 @@ export async function installHelpers() {
       }
       return false;
     },
-    caps: (h, p) => T.ask((sim, [h, p]) => { for (const r of sim.realms) { r.mobs.hostileCap = h; r.mobs.passiveCap = p; } }, [h, p]),
-    clearMobs: () => inRealm((r) => r.mobs.clear()),
+    caps: (h, p) => (remote ? T.cmd(`caps ${h} ${p}`) : T.ask((sim, [h, p]) => { for (const r of sim.realms) { r.mobs.hostileCap = h; r.mobs.passiveCap = p; } }, [h, p])),
+    clearMobs: () => (remote ? T.cmd('clearmobs') : inRealm((r) => r.mobs.clear())),
     save: () => g().save(),
     /** Set every cell of a box to one block, as the `fill` command of section 10.1 will. */
-    fill: (x0, y0, z0, x1, y1, z1, key) => inRealm((w, [x0, y0, z0, x1, y1, z1, id]) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) w.setBlock(x, y, z, id); },
-      [x0, y0, z0, x1, y1, z1, T.B[key]]),
+    fill: (x0, y0, z0, x1, y1, z1, key) => (remote ? T.cmd(`fill ${x0} ${y0} ${z0} ${x1} ${y1} ${z1} ${key}`) : inRealm((w, [x0, y0, z0, x1, y1, z1, id]) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) w.setBlock(x, y, z, id); },
+      [x0, y0, z0, x1, y1, z1, T.B[key]])),
   };
 }
 

@@ -27,6 +27,9 @@ function findSite(bot: Bot): { x: number; z: number; g: number } | null {
   return null;
 }
 
+/** What the pack holds, slot by slot. */
+const packText = (bot: Bot): string => bot.invc.inv.slots.map((q, i) => (q ? `${i}:${q.k}x${q.n}` : '')).filter(Boolean).join(' ');
+
 export default async function basic(ctx: Ctx): Promise<void> {
   const a = ctx.bot(new Bot('Ada')), b = ctx.bot(new Bot('Bram'));
   await Promise.all([a.connect(ctx.url), b.connect(ctx.url)]);
@@ -136,4 +139,34 @@ export default async function basic(ctx: Ctx): Promise<void> {
     ctx.check(bot.counts.deaths === 0, `${bot.name}: ${bot.counts.deaths} deaths, ${bot.counts.hurt} blows`);
   }
   ctx.log(`host steps ${st.steps}, p99 ${st.p99.toFixed(2)} ms, max ${st.max.toFixed(2)} ms, refused ${JSON.stringify(st.refused)}`);
+
+  // the same world after a restart. Bram sets one more block down and the server is stopped with SIGTERM at once,
+  // with both still connected: only the save on SIGTERM (8.1) can have kept that block and where they stand. Both
+  // come back where they were, with what they held, to the blocks they left.
+  await b.place(x + 2, g + 1, z + 1, BUILD);
+  const host2 = await ctx.hash(0, cx - 1, cz - 1, cx + 1, cz + 1);
+  const before = [a, b].map((bot) => ({ name: bot.name, token: bot.token, x: bot.body.x, y: bot.body.y, z: bot.body.z, pack: packText(bot) }));
+  const stopped = ctx.restart();
+  for (const bot of [a, b]) bot.close();
+  ctx.check((await stopped) === 0, 'the server stopped cleanly on SIGTERM for the restart');
+  const again = before.map((r) => ctx.bot(new Bot(r.name, r.token)));
+  await Promise.all(again.map((bot) => bot.connect(ctx.url)));
+  await Promise.all(again.map((bot) => bot.loaded()));
+  await Promise.all(again.map((bot) => bot.settle()));
+  await again[0].until(() => { for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) if (again[0].chunkHash(cx + i, cz + j) === null) return false; return true; }, 10000, 'the chunks round the site').catch(() => {});
+  const after = await ctx.hash(0, cx - 1, cz - 1, cx + 1, cz + 1);
+  ctx.check(again[0].vox.getBlock(x + 2, g + 1, z + 1) === P, 'the block Bram set down just before the stop is there after it');
+  let kept = 0;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+    const k = `${cx + i},${cz + j}`, h = again[0].chunkHash(cx + i, cz + j);
+    if (after[k] === host2[k] && h === host2[k]) kept++;
+    else ctx.log(`chunk ${k} after the restart: host ${after[k]}, Ada ${h}, before ${host2[k]}`);
+  }
+  ctx.check(kept === 9, `after the restart, ${kept} of 9 chunks hash as they did before it, on the host and on Ada`);
+  for (let i = 0; i < before.length; i++) {
+    const r = before[i], bot = again[i], d = Math.hypot(bot.body.x - r.x, bot.body.y - r.y, bot.body.z - r.z);
+    ctx.check(d < 0.5, `${r.name} is back where she left (${d.toFixed(2)} blocks off)`.replace('she', r.name === 'Ada' ? 'she' : 'he'));
+    ctx.check(packText(bot) === r.pack, `${r.name}'s pack after the restart is as it was: ${packText(bot) || 'empty'}`);
+    ctx.check(bot.counts.rej === 0 && bot.counts.corrections === 0, `${r.name} after the restart: ${bot.counts.rej} rej, ${bot.counts.corrections} corrections`);
+  }
 }

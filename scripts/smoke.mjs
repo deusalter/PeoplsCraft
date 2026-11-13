@@ -13,12 +13,17 @@
 //   npm run smoke -- sameworld           a world played in one tab is neither opened nor deleted in another
 //   npm run smoke -- frames              a script's frames each step once beside the display's; a hidden tab's world is still until driven
 //   --repeat N                           run N times, stop at the first failure
+//   --server                             golden on the Node server instead of the page: builds it, starts it on every
+//                                        interface with --harness --cheats --seed golden and a fresh folder, and opens it
+//                                        from this machine's LAN address over plain http (`--server http://h:p`: one already up)
 //   ?clone                               (or any ?a&b=c) added to the page's query: `npm run smoke -- golden ?clone` runs the
 //                                        scenario with every message between client and host taken through JSON
 //
 // Exit code 0 only when every probe matches.
-import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { spawn, spawnSync } from 'node:child_process';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { networkInterfaces } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launch } from './headless.mjs';
 
@@ -62,8 +67,46 @@ export function diff(expected, got) {
   return lines;
 }
 
+/** This machine's first non-internal IPv4 address: what another machine on the LAN would type. */
+function lanAddress() {
+  for (const list of Object.values(networkInterfaces())) for (const a of list ?? []) if (a.family === 'IPv4' && !a.internal) return a.address;
+  throw new Error('no LAN address: this machine has no IPv4 interface but loopback');
+}
+/** Build the client and the server into out/smoke and start the server on every interface; resolves with its LAN origin. */
+async function startServer() {
+  const root = resolve(here, '..'), out = join(root, 'out', 'smoke'), vite = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
+  for (const a of [['build', '--outDir', join(out, 'client'), '--emptyOutDir'], ['build', '-c', 'vite.server.config.ts', '--outDir', join(out, 'server')]]) {
+    const r = spawnSync(process.execPath, [vite, ...a, '--logLevel', 'warn'], { cwd: root, stdio: 'inherit' });
+    if (r.status !== 0) throw new Error('the build failed');
+  }
+  const data = join(root, '.claude', 'mp-work', 'pad', 'smoke', `server-${Date.now()}`);
+  mkdirSync(data, { recursive: true });
+  const proc = spawn(process.execPath, [join(out, 'server', 'main.js'), '--data', data, '--port', '0', '--host', '0.0.0.0', '--seed', 'golden', '--harness', '--cheats'],
+    { cwd: out, stdio: ['ignore', 'pipe', 'pipe'] });
+  let logs = '';
+  const port = await new Promise((ok, no) => {
+    const t = setTimeout(() => no(new Error('the server did not say where it listens:\n' + logs)), 30000);
+    const read = (b) => { logs += b; const m = /listening on http:\/\/[^:]+:(\d+)\//.exec(logs); if (m) { clearTimeout(t); ok(Number(m[1])); } };
+    proc.stdout.on('data', read); proc.stderr.on('data', read);
+    proc.once('exit', (c) => { clearTimeout(t); no(new Error(`the server exited (${c}):\n${logs}`)); });
+  });
+  return {
+    origin: `http://${lanAddress()}:${port}`, logs: () => logs,
+    stop: async () => {
+      if (proc.exitCode === null) { const gone = new Promise((ok) => proc.once('exit', ok)); proc.kill('SIGTERM'); await gone; }
+      rmSync(data, { recursive: true, force: true });
+    },
+  };
+}
+
 async function once(sc, run) {
-  const s = await launch({ query: sc.query + extra });
+  const given = opt('server', ''), target = flag('server') ? (/^https?:\/\//.test(given) ? given : '') : null;
+  const own = target === '' ? await startServer() : null;
+  const origin = own ? own.origin : target, host = origin ? new URL(origin).host : null;
+  if (origin) log(`${name} against the server at ${origin}`);
+  let s;
+  try { s = await launch(origin ? { base: origin, query: `server=${host}&name=Golden` + extra } : { query: sc.query + extra }); }
+  catch (e) { await own?.stop(); throw e; }
   const t0 = Date.now();
   try {
     const probes = await sc.run({ ...s, log, extra, args: { flag, opt } });
@@ -71,7 +114,7 @@ async function once(sc, run) {
     if (errs.length) throw new Error('page errors:\n' + errs.slice(0, 10).join('\n'));
     log(`${name} run ${run}: finished in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
     return probes;
-  } finally { await s.close(); }
+  } finally { await s.close(); if (own) await own.stop(); }
 }
 
 async function main() {
