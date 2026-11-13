@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peopls Craft interface kit</title>
+<link rel="icon" href="data:,">
+<style>
+html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
+/* A stand-in for the world behind a window: flat ground and sky, never part of the interface. */
+#world { position: fixed; inset: 0; display: none; background: #7aa7d8; }
+#world::after { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: 38%; background: #5f8f3e; border-top: 6vh solid #7cae4f; }
+</style>
+</head>
+<body>
+<div id="world"></div>
+<script type="module" src="/src/ui/kit/demo.ts"></script>
+</body>
+</html>
