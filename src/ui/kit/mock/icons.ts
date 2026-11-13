@@ -263,20 +263,24 @@ export const ITEMS: Record<string, PixelMap> = {
     '................',
     '................',
   ]),
+  // Three scores slash up and to the right across the crust, each lit on its upper side, and the base is a flat
+  // straight row: with two dots side by side on a rounded body the loaf read as a face.
+  // Three scores slash up and to the right across the crust, each lit on its upper side, over a flat straight base:
+  // with two dots side by side on a rounded body the loaf read as a face.
   loaf: item('loaf', [
     '................',
     '................',
     '................',
     '................',
-    '.....KKKKKK.....',
-    '...KKeeffffKK...',
-    '..KeffKffKfTTK..',
-    '.KefTfKTfKTTttK.',
-    '.KffTTKTTKTtttK.',
-    '.KfTTTTTTTttttK.',
-    '.KTTTTTTTttttUK.',
-    '..KUUUUUUUUUUK..',
     '...KKKKKKKKKK...',
+    '..KeefffefffeK..',
+    '.KeetffetffetTK.',
+    '.KetTTetTTetTtK.',
+    '.KtTTTtTTTtTttK.',
+    '.KTTTTTTTTTtttK.',
+    '.KTTTTTTTttttUK.',
+    '.KUUUUUUUUUUUUK.',
+    '..KKKKKKKKKKKK..',
     '................',
     '................',
     '................',
