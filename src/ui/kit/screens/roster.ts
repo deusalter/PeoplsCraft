@@ -1,5 +1,6 @@
 // The roster (section 6, 5.24): held open with Tab over the HUD, eight players on a plain dark plate centred on the
-// stage at y 30. It takes no pointer and no focus; the crew list is not drawn while it is held.
+// stage at y 30. It takes no pointer and no focus; the crew list, the Guide's step and the toasts are not drawn while it
+// is held.
 import type { Node, Ui } from '../node';
 import { roster } from '../parts/plates';
 import { PLAYERS, SERVER, hud } from './play/hud';
@@ -10,7 +11,7 @@ function build(ui: Ui): Node {
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
     kids: [
-      ...hud(ui, { crew: false, prompt: false }),
+      ...hud(ui, { crew: false, prompt: false, notices: false }),
       roster({ cx: st.x + Math.floor(st.w / 2), y: 30, server: SERVER, members: PLAYERS }),
     ],
   };

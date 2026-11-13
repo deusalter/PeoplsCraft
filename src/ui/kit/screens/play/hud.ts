@@ -68,6 +68,8 @@ export interface HudOpts {
   world?: boolean;
   /** The prompt under the crosshair; not drawn while chat is open. */
   prompt?: boolean;
+  /** The Guide's step and the toasts; not drawn while the roster is held, which would cover half of them. */
+  notices?: boolean;
 }
 
 /** The second boss bar or event strip: 12 under the first one's strip. */
@@ -162,7 +164,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     states.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + i * 20), y: lowY, ...s })));
     // The Guide's step stands under the status frames, and the one toast shown 4 under it.
     const stepY = lowY + 28;
-    out.push(tracker(R(4), stepY, 'Smelt iron', '2 of 3'));
+    if (o.notices !== false) out.push(tracker(R(4), stepY, 'Smelt iron', '2 of 3'));
     const toasts = [
       { frame: 'blood' as Colour, icon: 'raid_skull', title: 'A Night raid comes', line: 'Hold the doors till dawn' },
       { frame: 'growth' as Colour, icon: 'ingot', title: 'Smelt iron', line: 'A step of the Guide' },
@@ -173,13 +175,13 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     const clash = o.boss && tx < L(cx + 91 + 4);
     let ty = clash ? Math.max(BOSS2_Y + 22 + 4, stepY + TRACKER_H + 4) : stepY + TRACKER_H + 4;
     const floor = (narrow ? 150 : H - 54) - 2;
-    for (const t of toasts.slice(0, TOAST_MOST)) {
+    for (const t of o.notices === false ? [] : toasts.slice(0, TOAST_MOST)) {
       const h = toastHeight(t);
       if (ty + h > floor) break;
       out.push(toast({ x: tx, y: ty, ...t }));
       ty += h + TOAST_GAP;
     }
-  } else out.push(tracker(R(4), lowY, 'Gather wood', '0 of 4'));
+  } else if (o.notices !== false) out.push(tracker(R(4), lowY, 'Gather wood', '0 of 4'));
 
   if (!first) {
     const feed: [string, number][] = [['+3 Rubble (12)', 0], ['+1 Bone (7)', 0], ['+2 Shade Flesh (6)', 1], ['+1 Kankāl Bell', 2]];
