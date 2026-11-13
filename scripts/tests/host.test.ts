@@ -9,7 +9,7 @@ import { B } from '../../src/data/blocks';
 import { ClientVoxels, VoxChunk } from '../../src/net/clientvoxels';
 import { SimHost } from '../../src/net/host';
 import { loopback } from '../../src/net/loopback';
-import type { S2C, S2COf } from '../../src/net/protocol';
+import type { C2SOf, S2C, S2COf } from '../../src/net/protocol';
 import { MV_GROUND } from '../../src/net/protocol';
 import type { Transport } from '../../src/net/transport';
 import type { ChunkSource, GenResult } from '../../src/sim/chunksource';
@@ -35,9 +35,9 @@ class FlatSource implements ChunkSource {
 }
 
 interface Rig { host: SimHost; storage: MemStorage; logs: string[] }
-async function rig(solo: boolean, storage = new MemStorage(), maxPlayers = solo ? 1 : 4): Promise<Rig> {
+async function rig(solo: boolean, storage = new MemStorage(), maxPlayers = solo ? 1 : 4, now = () => performance.now()): Promise<Rig> {
   const logs: string[] = [];
-  const host = new SimHost({ now: () => performance.now(), setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: (h) => clearTimeout(h as NodeJS.Timeout), log: (l, m) => { logs.push(`${l} ${m}`); } },
+  const host = new SimHost({ now, setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: (h) => clearTimeout(h as NodeJS.Timeout), log: (l, m) => { logs.push(`${l} ${m}`); } },
     storage, new FlatSource(), { id: 'w', name: 'Test', seed: 7, seedText: '7', cheats: true, password: null, maxPlayers, viewMax: 8, clock: 'manual', saveEvery: 0, solo });
   await host.start();
   return { host, storage, logs };
@@ -341,4 +341,23 @@ test('a takeover ends what the older connection had under way: its window, its d
   assert.equal(p.dig, null); assert.equal(p.sleeping, false);
   const st = b.of('st')[0];
   assert.ok(st.inv && st.ack === 0); assert.equal(st.box, undefined, 'and no box in the first state');
+});
+
+test('chunk requests bunched by a stall of the link pass; a flood beyond 12 a second, once its burst is spent, closes with `rate`', async () => {
+  let ms = 0;
+  const r = await rig(false, new MemStorage(), 4, () => ms), a = client(r.host, { local: false }), b = client(r.host, { local: false });
+  a.hello('Ada', 'a'.repeat(32)); b.hello('Bea', 'b'.repeat(32));
+  await enter(r, a); await enter(r, b);
+  const none = (): C2SOf<'chunks'> => ({ t: 'chunks', dim: 0, sub: [], unsub: [] });
+  // an honest client flying for a while: one message every 100 ms
+  for (let i = 0; i < 200; i++) { ms += 100; a.s.send(none()); await run(r, 1, a); }
+  // then a stall of 3 s hands the host 30 of them in one step
+  ms += 3000;
+  for (let i = 0; i < 30; i++) a.s.send(none());
+  await run(r, 1, a);
+  assert.deepEqual(a.closed, [], 'a stalled link is not a flood');
+  // a client that keeps sending faster than 12 a second spends its burst and is closed
+  for (let i = 0; i < 400 && !b.closed.length; i++) { ms += 50; b.s.send(none()); await run(r, 1, b); }
+  assert.deepEqual(b.closed, ['rate']);
+  assert.equal(b.of('error')[0].code, 'rate');
 });

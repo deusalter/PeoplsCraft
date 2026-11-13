@@ -85,9 +85,13 @@ export const RTT_MAX_MS = 400;
 export const IDLE_CLOSE = 30;
 
 /** Token buckets of the inbound rate caps, as [refill per second, burst]. Sockets only. `seq` covers `op`, `edit`,
- *  `use`, `item` and `fire` together; `chunks` and `chat` are counted over a window instead (CHUNKS_PER_SEC, CHAT_PER_5S). */
+ *  `use`, `item` and `fire` together; `chunks` has a bucket of its own in wall time (CHUNKS_PER_SEC, CHUNKS_BURST), and `chat`
+ *  is counted over a window (CHAT_PER_5S). */
 export const RATE = { move: [60, 30], seq: [60, 120], atk: [12, 12], dig: [20, 20], talk: [4, 4], cmd: [5, 5], ping: [2, 2], rtt: [2, 2] } as const;
 export const CHUNKS_PER_SEC = 12, CHAT_PER_5S = 5;
+/** `chunks` messages a socket may have over its rate at once: what a client sends in the CLIENT_SILENCE it waits out
+ *  before it gives the socket up, so that a stall of the link short of that never reads as a flood (D36 (j)). */
+export const CHUNKS_BURST = CHUNKS_PER_SEC * CLIENT_SILENCE;
 /** Seconds of sustained excess on any bucket that close the connection with `rate`. */
 export const RATE_CLOSE = 3;
 

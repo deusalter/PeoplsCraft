@@ -1094,7 +1094,7 @@ closes with `error rate`.
 | `op`, `edit`, `use`, `item`, `fire` (the sequenced ones) | 60/s (120) in total | never dropped: handled as refused. `ackSeq` advances, `edit` and `use` are answered with `rej {seq, cells: []}`, the others by the `st` that follows |
 | `atk` | 12/s (12) | dropped |
 | `dig`, `talk` | 20/s (20), 4/s (4) | dropped |
-| `chunks` | 12 messages/s, each at most 1,024 `sub` entries, 1,024 `unsub` entries and 16 `full` entries | never dropped: every accepted message is queued and served at the host's pace (4.7). A thirteenth message inside one second is a protocol violation and closes with `error rate` |
+| `chunks` | 12 messages/s, each at most 1,024 `sub` entries, 1,024 `unsub` entries and 16 `full` entries | never dropped: every accepted message is queued and served at the host's pace (4.7). A bucket of its own, refilled at 12 per second of wall time with a burst of 72 (`CHUNKS_BURST`, 12 x `CLIENT_SILENCE`); a message that finds it empty is a protocol violation and closes with `error rate` (D36 (j)) |
 | `chat`, `cmd`, `ping`, `rtt` | 5 per 5 s, 5/s, 2/s, 2/s | dropped |
 
 Keepalive: the server sends a WebSocket ping every 5 s and closes a socket from which no frame (pong
@@ -3526,6 +3526,14 @@ lets its box go on the acknowledgement of a `close`. A chest closed and clicked 
 step was opened on the host and on nothing here: the `open` found no box and the client sent `close` again. A
 shop with nothing sold stood open with no window under it, so every sale was predicted as refused. The host now
 forgets the box it sent when it takes a `close` op.
+(j) The `chunks` cap is a bucket in wall time with a burst of 72, not twelve messages inside one second of host
+steps (4.1). Messages were counted by the step that drained them: a stall of the link of 2 to 4 s, short of the
+6 s after which the client gives a socket up, handed the host 20 to 40 honest messages (one per 100 ms) in one
+step, and a host that fell behind its 60 steps a second shrank the second the same way; either closed an honest
+client with `rate`. The bucket fills at the same 12 a second by the host's clock, so a sustained excess still
+closes the socket, after at most the 72 messages a client could have bunched in the time it waits before it
+gives up. This is a departure from the table as it stood: a client may now send up to 72 `chunks` messages at
+once. Their cost is bounded as before by the subscription range of 4.7, which every message is still held to.
 
 ---
 

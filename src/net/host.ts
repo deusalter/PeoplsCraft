@@ -19,7 +19,7 @@ import { EditMaps, SIM_RADIUS } from '../sim/voxels';
 import { Climate } from '../world/gen/climate';
 import { ChunkService } from './hostchunks';
 import { SnapService } from './hostsnap';
-import { BUF_SLOW, type C2S, type C2SOf, CHAT_PER_5S, CHUNKS_PER_SEC, type ErrorCode, HELLO_WITHIN, IDLE_CLOSE, MOVE_BYTES, MSG_MOVE, PASSWORD_TRIES, PASSWORD_WINDOW,
+import { BUF_SLOW, type C2S, type C2SOf, CHAT_PER_5S, CHUNKS_BURST, CHUNKS_PER_SEC, type ErrorCode, HELLO_WITHIN, IDLE_CLOSE, MOVE_BYTES, MSG_MOVE, PASSWORD_TRIES, PASSWORD_WINDOW,
   type PlayerInfo, PROTO, RATE, RATE_CLOSE, dataHash } from './protocol';
 import type { Conn, HostEnv } from './transport';
 import { checkC2S } from './validate';
@@ -48,7 +48,8 @@ interface Link {
   hello: boolean;
   rate: Record<string, Bucket>;
   /** Steps at which `chunks` and `chat` messages arrived, inside their windows. */
-  chunksAt: number[]; chatAt: number[];
+  /** The `chunks` bucket: tokens, and the wall time (ms) they were counted at. */
+  chunksN: number; chunksMs: number; chatAt: number[];
 }
 
 const STEP_MS = STEP * 1000;
@@ -114,7 +115,7 @@ export class SimHost {
   connect(c: Conn): void {
     const rate: Record<string, Bucket> = {};
     for (const k of Object.keys(RATE)) rate[k] = { n: RATE[k as keyof typeof RATE][1], over: -1 };
-    const l: Link = { c, p: null, inbox: [], closed: false, hello: false, rate, chunksAt: [], chatAt: [] };
+    const l: Link = { c, p: null, inbox: [], closed: false, hello: false, rate, chunksN: CHUNKS_BURST, chunksMs: this.env.now(), chatAt: [] };
     this.links.push(l);
     c.onMessage = (m) => {
       if (l.closed) return;
@@ -263,6 +264,16 @@ export class SimHost {
     at.push(this.steps);
     return true;
   }
+  /** The `chunks` bucket fills by the wall clock: messages bunched by a stall of the link, or drained by a host that runs
+   *  behind, are counted by the time that passed and not by the steps that took them. */
+  private chunksAllowed(l: Link): boolean {
+    const now = this.env.now();
+    l.chunksN = Math.min(CHUNKS_BURST, l.chunksN + (Math.max(0, now - l.chunksMs) / 1000) * CHUNKS_PER_SEC);
+    l.chunksMs = now;
+    if (l.chunksN < 1) return false;
+    l.chunksN--;
+    return true;
+  }
   private refill(l: Link): void {
     for (const k of Object.keys(RATE) as (keyof typeof RATE)[]) { const b = l.rate[k]; b.n = Math.min(RATE[k][1], b.n + RATE[k][0] * STEP); }
   }
@@ -294,7 +305,7 @@ export class SimHost {
           if (m.t === 'edit' || m.t === 'use') sim.sink.send(p.slot, { t: 'rej', seq, cells: [] });
           return;
         }
-      } else if (m.t === 'chunks') { if (!this.window(l.chunksAt, 60, CHUNKS_PER_SEC)) { this.kick(l, 'rate', 'Too many chunk requests.'); return; } }
+      } else if (m.t === 'chunks') { if (!this.chunksAllowed(l)) { this.kick(l, 'rate', 'Too many chunk requests.'); return; } }
       else if (m.t === 'chat') { if (!this.window(l.chatAt, 300, CHAT_PER_5S)) return; }
       else if (m.t in RATE && !this.allow(l, m.t as keyof typeof RATE)) return;
     }
