@@ -31,7 +31,7 @@ export const bookSheet: Sheet = {
       ],
       prev: () => {}, next: () => {},
       force: { next: { hover: true } },
-      left: [pageHeading({ x: 0, y: 0, w: 126, text: 'The kiln row' }), para(0, 16, TEXT_L, 8), whereLine(0, 108, 126, 'The kiln row: 40 strides west')],
+      left: [pageHeading({ x: 0, y: 0, w: 126, text: 'The kiln row' }), para(0, 16, TEXT_L, 8), whereLine(0, 108, 126, 'The kiln row: 40 m west')],
       right: [
         pageHeading({ x: 0, y: 0, w: 126, text: 'Bounties' }),
         slot({ id: 'b.0', x: 0, y: 16, ramp: 'clay', stack: { icon: 'ore', n: 20 } }),

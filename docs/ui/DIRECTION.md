@@ -2810,13 +2810,13 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19): a leather c
 | G1 | tabs | 0 | -21 | 93 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Guide (the lamp), Bounties (the note), Standing (the banner), Crew (two heads). The open section's ribbon lies in the gutter in its colour: blood, arm, growth, ember |
 | G2 | text | 12 | 10 | 126 | 10 | left page heading: the chapter, as "Iron and Root" |
 | G3 | rule | 12 | 21 | 126 | 1 | rule in clay.sh |
-| G4 | rows | 12 | 24 | 126 | 130 | thirteen step rows 10 tall: a check mark and faded ink when done, the step wedge and ink for the present step, faded ink alone for those to come |
+| G4 | rows | 12 | 24 | 126 | 130 | thirteen step rows 10 tall, the title at 10: done, a `{check}` in `growth.dk` at 1 and the title in faded ink; the present step, the `{step}` wedge at 3 and ink; the next step, ink with no mark; later ones, faded ink with no mark. The chosen row is told by its underline, not by its tone, so that choosing a later step does not make it read as next |
 | G5 | turn | 12 | 161 | 16 | 7 | page back |
 | G6 | text | 68 | 162 | 16 | 6 | page number, small face |
 | G7 | text | 154 | 10 | 126 | 10 | right page heading: the chosen step |
 | G8 | text | 154 | 24 | 126 | 60 | its telling, wrapped to 126, six lines at most |
 | G9 | gauge | 154 | 88 | 126 | 7 | a sunk channel filling in ember, with "3 of 5" right-aligned above it; only for steps that count |
-| G10 | text | 154 | 104 | 126 | 20 | where to: the compass mark (9 by 9, ink) at 0, 0 and the words in ink at 12, saying the thing, then how far and which way: "Vanahar Altar: 212 strides east", "Iron ore: 38 strides down". It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
+| G10 | text | 154 | 104 | 126 | 20 | where to: the compass mark (9 by 9, ink) at 0, 0 and the words in ink at 12, saying the thing, then how far and which way: "Vanahar Altar: 212 m east", "Iron ore: 38 m down". A line that ends in up or down has the `{up}` or `{down}` arrow of the text face in place of the compass mark, 2 in, since the compass cannot point straight up or down. Every screen writes a distance as a count and "m", as the HUD and the roster do; "strides" is a word of the tables, not of a readout. It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
 | G11 | text | 154 | 118 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink; three lines at most, or two starting 4 under a where-to of two lines |
 | G12 | turn | 264 | 161 | 16 | 7 | page on |
 | G13 | text | 210 | 162 | 16 | 6 | page number |

@@ -52,10 +52,13 @@ export function para(x: number, y: number, w: number, text: string, c: Colour, l
  */
 export function whereLine(x: number, y: number, w: number, text: string, lines = 2): Node {
   const b = box(text, w - 12, lines);
+  // Straight up or down the compass cannot point: the mark is the arrow the words name.
+  const plumb = / (up|down)$/.exec(text)?.[1];
   return {
     x, y, w, h: Math.max(10, b.h),
     paint: (s) => {
-      s.draw(WHERE_MARK, 0, 0, { tint: 'ink' });
+      if (plumb) s.text(`{${plumb}}`, 2, 0, 'ink');
+      else s.draw(WHERE_MARK, 0, 0, { tint: 'ink' });
       for (const l of b.lines) s.text(l.text, 12, l.y, 'ink');
     },
   };
