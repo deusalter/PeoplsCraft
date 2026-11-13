@@ -8,7 +8,7 @@ import { genChunk } from '../src/sim/genjob';
 export interface GenJobMsg { id: number; dim: number; cx: number; cz: number }
 export type GenReplyMsg =
   | { t: 'ready' }
-  | { t: 'gen'; id: number; blocks: Uint8Array; biomes: Uint8Array; ents: unknown[]; hash: number; emit: Uint16Array }
+  | { t: 'gen'; id: number; blocks: Uint8Array; biomes: Uint8Array; ents: unknown[]; hash: number; emit: Uint16Array; ms: number }
   | { t: 'err'; id: number; msg: string };
 export interface GenWorkerData { seed: number; faults: Int32Array | null }
 
@@ -27,10 +27,10 @@ port.on('message', (m: GenJobMsg) => {
   if (fault(1)) throw new Error('fault injected: worker dies');
   try {
     if (fault(0)) throw new Error('fault injected: job fails');
-    const g = genChunk(seed, m.dim, m.cx, m.cz), b = g.blocks, l: number[] = [];
+    const t0 = performance.now(), g = genChunk(seed, m.dim, m.cx, m.cz), ms = performance.now() - t0, b = g.blocks, l: number[] = [];
     if (g.hasEmit) for (let i = 0; i < CVOL; i++) if (T_EMITS[b[i]]) l.push(i);
     const emit = Uint16Array.from(l);
-    const r: GenReplyMsg = { t: 'gen', id: m.id, blocks: b, biomes: g.biomes, ents: g.ents, hash: g.hash, emit };
+    const r: GenReplyMsg = { t: 'gen', id: m.id, blocks: b, biomes: g.biomes, ents: g.ents, hash: g.hash, emit, ms };
     port.postMessage(r, [b.buffer, g.biomes.buffer, emit.buffer] as ArrayBuffer[]);
   } catch (e) {
     const r: GenReplyMsg = { t: 'err', id: m.id, msg: e instanceof Error ? e.message : String(e) };

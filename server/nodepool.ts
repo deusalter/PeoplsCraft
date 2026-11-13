@@ -21,6 +21,9 @@ export interface NodePoolOptions {
 interface Job { dim: number; cx: number; cz: number; prio: number; n: number; sent: boolean; fails: number }
 interface Slot { w: Worker; ready: boolean; job: Job | null; key: string; id: number }
 
+/** Generation time of one dimension, as the workers measured it (6.6, measurement 4). */
+export interface GenStat { n: number; ms: number; max: number }
+
 export const poolSize = (cores = availableParallelism()): number => Math.max(1, Math.min(4, cores - 2));
 
 /** Jobs go to the workers lowest `prio` first, oldest first among equals, one per worker at a time, so that a job
@@ -28,6 +31,8 @@ export const poolSize = (cores = availableParallelism()): number => Math.max(1, 
  *  dies, is asked for twice more behind the others, then logged and left without terrain (3.5). */
 export class NodePoolSource implements ChunkSource {
   readonly size: number;
+  /** By dimension: chunks generated, their total and their largest time in milliseconds. */
+  readonly stats: GenStat[] = [];
   private jobs = new Map<string, Job>();
   private done: GenResult[] = [];
   private slots: (Slot | null)[] = [];
@@ -101,6 +106,8 @@ export class NodePoolSource implements ChunkSource {
     const j = s.job, key = s.key;
     s.job = null;
     if (m.t === 'gen') {
+      const st = (this.stats[j.dim] ??= { n: 0, ms: 0, max: 0 });
+      st.n++; st.ms += m.ms; if (m.ms > st.max) st.max = m.ms;
       // cancelled, or cancelled and asked for again, while it ran
       if (this.jobs.get(key) === j) {
         this.jobs.delete(key);

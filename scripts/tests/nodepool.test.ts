@@ -72,6 +72,7 @@ test('same blocks, biomes, entities, hash and emitters as genChunk inline, 64 ch
     assert.deepEqual(Array.from(g.emit ?? []), emit);
   }
   assert.equal(want.size, 0);
+  for (let dim = 0; dim < 3; dim++) assert.ok(p.stats[dim].n === 64 && p.stats[dim].ms > 0 && p.stats[dim].max <= p.stats[dim].ms, `stats of ${dim}`);
 });
 
 test('lower prio first, a pending request is not doubled, a cancelled job gives nothing', async () => {
