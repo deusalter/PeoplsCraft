@@ -13,7 +13,7 @@ import { button } from '../parts/button';
 import { frameWell, type RowSpec, well } from '../parts/well';
 import { tabbedSlab } from '../parts/tabs';
 import { seat } from '../sample/crew';
-import { CHUNK, type Place, countryAt, FELL, groundAt, ME, PINGS, PLACES, STORE, WALK_RADIUS, WALKED } from '../sample/map';
+import { CHUNK, type Place, countryAt, FELL, groundAt, ME, PINGS, PLACES, STORE, STORE_PLACES, WALK_RADIUS, WALKED } from '../sample/map';
 import type { Surface } from '../surface';
 import { firstFocus, go, placeWindow } from './books-common';
 import type { NamedScreen } from './index';
@@ -27,6 +27,8 @@ export interface MapView {
   /** The place at the middle of the chart, in strides. */
   centre: { x: number; z: number };
   places: Place[];
+  /** How many of `places`, from the first, are on this chart; the rest are listed under "Elsewhere". All, on the ground. */
+  here?: number;
   chosen: number;
   pings: { seat: number; x: number; z: number }[];
   /** Seconds the Recall Stone still cools. */
@@ -159,7 +161,7 @@ function way(p: Place): string {
   const dx = p.x - ME.x, dz = p.z - ME.z;
   const d = Math.round(Math.hypot(dx, dz));
   const winds = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'];
-  return `${count(d)} ${winds[((Math.round(Math.atan2(dz, dx) / (Math.PI / 4)) % 8) + 8) % 8]}`;
+  return `${count(d)} m ${winds[((Math.round(Math.atan2(dz, dx) / (Math.PI / 4)) % 8) + 8) % 8]}`;
 }
 
 function unitOf(v: MapView, x: number, z: number): [number, number] {
@@ -180,27 +182,74 @@ function paintMarks(s: Surface, v: MapView): void {
   mark(ME.x, ME.z, (u, w) => s.draw(OWN_ARROW[ME.facing], u - 3, w - 3, { tint: SEATS[0] }));
 }
 
-/** The sealed store: its rooms drawn on the ground tile as they are entered, doors as gaps, a locked one with a key on it. */
+/**
+ * The sealed store, as it has been entered, on the ground tile: rooms and the passages between them laid out as floor
+ * on a grid of units, then walled from that grid, so that a doorway is only where a passage's floor meets a room's.
+ * Floor is stone.face with grout of stone.sh on a 4-unit grid fixed to the store; a wall is `t` units deep, stone.lt
+ * where the floor lies below or right of it and stone.dk where it lies above or left, with a root.0 outline. A passage
+ * is 3 wide. A locked door is a leaf of ember across its doorway, with the key beside it.
+ */
 function paintStore(s: Surface, v: MapView): void {
   const z = v.zoom;
   const [ox, oy] = unitOf(v, 0, 0);
   s.tile(GROUND, 0, 0, CW, CH, ((-ox % GROUND_W) + GROUND_W) % GROUND_W, ((-oy % GROUND_H) + GROUND_H) % GROUND_H);
+  const t = z <= 2 ? 2 : 1;
+  // A margin round the chart so that a wall just outside it still shades what is inside.
+  const M = t + 2, gw = CW + 2 * M, gh = CH + 2 * M;
+  const floor = new Uint8Array(gw * gh);
+  const isFloor = (x: number, y: number) => x >= -M && y >= -M && x < CW + M && y < CH + M && floor[(y + M) * gw + x + M] === 1;
+  const lay = (x0: number, y0: number, w: number, h: number) => {
+    for (let y = Math.max(-M, y0); y < Math.min(CH + M, y0 + h); y++) for (let x = Math.max(-M, x0); x < Math.min(CW + M, x0 + w); x++) floor[(y + M) * gw + x + M] = 1;
+  };
   for (const r of STORE.rooms) {
     const x = ox + Math.round(r.x / z), y = oy + Math.round(r.z / z), w = Math.round(r.w / z), h = Math.round(r.h / z);
-    // A room is a floor block lit from the top left: root.0 outline, a lit row and column, a shaded row and column.
-    s.fill(x, y, w, h, 'root.0');
-    s.fill(x + 1, y + 1, w - 2, h - 2, 'stone.sh');
-    s.fill(x + 1, y + 1, w - 3, h - 3, 'stone.lt');
-    s.fill(x + 2, y + 2, w - 4, h - 4, 'stone.face');
+    lay(x + t + 1, y + t + 1, w - 2 * (t + 1), h - 2 * (t + 1));
   }
+  const gap = Math.round(8 / z), wide = Math.min(3, gap);
+  const leaves: { x: number; y: number; w: number; h: number; across: boolean }[] = [];
   for (const d of STORE.doors) {
     const x = ox + Math.round(d.x / z), y = oy + Math.round(d.z / z);
-    const len = Math.max(2, Math.round(8 / z));
-    if (d.locked) {
-      if (d.across) s.fill(x, y - 1, len, 2, 'ember'); else s.fill(x - 1, y, 2, len, 'ember');
-      s.draw(SILHOUETTES.key, x - 7, y - 4, { flat: 'salt' });
-    } else if (d.across) s.fill(x, y - 1, len, 2, 'stone.face');
-    else s.fill(x - 1, y, 2, len, 'stone.face');
+    const mid = Math.floor((gap - wide) / 2);
+    // From inside the near room's floor, through both walls and the gap, into the far room's floor.
+    // A locked door opens on ground not yet entered: no passage, only its leaf set in the wall.
+    const from = -(t + 2), to = gap + t + 2;
+    if (!d.locked) { if (d.across) lay(x + mid, y + from, wide, to - from); else lay(x + from, y + mid, to - from, wide); }
+    if (d.locked) leaves.push(d.across ? { x: x + mid, y: y - t - 1, w: wide, h: t + 1, across: true } : { x: x - t - 1, y: y + mid, w: t + 1, h: wide, across: false });
+  }
+  for (let y = 0; y < CH; y++) {
+    for (let x = 0; x < CW; x++) {
+      if (isFloor(x, y)) {
+        const grout = ((x - ox) % 4 + 4) % 4 === 0 || ((y - oy) % 4 + 4) % 4 === 0;
+        s.fill(x, y, 1, 1, grout ? 'stone.sh' : 'stone.face');
+        continue;
+      }
+      let near = 99, sx = 0, sy = 0;
+      for (let dy = -(t + 1); dy <= t + 1; dy++) for (let dx = -(t + 1); dx <= t + 1; dx++) {
+        if (!isFloor(x + dx, y + dy)) continue;
+        near = Math.min(near, Math.max(Math.abs(dx), Math.abs(dy)));
+        if (Math.max(Math.abs(dx), Math.abs(dy)) <= t) { sx += Math.sign(dx); sy += Math.sign(dy); }
+      }
+      if (near > t + 1) continue;
+      if (near === t + 1) { s.fill(x, y, 1, 1, 'root.0'); continue; }
+      const lit = sx + sy > 0 || (sx + sy === 0 && sy > 0);
+      s.fill(x, y, 1, 1, lit ? 'stone.lt' : 'stone.dk');
+    }
+  }
+  for (const l of leaves) {
+    s.fill(l.x, l.y, l.w, l.h, 'ember');
+    s.fill(l.x, l.y, l.w, 1, 'ember.lt'); s.fill(l.x, l.y, 1, l.h, 'ember.lt');
+    s.fill(l.x, l.y + l.h - 1, l.w, 1, 'ember.dk'); s.fill(l.x + l.w - 1, l.y + 1, 1, l.h - 1, 'ember.dk');
+    s.draw(SILHOUETTES.key, l.across ? l.x - 2 : l.x + l.w + 2, l.across ? l.y - 10 : l.y - 6, { flat: 'salt' });
+  }
+  // The stair up, in the room it rises from: treads lit on their top edge, stepping down to the right.
+  const st = STORE_PLACES.find((p) => p.kind === 'stair');
+  if (st) {
+    const [u, w] = unitOf(v, st.x, st.z);
+    s.fill(u - 4, w - 4, 9, 9, 'root.0');
+    for (let k = 0; k < 4; k++) {
+      s.fill(u - 3, w - 3 + k * 2, 7, 1, 'stone.hi');
+      s.fill(u - 3, w - 2 + k * 2, 7, 1, k === 3 ? 'stone.dk' : 'stone.sh');
+    }
   }
   const [u, w] = unitOf(v, STORE.at.x, STORE.at.z);
   s.map(HEADS[STORE.at.seat - 1], u - 5, w - 5);
@@ -262,9 +311,31 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
       leave: () => { hover.on = false; hover.friend = null; hover.what = ''; ui.wake(); },
     },
   };
-  const rows: RowSpec[] = v.places.map((p) => {
-    return { id: p.id, icon: p.icon, name: p.name, colour: p.seat ? SEATS[p.seat - 1] : 'salt' };
-  });
+  // The list in groups under grey headers: on the ground, places then players; in a store, what is in it, then the
+  // rest under "Elsewhere". `rowAt[k]` is the place a row stands for, or -1 for a header.
+  const rows: RowSpec[] = [], rowAt: number[] = [];
+  const header = (text: string) => {
+    rows.push({ id: `map.head.${rows.length}`, name: text, disabled: true, body: (s, _w, h) => s.text(text, 3, Math.floor((h - 9) / 2), 'root.4', true) });
+    rowAt.push(-1);
+  };
+  const here = v.here ?? v.places.length;
+  const isCrew = (p: Place) => p.kind === 'friend' || p.kind === 'self';
+  const group = (from: number, to: number, crewHeader: string | null, placeHeader: string | null) => {
+    // Without headers the rows keep the order they are given in.
+    for (const wantCrew of crewHeader ? [false, true] : [null]) {
+      const idx = [...Array(to - from).keys()].map((k) => k + from).filter((i) => wantCrew === null || isCrew(v.places[i]) === wantCrew);
+      if (!idx.length) continue;
+      const h = wantCrew === null ? null : wantCrew ? crewHeader : placeHeader;
+      if (h) header(h);
+      for (const i of idx) {
+        const p = v.places[i];
+        rows.push({ id: p.id, icon: p.icon, name: p.name, colour: p.seat ? SEATS[p.seat - 1] : 'salt' });
+        rowAt.push(i);
+      }
+    }
+  };
+  if (here === v.places.length) group(0, here, 'Crew', 'Places');
+  else { group(0, here, null, null); header('Elsewhere'); group(here, v.places.length, null, null); }
   const cooling = place?.cooling !== undefined;
   const builtOpen = cooling && v.cooling(ui.t) <= 0;
   const kids: Node[] = [
@@ -282,8 +353,14 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
     button({ id: 'map.out', x: ZOOM_OUT_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1), tip: zoomTip(v.zoom === ZOOMS[0] ? 'Farthest' : 'Farther') }),
     button({ id: 'map.in', x: ZOOM_IN_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1), tip: zoomTip(v.zoom === ZOOMS[ZOOMS.length - 1] ? 'Closest' : 'Closer') }),
     well({
-      id: 'map.places', x: LIST_X, y: 18, w: LIST_W, h: 130, rowH: 16, host: 'stone', ui, rows, chosen: v.chosen,
-      onChoose: (i) => { v.onChoose(i); v.onPan(v.places[i].x, v.places[i].z); },
+      id: 'map.places', x: LIST_X, y: 18, w: LIST_W, h: 130, rowH: 16, host: 'stone', ui, rows, chosen: rowAt.indexOf(v.chosen),
+      onChoose: (k) => {
+        const i = rowAt[k];
+        if (i < 0) return;
+        v.onChoose(i);
+        // A place on another chart is chosen for its line under Travel; the chart stays where it is.
+        if (i < here) v.onPan(v.places[i].x, v.places[i].z);
+      },
     }),
     button({ id: 'map.travel', x: LIST_X, y: 152, w: LIST_W, h: 16, ramp: 'stone', label: 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
     {
@@ -292,7 +369,9 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
         if (!place) return;
         const left = Math.ceil(v.cooling(ui.t));
         if (cooling && (left <= 0) !== builtOpen) ui.invalidate();
-        const t = !cooling ? `${place.crossing}. ${way(place)}` : left > 0 ? `${place.crossing}, cooling ${clock(left)}` : `${place.crossing}, ready`;
+        // A place in the store is told by the chart beside it; how far and which way is said of the living ground only.
+        const local = v.here !== undefined && v.chosen < v.here;
+        const t = !cooling ? (local || place.kind === 'self' ? `${place.crossing}.` : `${place.crossing}. ${way(place)}`) : left > 0 ? `${place.crossing}, cooling ${clock(left)}` : `${place.crossing}, ready`;
         for (const l of box(t, LIST_W, 3).lines) s.text(l.text, 0, l.y, cooling && left <= 0 ? 'growth.dk' : 'ink');
       },
     },
@@ -339,17 +418,21 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
 
 // The sample keeps the chart's place, zoom, pings and the stone's cooling while the page is open.
 function sample(name: string, title: string, tab: ChartTab): NamedScreen {
-  const st = { tab, zoomI: { ground: 1, store: 2 } as Record<ChartTab, number>, centre: { ground: { x: ME.x, z: ME.z }, store: { x: 90, z: 40 } } as Record<ChartTab, { x: number; z: number }>, chosen: 0, pings: [...PINGS], cooledFrom: 3, cool: 12 };
+  const lists: Record<ChartTab, { places: Place[]; here?: number }> = {
+    ground: { places: PLACES },
+    store: { places: [...STORE_PLACES, ...PLACES.filter((p) => p.seat !== STORE.at.seat)], here: STORE_PLACES.length },
+  };
+  const st = { tab, zoomI: { ground: 1, store: 2 } as Record<ChartTab, number>, centre: { ground: { x: ME.x, z: ME.z }, store: { x: 90, z: 40 } } as Record<ChartTab, { x: number; z: number }>, chosen: { ground: 0, store: 0 } as Record<ChartTab, number>, pings: [...PINGS], cooledFrom: 3, cool: 12 };
   return {
     name, title, world: true,
     build: (ui: Ui) => mapScreen({
-      tab: st.tab, zoom: ZOOMS[st.zoomI[st.tab]], centre: st.centre[st.tab], places: PLACES, chosen: st.chosen, pings: st.pings,
+      tab: st.tab, zoom: ZOOMS[st.zoomI[st.tab]], centre: st.centre[st.tab], ...lists[st.tab], chosen: st.chosen[st.tab], pings: st.pings,
       // The stone stands at its cooling for the page's first three seconds, so that a shot holds still, then counts down.
       cooling: (t) => Math.max(0, st.cool - Math.max(0, t - st.cooledFrom)),
       onTab: (t) => { st.tab = t; ui.invalidate(); },
       onPan: (x, z) => { st.centre[st.tab] = { x: Math.round(x), z: Math.round(z) }; ui.invalidate(); },
       onZoom: (d) => { st.zoomI[st.tab] = Math.max(0, Math.min(ZOOMS.length - 1, st.zoomI[st.tab] + d)); ui.invalidate(); },
-      onChoose: (i) => { st.chosen = i; ui.invalidate(); },
+      onChoose: (i) => { st.chosen[st.tab] = i; ui.invalidate(); },
       onPing: (x, z) => { st.pings = [...st.pings.filter((p) => p.seat !== 1), { seat: 1, x: Math.round(x), z: Math.round(z) }]; ui.invalidate(); },
       onTravel: (p) => { ME.x = p.x - 4; ME.z = p.z + 6; st.centre.ground = { x: ME.x, z: ME.z }; st.cool = 30; st.cooledFrom = ui.t; ui.invalidate(); },
       onClose: () => go('hud'),

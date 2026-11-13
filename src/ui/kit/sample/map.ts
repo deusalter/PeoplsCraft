@@ -90,7 +90,7 @@ export const WALKED: [number, number][][] = [
 export const WALK_RADIUS = 56;
 export const CHUNK = 32;
 
-export type PlaceKind = 'bed' | 'mouth' | 'altar' | 'gate' | 'friend';
+export type PlaceKind = 'bed' | 'mouth' | 'altar' | 'gate' | 'friend' | 'self' | 'door' | 'stair';
 
 export interface Place {
   id: string;
@@ -105,16 +105,20 @@ export interface Place {
   cooling?: number;
 }
 
-const friends: Place[] = CREW.filter((m) => m.online && m.at && m.place !== 'a Sealed Store').map((m) => ({
+// Every player here, oneself first; one inside a store stands on the living ground at its mouth. One who is away has
+// no place and is not listed.
+const crew: Place[] = CREW.filter((m) => m.online).map((m) => (m.at ? {
   id: `place.friend.${m.seat}`, kind: 'friend', name: m.name, icon: `head:${m.seat}`, seat: m.seat,
-  x: ME.x + m.at![0], z: ME.z + m.at![1], crossing: 'No crossing to a friend',
+  x: ME.x + m.at[0], z: ME.z + m.at[1], crossing: m.place === 'a Sealed Store' ? 'In the Sealed Store under Pabbat' : 'No crossing to a friend',
+} : {
+  id: `place.self`, kind: 'self', name: m.name, icon: `head:${m.seat}`, seat: m.seat, x: ME.x, z: ME.z, crossing: 'You are here',
 }));
 
 export const PLACES: Place[] = [
   { id: 'place.bed', kind: 'bed', name: 'Bed', icon: 'codex:map_bed', x: 120, z: -330, crossing: 'Recall Stone', cooling: 12 },
   { id: 'place.mouth', kind: 'mouth', name: 'The mouth', icon: 'codex:map_mouth', x: 0, z: 0, crossing: 'No crossing to the mouth' },
   { id: 'place.altar1', kind: 'altar', name: 'Vanahar Altar', icon: 'codex:place_altar', x: 332, z: -330, crossing: 'No crossing to an altar' },
-  ...friends,
+  ...crew,
 ];
 
 /** Pings the crew has set, by seat. */
@@ -141,3 +145,10 @@ export const STORE = {
   /** Where Pellwright stands in it. */
   at: { x: 150, z: 80, seat: 4 },
 };
+
+/** What the store's chart shows, listed first while it is open: who is inside, the locked door, the way out. */
+export const STORE_PLACES: Place[] = [
+  { id: 'store.friend.4', kind: 'friend', name: CREW[3].name, icon: 'head:4', seat: 4, x: STORE.at.x, z: STORE.at.z, crossing: 'No crossing to a friend' },
+  { id: 'store.door', kind: 'door', name: 'Locked door', icon: 'key', x: 168, z: 24, crossing: 'It wants a key' },
+  { id: 'store.stair', kind: 'stair', name: 'Stair up', icon: 'codex:map_mouth', x: 24, z: 20, crossing: 'The way out, to Pabbat' },
+];

@@ -92,7 +92,10 @@ export function well(o: WellOpts): Node {
         // Up and Down choose within the list and keep the chosen row inside the well.
         const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
         if (!d || !o.onChoose) return;
-        const j = Math.min(o.rows.length - 1, Math.max(0, i + d));
+        // A row that cannot be chosen (a header) is stepped over.
+        let j = i + d;
+        while (j >= 0 && j < o.rows.length && o.rows[j].disabled) j += d;
+        if (j < 0 || j >= o.rows.length) return true;
         if (j < top) setTop(j); else if (j >= top + visible) setTop(j - visible + 1);
         o.onChoose(j);
         o.ui.focusOn(o.rows[j].id, true);
