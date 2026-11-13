@@ -6,9 +6,13 @@ import { Bot } from '../bot/bot';
 import type { Ctx } from '../bot/runner';
 
 const BUILD = 'oak_planks';
+/** The cells at g + 1, from the site (x, z), that the scenario places into: the pillar, Ada's block, Bram's, the chest. */
+const PLACED: [number, number][] = [[0, 0], [-1, 0], [3, -2], [0, 2]];
 
 /** A flat patch the bot can walk to: ground at one height under every cell the scenario uses (x - 1 to x + 3, z - 2
- *  to z + 2), soft enough to dig by hand, and open sky over (x, z) for the pillar. Nearest by walking first. */
+ *  to z + 2), soft enough to dig by hand, open sky over (x, z) for the pillar, and nothing but air or a replaceable
+ *  plant in the cells at g + 1 that get a block (a flower is neither, and placing into it is refused). Nearest by
+ *  walking first. */
 function findSite(bot: Bot): { x: number; z: number; g: number } | null {
   const v = bot.vox, reach = bot.flood(NaN, NaN, 8000), feet = new Map<string, number>();
   for (const c of reach) feet.set(`${c.x},${c.z}`, c.y);
@@ -20,6 +24,7 @@ function findSite(bot: Bot): { x: number; z: number; g: number } | null {
       flat = feet.get(`${x + i},${z + j}`) === g + 1 && BLOCKS[id].hard >= 0 && BLOCKS[id].hard <= 1 && !T_REPLACE[v.getBlock(x + i, g - 1, z + j)];
     }
     if (!flat) continue;
+    if (!PLACED.every(([i, j]) => { const id = v.getBlock(x + i, g + 1, z + j); return id === 0 || T_REPLACE[id]; })) continue;
     let open = true;
     for (let y = g + 1; y <= g + 9 && open; y++) open = !T_SOLID[v.getBlock(x, y, z)] && !T_LIQUID[v.getBlock(x, y, z)];
     if (open) return { x, z, g };

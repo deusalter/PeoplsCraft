@@ -158,6 +158,19 @@ test('an oversized frame closes the socket with `proto`, text or binary', { time
   a.ws.send('{"t":"chat","text":"' + 'x'.repeat(MAX_JSON) + '"}');
   const c = await a.closed;
   assert.equal(errorOf(a), 'proto'); assert.equal(c.reason, 'proto');
+  // the 16 KB cap on its own, after hello, with a chat the host would take at any size: JSON whitespace pads it
+  const padded = (n: number): string => { const s = '{"t":"chat","text":"hi"}'; return s.slice(0, -1) + ' '.repeat(n - s.length) + '}'; };
+  const j = sock();
+  await j.opened;
+  j.ws.send(hello('Bea', token('b')));
+  await j.next('welcome');
+  j.ws.send(padded(MAX_JSON));
+  assert.equal(((await j.next('chat')) as S2C & { t: 'chat' }).text, 'hi', 'a message of exactly 16 KB is taken');
+  j.ws.send(padded(MAX_JSON + 1));
+  const jc = await j.closed;
+  assert.equal(errorOf(j), 'proto'); assert.equal(jc.reason, 'proto');
+  assert.match((j.got.find((m) => m.t === 'error') as { msg?: string }).msg ?? '', /too large/, 'refused for its size, not its content');
+  // and the 64-byte binary cap: the host refuses a wrong-sized move as well, so the reason tells the two apart
   const b = sock();
   await b.opened;
   b.ws.send(hello('Bea', token('b')));
@@ -165,6 +178,7 @@ test('an oversized frame closes the socket with `proto`, text or binary', { time
   b.ws.send(new Uint8Array(65));
   await b.closed;
   assert.equal(errorOf(b), 'proto');
+  assert.match((b.got.find((m) => m.t === 'error') as { msg?: string }).msg ?? '', /too large/, 'refused for its size, not its content');
   // and a frame far beyond every limit is cut off by the socket layer itself
   const d = sock();
   await d.opened;
