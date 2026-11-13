@@ -59,10 +59,10 @@ export const bookSheet: Sheet = {
     }));
     kids.push(salt(296, 196, 'Square, cut and spiked:'));
     kids.push(salt(296, 208, 'locked, open, earned'));
-    kids.push(titleMark({ cx: 94, y: 210 }));
-    kids.push(salt(196, 214, 'The title mark'));
-    kids.push({ x: 196, y: 228, w: 64, h: 32, paint: (s) => s.tile(GROUND, 0, 0, 64, 32) });
-    kids.push(salt(264, 236, 'Ground tile'));
+    kids.push(titleMark({ cx: 113, y: 206 }));
+    kids.push(salt(4, 252, 'The title mark'));
+    kids.push({ x: 232, y: 228, w: 64, h: 32, paint: (s) => s.tile(GROUND, 0, 0, 64, 32) });
+    kids.push(salt(300, 236, 'Ground tile'));
     return page(ui, kids);
   },
 };
