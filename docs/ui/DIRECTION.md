@@ -3701,3 +3701,29 @@ Parts
 38. Does every button show tooled stone with a light top row and a dark bottom, and is the hovered one outlined in salt with its label in ember?
 39. Is progress shown by a hollow that fills (arrow, flame, channel), never by a spinner, a bare number or a percentage?
 40. Is every icon 16 units square and lit from the top left, with no emoji and no geometric glyph standing in for a picture?
+
+---
+
+## Decisions made while building
+
+Taken where the direction is silent, in its spirit. Builders may rely on them.
+
+**Pixel maps.** A key may map a character to `'tint'`, which stands for the colour given at draw time; the letters and the coloured frames of plates (tooltip, refusal) are drawn this way, so one map serves every grade. A map may also be drawn `flat`, every cell in one colour, which is how a silhouette or a missing thing is drawn from its icon. `coded(rows, name, slice)` builds a map straight from rows written in this document's own codes and role digits.
+
+**Nine-slice.** A middle piece whose columns (or rows) are all alike is drawn as one stretched copy of a single column (or row); any other middle piece repeats, cut at the far edge. Both give the same cells; stretching is fewer draws.
+
+**Atlas.** Every map is baked once per ramp, tint or flat colour into pages of 1024 by 1024 at one pixel to the unit, with one clear pixel between neighbours so a scaled copy can never take a neighbour's edge. It lives in `canvas.ts`, the one file that touches a 2D context. Clipping is done by cutting rectangles, not with a canvas clip path.
+
+**Letters.** The sheets of 4.1 and 4.2 are kept in `font/text.ts` and `font/small.ts` in the same form as above and read at start-up; a sheet whose rows disagree with its own width line throws. The small face has no tofu in 4.2; it draws a 3 by 5 box. Curly quotes become straight ones, and the arrows and check marks some strings already hold become `{right}`, `{left}`, `{up}`, `{down}`, `{check}`, `{cross}`. The middle dot `·`, used as a separator in some present strings, is deliberately left to draw as tofu so that every such string is found and rewritten when it is wired. A cut line drops trailing spaces before its `…`. When a box of several lines runs out, its last line takes `…` after its last word if there is room, else it is cut at a glyph.
+
+**Tree.** Besides the handlers of section 8 a node may have `pass` (the pointer came onto it with a button held that was pressed elsewhere: spreading one at a time with the right button) and `drop` (a press that began elsewhere was let go over it). A pointer event says `double` for a second press of the same button on the same node within 0.3 s. `Node.field` marks a drawn text field, which the hidden input then serves; `Node.anim` keeps the root painting every frame while that node is shown. `Live.focus` is true only while the focus was put there by a key, so a part draws its focus whenever it is told to.
+
+**Input.** Hit-testing stops at a modal layer: a press that hits nothing in it goes to that layer's `outside` (dropping a held stack into the world) and never to the HUD below. Tab walks the stops of the topmost layer that has any, in tree order, so a screen lists its parts in the reading order of section 7. An arrow key the focused part does not use moves the focus to the nearest stop that way, a unit across counting three units along. One notch of the wheel is 100 pixels of `deltaY` (33 to a line). A key goes first to the focused part and its parents, then to the part under the pointer (so 1 to 9 and Q act over a slot), then to the game.
+
+**Pointer canvas.** The pointer's canvas is 48 by 48 units with the hot spot at 16, 16, so a held stack's icon (at -8, -8) and its count both fit.
+
+**Grid surface.** Cells hold a palette index, or one of three marks for what is not the palette's by design: the world (`.` in a dump), a wash over a colour outside strict mode (`~`), a picture from the game (`?`).
+
+**The pixel-grid check** lives in `scripts/uilib.mjs` rather than `check.ts`, since it reads PNGs under Node. It is stricter than section 8 asks: the page paints the same frame on a `GridSurface`, and every unit of the screenshot the kit drew must be exactly the palette colour the grid holds, not merely some palette colour. The world behind a window is exempt from it, flatness included, because the world is the game's render; the game's pictures are exempt from the palette but not from flatness. `uigrid` checks scales 2, 3 and 4 (and strict mode with `--strict`); `uishot` checks its two shots as it takes them. Chrome runs with `--force-color-profile=srgb` so that a screenshot holds the colours the canvas holds.
+
+**The kit page.** `uikit.html` puts a flat stand-in for the world (sky and grass in CSS colours) behind screens that stand on the world; strict mode hides it and shows `stone.pit`. The type and parts sheets are 474 units wide and need a virtual screen of 480 by 270: they are sheets for judging, not screens of the game, and the 394 by 234 limit of section 3 does not bind them. The zoomed shot is taken at scale 1 in a 480 by 270 window, the same virtual screen as the shots at scales 2 and 4.
