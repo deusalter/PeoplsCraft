@@ -126,8 +126,13 @@ export class Session {
 
   /** A message that is not an action: it goes out as it is. */
   send(m: C2S): void {
+    if ('seq' in m) {
+      // between a hello and its welcome the numbering is the old connection's, which the new one would take as out of
+      // order (4.2); the welcome takes back every op still waiting for an answer
+      if (!this.welcomed) return;
+      this.lastSeq = m.seq;
+    }
     this.counts.out++;
-    if ('seq' in m) this.lastSeq = m.seq;
     this.transport.send(m);
   }
 

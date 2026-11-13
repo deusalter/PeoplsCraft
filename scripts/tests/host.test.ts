@@ -555,3 +555,64 @@ test('a server stop saves after the players are told, tries three times, and say
   assert.equal(full.ok, false, 'a last save that failed is reported');
   assert.deepEqual(full.linked, [0, 0, 0], 'tried three times, all after the kicks');
 });
+
+/** A transport that reconnects as the WebSocket's does: each `redial` is a new connection to the host, under one session. */
+class Redial implements Transport {
+  readonly kind = 'ws' as const;
+  state: Transport['state'] = 'connecting';
+  onOpen: Transport['onOpen'] = null; onMessage: Transport['onMessage'] = null; onBinary: Transport['onBinary'] = null; onClose: Transport['onClose'] = null;
+  codes: string[] = [];
+  private cur: Transport | null = null;
+  constructor(private host: SimHost) {}
+  redial(): void {
+    const { transport, conn } = loopback({ local: false, clone: true });
+    this.cur = transport;
+    transport.onMessage = (m) => this.onMessage?.(m);
+    transport.onBinary = (b) => this.onBinary?.(b);
+    transport.onClose = (code) => { this.codes.push(code); if (this.cur === transport) { this.cur = null; this.state = 'retrying'; this.onClose?.('retrying'); } };
+    this.host.connect(conn);
+    this.state = 'open';
+    this.onOpen?.();
+  }
+  /** The link goes away without a word, as a cable pulled or a server killed. */
+  cut(): void { const t = this.cur; this.cur = null; this.state = 'retrying'; t?.close(); }
+  send(m: Parameters<Transport['send']>[0]): void { if (this.state === 'open') this.cur?.send(m); }
+  sendBin(b: ArrayBuffer): void { if (this.state === 'open') this.cur?.sendBin(b); }
+  close(): void { this.state = 'closed'; this.cur?.close(); this.cur = null; }
+}
+
+test('after a reconnect, what the game sends before the new welcome has arrived does not end the session', async () => {
+  const { InvClient } = await import('../../src/client/invclient');
+  const r = await rig(false), sim = r.host.sim, tok = 'e'.repeat(32), id = playerIdOf(tok)!;
+  const t = new Redial(r.host), s = new Session(t), invc = new InvClient(s, () => sim.flags), errors: string[] = [];
+  s.on('error', (m) => { errors.push(`${m.code} ${m.msg}`); });
+  const c: Client = { s, t, vox: new ClientVoxels((cx, cz, key) => new VoxChunk(cx, cz, key)), got: [], closed: t.codes, tp: 0, pos: [0, 0, 0], moveFlags: MV_GROUND,
+    of: (k) => c.got.filter((m) => m.t === k) as never, hello: () => {} };
+  c.vox.attach(s);
+  for (const k of TYPES) s.on(k, (m) => { c.got.push(m); });
+  s.on('welcome', (m) => { c.tp = m.tp; c.pos = [m.pos[0], m.pos[1], m.pos[2]]; });
+  s.on('tp', (m) => { c.tp = m.id; c.pos = [m.x, m.y, m.z]; });
+  s.mover = () => ({ tp: c.tp, x: c.pos[0], y: c.pos[1], z: c.pos[2], vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, flags: c.moveFlags });
+  s.join({ name: 'Eda', token: tok, view: 8, build: 'test' });
+  t.redial();
+  await enter(r, c);
+  for (const i of [1, 2, 3, 4]) { invc.setSel(i); s.move(); await run(r, 1, c); }
+  assert.equal(sim.players.get(id)!.ackSeq, 4);
+  // the outage: the game is still in play and goes on choosing slots, which the dead link drops
+  t.cut(); c.got.length = 0;
+  for (const i of [5, 6]) { invc.setSel(i); s.move(); }
+  // the socket comes back and says hello; the game's next scheduled move flushes a selection before the welcome is pumped
+  t.redial();
+  invc.setSel(7); s.move();
+  await run(r, 3, c);
+  assert.deepEqual(errors, [], 'nothing the old numbering said reached the new connection');
+  assert.equal(c.of('welcome').length, 1);
+  await enter(r, c);
+  const p = sim.players.get(id)!;
+  assert.ok(active(p) && p.online);
+  invc.setSel(3); s.move();
+  await run(r, 2, c);
+  assert.equal(p.ackSeq, 1, 'the new connection numbers from 1');
+  assert.equal(p.inv.sel, 3);
+  t.close();
+});

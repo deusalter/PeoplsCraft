@@ -571,6 +571,8 @@ test('a reload keeps the modes and the recall cooldown, and a creative player co
 
 test('the hands: a shot, a swing, a station, a meal and a gate kit each leave as their message, with what they use up taken at once', () => {
   const link = fakeLink(), session = new Session(link.tr), flags = new Set<string>(), c = new InvClient(session, () => flags);
+  // in play: the host has welcomed this connection
+  session.welcomed = true;
   const player = new Player(); player.teleport(0.5, 64, 0.5); player.yaw = Math.PI; player.pitch = 0;   // looking along +z
   const hit = newRayHit();
   const shown: string[] = [], ghosts: unknown[][] = [], edits: string[] = [];

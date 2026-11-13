@@ -3856,6 +3856,13 @@ rejects. What changed during the first saves, and what the drops changed (window
 lost on a full disk while the process exited 0. `SimHost.stop(tries)` now tells the players and stops the clock
 first, then tries the last save up to `tries` times and resolves whether it was written; the server passes 3 and exits
 with 1 when it was not. Solo and the tests' hosts pass nothing and save once, as before.
+(i) A reconnect could end the session for good (4.2, 4.8). A game that stayed in play through an outage went on
+numbering its ops from the old connection, and once the new socket was open its next op (a break, or the hotbar
+selection that every scheduled `move` flushes) left before the welcome had been pumped. The host had set `ackSeq` to 0
+in `bind`, closed the socket with `proto` "sequence out of order", and `proto` is final, so the page stayed on its
+loading screen until it was reloaded. `Session.send` now drops a sequenced message while the connection has not been
+welcomed; the welcome resets the inventory channel and its pending ops, as 4.8 says, so nothing dropped there was
+going to count.
 
 ---
 
