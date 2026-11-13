@@ -75,7 +75,10 @@ const CHARSET = [
   '* % # & _ < > @ ~ ^ | ` $ × … °',
   '{tofu} {lees} {check} {cross} {right} {left} {up} {down} {step} {shield} {lmb} {rmb} {mmb}',
 ];
-const SMALL_SET = ['0123456789 ABCDEFGHIJKLM', "NOPQRSTUVWXYZ :.,-+/%x'()!?"];
+// The small face is shown only doing its one job, counts with no room for the text face, under a label in the text face:
+// set out as a second alphabet it read as a second font for words.
+const SMALL_LABEL = 'Counts with no room:';
+const SMALL_SET = '128   999   1k   12k   0:08   12';
 const PARAGRAPH = 'Salt-fired clay, pale and warm, holds the pack. What is written on it is written in lees. ' +
   'The old road to Amāvassa runs past the kilns of Īshū, where the jars are counted at 1,240 {lees} a cart.\n' +
   'A line too long for its box is cut.';
@@ -96,7 +99,8 @@ function specimen(dark: boolean, w: number): Node[] {
   const ink: Colour = dark ? 'salt' : 'ink', less: Colour = dark ? 'root.4' : 'ink.faded';
   const out: Node[] = [label(8, 6, dark ? 'On a dark plate' : 'On a clay slab', ink, dark)];
   CHARSET.forEach((line, i) => out.push(label(8, 18 + i * 10, line, ink, dark)));
-  SMALL_SET.forEach((line, i) => out.push(label(8, 79 + i * 6, line, less, dark, SMALL)));
+  out.push(label(8, 79, SMALL_LABEL, less, dark));
+  out.push(label(8 + measure(SMALL_LABEL) + 6, 82, SMALL_SET, ink, dark, SMALL));
   const right = w - 9;
   const para = box(PARAGRAPH, right - 8 - 40, 4);
   out.push({ x: 8, y: 94, w: right - 48, h: para.h, paint: (s) => { for (const l of para.lines) s.text(l.text, 0, l.y, ink, dark); } });
