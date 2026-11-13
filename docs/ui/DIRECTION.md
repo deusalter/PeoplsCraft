@@ -2373,7 +2373,7 @@ The pack is the main slab, 176 by 182, centred on the screen, with one row of ta
 | T3 | tab | 157 | -18 | 24 | 18 | Making |
 | T4 | tab | 180 | -18 | 24 | 18 | Skills |
 | S0 | slab | 0 | 0 | 112 | 166 | body panel, plain, no tabs of its own |
-| S1 | text | 8 | 6 | 96 | 10 | the player's name |
+| S1 | text | 8 | 6 | 96 | 10 | the player's name; one too long for 96 is cut with "…" and its tooltip gives it whole with the level under it |
 | S2 | text | 8 | 17 | 40 | 10 | "Level 14" in ink |
 | S3 | strip | 52 | 19 | 52 | 5 | practice strip, thin, from 6 after the level to x 104, a segment to 8 units; the practice in numbers ("320 of 900 to level 15") is its tooltip |
 | S4 | rows | 8 | 28 | 96 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 88; while there are points, a clay button "+" 11 by 11 at x 92 at the top of each row, so that one clear unit parts each from the next |

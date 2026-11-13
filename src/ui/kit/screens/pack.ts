@@ -130,7 +130,10 @@ const BODY_W = 112, BODY_H = 166;
 function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
   const out: Node[] = [];
   const R = narrow ? 96 : BODY_W - 8, plusX = R - 12;
-  out.push(ink(8, 6, st.name, 'ink', R - 8));
+  // A handle too long for the panel is cut and given whole in the title's tooltip; the panel has no row to spare for
+  // a second line above the level.
+  const title = ink(8, 6, st.name, 'ink', R - 8);
+  out.push(measure(st.name) > R - 8 ? { ...title, takes: true, tip: () => ({ lines: [{ text: st.name, c: 'salt' }, { text: `Level ${st.level}`, c: 'root.4' }], delay: 0.2 }) } : title);
   const lvl = `Level ${st.level}`;
   out.push(ink(8, 17, lvl));
   const sx = 8 + measure(lvl) + 6;
