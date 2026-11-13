@@ -1,6 +1,10 @@
 // Join a server (section 6, Join a server): address, name and password on the ground tile, the server's answer.
-import type { Screen } from '../node';
-import { button } from '../parts/button';
+import { TEXT } from '../font/face';
+import { cut } from '../font/wrap';
+import type { Node, Screen } from '../node';
+import type { Colour } from '../palette';
+import { button, paintButton } from '../parts/button';
+import { lv, sunk } from '../parts/common';
 import { field } from '../parts/controls';
 import { FORM, formButtonsY, formTitle, groundMenu, line } from '../parts/menu';
 import { ANSWERS, type ServerAnswer } from '../sample/menus';
@@ -13,6 +17,8 @@ export interface JoinView {
   password: string;
   /** What the server last said, or nothing yet. */
   answer?: ServerAnswer;
+  /** When a full server may be asked again, on the interface's clock: until then Join is "Try again" and counts down. */
+  retryAt?: number;
   onAddress(v: string): void;
   onName(v: string): void;
   onPassword(v: string): void;
@@ -24,11 +30,35 @@ const NAME_CHAR = /[A-Za-z0-9 _-]/;
 const validAddress = (a: string) => /^[A-Za-z0-9.-]+(:\d{1,5})?$/.test(a.trim());
 const validName = (n: string) => n.length >= 1 && n.length <= 16 && [...n].every((c) => NAME_CHAR.test(c));
 
+/** The wait before a full server is asked again. */
+export const RETRY_WAIT = 5;
+
+/**
+ * An answer from the server in the 12 kept under the field it is about: a strip 12 tall sunk in the ground tile, so that
+ * the line is read off a dark floor and not off the courses, its text clipped to the floor.
+ */
+function answerStrip(x: number, y: number, text: string, c: Colour): Node {
+  const w = 200, h = 12;
+  const t = cut(text, w - 8, TEXT);
+  return {
+    x, y, w, h,
+    paint: (s) => {
+      sunk(s, 0, 0, w, h, 'ground');
+      s.clip(1, 1, w - 2, h - 2);
+      s.text(t, 4, 1, c, true);
+      s.unclip();
+    },
+  };
+}
+
 export const joinScreen: Screen<JoinView> = (v, ui) => {
   const first = !v.address ? 'join.address' : !v.name ? 'join.name' : !v.password ? 'join.password' : 'join.name';
   firstFieldFocus(ui, `join:${v.answer?.text ?? ''}`, first, false);
   const ok = validAddress(v.address) && validName(v.name);
-  const enter = { key: (e: { key: string }) => { if (e.key === 'Enter') { if (ok) v.onJoin(); return true; } } };
+  // Seconds still to wait, counted on the paint's clock and never more than the whole wait.
+  const left = (t: number) => (v.retryAt === undefined ? 0 : Math.min(RETRY_WAIT, Math.ceil(v.retryAt - t)));
+  const ready = () => ok && left(ui.t) <= 0;
+  const enter = { key: (e: { key: string }) => { if (e.key === 'Enter') { if (ready()) v.onJoin(); return true; } } };
   const about = v.answer && !v.answer.ok ? v.answer.field : undefined;
   const f = (id: string, y: number, value: string, on: (t: string) => void, extra: Partial<Parameters<typeof field>[0]> = {}) => {
     const n = field({ id, x: 113, y, w: 200, h: FORM.fieldH, value, host: 'ground', onText: on, ui, ...extra });
@@ -45,14 +75,24 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
     kids.push(line({ x: 113, y, w: 200, text: label, c: 'salt', shadow: true }));
     const refused = about === key;
     kids.push(f(`join.${key}`, y + 10, value, on, refused ? { ...extra, show: { refused: true } } : extra));
-    if (said(key)) kids.push(line({ x: 113, y: y + 10 + FORM.fieldH + 1, w: 200, text: v.answer!.text, c: v.answer!.ok ? 'root.4' : 'blood.lt', shadow: true }));
+    if (said(key)) kids.push(answerStrip(113, y + 10 + FORM.fieldH + 1, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
   };
   row(0, 'address', 'Address', v.address, v.onAddress, { limit: 64 });
   row(1, 'name', 'Name', v.name, v.onName, { limit: 16, allow: NAME_CHAR });
   row(2, 'password', 'Password, if it has one', v.password, v.onPassword, { limit: 64, password: true });
   const by = formButtonsY(3);
+  // After a full server, Join becomes "Try again" and stands disabled while it counts the wait down.
+  const retry = v.retryAt !== undefined;
   kids.push(
-    button({ id: 'join.join', x: 113, y: by, w: 200, label: 'Join', disabled: !ok, onPress: v.onJoin }),
+    {
+      id: 'join.join', x: 113, y: by, w: 200, h: 20, takes: true, focus: ok, anim: retry || undefined,
+      paint: (s, live) => {
+        const n = left(live.t);
+        const label = !retry ? 'Join' : n > 0 ? `Try again in ${n}` : 'Try again';
+        paintButton(s, 200, 20, label, lv(live), !ok || n > 0);
+      },
+      on: ok ? { click: () => { if (ready()) v.onJoin(); } } : undefined,
+    },
     button({ id: 'join.back', x: 113, y: by + 24, w: 200, label: 'Back', onPress: v.onBack }),
   );
   return groundMenu(ui, 'join', kids, { on: { key: (e) => { if (e.key === 'Escape') { v.onBack(); return true; } } } });
@@ -62,19 +102,21 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
 const TAKEN = ['Kammar', 'Desik', 'Vejja'];
 const PASSWORD = 'yavas';
 
-function sample(name: string, init: Pick<JoinView, 'address' | 'name' | 'password' | 'answer'>): NamedScreen {
+function sample(name: string, init: Pick<JoinView, 'address' | 'name' | 'password' | 'answer' | 'retryAt'>): NamedScreen {
   const st = { ...init };
   return {
     name, title: `Join a server${init.answer && !init.answer.ok ? `, ${init.answer.text.toLowerCase()}` : ''}`, world: false,
     build: (ui) => joinScreen({
       ...st,
-      onAddress: (t) => { st.address = t; st.answer = validAddress(t) ? ANSWERS.here : undefined; ui.invalidate(); },
+      onAddress: (t) => { st.address = t; st.retryAt = undefined; st.answer = validAddress(t) ? ANSWERS.here : undefined; ui.invalidate(); },
       onName: (t) => {
         const was = validName(st.name); st.name = t;
         if (st.answer?.field === 'name') { st.answer = undefined; ui.invalidate(); } else if (was !== validName(t)) ui.invalidate();
       },
       onPassword: (t) => { st.password = t; if (st.answer?.field === 'password') { st.answer = undefined; ui.invalidate(); } },
       onJoin: () => {
+        // A full server stays full in the sample: each try waits the whole wait again.
+        if (st.answer === ANSWERS.full) { st.retryAt = ui.t + RETRY_WAIT; ui.invalidate(); return; }
         st.answer = TAKEN.includes(st.name) ? ANSWERS.taken : st.password && st.password !== PASSWORD ? ANSWERS.password : undefined;
         if (st.answer) { ui.invalidate(); return; }
         go('loading-server');
@@ -87,5 +129,6 @@ function sample(name: string, init: Pick<JoinView, 'address' | 'name' | 'passwor
 export const SCREENS: NamedScreen[] = [
   sample('join', { address: 'spark.local:8420', name: '', password: '', answer: ANSWERS.here }),
   sample('join-taken', { address: 'spark.local:8420', name: 'Desik', password: '', answer: ANSWERS.taken }),
-  sample('join-full', { address: 'spark.local:8420', name: 'Posak-of-Vana', password: 'yavas', answer: ANSWERS.full }),
+  // The answer came as the page opened; the wait is held whole for the first three seconds, as moving samples are.
+  sample('join-full', { address: 'spark.local:8420', name: 'Posak-of-Vana', password: 'yavas', answer: ANSWERS.full, retryAt: 3 + RETRY_WAIT }),
 ];

@@ -3302,8 +3302,8 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | O5 | field | 113 | 104 | 200 | 20 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
 | O6 | text | 113 | 148 | 200 | 10 | "Password, if it has one", salt with shadow |
 | O7 | field | 113 | 158 | 200 | 20 | drawn as one 3 by 3 dot to a character |
-| O8 | text | 113 | 71 | 200 | 10 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b, 1 under the field): a refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 3 of 8 here" in root.4, "The server is full" in blood.lt) under the address. Nothing moves when an answer comes |
-| O9 | button | 113 | 194 | 200 | 20 | "Join"; disabled until address and name are valid |
+| O8 | strip | 113 | 71 | 200 | 12 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b, 1 under the field), on a strip 12 tall sunk in the ground tile with the edges of a well, the text's cell at 4, 1 with its shadow and clipped to the strip's floor, so that the line is read off a dark floor and not off the courses: a refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 3 of 8 here" in root.4, "The server is full" in blood.lt) under the address. The strip is drawn only while there is an answer. Nothing moves when an answer comes |
+| O9 | button | 113 | 194 | 200 | 20 | "Join"; disabled until address and name are valid. After "The server is full" it reads "Try again in 5" and stands disabled, counting each second down, then "Try again" |
 | O10 | button | 113 | 218 | 200 | 20 | "Back" |
 
 - **Shows.** Address, name, password. The refusals are said plainly: "That name is taken", "Wrong password", "The server is full", "This server runs another version", "No answer".
