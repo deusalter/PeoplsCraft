@@ -84,8 +84,8 @@ function build(ui: Ui, title: string): Node {
   const panel = slab({
     x: 175, y: 17, w: PANEL_W, h: 42, ramp: 'timber',
     kids: [
-      iconButton({ id: 'chest.take', x: 3, y: 4, mark: TAKE, name: 'Take all', says: 'Into the pack, then the hotbar', onPress: () => { takeAll(h); b.after(); } }),
-      iconButton({ id: 'chest.stash', x: 3, y: 22, mark: STASH, name: 'Stash', says: 'Every kind the chest already holds', onPress: () => { stash(h); b.after(); } }),
+      iconButton({ id: 'chest.take', x: 3, y: 4, ramp: 'timber', mark: TAKE, name: 'Take all', says: 'Into the pack, then the hotbar', onPress: () => { takeAll(h); b.after(); } }),
+      iconButton({ id: 'chest.stash', x: 3, y: 22, ramp: 'timber', mark: STASH, name: 'Stash', says: 'Every kind the chest already holds', onPress: () => { stash(h); b.after(); } }),
     ],
   });
   return overWorld(ui, win, [slab({ x: 0, y: 0, w: 176, h: 172, ramp: 'timber', title, titleRoom: 40, kids }), panel], {
