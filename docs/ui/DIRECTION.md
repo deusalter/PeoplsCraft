@@ -1121,7 +1121,7 @@ Where rows of controls scroll on a slab and not in a well (settings), the track 
 
 ### 5.9 Text field
 
-A sunk dark field, 14 tall in a window and 16 tall in a full-screen menu, with the edges of a well. The text's cell is at 4, 2 (4, 3 when 16 tall), `salt` with shadow. With focus it has a frame of `salt` inside its edges and a caret: one unit wide, 10 tall, `salt`, one unit after the last glyph, on for 0.5 s and off for 0.5 s. A selection is a fill of `arm.dk` behind the selected glyphs. The placeholder is `root.4` with no shadow. A refused key gives the field a frame of `blood` for 0.3 s. Text longer than the field scrolls so that the caret stays inside.
+A sunk dark field, 14 tall in a window and 20 tall in the form of a full-screen menu (16 where a slab holds one), with the edges of a well. The text's cell is at 4, 2 (4, 3 when 16 tall, 4, 5 when 20), `salt` with shadow. With focus it has a frame of `salt` inside its edges and a caret: one unit wide, 10 tall, `salt`, one unit after the last glyph, on for 0.5 s and off for 0.5 s. A selection is a fill of `arm.dk` behind the selected glyphs. The placeholder is `root.4` with no shadow. A refused key gives the field a frame of `blood` for 0.3 s. Text longer than the field scrolls so that the caret stays inside.
 
 ```
      0         1         2         3         4         5         6         7         8         9         0  
@@ -3224,34 +3224,36 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
+"                                                              "N1"                                                                            "
 "                                                                                                                                              "
-"                                                                                                                                              "
-"                                                                                                                                              "
-"                                     "N1"                                                                                                     "
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                     "N2"                                                                                                     "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | N3 field                                                       |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
 "                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | N3 field                                                        |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
+"                                                                                                                                              "
+"                                                                                                                                              "
 "                                                                                                                                              "
 "                                     "N4"                                                                                                     "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | N5 field                                                        |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | N5 field                                                       |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
 "                                                                                                                                              "
 "                                                                                                                                              "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | N6 button                                                      |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | N7 button                                                      |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
 "                                                                                                                                              "
 "                                                                                                                                              "
-"                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | N6 button                                                       |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | N7 button                                                       |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
@@ -3265,13 +3267,13 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| N1 | text | 113 | 40 | 200 | 10 | "New world", salt with shadow |
-| N2 | text | 113 | 60 | 60 | 10 | "Name", root.4 |
-| N3 | field | 113 | 70 | 200 | 16 | at most 28 characters; holds "New world", selected |
-| N4 | text | 113 | 94 | 60 | 10 | "Seed", root.4 |
-| N5 | field | 113 | 104 | 200 | 16 | at most 32 characters; placeholder "Left empty, one is drawn" |
-| N6 | button | 113 | 150 | 200 | 20 | "Create" |
-| N7 | button | 113 | 174 | 200 | 20 | "Back" |
+| N1 | text | 113 | 20 | 200 | 10 | "New world", centred on the column, salt with shadow: the screen's head |
+| N2 | text | 113 | 40 | 60 | 10 | "Name", salt with shadow, 10 over its field |
+| N3 | field | 113 | 50 | 200 | 20 | at most 28 characters; holds "New world", selected |
+| N4 | text | 113 | 94 | 60 | 10 | "Seed", salt with shadow; rows of a form stand 54 apart: label, field, 12 kept for an answer, 12 clear |
+| N5 | field | 113 | 104 | 200 | 20 | at most 32 characters; placeholder "Left empty, one is drawn" |
+| N6 | button | 113 | 140 | 200 | 20 | "Create", 4 under the 12 kept under the last field |
+| N7 | button | 113 | 164 | 200 | 20 | "Back", 24 under "Create" |
 
 - **Shows.** Two fields.
 - **Clickable.** Fields and buttons.
@@ -3287,57 +3289,59 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
-"                                     "O1"                                                                                                     "
+"                                                           "O1"                                                                               "
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                     "O2"                                                                                                     "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | O3 field                                                        |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | O3 field                                                       |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     "O3b"                                                                                                    "
+"                                                                                                                                              "
+"                                                                                                                                              "
 "                                                                                                                                              "
 "                                     "O4"                                                                                                     "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | O5 field                                                       |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     "O5b"                                                                                                    "
 "                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | O5 field                                                        |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
+"                                                                                                                                              "
 "                                                                                                                                              "
 "                                     "O6"                                                                                                     "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | O7 field                                                        |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | O7 field                                                       |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     "O7b"                                                                                                    "
 "                                                                                                                                              "
-"                                     "O8"                                                                                                     "
-"                                                                                                                                              "
-"                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | O9 button                                                       |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | O10 button                                                      |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                                                                                                                              "
-"                                                                                                                                              "
-"                                                                                                                                              "
-"                                                                                                                                              "
-"                                                                                                                                              "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | O9 button                                                      |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     +----------------------------------------------------------------+                                       "
+"                                     | O10 button                                                     |                                       "
+"                                     |                                                                |                                       "
+"                                     +----------------------------------------------------------------+                                       "
 "                                                                                                                                              "
 +==============================================================================================================================================+
 ```
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| O1 | text | 113 | 24 | 200 | 10 | "Join a server", salt with shadow |
-| O2 | text | 113 | 44 | 60 | 10 | "Address", salt with shadow: a label on the ground is text on dark |
-| O3 | field | 113 | 54 | 200 | 16 | host and port; filled in when the page was served by a game server |
-| O4 | text | 113 | 78 | 60 | 10 | "Name", salt with shadow |
-| O5 | field | 113 | 88 | 200 | 16 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
-| O6 | text | 113 | 112 | 200 | 10 | "Password, if it has one", salt with shadow |
-| O7 | field | 113 | 122 | 200 | 16 | drawn as one 3 by 3 dot to a character |
-| O8 | text | 113 | 144 | 200 | 10 | one line: what the server answered ("Spark, 3 of 8 here"), or why it refused, in blood.lt. A refusal about one field ("That name is taken", "Wrong password") stands instead 2 under that field, the field is framed in blood until it is changed, and the rows under it move down 12 |
-| O9 | button | 113 | 160 | 200 | 20 | "Join"; disabled until address and name are valid |
-| O10 | button | 113 | 184 | 200 | 20 | "Back" |
+| O1 | text | 113 | 20 | 200 | 10 | "Join a server", centred on the column, salt with shadow: the screen's head, not a label |
+| O2 | text | 113 | 40 | 60 | 10 | "Address", salt with shadow, 10 over its field: a label on the ground is text on dark |
+| O3 | field | 113 | 50 | 200 | 20 | host and port; filled in when the page was served by a game server. Fields stand on the darkened ground with no slab under them |
+| O4 | text | 113 | 94 | 60 | 10 | "Name", salt with shadow; rows stand 54 apart |
+| O5 | field | 113 | 104 | 200 | 20 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
+| O6 | text | 113 | 148 | 200 | 10 | "Password, if it has one", salt with shadow |
+| O7 | field | 113 | 158 | 200 | 20 | drawn as one 3 by 3 dot to a character |
+| O8 | text | 113 | 71 | 200 | 10 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b, 1 under the field): a refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 3 of 8 here" in root.4, "The server is full" in blood.lt) under the address. Nothing moves when an answer comes |
+| O9 | button | 113 | 194 | 200 | 20 | "Join"; disabled until address and name are valid |
+| O10 | button | 113 | 218 | 200 | 20 | "Back" |
 
 - **Shows.** Address, name, password. The refusals are said plainly: "That name is taken", "Wrong password", "The server is full", "This server runs another version", "No answer".
 - **Clickable.** Fields and buttons.

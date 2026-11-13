@@ -10,8 +10,8 @@ const HANDLE_W = 8;
 export interface FieldOpts {
   id: string;
   x: number; y: number; w: number;
-  /** 14 in a window, 16 in a full-screen menu. */
-  h?: 14 | 16;
+  /** 14 in a window, 20 in a full-screen menu's form, 16 where a slab holds one. */
+  h?: 14 | 16 | 20;
   value: string;
   placeholder?: string;
   limit?: number;
@@ -34,12 +34,12 @@ function dots(s: Surface, n: number, x: number, y: number): number {
 }
 
 /**
- * A text field (5.9): sunk and dark with the edges of a well; the text's cell at 4, 2 (4, 3 when 16 tall) in salt with
+ * A text field (5.9): sunk and dark with the edges of a well; the text's cell at 4, 2 (4, 3 when 16 tall, 4, 5 when 20) in salt with
  * its shadow. With focus, a frame of salt inside its edges and a caret one unit wide and 10 tall that blinks each 0.5 s.
  */
 export function field(o: FieldOpts): Node {
   const h = o.h ?? 14, w = o.w;
-  const ty = h === 16 ? 3 : 2;
+  const ty = h >= 16 ? Math.floor((h - 10) / 2) : 2;
   return {
     id: o.id, x: o.x, y: o.y, w, h,
     focus: true,

@@ -2,7 +2,7 @@
 import type { Screen } from '../node';
 import { button } from '../parts/button';
 import { field } from '../parts/controls';
-import { groundMenu, line } from '../parts/menu';
+import { FORM, formButtonsY, formTitle, groundMenu, line } from '../parts/menu';
 import { ANSWERS, type ServerAnswer } from '../sample/menus';
 import { firstFieldFocus, go } from './books-common';
 import type { NamedScreen } from './index';
@@ -31,29 +31,29 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
   const enter = { key: (e: { key: string }) => { if (e.key === 'Enter') { if (ok) v.onJoin(); return true; } } };
   const about = v.answer && !v.answer.ok ? v.answer.field : undefined;
   const f = (id: string, y: number, value: string, on: (t: string) => void, extra: Partial<Parameters<typeof field>[0]> = {}) => {
-    const n = field({ id, x: 113, y, w: 200, h: 16, value, host: 'ground', onText: on, ui, ...extra });
+    const n = field({ id, x: 113, y, w: 200, h: FORM.fieldH, value, host: 'ground', onText: on, ui, ...extra });
     n.on = { ...n.on, ...enter };
     return n;
   };
-  // Labels on the ground are text on dark: salt with its shadow. A refusal about one field frames that field in blood
-  // and stands 2 under it, and what follows moves down to make room; any other answer stands above the buttons.
-  const kids = [line({ x: 113, y: 24, w: 200, text: 'Join a server', c: 'salt', shadow: true })];
-  let y = 44;
-  const row = (key: 'address' | 'name' | 'password', label: string, value: string, on: (t: string) => void, extra: Partial<Parameters<typeof field>[0]>) => {
+  // The title is centred at the head; each label stands 10 over its field, and the 12 under each field hold what the
+  // server said about it, in blood when it refuses, so an answer is always read next to what it is about. An answer
+  // about no one field (the server is full, or here) is about the address.
+  const kids = [formTitle('Join a server')];
+  const said = (key: 'address' | 'name' | 'password') => (v.answer ? (v.answer.ok || !about ? key === 'address' : about === key) : false);
+  const row = (i: number, key: 'address' | 'name' | 'password', label: string, value: string, on: (t: string) => void, extra: Partial<Parameters<typeof field>[0]>) => {
+    const y = FORM.top + i * FORM.pitch;
     kids.push(line({ x: 113, y, w: 200, text: label, c: 'salt', shadow: true }));
     const refused = about === key;
     kids.push(f(`join.${key}`, y + 10, value, on, refused ? { ...extra, show: { refused: true } } : extra));
-    y += 26;
-    if (refused) { kids.push(line({ x: 113, y: y + 2, w: 200, text: v.answer!.text, c: 'blood.lt', shadow: true })); y += 12; }
-    y += 8;
+    if (said(key)) kids.push(line({ x: 113, y: y + 10 + FORM.fieldH + 1, w: 200, text: v.answer!.text, c: v.answer!.ok ? 'root.4' : 'blood.lt', shadow: true }));
   };
-  row('address', 'Address', v.address, v.onAddress, { limit: 64 });
-  row('name', 'Name', v.name, v.onName, { limit: 16, allow: NAME_CHAR });
-  row('password', 'Password, if it has one', v.password, v.onPassword, { limit: 64, password: true });
-  if (v.answer && !about) kids.push(line({ x: 113, y: 144, w: 200, text: v.answer.text, c: v.answer.ok ? 'salt' : 'blood.lt', shadow: true }));
+  row(0, 'address', 'Address', v.address, v.onAddress, { limit: 64 });
+  row(1, 'name', 'Name', v.name, v.onName, { limit: 16, allow: NAME_CHAR });
+  row(2, 'password', 'Password, if it has one', v.password, v.onPassword, { limit: 64, password: true });
+  const by = formButtonsY(3);
   kids.push(
-    button({ id: 'join.join', x: 113, y: 160, w: 200, label: 'Join', disabled: !ok, onPress: v.onJoin }),
-    button({ id: 'join.back', x: 113, y: 184, w: 200, label: 'Back', onPress: v.onBack }),
+    button({ id: 'join.join', x: 113, y: by, w: 200, label: 'Join', disabled: !ok, onPress: v.onJoin }),
+    button({ id: 'join.back', x: 113, y: by + 24, w: 200, label: 'Back', onPress: v.onBack }),
   );
   return groundMenu(ui, 'join', kids, { on: { key: (e) => { if (e.key === 'Escape') { v.onBack(); return true; } } } });
 };

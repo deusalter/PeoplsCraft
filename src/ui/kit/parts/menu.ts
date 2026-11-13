@@ -42,6 +42,25 @@ export function washedMenu(ui: Ui, id: string, wash: { c: Colour; quarters: 1 | 
   };
 }
 
+/** The form of a full-screen menu (New world, Join a server): its rows of a label over a field, in table units. */
+export const FORM = {
+  /** The screen's title, centred on the column. */
+  titleY: 20,
+  /** The first label; a field stands 10 under its label. */
+  top: 40,
+  fieldH: 20,
+  /** From one label to the next: the label, the field, the 12 under it for its answer, and 12 clear. */
+  pitch: 54,
+} as const;
+
+/** Where the buttons of a form of n rows start: 4 under the 12 kept for the last field's answer. */
+export function formButtonsY(rows: number): number { return FORM.top + FORM.pitch * (rows - 1) + 10 + FORM.fieldH + 12 + 4; }
+
+/** The screen's title over a form: centred on the column, salt with its shadow. */
+export function formTitle(text: string): Node {
+  return line({ x: COLUMN_X, y: FORM.titleY, w: COLUMN_W, text, c: 'salt', shadow: true, centre: true });
+}
+
 /**
  * One line of text in a box, left-aligned or centred, cut with `…` when it is too long. On the ground tile or the world
  * it is drawn with its shadow; on a light face without.
