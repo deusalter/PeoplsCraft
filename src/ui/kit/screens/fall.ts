@@ -11,12 +11,12 @@ import { chat, nameTag } from '../parts/plates';
 import { since } from './play/common';
 import type { NamedScreen } from './index';
 
-/** `lie` is where the shed lees lie, as the compass's place line writes it. */
-interface Fall { by: string; shed: number; where: string; lie?: string; server: boolean }
+/** `lie` is where the shed lees lie and `at` where the body fell, as the compass's place line writes them. */
+interface Fall { by: string; shed: number; where: string; lie?: string; at: string; server: boolean }
 
 const FALLS: Record<string, Fall> = {
-  fall: { by: 'to a Tama', shed: 14, where: 'Vana', lie: 'x -104  z 2210', server: true },
-  'fall-alone': { by: 'from a height', shed: 0, where: 'Pabbat', server: false },
+  fall: { by: 'to a Tama', shed: 14, where: 'Vana', lie: 'x -104  z 2210', at: 'x -104  z 2210', server: true },
+  'fall-alone': { by: 'from a height', shed: 0, where: 'Pabbat', at: 'x 312  z -88', server: false },
 };
 
 let fellAt = 0;
@@ -39,6 +39,8 @@ function build(ui: Ui, id: string): Node {
   let y = 86;
   if (f.shed) kids.push(line((y += 12), `{lees} ${count(f.shed)} shed in ${f.where}`));
   if (f.shed && f.lie) kids.push(line((y += 12), `Lees lie at ${f.lie}`, 'arm.lt'));
+  // With nothing shed there is no place to go back to, but where it happened is still worth knowing.
+  else kids.push(line((y += 12), `At ${f.at}`, 'root.4'));
   // The buttons stand 6 under the last line, so the column holds together however many lines there are.
   const by = y + 10 + 6;
   kids.push(
