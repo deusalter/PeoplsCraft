@@ -33,6 +33,8 @@ try {
   for (const name of names) {
     const faults = [];
     for (const [w, h] of SIZES) {
+      // Sheets of parts are for judging, not screens of the game, and need a virtual screen of 480 by 270.
+      if (name.startsWith('parts') && (w < 480 || h < 270)) continue;
       const scrolls = new Map();
       const ui = {
         layout: layout(w, h, 1), w, h, t: 10, held: null,
