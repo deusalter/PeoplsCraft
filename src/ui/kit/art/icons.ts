@@ -64,23 +64,26 @@ export const TAB_MARKS: Record<string, PixelMap> = {
     '................',
     '................',
   ]),
-  /** A gilt relic, for old things. */
+  /**
+   * The ward core, an object from the page of old things: a dressed stone disc lit along its top left and shaded along
+   * its bottom right, with a blue gem sunk in its middle. A gilt diamond stood here, a shape and not a thing.
+   */
   old: mark('old', [
     '................',
-    '.......KK.......',
-    '......KyyK......',
-    '.....KyyyoK.....',
-    '....KyyoooOK....',
-    '...KyyooooOuK...',
-    '...KoooooOOuK...',
-    '....KoOOOOuK....',
-    '.....KOOuuK.....',
-    '......KuuK......',
-    '.......KK.......',
-    '................',
-    '................',
-    '................',
-    '................',
+    '......KKKK......',
+    '....KKAAAAKK....',
+    '...KAAHHHHAAK...',
+    '..KAHHHHHHHHMK..',
+    '..KAHMMMMMMHMK..',
+    '.KAHHMWbbBAHHMK.',
+    '.KAHHMbbBBAHHMK.',
+    '.KAHHMbBBdAHHMK.',
+    '.KAHHMBBddAHHMK.',
+    '..KAHMAAAAAHMK..',
+    '..KAHHHHHHHHMK..',
+    '...KMMHHHHMMK...',
+    '....KKMMMMKK....',
+    '......KKKK......',
     '................',
   ]),
   /** Two heads, for the crew: a short chestnut crop behind, long black hair in front. */
