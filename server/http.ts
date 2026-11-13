@@ -16,7 +16,8 @@ const TYPES: Record<string, string> = {
 
 /** `root`: the folder of the client build. Files under `assets/` carry a hash in their names and never change; everything
  *  else is asked for again each time, so that a page is never older than the server that serves it (4.2). */
-export function createHttp(root: string, info: () => Info): Server {
+/** `debug`: a test harness's questions; whatever it returns for a path (not undefined) is the answer, as JSON. */
+export function createHttp(root: string, info: () => Info, debug?: (path: string, q: URLSearchParams) => unknown): Server {
   const base = normalize(root.endsWith(sep) ? root : root + sep);
   const handle = (req: IncomingMessage, res: ServerResponse): void => {
     const head = req.method === 'HEAD';
@@ -27,6 +28,13 @@ export function createHttp(root: string, info: () => Info): Server {
       const body = JSON.stringify(info());
       res.writeHead(200, { 'Content-Type': TYPES['.json'], 'Cache-Control': 'no-store', 'Content-Length': Buffer.byteLength(body) });
       res.end(head ? undefined : body);
+      return;
+    }
+    const extra = debug && !head ? debug(path, new URL(req.url ?? '/', 'http://x').searchParams) : undefined;
+    if (extra !== undefined) {
+      const body = JSON.stringify(extra);
+      res.writeHead(200, { 'Content-Type': TYPES['.json'], 'Cache-Control': 'no-store', 'Content-Length': Buffer.byteLength(body) });
+      res.end(body);
       return;
     }
     if (path.endsWith('/')) path += 'index.html';

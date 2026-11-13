@@ -3677,6 +3677,58 @@ the commit of a tab being closed are as before. Smoke `frames`, part 2: in a hid
 driving moves neither the world nor the body; `T.run(3000)` moves both (about 180 steps), `T.cmd('simhash')` is
 answered, and once shown the host has the body where the client does.
 
+D39. Stage 4, lanes A, B and C and the merge that joined them (2.2, 3.5, 4.1, 4.2, 8.1, 10.2, 11). Where the server is not
+what the sections say.
+(a) 4.1 frame limits. `ws` takes frames up to 64 KB (`maxPayload` 4 x `MAX_JSON`); a text frame over 16 KB or a binary
+frame over 64 bytes is answered with `error proto` and closed, as written. A frame over 64 KB is closed by `ws` itself with
+WebSocket code 1009 and no `error` message, since the socket layer refuses to buffer it at all.
+(b) 4.1, beside the host's caps: `server/wsserver.ts` closes with `error rate` a socket that sends more than 2,000 frames in
+one second, whatever they hold, which bounds what a flood can make the host queue between two steps.
+(c) 2.2, `npm start` builds only when `dist/server/main.js` or `dist/client/index.html` is missing or older than any source
+file, and otherwise runs the build it has. Running needs only `node dist/server/main.js`.
+(d) 2.2 and D10, packages: `ws` and `@types/ws` are devDependencies (`ws` is inlined into `dist/server/main.js`; nothing
+installs it at run time). `engines.node` is `>=22`.
+(e) 4.2, closing: a socket the host closes ends with WebSocket close code 4000 and the error code as the close reason, after
+the `error` message. The client acts on the message; the reason is for logs and tests.
+(f) 4.1, client silence: the client looks once a second, so a silent socket is given up between 6 and 7 s after its last
+message; the same watch gives up a socket still connecting after 6 s.
+(g) 2.3 join screen: beside the "Join" a server's own page shows, every title menu has "Join a server", which asks for an
+address. `?server=<address>` opens it with that address; with `&name=` (and `&password=`) it joins at once. The name and
+the last address are kept in `localStorage` (`peopls.name`, `peopls.server`) beside `peopls.token`.
+(h) 8.1 CLI: `--port 0` listens on a free port, named by the log line `listening on http://<host>:<port>/`.
+(i) The password block counts its minute from the first wrong password of a window, not from the fifth (4.2 has five in a
+minute block for a minute): five sent together, as a guesser sends them, block for the full minute; five spread over a
+minute block for what is left of it.
+(j) 8.1, regions are held for 5 minutes after the last load or commit that touched them, not while a chunk of theirs is
+subscribed: `Storage` does not see subscriptions. A subscribed chunk's edits are in `EditMaps` and never read again (3.6
+rule 2), so a region leaving early costs one file read, never a stale answer.
+(k) Backups also at shutdown, when anything was committed since the last one, so a clean stop leaves a backup of the
+final state.
+(l) A `commit.json` that does not read refuses to start, like world.json, naming the newest backup and the command.
+(m) Restore is crash-safe through `restore.tmp/` and `restore.json`, names not in 8.1's layout; while `restore.json`
+exists the storage refuses to open and says to run the same `--restore` again. `pre-restore-<stamp>` takes the time of the
+restore and is never rotated away.
+(n) Stamps of backups, `.bad-` files and `pre-restore-` folders are UTC.
+(o) A player or region file that does not read is replaced at once by the newest backup copy that reads (tmp, fsync,
+rename), outside a commit: the record written is the backup's, which nothing in memory holds yet.
+(p) A region whose last chunk was emptied is left as a region file with no entries rather than deleted.
+(q) "fill a small tmpfs" (11): on macOS a 1 MB HFS+ disk image (`hdiutil`, no privileges); elsewhere a byte budget in the
+write layer gives ENOSPC on the same code path.
+(r) 3.5, "the seed is fixed at construction": `NodePoolSource` takes the seed as a function, read once at its first
+request, because `SimHost` learns the seed in `start()`.
+(s) 3.5, "the host re-requests twice": the pool queues a failed job again behind the others, twice at most, then logs it
+and leaves the chunk unready; `SimHost` has no retry of its own.
+(t) 3.5, `poll(maxJobs, budgetMs)`: the pool ignores `budgetMs`, since nothing is generated inside a step.
+(u) The server's files are `.js`, not `.mjs` (Node 22 takes them as modules by their syntax), so `server/main.ts` gives the
+pool its entry, `genworker.js` beside itself; the pool's own default (`genworker.mjs`) is what its tests build.
+(v) 10.2's `/hash`, and a `/stats`, are answered only by a server started with `--harness` (a flag 8.1 does not list):
+`/hash?dim&cx0&cz0&cx1&cz1` gives the FNV-1a of each sim chunk's blocks as the `hash` command does, '-' for one not
+held; `/stats?last=<n>` gives the step count, p50, p99 and max of the last n step times, failed steps, the SimPlayers in
+memory with their names, and `sim.refused`. Without the flag both are 404 like any missing file.
+(w) Not done in this merge, left to the stage 4 integration: the storage's notices (a repaired player file toasted at
+join, a repaired region announced in chat) reach only the log; "The server cannot save" is not toasted; smoke `golden`
+against a server and the README's hosting section.
+
 ---
 
 ## 14. Review log

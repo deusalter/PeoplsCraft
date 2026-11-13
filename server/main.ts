@@ -10,23 +10,27 @@ import { strSeed } from '../src/core/noise';
 import { SimHost } from '../src/net/host';
 import { VIEW_MAX, VIEW_MIN } from '../src/net/protocol';
 import type { HostEnv } from '../src/net/transport';
-import { type ChunkSource, type GenResult, InlineSource } from '../src/sim/chunksource';
-import { MemStorage, type Storage } from '../src/sim/storage';
+import type { ChunkSource } from '../src/sim/chunksource';
+import { hashBlocks } from '../src/sim/genjob';
+import { DiskStorage } from './diskstorage';
 import { createHttp } from './http';
+import { NodePoolSource } from './nodepool';
 import { attachWs } from './wsserver';
 
 const USAGE = `usage: node dist/server/main.js --data <dir> [--port 8080] [--host 0.0.0.0] [--name <text>] [--seed <text>]
-  [--password <text>] [--cheats] [--max-players 8] [--view-max 12] [--save-interval 60]
+  [--password <text>] [--cheats] [--harness] [--max-players 8] [--view-max 12] [--save-interval 60]
   [--backup-interval 1800] [--backup-keep 12] [--restore <stamp>]`;
 
 export interface ServerFlags {
   data: string; port: number; host: string; name: string; seed: string | null; password: string | null; cheats: boolean;
+  /** Test runs only: `/hash` and `/stats` answer (10.2). */
+  harness: boolean;
   maxPlayers: number; viewMax: number; saveInterval: number; backupInterval: number; backupKeep: number; restore: string | null;
 }
 
 /** The flags of 8.1; throws with what is wrong. */
 export function parseFlags(argv: string[]): ServerFlags {
-  const f: ServerFlags = { data: '', port: 8080, host: '0.0.0.0', name: 'Peopls Craft', seed: null, password: null, cheats: false,
+  const f: ServerFlags = { data: '', port: 8080, host: '0.0.0.0', name: 'Peopls Craft', seed: null, password: null, cheats: false, harness: false,
     maxPlayers: 8, viewMax: 12, saveInterval: 60, backupInterval: 1800, backupKeep: 12, restore: null };
   const int = (k: string, v: string, lo: number, hi: number): number => {
     const n = Number(v);
@@ -36,6 +40,7 @@ export function parseFlags(argv: string[]): ServerFlags {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--cheats') { f.cheats = true; continue; }
+    if (a === '--harness') { f.harness = true; continue; }
     if (a === '--help' || a === '-h') throw new Error('');
     if (!a.startsWith('--')) throw new Error(`unexpected "${a}"`);
     const k = a.slice(2), v = argv[++i];
@@ -60,26 +65,42 @@ export function parseFlags(argv: string[]): ServerFlags {
   return f;
 }
 
-/** The world's seed is known only once the storage is open, inside `host.start()`: the generator is made for it on the
- *  first request, which comes from a step. */
-class WorldSource implements ChunkSource {
-  private src: ChunkSource | null = null;
-  constructor(private make: (seed: number) => ChunkSource, private seed: () => number) {}
-  private get s(): ChunkSource { return (this.src ??= this.make(this.seed())); }
-  get pending(): number { return this.src ? this.src.pending : 0; }
-  request(dim: number, cx: number, cz: number, prio: number): void { this.s.request(dim, cx, cz, prio); }
-  cancel(dim: number, cx: number, cz: number): void { this.src?.cancel(dim, cx, cz); }
-  poll(maxJobs: number, budgetMs: number): GenResult[] { return this.src ? this.src.poll(maxJobs, budgetMs) : []; }
-  dispose(): void { this.src?.dispose(); }
+/** Where the world is kept and where its terrain comes from: the one place either is chosen. The pool reads the seed
+ *  at its first request, which comes from a step, after `host.start()` has opened the world. */
+function backends(f: ServerFlags, env: HostEnv, seed: () => number): { storage: DiskStorage; source: ChunkSource } {
+  const storage = new DiskStorage(f.data, {
+    backupInterval: f.backupInterval, backupKeep: f.backupKeep, ...(f.restore !== null ? { restore: f.restore } : {}),
+    log: (level, msg) => env.log(level, msg),
+  });
+  const source = new NodePoolSource(seed, { entry: new URL('./genworker.js', import.meta.url), log: (level, msg) => env.log(level, msg) });
+  return { storage, source };
 }
 
-/** Where the world is kept and where its terrain comes from: the one place either is chosen. Until the folder storage
- *  (server/diskstorage.ts) and the worker-thread pool (server/nodepool.ts) are wired in, the world lives in memory and is
- *  generated in the step. */
-function backends(_f: ServerFlags, env: HostEnv, seed: () => number): { storage: Storage; source: ChunkSource } {
-  const storage: Storage = new MemStorage();
-  const source: ChunkSource = new WorldSource((s) => new InlineSource(s, env.now), seed);
-  return { storage, source };
+/** The harness's questions (10.2), answered only under `--harness`: what the host holds, and how long its steps took. */
+function harness(h: SimHost, path: string, q: URLSearchParams): unknown {
+  if (path === '/hash') {
+    const n = ['dim', 'cx0', 'cz0', 'cx1', 'cz1'].map((k) => Number(q.get(k)));
+    if (n.some((v) => !Number.isInteger(v)) || !h.sim.realms[n[0]] || (n[3] - n[1] + 1) * (n[4] - n[2] + 1) > 1024) return { error: 'hash?dim&cx0&cz0&cx1&cz1' };
+    const realm = h.sim.realms[n[0]], out: Record<string, string> = {};
+    for (let cx = n[1]; cx <= n[3]; cx++) for (let cz = n[2]; cz <= n[4]; cz++) {
+      const c = realm.chunks.chunk(cx, cz);
+      out[`${cx},${cz}`] = c && c.state === 2 && c.blocks ? hashBlocks(c.blocks).toString(16) : '-';
+    }
+    return out;
+  }
+  if (path === '/stats') {
+    const t = h.stats.tickMs, steps = h.stepCount, last = Math.min(steps, t.length, Math.max(1, Number(q.get('last')) || t.length));
+    const a: number[] = [];
+    for (let i = 0; i < last; i++) a.push(t[(steps - i) % t.length]);
+    a.sort((x, y) => x - y);
+    const at = (f: number): number => (a.length ? a[Math.min(a.length - 1, Math.floor(f * a.length))] : 0);
+    const players = [...h.sim.players.values()];
+    return {
+      steps, n: a.length, p50: at(0.5), p99: at(0.99), max: a.length ? a[a.length - 1] : 0, stepErrors: h.stats.stepErrors,
+      simPlayers: players.length, online: h.sim.online(), names: players.map((p) => p.name), refused: h.sim.refused,
+    };
+  }
+  return undefined;
 }
 
 /** 4.1: true once `limit` steps have failed inside `windowMs`. `total` is the host's running count of failed steps. */
@@ -118,14 +139,19 @@ async function main(): Promise<number> {
     clock: 'real', saveEvery: f.saveInterval, solo: false,
   });
   const h = host;
-  await h.start();
+  try { await h.start(); } catch (e) {
+    console.error(e instanceof Error ? e.message : String(e));
+    source.dispose();
+    return 1;
+  }
 
   const clientDir = fileURLToPath(new URL('../client/', import.meta.url));
-  const http = createHttp(clientDir, () => ({ server: true, name: h.sim.world.name, players: h.sim.online(), max: f.maxPlayers, password: f.password !== null }));
+  const http = createHttp(clientDir, () => ({ server: true, name: h.sim.world.name, players: h.sim.online(), max: f.maxPlayers, password: f.password !== null }),
+    f.harness ? (path, q) => harness(h, path, q) : undefined);
   const ws = attachWs(http, '/ws', env, (c) => h.connect(c));
   await new Promise<void>((ok, no) => { http.once('error', no); http.listen(f.port, f.host, () => { http.off('error', no); ok(); }); });
   const addr = http.address(), port = typeof addr === 'object' && addr ? addr.port : f.port;
-  env.log('info', `world "${h.sim.world.name}" (seed ${h.sim.world.seedText}), up to ${f.maxPlayers} players, view ${f.viewMax}${f.password !== null ? ', password set' : ''}${f.cheats ? ', cheats on' : ''}`);
+  env.log('info', `world "${h.sim.world.name}" (seed ${h.sim.world.seedText}), up to ${f.maxPlayers} players, view ${f.viewMax}${f.password !== null ? ', password set' : ''}${f.cheats ? ', cheats on' : ''}${f.harness ? ', harness on' : ''}`);
   env.log('info', `listening on http://${f.host}:${port}/`);
 
   let ending: Promise<number> | null = null;
@@ -134,6 +160,9 @@ async function main(): Promise<number> {
     env.log(code ? 'error' : 'info', `stopping: ${why}`);
     ending = (async () => {
       let rc = code;
+      // 8.1: the last save is tried three times
+      for (let i = 0; i < 3; i++) { await h.save(); if (!storage.saveFailing) break; }
+      if (storage.saveFailing) rc = rc || 1;
       try { await h.stop(); } catch (e) { env.log('error', 'the last save failed: ' + (e instanceof Error ? e.message : String(e))); rc = rc || 1; }
       ws.close();
       await new Promise<void>((ok) => { http.close(() => ok()); http.closeAllConnections(); });

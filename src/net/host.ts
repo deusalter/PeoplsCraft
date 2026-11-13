@@ -406,6 +406,8 @@ export class SimHost {
     for (const e of this.edits.values()) if (e.dirty) return true;
     return false;
   }
+  /** Steps run so far; the newest step's time is at `stats.tickMs[stepCount % 3600]`. */
+  get stepCount(): number { return this.steps; }
   /** Step times over the last 3,600 steps (6.6 item 3), in ms. */
   tickStats(): string {
     const t = this.stats.tickMs, n = Math.min(this.steps, 3600), a = Array.from(this.steps >= 3600 ? t : t.subarray(1, n + 1)).sort((x, y) => x - y);
