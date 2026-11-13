@@ -19,7 +19,7 @@ export type Station = Pattern['station'];
 export const STATION_NAME: Record<Station, string> = {
   hand: 'By hand', workbench: 'Workbench', anvil: 'Anvil', runeloom: 'Line Frame', tinker: 'Joining Bench',
 };
-const STATION_ICON: Record<Station, string> = {
+export const STATION_ICON: Record<Station, string> = {
   hand: 'patterns', workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker_bench',
 };
 /** "Made at the Anvil": where a pattern read through another station's tab is made. */
@@ -129,6 +129,9 @@ export interface PanelOpts {
   /** The grid patterns are laid on; a pattern that does not fit it cannot be laid. */
   grid: Grid | null;
   id: string;
+  /** Under 400 units: "Can make" beside the kind button and the well under them, as wide as the slab allows. */
+  compact?: boolean;
+  wellW?: number;
 }
 
 const PANEL_W = 116;
@@ -145,14 +148,15 @@ function patternTip(h: Hand, p: Pattern, here: boolean, station: Station): Retur
 /** The cells of the patterns in a dark well, five to a row, moving by whole rows, with a track when they do not fit. */
 function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean, ui: Ui): Node {
   const { b } = o;
-  const w = 98, h = o.wellH, fh = h - 2;
-  const rows = Math.ceil(list.length / 5), visible = Math.floor(fh / 18);
+  const w = o.wellW ?? 98, h = o.wellH, fh = h - 2;
+  const cols = Math.floor((w - 2 - TRACK_W) / 18);
+  const rows = Math.ceil(list.length / cols), visible = Math.floor(fh / 18);
   const sid = `${o.id}.cells`;
   const maxTop = Math.max(0, rows - visible);
   const top = Math.min(maxTop, Math.max(0, ui.scroll(sid)));
   const setTop = (v: number) => ui.setScroll(sid, Math.min(maxTop, Math.max(0, v)));
   const kids: Node[] = list.map((p, i): Node => {
-    const r = Math.floor(i / 5) - top, c = i % 5;
+    const r = Math.floor(i / cols) - top, c = i % cols;
     const id = `${o.id}.cell.${p.out}`;
     const makeable = canMake(b.hand, p);
     const fitsGrid = !o.grid || layout(p, o.grid.w).filter((x) => x).length === needs(p).reduce((a, [, n]) => a + n, 0);
@@ -190,7 +194,7 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
     const thumbY = maxTop ? Math.round(((trackH - thumbH) * top) / maxTop) : 0;
     let from = top;
     kids.push({
-      id: `${o.id}.track`, x: 90, y: 0, w: TRACK_W, h: trackH, takes: true,
+      id: `${o.id}.track`, x: cols * 18, y: 0, w: TRACK_W, h: trackH, takes: true,
       paint: (s, live) => { s.fill(0, 0, TRACK_W, trackH, 'root.0'); paintThumb(s, 0, thumbY, thumbH, live.hover || live.down); },
       on: {
         down: (e) => { from = top; if (e.y < thumbY) setTop(top - visible); else if (e.y >= thumbY + thumbH) setTop(top + visible); },
@@ -200,7 +204,7 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
     });
   }
   return {
-    id: `${o.id}.well`, x: 8, y: 52, w, h,
+    id: `${o.id}.well`, x: 8, y: o.compact ? 32 : 52, w, h,
     paint: (s) => sunk(s, 0, 0, w, h, o.ramp),
     on: { wheel: (e) => { setTop(top + e.notches); return true; } },
     kids: [{ x: 1, y: 1, w: w - 2, h: fh, clip: true, kids }],
@@ -242,7 +246,7 @@ export function recipeControls(o: PanelOpts): Node[] {
       onText: (v) => { st.search = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); },
     }),
     kindButton(o, ui),
-    checkbox({ id: `${o.id}.can`, x: 8, y: 35, on: st.canMake, label: 'Can make', host: o.ramp, onToggle: (v) => { st.canMake = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); } }),
+    checkbox({ id: `${o.id}.can`, x: o.compact ? 112 : 8, y: o.compact ? 17 : 35, on: st.canMake, label: 'Can make', host: o.ramp, onToggle: (v) => { st.canMake = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); } }),
     cellWell(o, list, station, here, ui),
   ];
   if (o.hintY + 10 <= o.h) out.push(ink(8, o.hintY, '{lmb} lay out {rmb} make', 'ink.faded'));

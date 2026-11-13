@@ -7,10 +7,11 @@ import { PATTERNS } from '../sample/play-patterns';
 import { type Stack, thing } from '../sample/play-items';
 import { Bench, overWorld, packBlock, place, stackSlot } from './play/common';
 import { Hand, type Place, store } from './play/hand';
-import { type Grid, type PanelState, gridMatch, recipePanel, resultSlot } from './play/making';
+import { type Grid, type PanelState, gridMatch, recipeControls, recipePanel, resultSlot } from './play/making';
+import { tabbedSlab } from '../parts/tabs';
 import type { NamedScreen } from './index';
 
-interface State { hand: Hand; grid: Grid; panel: PanelState; bench: Bench | null }
+interface State { hand: Hand; grid: Grid; panel: PanelState; bench: Bench | null; side: number }
 let state: State | null = null;
 
 function open(): State {
@@ -32,7 +33,7 @@ function open(): State {
     return [p.store === 'pack' ? 'bar' : 'pack'];
   };
   const grid: Grid = { store: 'piece', w: 2, ghost: Array(4).fill(null), among: PATTERNS.filter((p) => p.station === 'tinker') };
-  state = { hand, grid, panel: { search: '', canMake: false, kind: 0, tab: 0 }, bench: null };
+  state = { hand, grid, panel: { search: '', canMake: false, kind: 0, tab: 0 }, bench: null, side: 0 };
   return state;
 }
 
@@ -49,7 +50,7 @@ function build(ui: Ui): Node {
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
   const b = st.bench, g = st.grid;
   const joined = !!gridMatch(st.hand, g);
-  const main: Node[] = [
+  const joining: Node[] = [
     stackSlot(b, { store: 'piece', i: 0 }, { x: 26, y: 35, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[0] ?? undefined }),
     line(44, 43, 12, joined),
     stackSlot(b, { store: 'remains', i: 0 }, { x: 56, y: 35, ramp: 'timber', locked: { key: 'heartroot', n: 1 } }),
@@ -57,13 +58,29 @@ function build(ui: Ui): Node {
     stackSlot(b, { store: 'piece', i: 1 }, { x: 86, y: 35, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[1] ?? undefined }),
     progressArrow({ x: 108, y: 37, f: joined ? 1 : 0, ramp: 'timber' }),
     resultSlot(b, g, 136, 31, 'timber', true),
-    ...packBlock(b, 'timber', 73, 84),
   ];
+  const pack = packBlock(b, 'timber', 73, 84);
+  const outside = () => { st.hand.dropHeld(); b.after(); };
+  const stations: ('tinker' | 'workbench' | 'anvil')[] = ['tinker', 'workbench', 'anvil'];
+  if (!ui.layout.wide) {
+    const win = place(ui, 176 + 21, 166);
+    const upper = st.side === 0 ? joining : recipeControls({
+      b, st: st.panel, id: 'joining.recipes', x: 0, y: 0, h: 70, ramp: 'timber', stations, wellH: 38, hintY: 70, grid: g, compact: true, wellW: 152,
+    });
+    return overWorld(ui, win, [tabbedSlab({
+      id: 'joining.narrow', x: 21, y: 0, w: 176, h: 166, ramp: 'timber', edge: 'left',
+      title: st.side === 0 ? 'Joining Bench' : 'Joining Bench: patterns',
+      tabs: [{ id: 'joining.side.0', icon: 'tinker_bench', name: 'Joining Bench' }, { id: 'joining.side.1', icon: 'patterns', name: 'Patterns' }],
+      chosen: st.side,
+      onTab: (i) => { st.side = i; ui.cue('tab'); ui.invalidate(); },
+      kids: [...upper, ...pack],
+    })], { outside });
+  }
   const win = place(ui, 291, 166, 21);
   return overWorld(ui, win, [
-    slab({ x: 0, y: 0, w: 176, h: 166, ramp: 'timber', title: 'Joining Bench', kids: main }),
-    recipePanel({ b, st: st.panel, id: 'joining.recipes', x: 175, y: 0, h: 166, ramp: 'timber', stations: ['tinker', 'workbench', 'anvil'], wellH: 92, hintY: 148, grid: g }),
-  ], { outside: () => { st.hand.dropHeld(); b.after(); } });
+    slab({ x: 0, y: 0, w: 176, h: 166, ramp: 'timber', title: 'Joining Bench', kids: [...joining, ...pack] }),
+    recipePanel({ b, st: st.panel, id: 'joining.recipes', x: 175, y: 0, h: 166, ramp: 'timber', stations, wellH: 92, hintY: 148, grid: g }),
+  ], { outside });
 }
 
 export const SCREENS: NamedScreen[] = [{ name: 'joining', title: 'Joining Bench', world: true, build }];

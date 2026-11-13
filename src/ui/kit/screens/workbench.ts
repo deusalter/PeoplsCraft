@@ -9,7 +9,8 @@ import { PATTERNS } from '../sample/play-patterns';
 import type { Stack } from '../sample/play-items';
 import { Bench, overWorld, packBlock, place, stackGrid } from './play/common';
 import { Hand, store } from './play/hand';
-import { type Grid, type PanelState, type Station, STATION_NAME, gridMatch, layOut, recipePanel, resultSlot } from './play/making';
+import { type Grid, type PanelState, type Station, STATION_ICON, STATION_NAME, gridMatch, layOut, recipeControls, recipePanel, resultSlot } from './play/making';
+import { tabbedSlab } from '../parts/tabs';
 import type { NamedScreen } from './index';
 
 interface Kind {
@@ -60,7 +61,7 @@ const KINDS: Record<string, Kind> = {
   },
 };
 
-interface State { hand: Hand; grid: Grid; panel: PanelState; bench: Bench | null }
+interface State { hand: Hand; grid: Grid; panel: PanelState; bench: Bench | null; side: number }
 const states = new Map<string, State>();
 
 function open(id: string, k: Kind): State {
@@ -73,7 +74,7 @@ function open(id: string, k: Kind): State {
   const grid: Grid = { store: 'grid', w: 3, ghost: Array(9).fill(null), among: PATTERNS.filter((p) => p.station === k.station || p.station === 'hand') };
   const first = PATTERNS.find((p) => p.out === k.laid);
   if (first) layOut(hand, grid, first);
-  st = { hand, grid, panel: { search: '', canMake: false, kind: 0, tab: 0 }, bench: null };
+  st = { hand, grid, panel: { search: '', canMake: false, kind: 0, tab: 0 }, bench: null, side: 0 };
   states.set(id, st);
   return st;
 }
@@ -84,17 +85,33 @@ function build(ui: Ui, id: string): Node {
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
   const b = st.bench, g = st.grid;
   const matched = gridMatch(st.hand, g);
-  const main: Node[] = [
+  const making: Node[] = [
     stackGrid(b, { store: 'grid', x: 30, y: 17, cols: 3, rows: 3, ramp: k.ramp, each: (i) => ({ missing: g.ghost[i] ?? undefined }) }),
     progressArrow({ x: 91, y: 36, f: matched ? 1 : 0, ramp: k.ramp, colour: k.arrow }),
     resultSlot(b, g, 122, 31, k.ramp, true),
-    ...packBlock(b, k.ramp, 73, 84),
   ];
+  const pack = packBlock(b, k.ramp, 73, 84);
+  const outside = () => { st.hand.dropHeld(); b.after(); };
+  if (!ui.layout.wide) {
+    // Under 400 units the recipe panel is a side tab on the slab's left edge and stands in the grid's place when chosen.
+    const win = place(ui, 176 + 21, 166);
+    const upper = st.side === 0 ? making : recipeControls({
+      b, st: st.panel, id: `${id}.recipes`, x: 0, y: 0, h: 70, ramp: k.ramp, stations: k.stations, wellH: 38, hintY: 70, grid: g, compact: true, wellW: 152,
+    });
+    return overWorld(ui, win, [tabbedSlab({
+      id: `${id}.narrow`, x: 21, y: 0, w: 176, h: 166, ramp: k.ramp, edge: 'left',
+      title: st.side === 0 ? STATION_NAME[k.station] : `${STATION_NAME[k.station]}: patterns`,
+      tabs: [{ id: `${id}.side.0`, icon: STATION_ICON[k.station], name: STATION_NAME[k.station] }, { id: `${id}.side.1`, icon: 'patterns', name: 'Patterns' }],
+      chosen: st.side,
+      onTab: (i) => { st.side = i; ui.cue('tab'); ui.invalidate(); },
+      kids: [...upper, ...pack],
+    })], { outside });
+  }
   const win = place(ui, 291, 166, 21);
   return overWorld(ui, win, [
-    slab({ x: 0, y: 0, w: 176, h: 166, ramp: k.ramp, title: STATION_NAME[k.station], kids: main }),
+    slab({ x: 0, y: 0, w: 176, h: 166, ramp: k.ramp, title: STATION_NAME[k.station], kids: [...making, ...pack] }),
     recipePanel({ b, st: st.panel, id: `${id}.recipes`, x: 175, y: 0, h: 166, ramp: k.ramp, stations: k.stations, wellH: 92, hintY: 148, grid: g }),
-  ], { outside: () => { st.hand.dropHeld(); b.after(); } });
+  ], { outside });
 }
 
 export const SCREENS: NamedScreen[] = [

@@ -50,7 +50,7 @@ const FURNACES: Record<string, Furnace> = {
   'furnace-kuranga': { name: 'Kuranga Furnace', forge: 5, remains: 'eclipse_ember', stones: ['violet.dk', 'root.1', 'root.0'], ore: { key: 'eclipsium_ore', n: 3 }, fuel: { key: 'coal', n: 2 }, out: null, burn: [9, 80], still: 0.1 },
 };
 
-interface State { f: Furnace; hand: Hand; bench: Bench | null; started: number; timer: number }
+interface State { f: Furnace; hand: Hand; bench: Bench | null; started: number; timer: ReturnType<typeof setInterval> | 0 }
 const states = new Map<string, State>();
 
 function worksOf(f: Furnace): Work[] {
@@ -135,7 +135,7 @@ function bed(x: number, y: number, stones: Stones): Node {
 function build(ui: Ui, id: string): Node {
   const st = open(id);
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
-  if (!STILL && !st.timer) st.timer = window.setInterval(() => tick(st, ui), 250);
+  if (!STILL && !st.timer) st.timer = setInterval(() => tick(st, ui), 250);
   const b = st.bench, f = st.f, h = st.hand;
   const ore = h.stores.ore[0];
   const work = ore ? worksOf(f).find((w) => w.from === ore.key) : undefined;

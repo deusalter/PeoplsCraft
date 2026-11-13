@@ -61,15 +61,15 @@ function build(ui: Ui): Node {
     kids: [stackGrid(b, { store: 'row', x: 8, y: 16, cols: 9, rows: 1, ramp: 'timber', each: (i) => ({ tip: () => tipOf(hand!.get({ store: 'row', i }) ?? ROW[i]) }) })],
   });
   // The specimens flow in rows under the slab; the block's tip is raised at the corner, as the pointer would place it.
+  // The plain thing and the named old thing stand in the first column, the one that compares beside them when there
+  // is room; the block's tip is raised at the corner, as the pointer would place it.
   const kids: Node[] = [];
-  let x = 4, y = wy + 36 + 6, rowH = 0;
-  for (const [label, st] of [['A plain thing', ROW[0]], ['It compares', ROW[4]], ['A named old thing', ROW[2]]] as [string, Stack][]) {
-    const w = tipBox(tipOf(st)).w;
-    if (x > 4 && x + w > ui.w - 4) { x = 4; y += rowH + 6; rowH = 0; }
-    kids.push(...specimen(x, y, label, tipOf(st)));
-    rowH = Math.max(rowH, 12 + tipBox(tipOf(st)).h);
-    x += w + 8;
-  }
+  const y0 = wy + 36 + 6;
+  const plain = tipOf(ROW[0]), oldOne = tipOf(ROW[2]), cmp = tipOf(ROW[4]);
+  kids.push(...specimen(4, y0, 'A plain thing', plain));
+  kids.push(...specimen(4, y0 + 12 + tipBox(plain).h + 6, 'A named old thing', oldOne));
+  const cx = 4 + Math.max(tipBox(plain).w, tipBox(oldOne).w) + 8;
+  if (cx + tipBox(cmp).w <= ui.w - 4) kids.push(...specimen(cx, y0, 'It compares', cmp));
   const edge = tipOf(ROW[3]);
   const eb = tipBox(edge);
   const px = ui.w - 5, py = ui.h - 8;
@@ -77,7 +77,7 @@ function build(ui: Ui): Node {
   kids.push(
     lit(at.x, at.y - 12, 'A block, at the corner', 'salt'),
     { x: at.x, y: at.y, w: eb.w, h: eb.h, paint: (s) => paintTip(s, edge, eb, 0, 0) },
-    { x: px, y: py, w: POINTER.w, h: Math.min(POINTER.h, ui.h - py), paint: (s) => { s.clip(0, 0, POINTER.w, ui.h - py); s.map(POINTER, 0, 0); s.unclip(); } },
+    { x: px, y: py, w: Math.min(POINTER.w, ui.w - px), h: Math.min(POINTER.h, ui.h - py), paint: (s) => { s.clip(0, 0, ui.w - px, ui.h - py); s.map(POINTER, 0, 0); s.unclip(); } },
   );
   return {
     x: 0, y: 0, w: ui.w, h: ui.h, takes: true,
