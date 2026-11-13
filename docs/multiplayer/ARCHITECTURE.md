@@ -3795,6 +3795,15 @@ then one layer of dirt, then air 14 high, 9 by 9), as golden and closetab level 
 unchanged. The walk is gone. The three `fill` commands are spaced 400 ms apart because the five commands before them
 empty the `cmd` bucket of 4.1.
 
+D43. Stage 4, read by independent readers (4.7, 7.9, 8.1). What their findings showed wrong, and what changed.
+(a) The cost of `chunks` messages was not bounded by the subscription range, as D36 (j) says it is. The subscription
+map was, but the queue of loads behind it took one entry per `sub` triple: a client that sent the same chunk with the
+same nonce 1,024 times a message, at the 12 messages a second the bucket allows, grew the queue by about 8,000 entries a
+second, every step sorted all of it, and each copy sent the chunk's `ce` once more. The queue of a connection in
+`hostchunks.ts` is now keyed by chunk, so a repeated `sub` replaces the entry and the queue never holds more chunks
+than the subscriptions; an `unsub` takes its chunk out of the queue too. A repeated `sub` still re-sends the chunk once,
+as 4.7 says.
+
 ---
 
 ## 14. Review log

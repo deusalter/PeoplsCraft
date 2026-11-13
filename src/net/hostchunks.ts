@@ -19,8 +19,9 @@ interface Follow {
   dim: number;
   /** chunk key -> the nonce of the current subscription */
   subs: Map<number, number>;
-  /** subscriptions whose edit map is still to be loaded */
-  queue: Want[];
+  /** subscriptions whose edit map is still to be loaded, one per chunk: a repeated sub replaces the entry, so the queue is
+   *  bounded by the subscription range however many `chunks` messages arrive */
+  queue: Map<number, Want>;
   inflight: number;
   /** loaded, waiting for a flush */
   ready: Map<number, Want>;
@@ -54,7 +55,7 @@ export class ChunkService {
   private follow(c: Conn, p: SimPlayer): Follow {
     let f = this.conns.get(c);
     if (!f) {
-      f = { dim: p.dim, subs: new Map(), queue: [], inflight: 0, ready: new Map(), full: [], fullN: 0, sent: new Set(), b: [], gh: [], t: 0, pcx: 0, pcz: 0 };
+      f = { dim: p.dim, subs: new Map(), queue: new Map(), inflight: 0, ready: new Map(), full: [], fullN: 0, sent: new Set(), b: [], gh: [], t: 0, pcx: 0, pcz: 0 };
       this.conns.set(c, f);
     }
     // a realm change the host did not report still ends every subscription of the old realm
@@ -76,7 +77,7 @@ export class ChunkService {
       // wanted again: the next `ce` carries every change made until it is sent
       this.unlisten(f, key);
       f.ready.delete(key);
-      f.queue.push({ key, cx, cz, n });
+      f.queue.set(key, { key, cx, cz, n });
     }
     const q = m.full ?? [];
     for (let i = 0; i + 1 < q.length; i += 2) {
@@ -113,12 +114,13 @@ export class ChunkService {
         if (cheb(cx, cz, f.pcx, f.pcz) > keep) this.unsub(f, key, cx, cz);
       }
     }
-    if (!f.queue.length) return;
-    f.queue = f.queue.filter((w) => f.subs.get(w.key) === w.n);
-    f.queue.sort((a, b) => cheb(a.cx, a.cz, f.pcx, f.pcz) - cheb(b.cx, b.cz, f.pcx, f.pcz));
-    let started = 0, i = 0;
-    for (; i < f.queue.length && started < LOADS_PER_TICK && f.inflight < LOADS_MAX; i++) {
-      const w = f.queue[i];
+    if (!f.queue.size || f.inflight >= LOADS_MAX) return;
+    const order = [...f.queue.values()].sort((a, b) => cheb(a.cx, a.cz, f.pcx, f.pcz) - cheb(b.cx, b.cz, f.pcx, f.pcz));
+    let started = 0;
+    for (let i = 0; i < order.length && started < LOADS_PER_TICK && f.inflight < LOADS_MAX; i++) {
+      const w = order[i];
+      f.queue.delete(w.key);
+      if (f.subs.get(w.key) !== w.n) continue;
       started++;
       if (this.edits.peek(f.dim, w.cx, w.cz)) { f.ready.set(w.key, w); continue; }
       f.inflight++;
@@ -130,7 +132,6 @@ export class ChunkService {
         else this.edits.release(dim, w.cx, w.cz);
       }, () => { f.inflight--; });
     }
-    f.queue.splice(0, i);
   }
 
   /** The tick's live changes, then the generation hashes. */
@@ -193,13 +194,13 @@ export class ChunkService {
   private unsub(f: Follow, key: number, cx: number, cz: number): void {
     if (!f.subs.delete(key)) return;
     this.unlisten(f, key);
-    f.ready.delete(key);
+    f.ready.delete(key); f.queue.delete(key);
     this.edits.release(f.dim, cx, cz);
   }
   private dropAll(f: Follow): void {
     const keys = [...f.subs.keys()];
     for (const key of f.sent) { const s = this.listeners[f.dim].get(key); if (s && s.delete(f) && !s.size) this.listeners[f.dim].delete(key); }
-    f.sent.clear(); f.subs.clear(); f.queue = []; f.ready.clear(); f.full = []; f.b = []; f.gh = [];
+    f.sent.clear(); f.subs.clear(); f.queue.clear(); f.ready.clear(); f.full = []; f.b = []; f.gh = [];
     for (const key of keys) this.edits.release(f.dim, Math.floor(key / 65536) - 32768, (key % 65536) - 32768);
   }
 }

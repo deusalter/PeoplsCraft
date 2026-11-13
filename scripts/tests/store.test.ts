@@ -601,3 +601,18 @@ test('the subscriptions of a connection are bounded by its range whatever its un
   assert.equal(r.edits.size, 0, `(2 x (view + ${SUB_KEEP}) + 1)^2 at most; here none is in range`);
   assert.equal(chunkKey(0, 0) > 0, true);
 });
+
+test('chunks: a sub repeated with the same nonce is one subscription, one load and one ce, however often it comes', async () => {
+  const r = rig(), p = player(r, 'a', 8, 8), svc = new ChunkService(r.sim, r.edits, 12), c = new FakeConn();
+  const sub: number[] = [];
+  for (let i = 0; i < 1024; i++) sub.push(1, 1, 7);
+  let sent = 0;
+  for (let m = 0; m < 40; m++) {
+    svc.onChunks(c, p, chunksMsg(0, sub));
+    sent += entries(await serve(svc, c, p)).length;
+  }
+  for (let i = 0; i < 40; i++) sent += entries(await serve(svc, c, p)).length;
+  assert.ok(sent <= 40, `${sent} ce entries for 40 messages naming one chunk with one nonce`);
+  const f = (svc as unknown as { conns: Map<Conn, { queue: { size?: number; length?: number } }> }).conns.get(c)!;
+  assert.ok((f.queue.size ?? f.queue.length ?? 0) <= 1, 'the queue holds the chunk at most once');
+});
