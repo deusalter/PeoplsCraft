@@ -151,7 +151,7 @@ export abstract class BaseSurface implements Surface {
     const pass = (ox: number, oy: number, col: Colour) => {
       let cx = x + ox;
       for (const t of ts) {
-        if (t.g.map) this.draw(t.g.map, cx, y + oy, { tint: col });
+        if (t.g.map) this.draw(t.g.map, cx, y + oy - (t.g.rise ?? 0), { tint: col });
         cx += t.g.w + face.gap;
       }
     };

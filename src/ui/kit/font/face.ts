@@ -1,12 +1,14 @@
 import { type PixelMap, pixmap } from '../pixmap';
 import { SMALL_SHEETS } from './small';
-import { SYMBOL_SHEETS, TEXT_SHEETS } from './text';
+import { RAISED_SHEETS, SYMBOL_SHEETS, TEXT_SHEETS } from './text';
 
 export interface Glyph {
   readonly ch: string;
   readonly w: number;
   /** Null for the space. */
   readonly map: PixelMap | null;
+  /** Rows the glyph stands above the top of its cell: 1 for a capital with a macron. */
+  readonly rise?: number;
 }
 
 export interface Face {
@@ -49,6 +51,10 @@ function readSheets(sheets: string[], rows: number, face: string): Map<string, G
 
 const textGlyphs = readSheets(TEXT_SHEETS, 10, 'text');
 textGlyphs.set(' ', { ch: ' ', w: 3, map: null });
+for (const [ch, g] of readSheets(RAISED_SHEETS, 11, 'text')) {
+  if (textGlyphs.has(ch)) throw new Error(`text face: glyph ${ch} is drawn twice`);
+  textGlyphs.set(ch, { ...g, rise: 1 });
+}
 const textSymbols = readSheets(SYMBOL_SHEETS, 10, 'text');
 
 const smallGlyphs = readSheets(SMALL_SHEETS, 6, 'small');
