@@ -44,29 +44,29 @@
  "folk.housed:apothecary": [
   "Put it on the table, away from the pot.",
   "This is what a holder drinks at first light, and it does the same for your arm.",
-  "A second salve does nothing until the first has closed the wound.",
+  "Wait until the first salve has closed the wound before you bind on another.",
   "An old holder's hand goes dead and sets, the way metal sets. The remains might loosen it.",
   "I have tried the remains on old holders' hands. None has loosened yet.",
   "Bring me any old salve you find in a Sealed Store."
  ],
  "folk.housed:tinker": [
   "The one who taught me had never joined two pieces either.",
-  "Two pieces that do the same thing do it no better worn together.",
+  "I sell one piece of each kind to a peopl. A second of the same does nothing when worn.",
   "If you get into a Sealed Store, bring out the small things as well as the bars.",
   "Hold a piece out to me and I can tell you which store it came from.",
   "I know what a piece does by holding it.",
   "The old pieces were made by hands with a skill that nobody has now, I think."
  ],
  "folk.housed:runescribe": [
-  "A staff is the same work as a hearthstone, pointed away from you.",
+  "I cut the lines of a staff as I cut a hearthstone's. On a staff they run to the crystal at the head.",
   "A bad cut leaks into the arm, and the arm tires sooner for the same work.",
-  "Where to cut is learned by the hand. I cannot tell it to you.",
+  "My teacher had me cut slab after slab before one of mine carried a night's holding.",
   "I held one of those recall stones all night once, and it did nothing for me.",
   "Crystal grows in the dark rock. There is nothing of any kill in it.",
   "At a great stone, look at the place for the hand. Tell me how many lines leave it."
  ],
  "folk.housed:beastcaller": [
-  "It stays for what is on the bone.",
+  "Your small one stays by you for the Tama flesh on the bone.",
   "Do not bring it inside my walls. Unsalted is food, and I sit beside a pot.",
   "If you find a nest in the old stonework, tell me what kind was in it before you break it.",
   "A second one will stay for the whistle. They come to the sound.",
@@ -112,7 +112,7 @@
  ],
  "folk.stage:wayfinder.8": [
   "You opened the Cairn, peopl, and what was under it is dead.",
-  "Every telling ends at the Cairn. None says who sits at a great stone after."
+  "I know of no stone past the Cairn to send you to, peopl."
  ],
 
  "folk.stage:provisioner.1": [
@@ -236,19 +236,19 @@
  ],
 
  "folk.stage:beastcaller.4": [
-  "They call Guhamāt mother. It was a beast that dropped food, and small ones formed on the food."
+  "You say small ones formed on the cap Guhamāt dropped. Bring me a piece of that cap, peopl."
  ],
  "folk.stage:beastcaller.5": [
-  "Jīmūt was a beast that never landed, so no hearth's edge ever turned it."
+  "Jīmūt never came to ground, so no hearth turned it. Show me how the Jīmūt Feather sits on a bone."
  ],
  "folk.stage:beastcaller.6": [
-  "Ratan was a beast bodied in crystal. By what you tell me, the small ones formed on its broken pieces."
+  "You say Sakal formed where pieces of Ratan fell to the floor. I have never bound crystal to bone."
  ],
  "folk.stage:beastcaller.7": [
-  "Kuranga was the biggest of the pale beasts, the kind that eats the other kinds."
+  "Kuranga went in front of the Chandasāvak, the kind that eats the other kinds. Do they still come up together?"
  ],
  "folk.stage:beastcaller.8": [
-  "What came up out of the Cairn was a beast bodied in Dressed Stone. It had eaten the stone it lay in."
+  "What lay under the Cairn had eaten the Dressed Stone round it. I want to see a piece of its remains."
  ],
 
  "folk.stage:deserter.3": [
@@ -285,10 +285,10 @@
  ],
  "folk.night:apothecary": [
   "This hand stays on the stone tonight. I will see to your arm at first light.",
-  "On a quiet night like this my arm is only sore by morning."
+  "My arm is only sore by morning on a quiet night like this."
  ],
  "folk.night:tinker": [
-  "With one hand on the stone I cannot turn pieces over. Take what is laid out.",
+  "I cannot turn pieces over with one hand on the stone. Take what is laid out.",
   "Come at first light and I will look at what you found."
  ],
  "folk.night:runescribe": [
@@ -448,7 +448,7 @@
  ],
  "folk.sell:smith": [
   "I can put an iron piece back in the fire and get a bar out of it.",
-  "The metal in it is what I weigh it for."
+  "I weigh it for the metal in it."
  ],
  "folk.sell:apothecary": [
   "Fruit and caps go into the salves.",
@@ -463,7 +463,7 @@
   "Bring me fibre as well."
  ],
  "folk.sell:beastcaller": [
-  "Bone and raw remains are what I work with.",
+  "I work with bone and raw remains.",
   "Bring me Shade Flesh after every dusk."
  ],
  "folk.sell:deserter": [
@@ -480,14 +480,14 @@
  "folk.short:beastcaller": "There is not enough lees in that.",
  "folk.short:deserter": "Beat off a march and you will have the Mūda for it.",
 
- "folk.leave:wayfinder": "You broke the bed, peopl. I will say why I left at the next hearth.",
- "folk.leave:provisioner": "There is nothing to sit on through the night. I am taking my goods down the road.",
- "folk.leave:smith": "I cannot hold here without a bed, peopl. I will sit down at an old house tonight.",
- "folk.leave:apothecary": "With my bed broken I will see to holders' arms at another hearth.",
- "folk.leave:tinker": "I am going, with nowhere to hold. The walkers will hear of your Joining Bench.",
- "folk.leave:runescribe": "A holder needs a seat for the night. Mine is broken. I am leaving.",
- "folk.leave:beastcaller": "My bed is broken, peopl, so I am packing the bone and going.",
- "folk.leave:deserter": "The bed is gone, and no fire will take me. I will find an empty house to hold in.",
+ "folk.leave:wayfinder": "Set a new bed in the room, peopl, and the next walker on the road will sit down in it.",
+ "folk.leave:provisioner": "There is nothing to sit on through the night. My goods go down the road with me.",
+ "folk.leave:smith": "The anvil is yours, peopl. Without a seat for the night I hold at an old house.",
+ "folk.leave:apothecary": "My salves are packed. Holders at other hearths have arms that need seeing to.",
+ "folk.leave:tinker": "Without a bed I cannot hold here. The walkers will hear of your Joining Bench.",
+ "folk.leave:runescribe": "My slab goes with me to the next old house. Put a bed back and send for me.",
+ "folk.leave:beastcaller": "The bone and the box of remains go with me. Nothing holds this ground tonight, peopl.",
+ "folk.leave:deserter": "No fire of ours will take me back, so I hold in an empty house tonight.",
 
  "folk.extra:deserter.burrower": "The burrower took our people while we lived on its sand. They were in it when you boiled it down.",
  "folk.extra:wayfinder.moon_in": "Amāvassa is in {n} nights, peopl. Be under a roof or where you mean to fight.",
