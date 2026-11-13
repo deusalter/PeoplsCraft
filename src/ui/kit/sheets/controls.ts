@@ -6,7 +6,7 @@ import { checkbox, field, slider } from '../parts/controls';
 import { keycap } from '../parts/keycap';
 import { slab } from '../parts/slab';
 import { tabbedSlab } from '../parts/tabs';
-import { type RowSpec, well } from '../parts/well';
+import { type RowSpec, slabTrack, well } from '../parts/well';
 import { type Sheet, ink, page, salt } from './common';
 
 const TABS = [
@@ -93,6 +93,8 @@ export const controlsSheet: Sheet = {
         field({ id: 'f.menu', x: 8, y: 40, w: 160, h: 16, value: 'Hearth of Ash', host: 'stone', ui }),
         checkbox({ id: 'c.st', x: 176, y: 42, on: true, label: 'Cheats', host: 'stone' }),
         ink(8, 62, 'A field 16 tall, as a menu has it', 'ink.faded'),
+        slabTrack({ id: 'track.slab', x: 254, y: 18, h: 54, ramp: 'stone', top: 2, visible: 4, total: 9 }),
+        ink(214, 62, 'Track', 'ink.faded'),
       ],
     }));
     return page(ui, kids);

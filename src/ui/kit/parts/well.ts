@@ -1,7 +1,7 @@
 import { count, rightX } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Live, Node, Tip, Ui } from '../node';
-import type { Colour } from '../palette';
+import { type Colour, type Ramp, tone } from '../palette';
 import type { Surface } from '../surface';
 import { type Force, type Host, lv, ring, sunk } from './common';
 
@@ -104,6 +104,37 @@ export function paintThumb(s: Surface, x: number, y: number, h: number, hot: boo
   s.fill(x, y + h - 1, TRACK_W, 1, 'root.2');
   const m = Math.floor(h / 2);
   for (const g of [m - 2, m, m + 2]) s.fill(x + 1, y + g, TRACK_W - 2, 1, 'root.1');
+}
+
+/**
+ * Where rows of controls scroll on a slab and not in a well (settings): a channel sunk in the slab, 6 wide with its
+ * rim and a floor of `dk`, whose thumb is the slider's handle, 6 wide and never shorter than 12 (5.8).
+ */
+export function slabTrack(o: { id: string; x: number; y: number; h: number; ramp: Ramp; top: number; visible: number; total: number; force?: Force; onScroll?: (top: number) => void }): Node {
+  const h = o.h, inner = h - 2;
+  const maxTop = Math.max(0, o.total - o.visible);
+  const thumbH = Math.max(THUMB_MIN, Math.floor((inner * o.visible) / Math.max(1, o.total)));
+  const thumbY = 1 + (maxTop ? Math.round(((inner - thumbH) * Math.min(o.top, maxTop)) / maxTop) : 0);
+  return {
+    id: o.id, x: o.x, y: o.y, w: TRACK_W, h, takes: true,
+    on: { down: (e) => { if (e.y < thumbY) o.onScroll?.(o.top - o.visible); else if (e.y >= thumbY + thumbH) o.onScroll?.(o.top + o.visible); } },
+    paint: (s, live) => {
+      const l = lv(live, o.force);
+      const pit = tone(o.ramp, 'pit'), hi = tone(o.ramp, 'hi');
+      s.fill(1, 0, TRACK_W - 2, 1, pit); s.fill(0, 1, 1, h - 2, pit);
+      s.fill(1, h - 1, TRACK_W - 2, 1, hi); s.fill(TRACK_W - 1, 1, 1, h - 2, hi);
+      s.fill(1, 1, TRACK_W - 2, h - 2, tone(o.ramp, 'dk'));
+      // The handle of 5.11 at the track's width: outline, a top row of stone.lt, stone.sh with a grip, two rows of stone.dk.
+      const y = thumbY - 1, th = thumbH + 2;
+      const edge = l.hover || l.down ? 'salt' : 'root.0';
+      s.fill(1, y, TRACK_W - 2, 1, edge); s.fill(1, y + th - 1, TRACK_W - 2, 1, edge);
+      s.fill(0, y + 1, 1, th - 2, edge); s.fill(TRACK_W - 1, y + 1, 1, th - 2, edge);
+      s.fill(1, y + 1, TRACK_W - 2, 1, 'stone.lt');
+      s.fill(1, y + 2, TRACK_W - 2, th - 5, 'stone.sh');
+      s.fill(1, y + th - 3, TRACK_W - 2, 2, 'stone.dk');
+      s.fill(2, y + 4, 1, th - 9, 'stone.dk');
+    },
+  };
 }
 
 /** A well that frames something other than a list: the figure, a picture, a field, a chart. */

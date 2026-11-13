@@ -1,7 +1,7 @@
 import { GROUND } from '../art/ground';
 import { NODE_FRAMES, type NodeShape, type NodeState } from '../art/tree';
 import { SMALL } from '../font/face';
-import { centreX } from '../font/measure';
+import { centreX, measure } from '../font/measure';
 import type { Live, Node, Tip, Ui } from '../node';
 import type { Colour } from '../palette';
 import type { Surface } from '../surface';
@@ -79,7 +79,10 @@ export function tree(o: TreeOpts): Node {
       if (n.id === o.chosen || l.focus) paintSelector(s, -2, -2, 30);
       if (n.ranks) {
         const t = `${n.ranks[0]}/${n.ranks[1]}`;
-        s.text(t, centreX(t, 0, NODE, SMALL), NODE + 2, n.ranks[0] >= n.ranks[1] ? 'growth.lt' : 'salt', true, SMALL);
+        const tx = centreX(t, 0, NODE, SMALL);
+        // The ranks sit on a scrap of root.0 so that a link passing under them does not run through the figures.
+        s.fill(tx - 2, NODE + 1, measure(t, SMALL) + 4, 9, 'root.0');
+        s.text(t, tx, NODE + 2, n.ranks[0] >= n.ranks[1] ? 'growth.lt' : 'salt', true, SMALL);
       }
     },
   }));

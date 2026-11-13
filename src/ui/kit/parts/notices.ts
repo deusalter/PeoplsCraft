@@ -113,8 +113,11 @@ export function banner(o: BannerOpts): Node {
     x: o.x, y: o.y, w, h: 24,
     paint: (s) => {
       s.nine(FRAMED_PLATE, 0, 0, w, 24, { tint: o.frame });
+      // A descender's shadow would fall on the frame: the text is held inside it.
+      s.clip(2, 2, w - 4, 20);
       s.text(o.title, 5, 2, o.colour ?? frameText(o.frame), true);
       if (o.line) s.text(o.line, 5, 12, 'root.4', true);
+      s.unclip();
     },
   };
 }
