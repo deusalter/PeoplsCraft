@@ -310,11 +310,12 @@ function add(surface, key, o = {}) {
   const e = { surface, key, needs: o.needs ?? [], file: o.file ?? null, line: o.line ?? null, now: o.now ?? '', voice: o.voice ?? s.voice, limit: o.limit ?? s.limit, assign: s.assign };
   const lines = o.lines ?? s.lines;
   if (lines) e.lines = lines;
-  const slots = [...new Set(e.now.match(/\{[a-z_]+\}/g) ?? [])];
+  const slots = o.slots ?? [...new Set(e.now.match(/\{[a-z_]+\}/g) ?? [])];
   if (slots.length) e.slots = slots;
   if (o.note) e.note = o.note;
   if (o.planned) e.planned = true;
   if (o.empty) e.empty = true;
+  if (o.must) e.must = o.must;
   entries.set(id, e);
   for (const n of e.needs) covered.add(n);
 }
@@ -423,7 +424,7 @@ for (const b of bosses) {
 for (const n of npcs) {
   const needs = ['npc:' + n.key, 'mob:' + n.mob], voice = n.key === 'deserter' ? 'sand' : undefined;   // the Deserter is a sand-country man (5.5)
   add('folk.why', n.key, { needs, file: F_NPCS, line: n.line, now: n.why, note: `the game's condition: need ${n.need}` });
-  add('folk.meet', n.key, { needs, voice, planned: true });
+  add('folk.meet', n.key, { needs, voice, planned: true, must: ['peopl'], note: 'the townsperson calls the player peopl to the face (1.5, 8.10)' });
   add('folk.housed', n.key, { needs, voice, file: F_NPCS, line: n.line + 1, now: n.lines.join(' | ') });
   const from = STAGE_FROM[n.key];
   if (!from) { fail(`${F_NPCS}:${n.line}: townsperson '${n.key}' has no first stage in STAGE_FROM`); continue; }
@@ -520,6 +521,7 @@ L('eight.line', 'fallen', 'src/sim/loot.ts', '${d.name} has fallen', { now: '{na
 L('eight.line', 'fallen.sub', 'src/sim/loot.ts', 'Check the guide for what this unlocks');
 L('eight.line', 'night_only', ACT, 'Kuranga comes up only at night.', { needs: ['boss:7'] });
 L('eight.line', 'altar_waits', ACT, 'The altar waits for ${article(name)} ${name}.', { now: 'The altar waits for {a} {item}.' });
+add('eight.line', 'dawn_down', { needs: ['boss:7'], planned: true, now: '', slots: ['{name}'], note: 'plan C: the strongest of the deep kind goes back down at dawn' });
 // ---- banners of the crew ----
 L('banner', 'moved_in', NPC, '${n.name} has moved in', { now: '{name} has moved in' });
 L('banner', 'level', PLY, 'Level ${st.level}', { now: 'Level {n}', voice: 'label' });
@@ -558,6 +560,7 @@ L('toast', 'made_at', WIN, "'Made at the '", { now: 'Made at the {station}' });
 L('toast', 'made_n', WIN, 'Made ${q.n} ${item(r.out).name}', { now: 'Made {n} {item}' });
 L('toast', 'sell_again', WIN, "'Shift-click again to sell '", { now: 'Shift-click again to sell {item}' });
 L('toast', 'pickup', HUD, '+${n} ${name}  (${total})', { now: '+{n} {item}  ({total})' });
+add('toast', 'codex_new', { planned: true, slots: ['{subject}'], note: 'plan D: a step of the codex has opened; {subject} is the name of the subject' });
 // ---- beds and rooms ----
 L('bed', 'not_enclosed_big', NPC, 'The room is not enclosed (or is larger than 32 blocks across).');
 L('bed', 'not_enclosed', NPC, 'The room is not enclosed.');
@@ -627,6 +630,11 @@ L('win', 'back_to', WIN, "'Back to '", { now: 'Back to {window}', limit: 30 });
 L('win', 'stats.level', WIN, 'Level ${st.level} · ${st.xp}/${st.xpNeeded()} xp', { now: 'Level {n} · {xp}/{need} xp', limit: 40 });
 for (const [k, text] of [['defense', 'Defense'], ['critical', 'Critical'], ['speed', 'Speed'], ['minions', 'Minions']]) L('win', 'stats.' + k, WIN, `>${text}<`, { now: text, limit: 16 });
 L('win', 'stats.attributes', WIN, '>Attributes$', { now: 'Attributes', limit: 16 });
+// plan D: the codex window. Its title is a name and comes from names.json; these are its headings and its empty state.
+for (const [k, why] of [['codex.none', 'shown in the codex before anything is known'], ['codex.sight', 'heading of a bestiary step: first sight'], ['codex.kill', 'heading: first kill'],
+  ['codex.habit', 'heading: many kills'], ['codex.once', 'heading: one thing seen once'], ['codex.loss', 'heading: after the first kill of one of the eight'], ['codex.said', 'heading: what householders say one of the eight is'],
+  ['codex.seen', 'heading: what the crew saw'], ['codex.read', 'heading: what the crew makes of it'], ['codex.born', 'heading: what householders say'], ['codex.sand', 'heading: what the Deserter says'],
+  ['codex.closed', 'stands in place of a step that has not opened'], ['journal.said', 'heading over the householders\' telling of a task']]) add('win', k, { planned: true, limit: 40, note: 'plan D: ' + why });
 // ---- tooltip lines made from numbers ----
 for (const [k, needle, now] of [
   ['slot_empty', ' slot is empty', '{slot} slot is empty'], ['set_completes', 'Completes set: ', 'Completes set: {bonus}'], ['set_breaks', 'Breaks set: ', 'Breaks set: {bonus}'],
@@ -738,7 +746,7 @@ const ASSIGN = ['items-a', 'items-b', 'creatures', 'people', 'system', 'sites'];
 const counts = {};
 for (const e of entries.values()) { const c = (counts[e.surface] ??= { entries: 0, lines: 0 }); c.entries++; c.lines += e.lines ? e.lines[0] : 1; }
 const out = {
-  about: 'Written by surfaces.mjs from the game\'s source. Do not edit by hand. Each entry is one string a writer supplies, or one list of strings where `lines` gives the fewest and the most. `now` is the text the game shows today, with {braces} where the code puts a value in; `slots` lists those, and the new text carries each of them once. `empty` marks the few entries that may be left as an empty string. `planned` marks an entry for something plan.md adds and the game does not have yet. `needs` lists the internal keys the text is about.',
+  about: 'Written by surfaces.mjs from the game\'s source. Do not edit by hand. Each entry is one string a writer supplies, or one list of strings where `lines` gives the fewest and the most. `now` is the text the game shows today, with {braces} where the code puts a value in; `slots` lists those, and the new text carries each of them once. `empty` marks an entry that may be left as an empty string. `must` lists words the text has to contain. `planned` marks an entry for something plan.md adds and the game does not have yet. `needs` lists the internal keys the text is about.',
   letters: 'Āāīū',
   voices: ['label', 'sight', 'note', 'born', 'sand'],
   assignments: ASSIGN,

@@ -19,6 +19,7 @@
 //   letters    only ASCII from space to ~ and the letters Ā ā ī ū
 //   spaces     no space at either end, no two spaces together
 //   slots      every {slot} of the entry is in the text once, and no other {word}
+//   must       a word the entry requires is in the text (a townsperson's first line says peopl)
 //   old-name   no old name from names.json
 //   spelling   every name of a born tongue spelled and capitalised as names.json has it, with no English plural
 //   banned     none of the banned words of README rules 6, 9 to 13, 16, 20 and 21, nor what plan.md H bans for the voice
@@ -53,8 +54,8 @@ const TIME_WORDS = ['year', 'month', 'week', 'century', 'decade', 'season', 'win
 const UI_WORDS = ['player', 'click', 'inventory', 'hotbar', 'respawn', 'spawn', 'xp', 'quest', 'boss', 'npc', 'mob', 'biome', 'dimension', 'realm', 'tooltip', 'crafting', 'loot', 'server'];
 const UI_SPOKEN = [...UI_WORDS, 'level', 'game', 'screen', 'menu', 'button'];
 const BANNED_VOICE = {
-  label: [['H label: the born\'s words for the stones stay out of the game\'s own labels', ['offering', 'warden', 'sovereign']], ['H label: a label says what a thing does, never whose it is or was', ['forebear', 'peopl', 'peopls']]],
-  sight: [['H sight: only what a person standing there sees; the born\'s beliefs stay out', ['offering', 'warden', 'sovereign', 'forebear', 'invasion', 'host']], ['H sight: no reckoning of time by years or seasons', TIME_WORDS], ['H sight: the game does not speak of itself here', UI_WORDS]],
+  label: [['H label: the born\'s words for the stones stay out of the game\'s own labels', ['offering', 'offer', 'warden', 'sovereign']], ['H label: a label says what a thing does, never whose it is or was', ['forebear', 'peopl', 'peopls']]],
+  sight: [['H sight: only what a person standing there sees; the born\'s beliefs stay out', ['offering', 'offer', 'warden', 'sovereign', 'forebear', 'invasion', 'host']], ['H sight: no reckoning of time by years or seasons', TIME_WORDS], ['H sight: the game does not speak of itself here', UI_WORDS]],
   note: [['H note: a note is written for the crew and never addresses a reader', ['you', 'your', 'yours', 'yourself']], ['H note: the born\'s titles for the eight are theirs', ['warden', 'sovereign']], ['H note: no reckoning of time by years or seasons', TIME_WORDS], ['H note: the game does not speak of itself here', UI_WORDS]],
   born: [['H born: a householder has no word for these', ['arrival', 'cutter', 'pathfinder', 'core', 'world', 'island']], ['H born: no reckoning of time by years or seasons', TIME_WORDS], ['H born: a person does not speak of the game', UI_SPOKEN]],
   sand: [['H sand: these are the hearths\' words, and a sand-country person does not use them', ['altar', 'offering', 'warden', 'sovereign', 'arrival', 'cutter', 'pathfinder', 'core', 'world', 'island']], ['H sand: no reckoning of time by years or seasons', TIME_WORDS], ['H sand: a person does not speak of the game', UI_SPOKEN]],
@@ -71,6 +72,7 @@ const BAIT_VERBS = ['4.2: every bait is laid on its stone; wake, call, ring, bur
 // Turns of sentence, whatever the words.
 const PATTERNS = [
   ['README rule 12: the dead are never counted', /\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|hundred|hundreds|thousand|thousands|dozen|dozens|score|scores|countless|numberless)\s+(?:\w+\s+)?(dead|deaths|corpses|bodies|graves|killed|slain|fallen|lost|lives)\b/i],
+  ['README rule 12: the dead are never counted', /\b(lost|buried|burned|sank|killed|mourned)\s+(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|a hundred|hundreds|a thousand|thousands|a dozen|dozens|scores)\b(?!\s+(?:coins?|nights?|strides?|bars?|logs?|arrows?))/i],
   ['README rule 12: the dead are never counted', /\b(death toll|body count|count(?:ed|ing)? the dead|number of (?:the )?dead|how many (?:died|fell|were lost))\b/i],
   ['README rule 16: no sentence that sets up one thing only to knock it down for another', /\bnot\s+(?:just\s+|only\s+|merely\s+|simply\s+)?[^.?;:]{1,60}?[,]?\s+but\b/i],
   ['README rule 16: no sentence that sets up one thing only to knock it down for another', /\b(less an? [^.?]{1,40} than|more than (?:just|merely|only)|isn't [^.?]{1,40}[,;] it's|is no [^.?]{1,30}[,;] it is)\b/i],
@@ -178,6 +180,7 @@ export function lint(surfaces, names, files, only = null) {
       for (const h of new Set(have)) if (!slots.includes(h)) bad(file, key, 'slots', `${h} is no slot of this entry${slots.length ? ` (its slots: ${slots.join(' ')})` : ''}`);
       if (/[{}]/.test(s.replace(/\{[^{}]*\}/g, ''))) bad(file, key, 'slots', 'a brace without its pair');
       const body = s.replace(/\{[^{}]*\}/g, ' ');
+      for (const w of e.must ?? []) if (!new RegExp(`\\b${esc(w)}s?\\b`).test(body)) bad(file, key, 'must', `the text has to contain "${w}"`);
       // old names
       for (const o of olds) {
         const single = !/\s/.test(o.old), plain = PLAIN_OLD.has(o.old);
@@ -221,6 +224,7 @@ function selftest() {
     'banner:c': ent('banner', 'c', 'sight', 40),
     'fall:d': ent('fall', 'd', 'sight', 60),
     'folk.housed:e': ent('folk.housed', 'e', 'born', 60, { assign: 'people', lines: [2, 3] }),
+    'folk.meet:e': ent('folk.meet', 'e', 'born', 80, { assign: 'people', must: ['peopl'] }),
     'fire.say:f': ent('fire.say', 'f', 'sand', 60, { assign: 'people', lines: [1, 2] }),
     'item.desc:g': ent('item.desc', 'g', 'note', 80, { assign: 'items-b' }),
     'item.desc:warden_bell': ent('item.desc', 'warden_bell', 'note', 80, { assign: 'items-b' }),
@@ -230,7 +234,7 @@ function selftest() {
   } };
   const good = {
     'system.json': { 'toast:a': 'The pack is full.', 'toast:b': '{name} has moved in.', 'banner:c': 'Packs come up at dusk', 'fall:d': 'The drop was too long for the body.' },
-    'people.json': { 'folk.housed:e': ['Put it on the table, away from the pot.', 'I buy anything, peopl.'], 'fire.say:f': ['Nothing of ours draws.'] },
+    'people.json': { 'folk.housed:e': ['Put it on the table, away from the pot.', 'I buy anything, peopl.'], 'fire.say:f': ['Nothing of ours draws.'], 'folk.meet:e': 'You have a room and a light, peopl. I will hold here.' },
     'items-b.json': { 'item.desc:g': 'A tooth of Maruhar. Harder than its plates.', 'item.desc:warden_bell': 'Lay it on a Kankāl Altar. Kankāl comes up to it.' },
     'creatures.json': { 'eight.intro:h': 'Roots come up through the paving.' },
     'items-a.json': { 'gear.desc:j': 'Flint on a shaft, fletched with grouse feather.' }, 'sites.json': { 'site.sight:i': 'Single dressed stones run out from the shore and stop.' },
@@ -265,6 +269,7 @@ function selftest() {
     ['spaces', 'a space at the end', (f) => { f['system.json']['toast:a'] = 'The pack is full. '; }],
     ['slots', 'a slot left out', (f) => { f['system.json']['toast:b'] = 'Someone has moved in.'; }],
     ['slots', 'a slot the entry does not have', (f) => { f['system.json']['toast:a'] = 'The pack of {name} is full.'; }],
+    ['must', 'a first meeting that does not say peopl (8.10)', (f) => { f['people.json']['folk.meet:e'] = 'You have a room and a light. I will hold here.'; }],
     ['old-name', 'an old name of a creature (Gloomshade)', (f) => { f['items-b.json']['item.desc:g'] = 'What a Gloomshade leaves in the pot.'; }],
     ['old-name', 'an old name in lower case (wardstone)', (f) => { f['items-b.json']['item.desc:g'] = 'Cut from wardstone.'; }],
     ['old-name', 'an old name of two words (Guest Bed)', (f) => { f['system.json']['toast:a'] = 'Place a Guest Bed.'; }],

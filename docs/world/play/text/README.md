@@ -30,6 +30,7 @@ Each entry of `_surfaces.json` gives:
 | `limit` | The most characters one line may have |
 | `lines` | Present when the value is a list: the fewest and the most lines |
 | `slots` | Words in braces that the code fills in. The new text carries each of them once and no other |
+| `must` | Words the text has to contain. A townsperson's first line has to say peopl |
 | `planned` | The entry is for something the plan adds and the game does not have yet |
 | `note` | What the thing is, where that is not plain from the key |
 
@@ -64,7 +65,7 @@ The numbers of a piece are printed by the game. A description never repeats them
 
 The eight baits are laid on their stones. The verbs wake, call up, ring, burn, fly, focus, wear and open are the born's account and stay out of these lines (4.2); they go in `task.said`, which is a born mouth. A found thing's description is its found text (plan G): a bait in an old chest, a bedroll in an old house and a recall stone must each read true of one made today and of one found.
 
-### `creatures.json`: the bestiary and the eight (227 entries)
+### `creatures.json`: the bestiary and the eight (228 entries)
 
 | Surface | Key | What it is |
 | --- | --- | --- |
@@ -73,7 +74,7 @@ The eight baits are laid on their stones. The verbs wake, call up, ring, burn, f
 | `eight.said` | `b_...` | What householders say the animal is (4.11) |
 | `eight.intro` | `b_...` | The line under the name when it comes up |
 | `eight.phase` | `b_....<n>` | The line when it changes what it does, in order |
-| `eight.line` | fixed keys | Five lines that take a great feeder's name |
+| `eight.line` | fixed keys | Six lines about a great feeder, most of which take its name |
 
 The eight are animals (rule 19). The sand-country fighters are people: their entries say what was seen and what a fallen fighter carried, and never count anyone (rule 12).
 
@@ -95,7 +96,7 @@ The eight are animals (rule 19). The sand-country fighters are people: their ent
 
 Chapter 5 gives each townsperson's trade, belief and manner, with lines as a guide. Seven are `born`. Every entry of the Deserter is `sand`, whatever its surface. All eight say peopl to the face.
 
-### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (457 entries)
+### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (471 entries)
 
 | Surface | Key | What it is |
 | --- | --- | --- |

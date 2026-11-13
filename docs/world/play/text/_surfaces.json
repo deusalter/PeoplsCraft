@@ -1,5 +1,5 @@
 {
- "about": "Written by surfaces.mjs from the game's source. Do not edit by hand. Each entry is one string a writer supplies, or one list of strings where `lines` gives the fewest and the most. `now` is the text the game shows today, with {braces} where the code puts a value in; `slots` lists those, and the new text carries each of them once. `empty` marks the few entries that may be left as an empty string. `planned` marks an entry for something plan.md adds and the game does not have yet. `needs` lists the internal keys the text is about.",
+ "about": "Written by surfaces.mjs from the game's source. Do not edit by hand. Each entry is one string a writer supplies, or one list of strings where `lines` gives the fewest and the most. `now` is the text the game shows today, with {braces} where the code puts a value in; `slots` lists those, and the new text carries each of them once. `empty` marks an entry that may be left as an empty string. `must` lists words the text has to contain. `planned` marks an entry for something plan.md adds and the game does not have yet. `needs` lists the internal keys the text is about.",
  "letters": "Āāīū",
  "voices": [
   "label",
@@ -141,7 +141,7 @@
    "voice": "sight",
    "limit": 60,
    "assign": "creatures",
-   "entries": 5
+   "entries": 6
   },
   "folk.why": {
    "about": "What moves a townsperson in, shown on a ready bed as \"<name>: <line>\"",
@@ -339,7 +339,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 30
+   "entries": 31
   },
   "bed": {
    "about": "Answer of a bed or a room when it is checked",
@@ -388,7 +388,7 @@
    "voice": "label",
    "limit": 150,
    "assign": "system",
-   "entries": 33
+   "entries": 46
   },
   "tip": {
    "about": "Lines the tooltip writes from numbers",
@@ -8054,6 +8054,24 @@
     "{item}"
    ]
   },
+  "eight.line:dawn_down": {
+   "surface": "eight.line",
+   "key": "dawn_down",
+   "needs": [
+    "boss:7"
+   ],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "sight",
+   "limit": 60,
+   "assign": "creatures",
+   "slots": [
+    "{name}"
+   ],
+   "note": "plan C: the strongest of the deep kind goes back down at dawn",
+   "planned": true
+  },
   "eight.line:fallen": {
    "surface": "eight.line",
    "key": "fallen",
@@ -10209,7 +10227,11 @@
    "voice": "born",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.meet:beastcaller": {
    "surface": "folk.meet",
@@ -10224,7 +10246,11 @@
    "voice": "born",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.meet:deserter": {
    "surface": "folk.meet",
@@ -10239,7 +10265,11 @@
    "voice": "sand",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.meet:provisioner": {
    "surface": "folk.meet",
@@ -10254,7 +10284,11 @@
    "voice": "born",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.meet:runescribe": {
    "surface": "folk.meet",
@@ -10269,7 +10303,11 @@
    "voice": "born",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.meet:smith": {
    "surface": "folk.meet",
@@ -10284,7 +10322,11 @@
    "voice": "born",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.meet:tinker": {
    "surface": "folk.meet",
@@ -10299,7 +10341,11 @@
    "voice": "born",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.meet:wayfinder": {
    "surface": "folk.meet",
@@ -10314,7 +10360,11 @@
    "voice": "born",
    "limit": 110,
    "assign": "people",
-   "planned": true
+   "note": "the townsperson calls the player peopl to the face (1.5, 8.10)",
+   "planned": true,
+   "must": [
+    "peopl"
+   ]
   },
   "folk.night:apothecary": {
    "surface": "folk.night",
@@ -20149,6 +20199,22 @@
    "limit": 90,
    "assign": "system"
   },
+  "toast:codex_new": {
+   "surface": "toast",
+   "key": "codex_new",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "slots": [
+    "{subject}"
+   ],
+   "note": "plan D: a step of the codex has opened; {subject} is the name of the subject",
+   "planned": true
+  },
   "toast:coins": {
    "surface": "toast",
    "key": "coins",
@@ -20679,6 +20745,162 @@
    "limit": 60,
    "assign": "system"
   },
+  "win:codex.born": {
+   "surface": "win",
+   "key": "codex.born",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: what householders say",
+   "planned": true
+  },
+  "win:codex.closed": {
+   "surface": "win",
+   "key": "codex.closed",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: stands in place of a step that has not opened",
+   "planned": true
+  },
+  "win:codex.habit": {
+   "surface": "win",
+   "key": "codex.habit",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: many kills",
+   "planned": true
+  },
+  "win:codex.kill": {
+   "surface": "win",
+   "key": "codex.kill",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: first kill",
+   "planned": true
+  },
+  "win:codex.loss": {
+   "surface": "win",
+   "key": "codex.loss",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: after the first kill of one of the eight",
+   "planned": true
+  },
+  "win:codex.none": {
+   "surface": "win",
+   "key": "codex.none",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: shown in the codex before anything is known",
+   "planned": true
+  },
+  "win:codex.once": {
+   "surface": "win",
+   "key": "codex.once",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: one thing seen once",
+   "planned": true
+  },
+  "win:codex.read": {
+   "surface": "win",
+   "key": "codex.read",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: what the crew makes of it",
+   "planned": true
+  },
+  "win:codex.said": {
+   "surface": "win",
+   "key": "codex.said",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: what householders say one of the eight is",
+   "planned": true
+  },
+  "win:codex.sand": {
+   "surface": "win",
+   "key": "codex.sand",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: what the Deserter says",
+   "planned": true
+  },
+  "win:codex.seen": {
+   "surface": "win",
+   "key": "codex.seen",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading: what the crew saw",
+   "planned": true
+  },
+  "win:codex.sight": {
+   "surface": "win",
+   "key": "codex.sight",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading of a bestiary step: first sight",
+   "planned": true
+  },
   "win:equipment": {
    "surface": "win",
    "key": "equipment",
@@ -20747,6 +20969,19 @@
    "voice": "label",
    "limit": 24,
    "assign": "system"
+  },
+  "win:journal.said": {
+   "surface": "win",
+   "key": "journal.said",
+   "needs": [],
+   "file": null,
+   "line": null,
+   "now": "",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "plan D: heading over the householders' telling of a task",
+   "planned": true
   },
   "win:none_match": {
    "surface": "win",
