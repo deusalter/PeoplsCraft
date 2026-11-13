@@ -11,6 +11,7 @@
     "smoke": "node scripts/smoke.mjs",
     "node": "node scripts/run.mjs",
     "test": "node scripts/test.mjs",
+    "scenario": "node scripts/run.mjs scripts/bot/runner.ts",
     "start": "if [ ! -f dist/server/main.js ] || [ ! -f dist/client/index.html ] || [ -n \"$(find src server index.html package.json vite.config.ts vite.server.config.ts -newer dist/server/main.js -print 2>/dev/null | head -n 1)\" ]; then npm run build; fi && node dist/server/main.js"
   },
   "dependencies": {

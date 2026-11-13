@@ -3729,6 +3729,32 @@ memory with their names, and `sim.refused`. Without the flag both are 404 like a
 join, a repaired region announced in chat) reach only the log; "The server cannot save" is not toasted; smoke `golden`
 against a server and the README's hosting section.
 
+D40. Stage 4, lane D (10.2, 11, the Stage 6 lag row). The bots, the scenario runner and the lag proxy.
+(a) `scripts/bot/bot.ts` reuses beside the table of 10.2 the browser's own `client/blocks.ts` (`BlockClient`: dig, break,
+place and door, with their predictions) and `client/invclient.ts` (`InvClient` over `net/invsync.ts`), so that a bot's
+edits and ops leave through exactly the code a page runs. `use` of a chest or station is sent as `client/combat.ts`
+sends it, which needs `three` and is not reused. Others are kept as the latest snapshot has them, not interpolated.
+(b) `pillar(n, itemKey)` and `place(x, y, z, itemKey)` name the block to use: 10.2's `pillar(n)` has none. `goto` walks
+along a breadth-first path over the bot's own blocks (steps up of one, drops of up to three).
+(c) `silence(ms)` holds both directions of the socket and then lets everything through in order, as a link that stalls
+and recovers does; `drop()` cuts the socket without a closing handshake, and the transport reconnects by itself.
+(d) The runner is `npm run scenario -- <name> [--runs N] [--lag] [--keep] [--seed <text>]`. It builds the server alone
+into `out/scenario/server` and starts it with `--harness --cheats --max-players 32` on a free port of 127.0.0.1, with its
+data in a new folder under `.claude/mp-work/pad/scenarios/`. The seed is random unless given.
+(e) Scenario `basic` uses the test commands of 10.1 (`caps 0 0`, `clearmobs`, `time day`) so that nothing but the two
+players acts on the place, and `give` for the planks and the chest. In one early run a creature killed a bot between
+two of its edits, and the host rightly refused the dead bot's next edit with an empty `rej`. "Back-fill" is read as
+filling back the holes the bots mined, after Ada has come down by mining her pillar from under her feet.
+(f) Scenario `abuse` measures the step p99 over every step from the bystander's entry into play to the end (the
+malformed frames, the 10 s of floods and the two hellos), from `/stats`. Each malformed frame goes on a socket of its
+own that was welcomed first (a hello variant is the socket's first frame), since the host closes a connection on the
+first malformed frame; the scenario checks every frame `checkC2S` or the frame rules refuse was answered `proto`.
+(g) `scripts/lagproxy.ts` reads the Stage 6 row's 150 ms +- 40 ms as a round trip, as R5 does (a dodge reaches the
+host 75 ms later): each direction is delayed 75 ms +- 20 ms. A stall (250 to 400 ms, 2 % of segments read) holds the
+segment and everything behind it, so the stream stays in order.
+(h) No scenario of this stage failed for a defect in the server or the shared code: `basic` (three runs on random
+seeds, and two through the lag proxy) and `abuse` (three runs) passed with zero `rej` and zero corrections on every bot.
+
 ---
 
 ## 14. Review log

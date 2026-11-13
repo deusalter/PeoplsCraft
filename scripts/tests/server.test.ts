@@ -132,6 +132,14 @@ test('the client files are served from the same port, with the caching the proto
   assert.equal((await fetch(base + '/', { method: 'POST' })).status, 405);
 });
 
+test('a server started without --harness answers neither /hash nor /stats', { timeout: 30 * S }, async () => {
+  for (const path of ['/hash?dim=0&cx0=0&cz0=0&cx1=0&cz1=0', '/stats', '/stats?last=10']) {
+    const r = await fetch(base + path);
+    assert.equal(r.status, 404, path);
+    assert.equal(await r.text(), 'Not found');
+  }
+});
+
 test('a hello with a good token and the password is welcomed, and the player is put in the world', { timeout: 30 * S }, async () => {
   const a = sock();
   await a.opened;
