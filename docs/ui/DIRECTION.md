@@ -3510,7 +3510,7 @@ Size 427 by 240. Material: the world under a flat wash of blood.dk at half stren
 "                                                               "D2"                                                                           "
 "                                                                                                                                              "
 "                                                               "D3"                                                                           "
-"                                                                                                                                              "
+"                                                               "D3b"                                                                          "
 "                                                                                                                                              "
 "                                    +------------------------------------------------------------------+                                      "
 "                                    | D4 button                                                        |                                      "
