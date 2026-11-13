@@ -64,8 +64,13 @@ export class WorkerTransport implements Transport {
     if (this.state === 'closed') return;
     this.state = 'closed';
     this.w.terminate();
-    for (const f of this.steps) f();
+    this.settleSteps();
+  }
+  /** A step the host will never answer: it closed the connection, and sends no `stepped` after that. */
+  private settleSteps(): void {
+    const s = this.steps;
     this.steps = [];
+    for (const f of s) f();
   }
 
   private post(m: ToWorker): void { this.w.postMessage(m); }
@@ -78,7 +83,7 @@ export class WorkerTransport implements Transport {
       else if (c.ctl === 'answer') {
         const a = this.asks.get(c.id);
         if (a) { this.asks.delete(c.id); if (c.ok) a.ok(c.value); else a.no(new Error(c.err ?? 'failed')); }
-      } else if (c.ctl === 'closed') { this.state = 'closed'; if (this.onClose) this.onClose(c.code); }
+      } else if (c.ctl === 'closed') { this.state = 'closed'; if (this.onClose) this.onClose(c.code); this.settleSteps(); }
       return;
     }
     // the step's own messages came first, in order: they are all queued by the time the step is said to be done

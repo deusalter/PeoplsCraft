@@ -3628,6 +3628,13 @@ a frame ran at most five steps, and a slower page slowed the world). A world com
 it, as well as on pause, on hiding the tab and every 30 s. Closing the tab in Chrome saves as it closes: the page
 goes hidden first, which sends `pause`, and the worker commits before it is torn down (MEASUREMENTS 7).
 
+D38. Stage 3, read by independent readers (3.5, 3.6, 8.2, 10.1). What their findings showed wrong, and what changed.
+(a) On a manual clock the host answers a `step` with `stepped` only while the connection is open, so a step in which it
+closes the page's connection (a malformed message, a sequence out of order, a handler that throws) was never answered:
+`WorkerTransport` set its state on `closed` but left the step's promise pending, the frame never ended, and the error
+screen, `T.frame`, `T.step` and `T.cmd` waited for ever. `closed` now settles every pending step, as `close()` did
+(`scripts/tests/workerclient.test.ts`).
+
 ---
 
 ## 14. Review log
