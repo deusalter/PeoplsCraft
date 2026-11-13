@@ -3607,6 +3607,9 @@ the loopback too, where D35 (c) had left it to this stage.
 otherwise added ticks at moments of the wall clock, and two runs of one script were a few ticks apart from the first call.
 The `det` scenario gives the same tick and `simhash` after each of its 20 calls in the worker and in the page, and the two
 transports give the same values as each other.
+(i) Where a page cannot save, the title menu, the banner in the game and the pause screen say why in the same words
+(`noSaveText` in `ui/menus.ts`): a database written by a newer build (`StorageError('version')`) is named as such in all
+three, where the banner and the pause screen still blamed the browser (D36 (l)).
 
 ---
 
