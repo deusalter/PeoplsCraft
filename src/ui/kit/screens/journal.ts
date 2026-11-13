@@ -166,14 +166,17 @@ const WORN_SLOTS: SilhouetteName[] = ['head', 'body', 'legs', 'trinket', 'trinke
 function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: 'Crew' })];
   v.crew.forEach((m, i) => {
-    const name = inkCut(m.name, PW - 32);
+    // Each player's head before the name, as on the roster. One who is away is a head in shade with "away" in place
+    // of the level; one's own row says "you" there.
+    const self = m.seat === v.seat;
+    const right = self ? 'you' : m.online ? String(m.level) : 'away';
+    const name = inkCut(m.name, PW - 14 - measureInk(right) - 4);
     left.push(pageRow({
-      id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, under: { x: 6, y: 10, w: measureInk(name) }, onChoose: () => v.onChoose(i),
+      id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, under: { x: 13, y: 10, w: measureInk(name) }, onChoose: () => v.onChoose(i),
       paint: (g) => {
-        flag(g, m.seat, 1, 2);
-        const lv = String(m.level);
-        g.text(lv, PW - 2 - measureInk(lv), 1, m.online ? 'ink' : 'ink.faded');
-        g.text(name, 6, 1, m.online ? 'ink' : 'ink.faded');
+        if (m.online) g.map(HEADS[m.seat - 1], 1, 1); else g.draw(HEADS[m.seat - 1], 1, 1, { flat: 'clay.sh' });
+        g.text(right, PW - 2 - measureInk(right), 1, m.online && !self ? 'ink' : 'ink.faded');
+        g.text(name, 13, 1, m.online ? 'ink' : 'ink.faded');
       },
     }));
   });
