@@ -35,8 +35,9 @@ function hash(a: number, b: number, c = 0): number {
 }
 
 // The floor of the tree (5.20): boards of root-dark timber laid lengthwise, 6 tall with a joint of one unit, their ends
-// staggered by a fixed hash. A board is lit along its top row in `timber.dk`, has a face of `timber.pit` with two
-// grain lines of `timber.dk` 4 to 9 long, and a bottom row of `root.1` over the `root.0` joint.
+// staggered by a fixed hash. A board is flat `timber.pit` with two grain lines of `root.1` 4 to 9 long, the joint and
+// the butt ends `root.0`. No board is lit along its top: a bright edge on every board made the floor as loud as the
+// nodes on it, and the dark of a locked node was lost in it.
 const PW = 96, PH = 42, BOARD = 7;
 
 function planks(): string[] {
@@ -46,21 +47,13 @@ function planks(): string[] {
   for (let r = 0; r < PH / BOARD; r++) {
     const y0 = r * BOARD;
     const ends = [hash(r, 1, 5) % 48, 48 + (hash(r, 2, 5) % 40)];
-    for (let x = 0; x < PW; x++) {
-      grid[y0][x] = 'timber.dk';
-      grid[y0 + BOARD - 2][x] = 'root.1';
-      grid[y0 + BOARD - 1][x] = 'root.0';
-    }
-    for (const e of ends) for (let v = 0; v < BOARD - 1; v++) {
-      grid[y0 + v][e] = 'root.0';
-      grid[y0 + v][(e + PW - 1) % PW] = 'root.1';
-      if (v < BOARD - 2) grid[y0 + v][(e + 1) % PW] = 'timber.dk';
-    }
+    for (let x = 0; x < PW; x++) grid[y0 + BOARD - 1][x] = 'root.0';
+    for (const e of ends) for (let v = 0; v < BOARD - 1; v++) grid[y0 + v][e] = 'root.0';
     for (let k = 0; k < 2; k++) {
-      const gx = hash(r, k, 9) % PW, gy = y0 + 2 + (hash(r, k, 13) % 3), gl = 4 + (hash(r, k, 17) % 6);
+      const gx = hash(r, k, 9) % PW, gy = y0 + 1 + (hash(r, k, 13) % 4), gl = 4 + (hash(r, k, 17) % 6);
       for (let d = 0; d < gl; d++) {
         const x = (gx + d) % PW;
-        if (grid[gy][x] === 'timber.pit') grid[gy][x] = 'timber.dk';
+        if (grid[gy][x] === 'timber.pit') grid[gy][x] = 'root.1';
       }
     }
   }

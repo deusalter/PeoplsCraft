@@ -72,7 +72,7 @@ const CHECK = coded([
   '.KKKKK.',
 ], 'slot.accepts');
 // The lock on the same badge: a grey shackle over an ember body with its keyhole, so that it reads over a pale icon.
-const LOCK = coded([
+export const LOCK = coded([
   '.KKKKK.',
   'KkgggkK',
   'KkgkgkK',

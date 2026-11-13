@@ -6,7 +6,7 @@ import type { KeyEv, Node, Screen, Tip } from '../node';
 import type { NodeState } from '../art/tree';
 import { button } from '../parts/button';
 import { tabbedSlab } from '../parts/tabs';
-import { LATTICE, NODE, tree } from '../parts/tree';
+import { panTo, tree } from '../parts/tree';
 import { CREW, type CrewMember } from '../sample/crew';
 import { JOBS, type Job, type SkillNode, TAKEN, TO_SPEND } from '../sample/skills';
 import { firstFocus, go, placeWindow } from './books-common';
@@ -29,7 +29,9 @@ export interface SkillsView {
   onClose(): void;
 }
 
-const W = 260, H = 206;
+// Wide, the field shows a job's seven columns whole; narrow, it keeps the old width and pans across as well.
+const WIDE_W = 320, NARROW_W = 260, H = 212;
+const FIELD_Y = 17, FIELD_H = 156;
 const SHAPE_SAYS: Record<string, string> = { square: 'a step anyone may take', cut: 'its own skill', spiked: 'a mark it ends in' };
 
 function stateOf(job: Job, n: SkillNode, taken: Record<string, number>): NodeState {
@@ -50,20 +52,6 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
   const canTake = me && v.toSpend > 0 && nodeState !== 'locked' && rank < node.ranks;
   firstFocus(ui, 'skills', null);
 
-  // The field is centred on the last node earned in this job the first time it is shown.
-  const fieldW = 242, fieldH = 140;
-  const panId = `sk.field.${job.key}.${owner.seat}.pan`;
-  const earned = job.nodes.filter((n) => (taken[n.id] ?? 0) > 0);
-  const focusNode = earned[earned.length - 1] ?? job.nodes[0];
-  if (!panned.has(panId)) {
-    panned.add(panId);
-    const cx = 8 + focusNode.col * LATTICE + NODE / 2, cy = 8 + focusNode.row * LATTICE + NODE / 2;
-    const maxX = Math.max(0, Math.max(...job.nodes.map((n) => n.col * LATTICE + NODE + 16)) - fieldW);
-    const maxY = Math.max(0, Math.max(...job.nodes.map((n) => n.row * LATTICE + NODE + 16)) - fieldH);
-    const clamp = (x: number, m: number) => Math.min(m, Math.max(0, Math.round(x)));
-    ui.setScroll(panId, clamp(cx - fieldW / 2, maxX) + clamp(cy - fieldH / 2, maxY) * 100000);
-  }
-
   const tip = (n: SkillNode, st: NodeState) => (): Tip => ({
     lines: [
       { text: n.name, c: st === 'locked' ? 'root.4' : 'salt' },
@@ -73,38 +61,55 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
       ...(st === 'locked' ? [{ text: 'Take a step joined to it first', c: 'blood.lt' as const }] : []),
     ],
   });
+  const W = ui.w >= 400 ? WIDE_W : NARROW_W;
+  const fieldW = W - 16;
+  const specs = job.nodes.map((n) => {
+    const st = stateOf(job, n, taken);
+    return { id: n.id, col: n.col, row: n.row, shape: n.shape, state: st, icon: n.icon, ranks: n.ranks > 1 ? [taken[n.id] ?? 0, n.ranks] as [number, number] : undefined, tip: tip(n, st) };
+  });
+
+  // The field rests on the last node earned in this job the first time it is shown.
+  const panId = `sk.field.${job.key}.${owner.seat}.pan`;
+  const earned = job.nodes.filter((n) => (taken[n.id] ?? 0) > 0);
+  if (!panned.has(panId)) {
+    panned.add(panId);
+    ui.setScroll(panId, panTo(specs, fieldW, FIELD_H, (earned[earned.length - 1] ?? job.nodes[0]).id));
+  }
+
   const field = tree({
-    id: `sk.field.${job.key}.${owner.seat}`, x: 8, y: 18, w: 244, h: 142, host: 'stone', ui, chosen: node.id,
-    nodes: job.nodes.map((n) => {
-      const st = stateOf(job, n, taken);
-      return { id: n.id, col: n.col, row: n.row, shape: n.shape, state: st, icon: n.icon, ranks: n.ranks > 1 ? [taken[n.id] ?? 0, n.ranks] as [number, number] : undefined, tip: tip(n, st) };
-    }),
+    id: `sk.field.${job.key}.${owner.seat}`, x: 8, y: FIELD_Y, w: fieldW, h: FIELD_H, host: 'stone', ui, chosen: node.id,
+    nodes: specs,
     links: job.links,
     onChoose: (id) => { if (id === v.chosen && me) v.onTake(id); else v.onChoose(id); },
   });
 
-  const spend = me ? `${v.toSpend} to spend` : 'To read';
+  // On one's own tree the points to spend; on another's whose it is, read only, its name cut so it never meets the title.
+  const right = W - 8;
+  const head = me ? `${v.toSpend} to spend` : `${cut(owner.name, 90)} (read only)`;
   // What the chosen node is, what a rank of it does and what it needs, on three lines under the field.
   const needs = job.links.filter(([, b]) => b === node.id).map(([a]) => job.nodes.find((n) => n.id === a)!.name);
   const needLine = needs.length ? `Needs: ${needs.join(' or ')}` : 'Needs nothing: a first step';
   const rankText = `${rank} of ${node.ranks}`;
+  const textW = W - 16, room = me ? textW - 48 : textW;
+  const by = FIELD_Y + FIELD_H + 2;
   const kids: Node[] = [
     field,
-    { x: 160, y: 6, w: 93, h: 10, paint: (s) => { const t = cut(spend, 92); s.text(t, rightX(t, 252 - 160), 0, me ? 'growth.dk' : 'ink.faded'); } },
+    { x: right - 150, y: 6, w: 150, h: 10, paint: (s) => { s.text(head, rightX(head, 150), 0, me ? 'growth.dk' : 'ink.faded'); } },
     {
-      x: 8, y: 164, w: 244, h: 34,
+      x: 8, y: by, w: textW, h: 32,
       paint: (s) => {
-        s.text(rankText, rightX(rankText, 244), 0, 'ink.faded');
-        s.text(cut(node.name, 244 - measure(rankText) - 6), 0, 0, nodeState === 'locked' ? 'ink.faded' : 'ink');
-        s.text(cut(node.does, 196), 0, 11, 'ink');
-        s.text(cut(needLine, 196), 0, 22, nodeState === 'locked' ? 'blood.dk' : 'ink.faded');
+        s.text(rankText, rightX(rankText, textW), 0, 'ink.faded');
+        s.text(cut(node.name, textW - measure(rankText) - 6), 0, 0, nodeState === 'locked' ? 'ink.faded' : 'ink');
+        s.text(cut(node.does, room), 0, 11, 'ink');
+        s.text(cut(needLine, room), 0, 22, nodeState === 'locked' ? 'blood.dk' : 'ink.faded');
       },
     },
-    button({ id: 'sk.take', x: 208, y: 182, w: 44, h: 16, ramp: 'stone', label: 'Take', disabled: !canTake, onPress: () => v.onTake(node.id) }),
+    // Another's tree is read, not changed: no Take is drawn there at all.
+    ...(me ? [button({ id: 'sk.take', x: right - 44, y: H - 20, w: 44, h: 16, ramp: 'stone', label: 'Take', disabled: !canTake, onPress: () => v.onTake(node.id) })] : []),
   ];
   const at = placeWindow(ui, W, H, 21, 21);
   const top = tabbedSlab({
-    id: 'sk.slab', x: at.x, y: at.y, w: W, h: H, ramp: 'stone', title: `${owner.name}, ${job.name}`, titleRoom: 148, edge: 'top',
+    id: 'sk.slab', x: at.x, y: at.y, w: W, h: H, ramp: 'stone', title: job.name, titleRoom: W - 166, edge: 'top',
     tabs: v.jobs.map((j) => ({ id: `sk.job.${j.key}`, icon: j.icon, name: j.name })), chosen: v.job,
     onTab: (i) => { ui.cue('tab'); v.onJob(i); }, kids,
   });

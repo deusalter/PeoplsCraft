@@ -1711,7 +1711,9 @@ A page's text area is 126 wide and starts 12 from the book's outer edge and 10 f
 
 ### 5.20 Tree field, nodes and links
 
-The field is a well whose floor is laid with boards and pans under its frame: a tile 96 by 42 of boards 6 tall with a joint of one unit, each lit along its top row in `timber.dk`, a face of `timber.pit` with two grain lines of `timber.dk` 4 to 9 long, a bottom row of `root.1` over the `root.0` joint, and two butt joints a board placed by a fixed hash. It is timber and not the ground tile so that the tree does not read as one more menu. Nodes are 26 by 26 on a lattice of 40 by 40, each holding a 16 by 16 icon at 5, 5. Three frames: square, cut (its corners cut by 5), spiked (a body 22 by 22 with its corners cut by two, and on each side a spike 4 wide at its foot and 2 at its tip that stands 2 out from the body; no studs or loose units at the corners, which read as stitching). Each is built by the rule for raised shapes: the shape's outer units are outline; the next units in are `hi` where they face up or left and `pit` where they face down or right; the rest is face.
+The field is a well whose floor is laid with boards and pans under its frame: a tile 96 by 42 of boards 6 tall with a joint of one unit, each a flat face of `timber.pit` with two grain lines of `root.1` 4 to 9 long, the joint and two butt joints a board, placed by a fixed hash, in `root.0`. No board is lit: a `timber.dk` top row on every board made the floor as loud as the nodes, and a locked node's dark was lost in it. It is timber and not the ground tile so that the tree does not read as one more menu.
+
+The field lays its nodes out from a margin of 4 inside its frame; along an axis where all of them fit with that margin they stand centred and the field does not pan that way. Dragging pans by whole units, and on release the pan comes to rest on a whole step of the lattice (or the far end), so that the edge falls 4 before a node and a node at rest is never cut through. Where nodes lie past an edge a chevron says so: a head 5 wide and 3 deep in `salt` outlined in `root.0`, up and down in the right-hand corners, left and right low on the side edges, where a field laid out from the top left leaves room. Nodes are 26 by 26 on a lattice of 40 by 40, each holding a 16 by 16 icon at 5, 5. Three frames: square, cut (its corners cut by 5), spiked (a body 22 by 22 with its corners cut by two, and on each side a spike 4 wide at its foot and 2 at its tip that stands 2 out from the body; no studs or loose units at the corners, which read as stitching). Each is built by the rule for raised shapes: the shape's outer units are outline; the next units in are `hi` where they face up or left and `pit` where they face down or right; the rest is face.
 
 ```
      0         1         2         3         4         5         6         7         8 
@@ -1747,30 +1749,30 @@ The field is a well whose floor is laid with boards and pans under its frame: a 
 
 | State | hi | face | pit | Icon |
 | --- | --- | --- | --- | --- |
-| Locked | `root.3` | `root.2` | `root.1` | silhouette in `root.3` |
+| Locked | `root.3` | `root.2` | `root.1` | silhouette in `root.3`, and the slot's lock (5.4), 7 by 7, at 18, 17 (18, 14 on the spiked frame) |
 | Open (can be taken now) | `stone.lt` | `stone.sh` | `stone.pit` | full |
 | Earned | `salt` | `clay.face` | `clay.pit` | full |
 
-A node with more than one rank shows them as figures in the small face, "2/3", `salt` with its shadow, or `root.4` while none is taken, on a scrap of `root.0` one unit larger than the figures all round (13 by 7 for "2/3"), centred, hanging from the frame's bottom outline (row 25 for square and cut, row 22 inside the spiked body) so that the figures stand one unit under it. The tooltip says "Rank 2 of 3". Pips were tried first: three lit squares on the bottom outline read as a row of teeth and turned every earned node into a skull. The chosen node has the hotbar's selector round it (5.16), 30 by 30.
+A node with more than one rank shows them as cells 3 by 3, one unit apart, in a strip of `root.0` one unit round them, set into the frame's foot so that the strip's last row is the frame's bottom outline (rows 21 to 25 of square and cut, 18 to 22 of the spiked body), centred; on a locked node it stands at x 4, clear of the lock. A rank taken is `ember`, one to take is `root.2`. The tooltip says "Rank 2 of 3". Lit squares in salt on the outline were tried and read as a row of teeth, and figures needed the second face; ember cells sunk in a dark strip read as a count. The chosen node has the hotbar's selector round it (5.16), 30 by 30.
 
-**Links** run only along rows and columns, with square elbows at the midpoint. A link is 3 units wide: `root.0` either side of a core one unit wide. The core is `root.3` to a locked node, `root.4` to an open one, `salt` between two earned ones. Links are drawn under nodes.
+**Links** run only along rows and columns, with square elbows at the midpoint. A link is 2 units wide and lit like a part: a light line one unit wide with `root.0` one unit under it, or to its right where it runs down. The light line is `root.3` to a locked node, `root.4` to an open one, `salt` between two earned ones. The light line runs through the node's centre at 12, 12. Links are drawn under nodes.
 
 ```
      0         1         2         
      012345678901234567890123456789
   0  ..............................
-  1  KKKKKKKKKKKKKKKK..............
-  2  KWWWWWWWWWWWWWWK..............
-  3  KKKKKKKKKKKKKKWK..............
-  4  .............KWK..............
-  5  .............KWK..............
-  6  .............KWK..............
-  7  .............KWK..............
-  8  .............KWK..............
-  9  .............KWK..............
- 10  .............KWKKKKKKKKKKKKKKK
- 11  .............KWWWWWWWWWWWWWWWK
- 12  .............KKKKKKKKKKKKKKKKK
+  1  WWWWWWWWWWWWWW................
+  2  KKKKKKKKKKKKKWK...............
+  3  .............WK...............
+  4  .............WK...............
+  5  .............WK...............
+  6  .............WK...............
+  7  .............WK...............
+  8  .............WK...............
+  9  .............WK...............
+ 10  .............WWWWWWWWWWWWWWWWW
+ 11  .............KKKKKKKKKKKKKKKKK
+ 12  ..............................
  13  ..............................
 ```
 `. nothing  K root.0  W salt`
@@ -2888,7 +2890,7 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19). Anchor: cen
 
 ### Skill tree (to come)
 
-Size 260 by 206, with tabs standing 21 above and 21 to the left. Material: stone. Anchor: centre of the screen.
+Size 320 by 212 on a wide screen and 260 by 212 on a narrow one, with tabs standing 21 above and 21 to the left. Material: stone. Anchor: centre of the screen. Wide, the field holds a job's seven columns whole and pans only up and down; at 260 half the tree was always out of view.
 
 ```
        +------+
@@ -2934,14 +2936,14 @@ Size 260 by 206, with tabs standing 21 above and 21 to the left. Material: stone
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| K0 | slab | 0 | 0 | 260 | 206 | stone slab |
+| K0 | slab | 0 | 0 | W | 212 | stone slab, W 320 wide or 260 narrow |
 | T1 | tab | 0 | -21 | 24 | 24 | top tabs, one to a job, item icon on each: Melee, Ranged, Crystal-work, Totem, and the cutter's trade |
 | U1 | tab | -21 | 14 | 24 | 24 | side tabs, one to each of the eight of the crew, away or not, at the pitch of 23, a head in their colour; the tooltip is the name and level ("Rook (you), level 14", "Jun, level 3, away"): one's own first and chosen; another's tree is read, not changed |
-| K1 | text | 8 | 6 | 148 | 10 | whose tree and which job: "Rook, Melee" |
-| K2 | text | 160 | 6 | 92 | 10 | right-aligned to x 252: "3 to spend" in growth.dk on one's own tree, "To read" in ink.faded on another's |
-| K3 | well | 8 | 18 | 244 | 142 | the field: a sunk well whose floor is the ground tile in stone.dk and stone.pit, panned by dragging; nodes 26 square on a lattice of 40; links between them |
-| K4 | text | 8 | 164 | 244 | 32 | the chosen node on three lines 11 apart: its name in ink with its rank "3 of 3" right-aligned to x 252 in faded ink; what a rank does, in ink, cut at 196; what it needs ("Needs: Deep breath", or "Needs nothing: a first step") in faded ink, in blood.dk while it is locked. A name and a rank alone left the player nothing to choose by |
-| K5 | button | 208 | 182 | 44 | 16 | "Take"; disabled when the node cannot be taken |
+| K1 | text | 8 | 6 | W - 166 | 10 | the job: "Melee" |
+| K2 | text | W - 158 | 6 | 150 | 10 | right-aligned to x W - 8: "3 to spend" in growth.dk on one's own tree; on another's, their name cut at 90 and "(read only)", "brackenfoot_1999 (read only)", in ink.faded, so that a long name never runs into the title |
+| K3 | well | 8 | 17 | W - 16 | 156 | the field (5.20): boards, panned by dragging and at rest on whole lattice steps; nodes 26 square on a lattice of 40; links between them |
+| K4 | text | 8 | 175 | W - 16 | 32 | the chosen node on three lines 11 apart: its name in ink with its rank "3 of 3" right-aligned to x W - 8 in faded ink; what a rank does, in ink, cut 48 short of the right edge where Take stands; what it needs ("Needs: Deep breath", or "Needs nothing: a first step") in faded ink, in blood.dk while it is locked. A name and a rank alone left the player nothing to choose by. On another's tree the lines run the full width |
+| K5 | button | W - 52 | 192 | 44 | 16 | "Take" on one's own tree, disabled when the node cannot be taken; on another's tree it is not drawn at all, since nothing there can be taken |
 
 - **Shows.** One field to a job. Square frames are steps anyone may take, cut frames are the job's own skills, spiked frames are the three marks a job ends in. Locked is dull, open is stone, earned is clay and salt. The party shows in the side tabs, so that a crew can see who took what.
 - **Clickable.** A node chooses it; "Take" or a second click on the chosen node spends a point. Dragging the field pans it. Tabs.
