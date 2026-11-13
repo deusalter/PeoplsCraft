@@ -3,8 +3,10 @@
 //
 //   npm run node -- server/backup.ts --data <dir> --list
 //   npm run node -- server/backup.ts --data <dir> --restore <stamp>
-import { open, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
+import { link, open, mkdir, readFile, readdir, rename, rm, stat, unlink, writeFile } from 'node:fs/promises';
+import { uptime } from 'node:os';
+import { basename, dirname, join, resolve } from 'node:path';
 import { StorageError, type PlayerRecord, type WorldRecord } from '../src/sim/storage';
 import { FormatError, decodeRegion, parseRegionName } from './region';
 
@@ -49,21 +51,82 @@ export function stampOf(ms: number): string {
 const alive = (pid: number): boolean => {
   try { process.kill(pid, 0); return true; } catch (e) { return errCode(e) === 'EPERM'; }
 };
-/** Take `server.lock`, or refuse when a live process holds it. A lock left by a process that died is taken over. */
+/** Which boot of the machine this is: Linux names each boot; elsewhere the boot time stands in for a name. */
+async function bootMark(): Promise<string> {
+  const id = (await readFile('/proc/sys/kernel/random/boot_id', 'utf8').catch(() => '')).trim();
+  return id ? 'id:' + id : 't:' + Math.round(Date.now() - uptime() * 1000);
+}
+const otherBoot = (a: string, b: string): boolean =>
+  a.startsWith('id:') && b.startsWith('id:') ? a !== b
+  : a.startsWith('t:') && b.startsWith('t:') ? Math.abs(Number(a.slice(2)) - Number(b.slice(2))) > 30_000
+  : false;
+/** Locks this process holds, by path, with the text it wrote. */
+const held = new Map<string, string>();
+const lockPid = (text: string | null): number => Number.parseInt((text ?? '').trim(), 10);
+/** `server.lock` holds the pid, the boot mark and a nonce, one a line. A lock is live when its pid is a live process of
+ *  this boot and, for this process's own pid, one this process took. */
+async function lockLive(path: string, text: string): Promise<boolean> {
+  const pid = lockPid(text), mark = text.split('\n')[1]?.trim() ?? '';
+  if (!(pid > 0)) return false;
+  if (pid === process.pid) return held.has(path);
+  if (mark && otherBoot(mark, await bootMark())) return false;
+  return alive(pid);
+}
+const lockedBy = (pid: number, dir: string): StorageError => new StorageError('locked', `Another server (pid ${pid}) is using ${dir}.`);
+const claimOf = (p: string, text: string): string => `${p}.take-${createHash('sha1').update(text).digest('hex').slice(0, 16)}`;
+/** Take `server.lock`, or refuse when a live process holds it. A lock left by a process that died is taken over.
+ *  Only one process may replace a given stale lock: the one that creates its claim file, `server.lock.take-<hash of
+ *  its text>`, which holds that process's own lock text. A claim left by a process that died before it replaced the
+ *  lock is stale in turn, and is taken over the same way through the claim of its own text. */
 export async function takeLock(dir: string): Promise<void> {
-  const p = join(dir, 'server.lock');
-  for (let i = 0; i < 3; i++) {
-    try { await writeFile(p, `${process.pid}\n`, { flag: 'wx' }); return; } catch (e) { if (errCode(e) !== 'EEXIST') throw ioError(e, 'take server.lock'); }
-    const pid = Number.parseInt((await readFile(p, 'utf8').catch(() => '')).trim(), 10);
-    if (pid > 0 && alive(pid)) throw new StorageError('locked', `Another server (pid ${pid}) is using ${dir}.`);
-    await unlink(p).catch(() => {});
+  const p = resolve(dir, 'server.lock');
+  if (held.has(p)) throw lockedBy(process.pid, dir);
+  const mine = `${process.pid}\n${await bootMark()}\n${randomUUID()}\n`, fresh = `${p}.${process.pid}.new`;
+  const write = async (): Promise<void> => { await unlink(fresh).catch(() => {}); await writeFile(fresh, mine); };
+  try {
+    for (let i = 0; i < 8; i++) {
+      // made whole under another name and linked into place, so no other server can read it half written
+      await write();
+      try { await link(fresh, p); held.set(p, mine); return; } catch (e) { if (errCode(e) !== 'EEXIST') throw ioError(e, 'take server.lock'); }
+      const seen = await readFile(p, 'utf8').catch(() => null);
+      if (seen === null) continue;
+      const chain = [seen];
+      for (let stale = seen; chain.length < 8;) {
+        if (await lockLive(p, stale)) throw lockedBy(lockPid(stale), dir);
+        try { await link(fresh, claimOf(p, stale)); } catch (e) {
+          if (errCode(e) !== 'EEXIST') throw ioError(e, 'take server.lock');
+          const next = await readFile(claimOf(p, stale), 'utf8').catch(() => null);
+          if (next === null) break;
+          chain.push(stale = next);
+          continue;
+        }
+        // the claim is ours; the lock is replaced only while it still holds a text this chain judged stale
+        if (!chain.includes((await readFile(p, 'utf8').catch(() => '')))) break;
+        // a file of its own, not a second name of the claim: a lock edited in place must not edit the claim
+        await write();
+        await rename(fresh, p);
+        held.set(p, mine);
+        await dropOldClaims(p);
+        return;
+      }
+    }
+    throw new StorageError('locked', `Could not take ${p}.`);
+  } finally { await unlink(fresh).catch(() => {}); }
+}
+/** Claims are kept a while for a server that read the same stale lock and is slow to try its claim. */
+async function dropOldClaims(p: string): Promise<void> {
+  const d = dirname(p), pre = basename(p) + '.take-';
+  for (const n of await readdir(d).catch(() => [] as string[])) {
+    if (!n.startsWith(pre)) continue;
+    const st = await stat(join(d, n)).catch(() => null);
+    if (st && Date.now() - st.mtimeMs > 3_600_000) await unlink(join(d, n)).catch(() => {});
   }
-  throw new StorageError('locked', `Could not take ${p}.`);
 }
 export async function releaseLock(dir: string): Promise<void> {
-  const p = join(dir, 'server.lock');
-  const pid = Number.parseInt((await readFile(p, 'utf8').catch(() => '')).trim(), 10);
-  if (pid === process.pid) await unlink(p).catch(() => {});
+  const p = resolve(dir, 'server.lock'), mine = held.get(p);
+  if (mine === undefined) return;
+  held.delete(p);
+  if ((await readFile(p, 'utf8').catch(() => '')) === mine) await unlink(p).catch(() => {});
 }
 
 // ---- reading the record files ----

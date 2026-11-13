@@ -20,7 +20,7 @@ import type { ChunkSource, GenResult } from '../../src/sim/chunksource';
 import { hashBlocks } from '../../src/sim/genjob';
 import type { Batch, ChunkRecord, PlayerRecord, WorldRecord } from '../../src/sim/storage';
 import { StorageError } from '../../src/sim/storage';
-import { type DiskIO, listBackups, nodeIO, restoreBackup, stampOf } from '../../server/backup';
+import { type DiskIO, listBackups, nodeIO, restoreBackup, stampOf, takeLock } from '../../server/backup';
 import { type DiskNotice, type DiskOptions, DiskStorage } from '../../server/diskstorage';
 import { FormatError, crc32, decodeRegion, encodeRegion, localKey } from '../../server/region';
 
@@ -545,7 +545,7 @@ function tests(): void {
   test('server.lock: a second storage on one folder refuses, a dead holder or an unreadable lock is taken over', async () => {
     const dir = await fresh('lock');
     const a = await opened(dir);
-    assert.equal((await readFile(join(dir, 'server.lock'), 'utf8')).trim(), String(process.pid));
+    assert.equal((await readFile(join(dir, 'server.lock'), 'utf8')).split('\n')[0], String(process.pid));
     const e = await rejects(new DiskStorage(dir, quiet).open(), 'locked');
     assert.match(e.message, new RegExp(`pid ${process.pid}`));
     await a.close();
@@ -555,6 +555,34 @@ function tests(): void {
     await (await opened(dir)).close();
     await writeFile(join(dir, 'server.lock'), '\u0000garbage');
     await (await opened(dir)).close();
+  });
+
+  test('server.lock: a lock left with this process\'s own pid, as a restarted PID 1 finds it, is taken over', async () => {
+    const dir = await fresh('lock-own');
+    await writeFile(join(dir, 'server.lock'), `${process.pid}\n`);
+    const a = await opened(dir);
+    await rejects(new DiskStorage(dir, quiet).open(), 'locked');
+    const mark = (await readFile(join(dir, 'server.lock'), 'utf8')).split('\n')[1];
+    await a.close();
+    assert.ok(!(await exists(join(dir, 'server.lock'))));
+    // a live process that only has the pid a server had before the machine restarted
+    const before = mark.startsWith('id:') ? 'id:another-boot' : `t:${Number(mark.slice(2)) - 86_400_000}`;
+    await writeFile(join(dir, 'server.lock'), `${process.ppid}\n${before}\nx\n`);
+    await (await opened(dir)).close();
+    await writeFile(join(dir, 'server.lock'), `${process.ppid}\n${mark}\nx\n`);
+    await rejects(new DiskStorage(dir, quiet).open(), 'locked');
+  });
+
+  test('server.lock: servers that start together on a folder with a dead lock: exactly one takes it', async () => {
+    const dir = await fresh('lock-race');
+    const dead = spawnSync(process.execPath, ['-e', 'process.stdout.write(String(process.pid))'], { encoding: 'utf8' }).stdout;
+    for (let round = 0; round < 6; round++) {
+      await writeFile(join(dir, 'server.lock'), dead + '\n');
+      const at = Date.now() + 600;
+      const kids = Array.from({ length: 8 }, () => spawn(process.execPath, [bundle, 'locker', dir, String(at)], { stdio: ['ignore', 'pipe', 'inherit'] }));
+      const outs = await Promise.all(kids.map((c) => new Promise<string>((res) => { let b = ''; c.stdout!.on('data', (d) => { b += d; }); c.on('exit', () => res(b)); })));
+      assert.equal(outs.filter((o) => o.includes('took')).length, 1, `round ${round}: ${outs.map((o) => o.trim()).join(' / ')}`);
+    }
   });
 
   test('a full disk (a byte budget at the write layer): nothing is renamed, no temporaries stay, backups wait, the retry succeeds', async () => {
@@ -770,8 +798,18 @@ async function enter(host: SimHost, c: Client): Promise<void> {
   assert.ok(inPlay(), 'in play');
 }
 
+/** Waits for the moment `at`, takes the lock, holds it a while and dies without letting go of it. */
+async function locker(dir: string, at: number): Promise<void> {
+  while (Date.now() < at) { /* every locker starts at the same instant */ }
+  try { await takeLock(dir); process.stdout.write('took\n'); } catch (e) { process.stdout.write(`refused ${(e as Error).message}\n`); return; }
+  await new Promise((r) => setTimeout(r, 1500));
+  process.kill(process.pid, 'SIGKILL');
+}
+
 if (process.argv[2] === 'writer') {
   writer(process.argv[3], Number(process.argv[4]), process.argv[5], Number(process.argv[6])).then(() => process.exit(0), (e) => { console.error(e); process.exit(1); });
+} else if (process.argv[2] === 'locker') {
+  locker(process.argv[3], Number(process.argv[4])).then(() => process.exit(0), (e) => { console.error(e); process.exit(1); });
 } else {
   tests();
 }

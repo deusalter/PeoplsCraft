@@ -3833,6 +3833,22 @@ that succeeded left no `players/<id>.json`, and the next join gave the player a 
 holding a good one. The bad player file is now copied to `.bad-<stamp>` and the backup copy written over it with a
 rename, so until that write succeeds the bad file stays and the next join repairs it again. A player that no backup
 holds is still renamed aside. The same departure from "Rename it" as (d).
+(f) A crashed server's lock was not always taken over (8.1 start-up). A lock was judged live when a process with its
+pid was alive, and nothing compared it with the server's own pid: in a container where node is always PID 1, or after
+a power cut when the next boot gives the server the same pid or gives that pid to another program, the new server
+refused to start until someone deleted `server.lock` by hand. `server.lock` now holds three lines: the pid, a mark of
+the machine's boot (Linux's `boot_id`, elsewhere the boot time to within 30 s) and a random nonce. A lock with this
+process's own pid is live only when this process took it, and a lock written in another boot is stale whatever its pid
+names. A lock of the older one-line form is still read by its pid. The extra lines depart from "pid of the running
+server" in the 8.1 listing; the first line is still that pid.
+(g) Two servers starting together could both take a stale lock (8.1, "the second refuses"). Each read the dead pid,
+deleted the file and created its own, so the second could delete the lock the first had just made. A lock is now made
+whole under a temporary name and linked into place, so it is never read half written, and a stale lock is replaced
+only by the one process that creates its claim, `server.lock.take-<hash of the stale text>`, with `link`, which fails
+for every other. The winner renames its own lock over the stale one only while the lock still holds a text it judged
+stale; a claim left by a process that died before that rename is itself stale and is taken over through the claim of
+its own text. Claims stay for an hour, for a server that read the same stale lock and is slow to try, and are then
+deleted by the next server to take the lock. These files beside `server.lock` are not in the 8.1 listing.
 
 ---
 
