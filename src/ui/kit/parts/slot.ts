@@ -36,12 +36,14 @@ export interface SlotOpts {
 /**
  * The stack count (5.4), inside the floor with its shadow: its last column on `right` and its lowest row on `bottom`, so
  * that the shadow falls on the floor and never on the light edge, where salt digits would run into the bright rim. Two
- * digits are the text face; three no longer fit 15 units in it and take the small face. 1 is not written.
+ * digits are the text face; three no longer fit 15 units in it and take the small face, as does a count of a thousand
+ * or more, written in thousands ("1k", "12k") so that it is never more than three glyphs. 1 is not written.
  */
 export function paintCount(s: Surface, n: number, right: number, bottom: number, c: Colour = 'salt'): void {
   if (n <= 1) return;
-  const t = String(Math.min(999, Math.trunc(n)));
-  if (t.length < 3) s.text(t, rightX(t, right), bottom - 7, c, true);
+  const whole = Math.trunc(n);
+  const t = whole >= 1000 ? `${Math.min(999, Math.floor(whole / 1000))}k` : String(whole);
+  if (t.length < 3 && whole < 1000) s.text(t, rightX(t, right), bottom - 7, c, true);
   else s.text(t, rightX(t, right, SMALL), bottom - 4, c, true, SMALL);
 }
 
