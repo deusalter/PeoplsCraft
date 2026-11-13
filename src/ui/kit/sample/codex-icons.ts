@@ -1,9 +1,10 @@
 import { type PixelMap, coded } from '../pixmap';
 
-// Pictures for the codex's sample entries: the kinds of creature of the world bible's chapter 7, the eight strongest,
-// the sites, the peoples and the old things of 8.7 and 8.8, keyed by their names.json keys where they have one. Each is
-// 16 by 16, outlined in root.0 and lit from the top left by the rule for raised shapes: a face that looks up or left
-// takes its material's light tone, one that looks down or right its dark tone.
+// Pictures for the books' sample entries: the kinds of creature of the world bible's chapter 7, the eight strongest,
+// the sites, the peoples and the old things of 8.7 and 8.8, and the bed and the mouth of the map's list of places,
+// keyed by their names.json keys where they have one. Each is 16 by 16, outlined in root.0 and lit from the top left by
+// the rule for raised shapes: a face that looks up or left takes its material's light tone, one that looks down or
+// right its dark tone.
 
 function picture(name: string, rows: string[]): PixelMap { return coded(rows, `codex.${name}`); }
 
@@ -941,6 +942,42 @@ const PICTURES = {
     '.KGHHHHHHHHHHHK.',
     '.KHJJJJJJJJJJJK.',
     '..KKKKKKKKKKKK..',
+    '................',
+    '................',
+  ]),
+  map_bed: picture('map_bed', [
+    '................',
+    '................',
+    '................',
+    '.KK.............',
+    'KfTKKKKKKKKKKKK.',
+    'KftWLrrrrrrrrrRK',
+    'KftLSRqqqqqqqqqK',
+    'KftUUUUUUUUUUtUK',
+    'KftKKKKKKKKKKtXK',
+    'KTtK........KUXK',
+    '.KK..........KK.',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+  ]),
+  map_mouth: picture('map_mouth', [
+    '................',
+    '................',
+    '................',
+    '................',
+    '....KKKKKKKK....',
+    '..KKHJJJJJJJKK..',
+    '.KHJMjjjjjkJJJK.',
+    'KHMjjkkkkkkjkJJK',
+    'KJkkkkkkkkkkkkJK',
+    'KJJkKkkkkkkKKHMK',
+    '.KJJJkKKKKKHJMK.',
+    '..KKJJJJJJJMKK..',
+    '....KKKKKKKK....',
+    '................',
     '................',
     '................',
   ]),

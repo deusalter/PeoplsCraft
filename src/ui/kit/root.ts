@@ -437,6 +437,7 @@ export class Root implements Ui {
     if (x === this.px && y === this.py) return;
     this.px = x; this.py = y;
     this.hoverAt(x, y, true);
+    if (this.hover?.n.on?.move) { this.hover.n.on.move(this.ev(this.hover, x, y, -1, e)); this.dirty = true; }
     const pr = this.pressed;
     if (pr) {
       const d = { phase: (pr.dragging ? 'move' : 'start') as DragEv['phase'], dx: x - pr.x, dy: y - pr.y, over: this.hover?.n ?? null, from: pr.p.n };

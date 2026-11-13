@@ -77,6 +77,8 @@ export interface Handlers {
   pass(e: PointerEv): void;
   /** A press that began on another node was let go over this one. */
   drop(e: DragEv): void;
+  /** The pointer moved to another unit over this node, the topmost under it (a chart's readout of the place). */
+  move(e: PointerEv): void;
 }
 
 export interface TipLine { text: string; c: Colour }
