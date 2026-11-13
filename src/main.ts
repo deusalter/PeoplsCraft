@@ -6,16 +6,17 @@ import { validateData } from './dev/validate';
 import { Game } from './game';
 import { SimHost } from './net/host';
 import { loopback } from './net/loopback';
-import { VIEW_MAX, VIEW_MIN } from './net/protocol';
+import { RETRY_CODES, VIEW_MAX, VIEW_MIN } from './net/protocol';
 import type { HostEnv } from './net/transport';
 import type { Sim } from './sim/sim';
 import { WorkerTransport } from './net/worker-client';
+import { WsTransport, serverUrl } from './net/ws-client';
 import { InlineSource } from './sim/chunksource';
 import { MemStorage, type Storage } from './sim/storage';
 import { IdbStorage, deleteWorld, storageReady } from './storage/idb';
 import { claimWorld } from './storage/lock';
 import './style.css';
-import { TitleMenu, type WorldChoice, applyUiScale, loadSettings, noSaveText } from './ui/menus';
+import { type JoinChoice, type ServerInfo, TitleMenu, type WorldChoice, applyUiScale, loadSettings, noSaveText, playerToken } from './ui/menus';
 import { el } from './ui/hud';
 import { WorkerPool } from './world/pool';
 
@@ -105,6 +106,60 @@ async function boot(): Promise<void> {
     await play({ id, name: 'Quick world', seed: /^-?\d+$/.test(seedText) ? Number(seedText) | 0 : strSeed(seedText), seedText }, true, true);
     return;
   }
-  new TitleMenu(ui, settings, (w) => void play(w, false), canSave, noSaveText(noSave?.code).menu);
+  // A server's page plays on that server; `?server=<address>` names one from any page (development, bots), and with
+  // `&name=` joins it at once.
+  const forced = q.get('server');
+  const here = forced === null ? await serverHere() : null;
+  const join = (j: JoinChoice): (() => void) => {
+    const url = here && !j.address ? ownSocket() : serverUrl(j.address, location);
+    if (!url) { setTimeout(() => menu.join('That is not an address. Type it as host:port, for example 192.168.1.20:8080.')); return () => {}; }
+    const t = new WsTransport(url), session = new Session(t);
+    let game: Game | null = null, over = false, lost: HTMLElement | null = null;
+    const stop = (): void => { over = true; t.close(); };
+    const heard = t.onMessage!;
+    t.onMessage = (m) => {
+      heard(m);
+      if (m.t === 'welcome') { lost?.remove(); lost = null; }
+      if (game || over) return;
+      if (m.t === 'welcome') {
+        menu.close();
+        // the simulation is the server's: every core but the page's own may mesh
+        const pool = new WorkerPool(Math.max(2, Math.min(6, cores - 2)));
+        game = new Game(canvas, ui, { session, settings, pool, canSave: true });
+        installDevTools(game, { ask: () => Promise.reject(new Error('the simulation runs on the server')) });
+        game.start();
+      } else if (m.t === 'error' && !RETRY_CODES.includes(m.code)) { stop(); menu.join(m.msg); }
+    };
+    t.onClose = (code) => {
+      if (over || code !== 'retrying') return;
+      if (!game) menu.status('Cannot reach the server. Trying again...', () => { stop(); menu.join(); });
+      else if (!lost) { lost = el('div', '', ui, 'Connection lost. Reconnecting...'); lost.style.cssText = 'position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(10,12,18,0.85);color:#ff9a8a;font-size:13px;letter-spacing:0.06em'; }
+    };
+    session.join({ name: j.name, token: playerToken(), password: j.password, view: Math.max(VIEW_MIN, Math.min(VIEW_MAX, Math.round(settings.gfx.renderDist))), build: BUILD });
+    return stop;
+  };
+  const autoName = forced !== null ? q.get('name') : null;
+  const menu = new TitleMenu(ui, settings, (w) => void play(w, false), canSave, noSaveText(noSave?.code).menu,
+    { here, address: forced ?? '', onJoin: join, open: forced !== null });
+  if (autoName) { const stop = join({ address: forced!, name: autoName, password: q.get('password') ?? undefined }); menu.status('Connecting...', () => { stop(); menu.join(); }); }
+}
+
+/** The socket of the server that served this page: the same origin, over the same plain or secure scheme. */
+function ownSocket(): string {
+  const u = new URL('./ws', location.href);
+  u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:'; u.search = ''; u.hash = '';
+  return u.toString();
+}
+
+/** What the server that served this page says of itself, or null when no server did (a development server answers
+ *  `./info` with the page). */
+async function serverHere(): Promise<ServerInfo | null> {
+  const ac = new AbortController(), t = setTimeout(() => ac.abort(), 2000);
+  try {
+    const r = await fetch('./info', { signal: ac.signal, cache: 'no-store' });
+    if (!r.ok || !(r.headers.get('content-type') ?? '').includes('json')) return null;
+    const j = (await r.json()) as ServerInfo | null;
+    return j && j.server === true ? j : null;
+  } catch { return null; } finally { clearTimeout(t); }
 }
 void boot();
