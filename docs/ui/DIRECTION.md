@@ -137,7 +137,7 @@ Three rules follow and are used everywhere below.
 | Wash | Colour and strength | In strict mode (section 8) |
 | --- | --- | --- |
 | The dim behind a window | `root.0` at a half | `root.1`, opaque |
-| The dim behind the pause buttons | `root.0` at three quarters | `root.1`, opaque |
+| The dim behind the pause slab | `root.0` at a half, as behind any window | `root.1`, opaque |
 | The strip under a chat line, a name tag and the prompt | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
@@ -185,7 +185,8 @@ Three rules follow and are used everywhere below.
 | --- | --- |
 | Container windows (pack, chest, stations, shop), book screens, tree, map, settings | Centred on the screen: `x = floor((Vw - w) / 2)`, `y = floor((Vh - h) / 2)`. Tabs above or to the left are not counted in `w` and `h`. The world behind is dimmed |
 | Title, worlds, new world, join, loading | The ground tile over the whole screen; content in a column 200 wide centred on x; y measured from the top of a block 240 tall that is centred on the screen |
-| Pause, the fall | The same column over the washed world |
+| Pause | A clay slab 216 by 144 centred over the dimmed world, its buttons in the same column |
+| The fall | The same column over the washed world |
 | HUD, bottom centre | Hotbar, practice strip, pips, level, name of the thing in hand: centred on the stage, measured up from its bottom edge |
 | HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at: centred on the stage, measured down from its top edge |
 | HUD, top left | The crew |
@@ -3307,7 +3308,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 ### Pause
 
-Size 427 by 240. Material: the world, dimmed. Anchor: the whole screen.
+Size 427 by 240. Material: a clay slab 216 by 144 over the world under a half of `root.0`, the dim behind any window. Anchor: the slab centred on the screen.
 
 ```
 +==============================================================================================================================================+
@@ -3317,32 +3318,33 @@ Size 427 by 240. Material: the world, dimmed. Anchor: the whole screen.
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
-"                                     "Z1"                                                                                                     "
-"                                                                                                                                              "
-"                                     "Z2"                                                                                                     "
-"                                                                                                                                              "
-"                                     "Z3"                                                                                                     "
 "                                                                                                                                              "
 "                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | Z4 button                                                       |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | Z5 button                                                       |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | Z6 button                                                       |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                                                                                                                              "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                     | Z7 button                                                       |                                      "
-"                                     +-----------------------------------------------------------------+                                      "
-"                                                                                                                                              "
-"                                                                                                                                              "
-"                                                                                                                                              "
-"                                                                                                                                              "
+"                                   #=======================================================================#                                  "
+"                                   # S0                                                                    #                                  "
+"                                   # "Z1"                                                                  #                                  "
+"                                   # "Z2"                                                                  #                                  "
+"                                   # "Z3"                                                                  #                                  "
+"                                   #                                                                       #                                  "
+"                                   #                                                                       #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   # | Z4 button                                                       |   #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   #                                                                       #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   # | Z5 button                                                       |   #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   #                                                                       #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   # | Z6 button                                                       |   #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   #                                                                       #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   # | Z7 button                                                       |   #                                  "
+"                                   # +-----------------------------------------------------------------+   #                                  "
+"                                   #                                                                       #                                  "
+"                                   #                                                                       #                                  "
+"                                   #=======================================================================#                                  "
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
@@ -3355,15 +3357,16 @@ Size 427 by 240. Material: the world, dimmed. Anchor: the whole screen.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Z1 | text | 113 | 40 | 200 | 10 | "Paused", centred, salt with shadow; on a server "Menu", since the world goes on |
-| Z2 | text | 113 | 52 | 200 | 10 | the world's name, centred, root.4 |
-| Z3 | text | 113 | 64 | 200 | 10 | one line, centred: "Saved", "Saving", or why not, in blood.lt |
-| Z4 | button | 113 | 84 | 200 | 20 | "Back to the game" |
-| Z5 | button | 113 | 108 | 200 | 20 | "Settings" |
-| Z6 | button | 113 | 132 | 200 | 20 | "Controls" |
-| Z7 | button | 113 | 156 | 200 | 20 | "Save and leave"; on a server "Leave" |
+| S0 | slab | 105 | 48 | 216 | 144 | clay; title at 8, 6: "Paused", on a server "Menu", since the world goes on |
+| Z1 | text | 113 | 54 | 200 | 9 | the title, ink, no shadow (5.3) |
+| Z2 | text | 113 | 66 | 200 | 9 | the world's name, ink.faded |
+| Z3 | text | 113 | 76 | 200 | 9 | one line: "Saved", "Saving" in ink.faded, or why not in blood.dk |
+| Z4 | button | 113 | 90 | 200 | 20 | "Back to the game" |
+| Z5 | button | 113 | 114 | 200 | 20 | "Settings" |
+| Z6 | button | 113 | 138 | 200 | 20 | "Controls" |
+| Z7 | button | 113 | 162 | 200 | 20 | "Save and leave"; on a server "Leave" |
 
-- **Shows.** Four buttons on the dimmed world. No slab.
+- **Shows.** One clay slab titled like any window, the world and whether it is saved written on it at the top left, and four buttons in a column inside it. Not a bare column of buttons with grey lines centred over it.
 - **Clickable.** The buttons.
 - **Keys.** Esc goes back to the game. Up, Down, Enter.
 - **First.** Focus on "Back to the game".
