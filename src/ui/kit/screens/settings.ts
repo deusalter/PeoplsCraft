@@ -21,7 +21,8 @@ export interface SettingsView {
   onDone(): void;
 }
 
-const W = 248, H = 206, ROW = 16, ROWS_Y = 20, VISIBLE = 10;
+// Done is the menus' stone button, 4 under the rows and 8 above the slab's foot.
+const W = 248, H = 212, ROW = 16, ROWS_Y = 20, VISIBLE = 10;
 
 function valueText(s: Setting): string {
   if (s.kind === 'measure') return count(s.value) + (s.unit ?? '');
@@ -83,7 +84,7 @@ export const settingsScreen: Screen<SettingsView> = (v, ui) => {
   };
   const slabKids: Node[] = [area];
   if (maxTop > 0) slabKids.push(slabTrack({ id: `${scrollId}.track`, x: 234, y: ROWS_Y, h: VISIBLE * ROW, ramp: 'clay', top, visible: VISIBLE, total: rows.length, onScroll: setTop }));
-  slabKids.push(button({ id: 'set.done', x: 74, y: 184, w: 100, h: 16, ramp: 'clay', label: 'Done', onPress: v.onDone }));
+  slabKids.push(button({ id: 'set.done', x: Math.floor((W - 200) / 2), y: H - 28, w: 200, label: 'Done', onPress: v.onDone }));
   const at = placeWindow(ui, W, H, 21);
   const slab = tabbedSlab({
     id: 'set.slab', x: at.x, y: at.y, w: W, h: H, ramp: 'clay', title: tab.name, edge: 'top',

@@ -3368,7 +3368,7 @@ Size 427 by 240. Material: a clay slab 216 by 144 over the world under a half of
 
 ### Settings
 
-Size 248 by 206, with tabs standing 21 above. Material: clay. Anchor: centre of the screen, over the ground tile from the title or over the dimmed world from the pause.
+Size 248 by 212, with tabs standing 21 above. Material: clay. Anchor: centre of the screen, over the ground tile from the title or over the dimmed world from the pause.
 
 ```
 +------+
@@ -3414,12 +3414,12 @@ Size 248 by 206, with tabs standing 21 above. Material: clay. Anchor: centre of 
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| E0 | slab | 0 | 0 | 248 | 206 | clay slab |
+| E0 | slab | 0 | 0 | 248 | 212 | clay slab |
 | T1 | tab | 0 | -21 | 24 | 24 | top tabs: Picture, Play, Sound, Interface. Their marks are things of the hearth, not of a desk: Picture a shuttered window in a stone jamb with sky and hill through it, Play an open hand in clay, Sound a bell, Interface a slate hung from a nail in a timber frame with three chalked lines. A framed photograph, a computer mouse and an application window made the settings read as a preferences pane |
 | E1 | text | 8 | 6 | 100 | 10 | the tab's name |
 | E2 | rows | 8 | 20 | 224 | 160 | ten rows 16 tall, the rest scroll. Label in ink at x 8. A switch is a checkbox right-aligned to x 232. A measure is a slider 80 wide at x 152 with its value right-aligned to x 147. A choice is a button 80 by 14 at x 152 that steps through its values |
 | E3 | scroll | 234 | 20 | 6 | 160 | scroll track, light variant (floor clay.dk, thumb as the slider handle) |
-| E4 | button | 74 | 184 | 100 | 16 | "Done" |
+| E4 | button | 24 | 184 | 200 | 20 | "Done": the menus' stone button, as on the title and the pause, 8 above the slab's foot. A small clay "Done" 100 by 16 made two families of button for one role across the full-screen menus |
 
 - **Shows.** Picture: preset, render distance, field of view, resolution scale, texture filtering, adaptive resolution, bloom, sun shadows, tone mapping, vignette, the two edge smoothings, clouds, sway, eye adaptation. Play: mouse sensitivity, view bobbing, screen shake, auto-jump, tool switching, double-tap to fly, raw mouse. Play also: invert looking up and down, crouch and run while the key is held. Sound: all sound, effects, music, wind, water and birds, rain and thunder, footsteps, crew voices, interface clicks, sound when the window is away, write what is heard. Interface: scale (Auto, then each whole number that fits), chat lines shown, chat width, how long chat stays, and a switch for each part of the HUD a player may want gone: the crew list, toasts, the pickup log, the name of the thing in hand, coordinates, the compass. Every tab fills the ten rows the slab shows, so that the slab keeps one height across the tabs and "Done" stands under the last row, not under an empty face.
 - **Clickable.** Controls, tabs, "Done". A change takes effect at once and is saved at once; there is no "Apply".
