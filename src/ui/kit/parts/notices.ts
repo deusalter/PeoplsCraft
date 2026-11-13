@@ -1,4 +1,4 @@
-import { FRAMED_PLATE } from '../art/slab';
+import { FRAMED_PLATE, HARM_PLATE } from '../art/slab';
 import { SMALL_SHADOWED } from '../font/face';
 import { centreX, clock, measure } from '../font/measure';
 import { box, cut } from '../font/wrap';
@@ -116,15 +116,23 @@ export function bossBar(o: BossOpts): Node {
 
 export interface StatusOpts { x: number; y: number; icon: string; good: boolean; seconds: number }
 
-/** A status frame (5.18): a dark plate 18 by 18 framed in growth or blood, the time left under it in the small face. */
+/** Whether a timer in its last ten seconds is lit: on for half a second, off for half, held lit for the first three. */
+export const blinkOn = (t: number): boolean => t < 3 || Math.floor(t * 2) % 2 === 0;
+
+/**
+ * A status frame (5.18): a dark plate 18 by 18 framed in growth for a help, or in blood with its frame's corners cut
+ * for a harm, the time left under it in the small face, blinking in blood.lt for the last ten seconds.
+ */
 export function statusFrame(o: StatusOpts): Node {
+  const last = o.seconds <= 10;
   return {
-    x: o.x, y: o.y, w: 18, h: 26,
-    paint: (s) => {
-      s.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: o.good ? 'growth' : 'blood' });
+    x: o.x, y: o.y, w: 18, h: 26, anim: last || undefined,
+    paint: (s, live) => {
+      s.nine(o.good ? FRAMED_PLATE : HARM_PLATE, 0, 0, 18, 18, { tint: o.good ? 'growth' : 'blood' });
       s.icon(o.icon, 1, 1);
+      if (last && !blinkOn(live.t)) return;
       const t = clock(o.seconds);
-      s.text(t, centreX(t, 0, 18, SMALL_SHADOWED), 20, o.seconds <= 10 ? 'blood.lt' : 'salt', true, SMALL_SHADOWED);
+      s.text(t, centreX(t, 0, 18, SMALL_SHADOWED), 20, last ? 'blood.lt' : 'salt', true, SMALL_SHADOWED);
     },
   };
 }

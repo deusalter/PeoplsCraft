@@ -56,6 +56,24 @@ export const FRAMED_PLATE = pixmap({
   slice: [2, 2, 2, 2],
 }, 'plate.framed');
 
+/**
+ * The status frame of a harm (5.18): the framed plate with a unit cut from each corner of its frame, so that a harm is
+ * told from a help by its outline and not by its colour alone.
+ */
+export const HARM_PLATE = pixmap({
+  rows: [
+    '..KKK..',
+    '.KcccK.',
+    'KckkkcK',
+    'KckkkcK',
+    'KckkkcK',
+    '.KcccK.',
+    '..KKK..',
+  ],
+  key: { K: 'root.0', c: 'tint', k: 'root.1' },
+  slice: [3, 3, 3, 3],
+}, 'plate.harm');
+
 /** The plate of a named old thing (5.12): a second frame of salt inside the coloured one. */
 export const NAMED_PLATE = pixmap({
   rows: [

@@ -1552,7 +1552,7 @@ A small clay slab 160 by 32, opaque, handed in from the right edge: the one ligh
 
 A world event (Night raid, Sand March, Amāvassa) is the same with a thin strip that shows the time left, in `blood` for the first two and `violet.lt` for the third.
 
-**Status frame.** A dark plate 18 by 18 with a frame of `growth` for a good state and `blood` for a bad one, the icon at 1, 1. Under it the time left in the small face, centred, its cell at y 20; `blood.lt` in the last ten seconds.
+**Status frame.** A dark plate 18 by 18 with a frame of `growth` for a good state and `blood` for a bad one, the icon at 1, 1. A bad state's frame also has a unit cut from each of its corners, the outline stepping in to meet it, so that harm and help differ in outline and not in colour alone. Under it the time left in the small face, centred, its cell at y 20; in the last ten seconds it is `blood.lt` and blinks, lit for 0.5 s and out for 0.5 s. A good frame, and the top left corner of a bad one:
 
 ```
      0         1       
@@ -1585,6 +1585,16 @@ A world event (Night raid, Sand March, Amāvassa) is the same with a thin strip 
  25  ..................
 ```
 `. nothing  k root.1  K root.0  N growth  W salt`
+
+```
+     0    
+     01234
+  0  ..KKK
+  1  .KRRR
+  2  KRkkk
+  3  KRkkk
+```
+`. nothing  k root.1  K root.0  R blood`
 
 ### 5.19 Book
 
