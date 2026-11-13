@@ -3462,7 +3462,7 @@ Size 248 by 206, with tabs standing 21 above. Material: clay. Anchor: centre of 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | E0 | slab | 0 | 0 | 248 | 206 | clay slab |
-| T1 | tab | 0 | -21 | 24 | 24 | top tabs: Picture, Play, Sound, Interface |
+| T1 | tab | 0 | -21 | 24 | 24 | top tabs: Picture, Play, Sound, Interface. Their marks are things of the hearth, not of a desk: Picture a shuttered window in a stone jamb with sky and hill through it, Play an open hand in clay, Sound a bell, Interface a slate hung from a nail in a timber frame with three chalked lines. A framed photograph, a computer mouse and an application window made the settings read as a preferences pane |
 | E1 | text | 8 | 6 | 100 | 10 | the tab's name |
 | E2 | rows | 8 | 20 | 224 | 160 | ten rows 16 tall, the rest scroll. Label in ink at x 8. A switch is a checkbox right-aligned to x 232. A measure is a slider 80 wide at x 152 with its value right-aligned to x 147. A choice is a button 80 by 14 at x 152 that steps through its values |
 | E3 | scroll | 234 | 20 | 6 | 160 | scroll track, light variant (floor clay.dk, thumb as the slider handle) |
