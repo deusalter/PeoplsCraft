@@ -1,9 +1,9 @@
 // The fifth sheet: the plates of play together: compass, readout, tags, pings, chat, roster, crew, pointer.
+import { HEADS } from '../art/heads';
 import { COMPASS_MARKS } from '../art/marks';
 import { POINTER } from '../art/pointer';
 import type { Node } from '../node';
-import { SEATS } from '../palette';
-import { chat, compass, crew, type Member, nameTag, ping, readout, roster } from '../parts/plates';
+import { chat, compass, crew, type Member, nameTag, paintEntry, ping, readout, roster } from '../parts/plates';
 import { heldStack } from '../root';
 import { type Sheet, page, salt } from './common';
 
@@ -32,10 +32,10 @@ export const platesSheet: Sheet = {
     kids.push(ping({ cx: 360, y: 14, seat: 5, metres: 40 }));
     kids.push(ping({ cx: 380, y: 14, seat: 2 }));
     kids.push({
-      x: 196, y: 34, w: 120, h: 7,
+      x: 196, y: 34, w: 120, h: 8,
       paint: (s) => {
-        s.map(COMPASS_MARKS.bed, 0, 0); s.map(COMPASS_MARKS.fell, 10, 0); s.map(COMPASS_MARKS.guide, 20, 0);
-        SEATS.forEach((c, i) => s.draw(COMPASS_MARKS.friend, 32 + i * 10, 0, { tint: c }));
+        s.map(COMPASS_MARKS.bed, 0, 1); s.map(COMPASS_MARKS.fell, 10, 1); s.map(COMPASS_MARKS.guide, 20, 1);
+        HEADS.forEach((h, i) => s.map(h, 32 + i * 10, 0));
       },
     });
     // The crew at the top left.
@@ -46,14 +46,15 @@ export const platesSheet: Sheet = {
     kids.push({ x: 310, y: 62, w: 80, h: 40, paint: (s) => { s.map(POINTER, 2, 2); heldStack('ingot', 12).paint(s, 34, 12); heldStack('blade', 1).paint(s, 62, 12); } });
     // Chat, closed and open.
     kids.push(chat({
-      x: 0, bottom: 262,
+      x: 0, bottom: 246,
       lines: [
         { text: 'Meghna came in.' },
         { seat: 3, from: 'Meghna', text: 'the kiln row is lit' },
         { seat: 1, from: 'Tarun', text: 'bring lees, we are short of it for the long run of jars past the low field' },
       ],
-      open: true, entry: 'on my way',
+      open: true,
     }));
+    kids.push({ x: 0, y: 252, w: 240, h: 14, paint: (s) => paintEntry(s, 240, 'on my way') });
     kids.push(roster({ cx: 156, y: 110, server: 'Hearth of Ash', members: MEMBERS }));
     kids.push(salt(318, 112, 'The roster,'));
     kids.push(salt(318, 124, 'held open with Tab'));

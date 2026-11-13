@@ -1,7 +1,7 @@
 // Sample skill trees: one field to each job of the crew's roles (world bible 8.4), and what each of the crew has taken.
 import type { NodeShape } from '../art/tree';
-import { CODE, COLOURS, SEATS } from '../palette';
-import { type PixelMap, coded } from '../pixmap';
+import { HEAD_ICONS } from '../art/heads';
+import type { PixelMap } from '../pixmap';
 
 export interface SkillNode {
   id: string;
@@ -125,27 +125,5 @@ export const TAKEN: Record<number, Record<string, number>> = {
 /** One's own points not yet spent. */
 export const TO_SPEND = 3;
 
-const HEAD = [
-  '................',
-  '................',
-  '................',
-  '....KKKKKKKK....',
-  '...KccccccccK...',
-  '..KccccccccccK..',
-  '..KccccccccccK..',
-  '..KccKKccKKccK..',
-  '..KccKKccKKccK..',
-  '..KccccccccccK..',
-  '..KccccccccccK..',
-  '...KccccccccK...',
-  '....KKKKKKKK....',
-  '................',
-  '................',
-  '................',
-];
-
 /** A head in each seat's colour, for the side tabs of the crew. */
-export const ICONS: Record<string, PixelMap> = Object.fromEntries(SEATS.map((colour, i) => {
-  const code = CODE[COLOURS.indexOf(colour)];
-  return [`head:${i + 1}`, coded(HEAD.map((r) => r.replace(/c/g, code)), `head.${i + 1}`)];
-}));
+export const ICONS: Record<string, PixelMap> = HEAD_ICONS;

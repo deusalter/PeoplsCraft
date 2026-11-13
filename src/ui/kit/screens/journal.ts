@@ -1,6 +1,6 @@
 // The journal (section 6, Journal): one book shared by the crew, with ribbons for the Guide, bounties, standing and the
 // crew. The Guide gives a chapter to the left page and the chosen step to the right.
-import { COMPASS_MARKS } from '../art/marks';
+import { HEADS } from '../art/heads';
 import { count, measure as measureInk } from '../font/measure';
 import { cut as inkCut } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
@@ -78,7 +78,7 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
 }
 
 function heads(g: Parameters<NonNullable<Node['paint']>>[0], seats: number[], right: number, y: number): void {
-  seats.forEach((seat, k) => g.draw(COMPASS_MARKS.friend, right - 7 - k * 8, y, { tint: SEATS[seat - 1] }));
+  seats.forEach((seat, k) => g.map(HEADS[seat - 1], right - 7 - k * 9, y));
 }
 
 function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
@@ -87,7 +87,7 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
     left.push(pageRow({
       id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen: i === v.bounty, onChoose: () => v.onChoose(i),
       paint: (g, live) => {
-        const room = PW - 21 - b.took.length * 8 - 1;
+        const room = PW - 21 - b.took.length * 9 - 2;
         g.text(inkCut(b.asker, room), 21, 1, b.barred ? 'ink.faded' : 'ink');
         g.text(inkCut(b.task, PW - 22), 21, 10, 'ink.faded');
         heads(g, b.took, PW - 1, 2);

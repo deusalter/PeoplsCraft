@@ -1,3 +1,4 @@
+import { HEADS } from '../art/heads';
 import { COMPASS_MARKS, PING } from '../art/marks';
 import { PLATE } from '../art/slab';
 import { SMALL, TEXT } from '../font/face';
@@ -58,14 +59,15 @@ export function compass(o: CompassOpts): Node {
       for (const m of o.marks ?? []) {
         const d = Math.max(-HALF + 3, Math.min(HALF - 3, along(m.deg, o.heading)));
         const x = mid + d - 3;
-        if (m.kind === 'friend') s.draw(COMPASS_MARKS.friend, x, 3, { tint: SEATS[m.seat - 1] });
+        if (m.kind === 'friend') s.map(HEADS[m.seat - 1], x, 2);
         else s.map(COMPASS_MARKS[m.kind], x, 3);
       }
       s.unclip();
       s.fill(mid, 1, 2, 2, 'salt');
       s.fill(mid, 9, 2, 2, 'salt');
-      if (o.place) s.text(cut(o.place, 88, SMALL), 1, 15, 'salt', true, SMALL);
-      if (o.night) s.text(o.night, rightX(o.night, COMPASS_W - 2, SMALL), 15, 'salt', true, SMALL);
+      const nw = o.night ? measure(o.night) + 8 : 0;
+      if (o.place) s.text(cut(o.place, COMPASS_W - 2 - nw), 1, 13, 'salt', true);
+      if (o.night) s.text(o.night, rightX(o.night, COMPASS_W - 2), 13, 'salt', true);
     },
   };
 }
@@ -112,34 +114,46 @@ export interface TagOpts {
   strict?: boolean;
 }
 
-/** A name tag (5.25): the name on a strip of the chat wash, a flag in the player's colour, a line of their life. */
+/**
+ * A player's life as it stands beside their name (5.24, 5.25): a strip 4 tall, a frame of root.0 round two rows of
+ * fill, blood under a lit row of blood.lt, root.2 where it is spent, a segment line of root.0 every 8 units. It fills
+ * from the left by whole units.
+ */
+export function paintLife(s: Surface, x: number, y: number, w: number, f: number): void {
+  const inner = w - 2;
+  s.fill(x, y, w, 4, 'root.0');
+  s.fill(x + 1, y + 1, inner, 2, 'root.2');
+  const n = Math.round(Math.min(1, Math.max(0, f)) * inner);
+  if (n) { s.fill(x + 1, y + 1, n, 1, 'blood.lt'); s.fill(x + 1, y + 2, n, 1, 'blood'); }
+  for (let k = 8; k < w - 1; k += 8) s.fill(x + k, y + 1, 1, 2, 'root.0');
+}
+
+/** The width of the life strip beside a name: five segments. */
+export const LIFE_W = 41;
+
+/** A name tag (5.25): the name on a strip of the chat wash, a flag in the player's colour, their life strip as wide under it. */
 export function nameTag(o: TagOpts): Node {
   const w = measure(o.name) + 10;
   return {
-    x: o.cx - Math.floor(w / 2), y: o.y, w, h: o.seat ? 14 : 11,
+    x: o.cx - Math.floor(w / 2), y: o.y, w, h: o.seat ? 15 : 11,
     paint: (s) => {
-      s.wash(0, 0, w, 11, 'root.0', 2);
+      s.wash(0, 0, w, 11, 'root.0', 3);
       if (o.seat) s.fill(1, 2, 2, 7, SEATS[o.seat - 1]);
       s.text(o.name, 5, 0, 'salt', true);
-      if (o.seat) {
-        s.fill(0, 11, w, 3, 'root.0');
-        const n = Math.round(Math.min(1, Math.max(0, o.life ?? 1)) * (w - 2));
-        if (n) s.fill(1, 12, n, 1, 'blood');
-      }
+      if (o.seat) paintLife(s, 0, 11, w, o.life ?? 1);
     },
   };
 }
 
 /** A ping (5.25), 9 by 6 in the colour of the player who set it, pointing down at the place, its distance under it. */
 export function ping(o: { cx: number; y: number; seat: number; metres?: number }): Node {
+  const t = o.metres !== undefined ? `${count(o.metres)} m` : '';
+  const w = Math.max(9, measure(t) + 1), x = o.cx - Math.floor(w / 2), at = o.cx - 4 - x;
   return {
-    x: o.cx - 4, y: o.y, w: 9, h: 14,
+    x, y: o.y, w, h: t ? 17 : 6,
     paint: (s) => {
-      s.draw(PING, 0, 0, { tint: SEATS[o.seat - 1] });
-      if (o.metres !== undefined) {
-        const t = `${count(o.metres)}M`;
-        s.text(t, centreX(t, 0, 9, SMALL), 8, 'salt', true, SMALL);
-      }
+      s.draw(PING, at, 0, { tint: SEATS[o.seat - 1] });
+      if (t) s.text(t, centreX(t, at, 9), 7, 'salt', true);
     },
   };
 }
@@ -147,7 +161,7 @@ export function ping(o: { cx: number; y: number; seat: number; metres?: number }
 // ---- chat (5.23)
 
 export interface ChatLine {
-  /** A player's line: their seat and name; a line from the server has none and is all `root.4`. */
+  /** A player's line: their seat and name; a line from the server has none and is all `stone.lt`. */
   seat?: number;
   from?: string;
   text: string;
@@ -158,26 +172,27 @@ export interface ChatOpts {
   /** The bottom of the newest line. */
   bottom: number;
   lines: ChatLine[];
+  /** Open, twelve lines show; closed, eight. */
   open?: boolean;
-  /** What is typed, when open. */
-  entry?: string;
-  caret?: boolean;
-  ui?: Ui;
+  /** Where lines wrap: 150 on a wide stage, less on a narrow one, so that chat keeps clear of the prompt (5.23). */
+  wrap?: number;
+  /** The most lines that may show, fewer than the eight or twelve when the crew list stands above. */
+  most?: number;
 }
 
-const CHAT_WRAP = 236;
-const ENTRY_W = 240;
+/** Where chat lines wrap on a wide stage: they end left of the prompt under the crosshair. */
+export const CHAT_WRAP = 150;
 
 interface Run { text: string; c: Colour }
 
-/** A chat line's runs, wrapped at 236: the name in its colour, a colon in `root.4`, 3 units, the text in salt. */
-function chatRows(l: ChatLine): Run[][] {
-  if (!l.from) return wrap(l.text, CHAT_WRAP).map((w) => [{ text: w.text, c: 'root.4' }]);
+/** A chat line's runs, wrapped: the name in its colour, a colon in `root.4`, 3 units, the text in salt. */
+function chatRows(l: ChatLine, at: number): Run[][] {
+  if (!l.from) return wrap(l.text, at).map((w) => [{ text: w.text, c: 'stone.lt' }]);
   const head = measure(l.from) + 1 + measure(':') + 3;
-  const first = wrap(l.text, CHAT_WRAP - head);
+  const first = wrap(l.text, at - head);
   const rows: Run[][] = [[{ text: l.from, c: SEATS[(l.seat ?? 8) - 1] }, { text: ':', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'salt' }]];
   const rest = first.slice(1).map((w) => w.text).join(' ');
-  if (rest) for (const w of wrap(rest, CHAT_WRAP)) rows.push([{ text: w.text, c: 'salt' }]);
+  if (rest) for (const w of wrap(rest, at)) rows.push([{ text: w.text, c: 'salt' }]);
   return rows;
 }
 
@@ -195,29 +210,32 @@ function runsWidth(runs: Run[]): number {
 }
 
 /**
- * Chat (5.23): lines 10 tall, newest lowest, each on a strip of the chat wash as wide as its text plus 4, the text 2 in.
- * Open, the entry stands 2 under them: 14 tall, floor `root.0`, a frame of `root.3`, its text at 4, 2.
+ * Chat (5.23): lines 10 tall, newest lowest, each on a strip of the chat wash at three quarters, as wide as its text
+ * and shadow plus one unit either side; the text starts 1 in. The wash is strong enough that the grey lines of the
+ * server read on a noon sky. The entry is not part of this: it stands at the bottom of the screen (6, Chat, open).
  */
 export function chat(o: ChatOpts): Node {
-  const rows = o.lines.flatMap(chatRows).slice(-(o.open ? 12 : 8));
-  const h = rows.length * 10 + (o.open ? 16 : 0);
+  const at = o.wrap ?? CHAT_WRAP;
+  const rows = o.lines.flatMap((l) => chatRows(l, at)).slice(-Math.min(o.most ?? 99, o.open ? 12 : 8));
+  const h = rows.length * 10;
   return {
-    x: o.x, y: o.bottom - h, w: ENTRY_W, h,
+    x: o.x, y: o.bottom - h, w: at + 3, h,
     paint: (s) => {
       rows.forEach((r, i) => {
         const y = i * 10;
-        s.wash(0, y, runsWidth(r) + 4, 10, 'root.0', 2);
-        paintRuns(s, r, 2, y);
+        s.wash(0, y, runsWidth(r) + 3, 10, 'root.0', 3);
+        paintRuns(s, r, 1, y);
       });
-      if (o.open) {
-        const y = rows.length * 10 + 2;
-        s.fill(0, y, ENTRY_W, 14, 'root.3');
-        s.fill(1, y + 1, ENTRY_W - 2, 12, 'root.0');
-        const tw = s.text(cut(o.entry ?? '', ENTRY_W - 10), 4, y + 2, 'salt', true);
-        if (o.caret !== false) s.fill(4 + tw + (tw ? 1 : 0), y + 2, 1, 10, 'salt');
-      }
     },
   };
+}
+
+/** The chat entry (5.23), w by 14: a frame of root.3, a floor of root.0, the text's cell at 4, 2, the caret after it. */
+export function paintEntry(s: Surface, w: number, text: string, caret = true): void {
+  s.fill(0, 0, w, 14, 'root.3');
+  s.fill(1, 1, w - 2, 12, 'root.0');
+  const tw = s.text(cut(text, w - 10), 4, 2, 'salt', true);
+  if (caret) s.fill(4 + tw + (tw ? 1 : 0), 2, 1, 10, 'salt');
 }
 
 // ---- roster and crew (5.24)
@@ -234,12 +252,12 @@ export interface Member {
   bars: number;
 }
 
-/** The head of a player: the friend mark of the compass in their colour. */
-function head(s: Surface, seat: number, x: number, y: number): void { s.draw(COMPASS_MARKS.friend, x, y, { tint: SEATS[seat - 1] }); }
+/** The head of a player (art/heads.ts), 8 by 8. */
+function head(s: Surface, seat: number, x: number, y: number): void { s.map(HEADS[seat - 1], x, y); }
 
-/** The roster (5.24), held open with Tab: a plain dark plate 312 wide, a header, rows 13 tall from y 18. */
+/** The roster (5.24), held open with Tab: a plain dark plate 312 wide, a header, rows 16 tall from y 18. */
 export function roster(o: { cx: number; y: number; server: string; members: Member[]; seats?: number }): Node {
-  const w = 312, h = 18 + o.members.length * 13 + 3;
+  const w = 312, h = 18 + o.members.length * 16 + 2;
   return {
     x: o.cx - Math.floor(w / 2), y: o.y, w, h,
     paint: (s) => {
@@ -250,18 +268,16 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
       s.text(of, ofX, 3, 'root.4', true);
       s.fill(1, 15, w - 3, 1, 'root.3');
       o.members.forEach((m, i) => {
-        const y = 18 + i * 13;
-        head(s, m.seat, 6, y + 2);
+        const y = 18 + i * 16;
+        head(s, m.seat, 6, y + 1);
         s.text(cut(m.name, 126), 16, y, 'salt', true);
-        s.fill(16, y + 10, 100, 1, 'root.0');
-        const n = Math.round(Math.min(1, Math.max(0, m.life)) * 100);
-        if (n) s.fill(16, y + 10, n, 1, 'blood');
-        s.text(cut(m.place, 90), 148, y, 'root.4', true);
+        paintLife(s, 16, y + 11, LIFE_W, m.life);
+        s.text(cut(m.place, 76), 148, y, 'root.4', true);
         const lv = String(m.level);
-        s.text(lv, rightX(lv, 262, SMALL), y + 3, 'growth.lt', true, SMALL);
+        s.text(lv, rightX(lv, 244), y, 'growth.lt', true);
         if (m.metres !== undefined) {
-          const d = `${count(m.metres)}M`;
-          s.text(d, rightX(d, 292, SMALL), y + 3, 'salt', true, SMALL);
+          const d = `${count(m.metres)} m`;
+          s.text(d, rightX(d, 292), y, 'salt', true);
         }
         for (let b = 0; b < 3; b++) s.fill(298 + b * 3, y + 7 - b * 2, 2, 2 + b * 2, b < m.bars ? 'salt' : 'root.3');
       });
@@ -269,17 +285,18 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
   };
 }
 
-/** The crew at the top left of the HUD (5.24): the roster's head, name and life line in rows 12 tall and 92 wide, no plate. */
+/** The pitch of the crew's rows: the name's cell 10, one clear unit under its descenders, the life strip 4. */
+export const CREW_ROW = 15;
+
+/** The crew at the top left of the HUD (5.24): the roster's head, name and life strip in rows 15 tall, no plate. */
 export function crew(o: { x: number; y: number; members: Member[] }): Node {
   return {
-    x: o.x, y: o.y, w: 92, h: o.members.length * 12,
+    x: o.x, y: o.y, w: 92, h: o.members.length * CREW_ROW,
     paint: (s) => o.members.forEach((m, i) => {
-      const y = i * 12;
+      const y = i * CREW_ROW;
       head(s, m.seat, 0, y + 1);
-      s.text(cut(m.name, 76), 10, y, 'salt', true);
-      s.fill(10, y + 10, 76, 1, 'root.0');
-      const n = Math.round(Math.min(1, Math.max(0, m.life)) * 76);
-      if (n) s.fill(10, y + 10, n, 1, 'blood');
+      s.text(cut(m.name, 80), 10, y, 'salt', true);
+      paintLife(s, 10, y + 11, LIFE_W, m.life);
     }),
   };
 }

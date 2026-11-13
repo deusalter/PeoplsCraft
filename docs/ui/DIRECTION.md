@@ -102,6 +102,7 @@ Three rules follow and are used everywhere below.
 | --- | --- | --- |
 | Plain text | `salt` | `ink` |
 | The less important line | `root.4` | `ink.faded` |
+| A line from the server in chat | `stone.lt` | not used |
 | A grade | the table above | the table above |
 | Better than what is worn or held; can be afforded | `growth.lt` | `growth.dk` |
 | Worse; cannot be afforded; a refusal; a warning | `blood.lt` | `blood.dk` |
@@ -137,7 +138,7 @@ Three rules follow and are used everywhere below.
 | --- | --- | --- |
 | The dim behind a window | `root.0` at a half | `root.1`, opaque |
 | The dim behind the pause buttons | `root.0` at three quarters | `root.1`, opaque |
-| The strip under a chat line and under a name tag | `root.0` at a half | `root.1`, opaque |
+| The strip under a chat line, a name tag and the prompt | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
 | The fall | `blood.dk` at a quarter, a half, then a half held | `blood.dk`, opaque |
@@ -191,7 +192,7 @@ Three rules follow and are used everywhere below.
 | HUD, left, above the pips | Chat |
 | HUD, top right | Status frames, then toasts under them |
 | HUD, right | The Guide's present step, then pickups, then "Saved" at the bottom right corner |
-| HUD, centre | Crosshair; the prompt 18 units under it |
+| HUD, centre | Crosshair; the prompt 12 units under its centre |
 | Above everything | The tooltip, then the held stack, then the pointer |
 
 **Icon size.** The interface is designed for item icons of 16 by 16 units, one icon pixel to the unit, and never draws an icon at another size. The large result slot holds a 16 by 16 icon in a 24 by 24 floor. Until the icons are redrawn by hand, the game hands the kit a 16 by 16 reading of each present 32 by 32 icon (the top left pixel of every 2 by 2 block).
@@ -430,7 +431,7 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 
 ### 4.2 The small face
 
-For numbers that have no room: the time under a status frame, a distance, coordinates, a level in the roster, a page number, the life as a number beside the pips. Capitals and digits only; a lowercase letter is drawn as its capital. It is never used for a label or a sentence.
+For digits that have no room: a stack count of three digits, the time under a status frame, a page number, the ranks under a node, the life as a number beside the pips. Its letters are kept for the few strings already wired in it, but every HUD readout with a word in it (coordinates, the night, "Saved", a distance with its unit) is the text face in sentence case: at 3 by 5, capitals are hard to tell apart (Z from 2, U from V) and set in capitals they break the rule of case. It is never used for a label or a sentence. The 4 has its diagonal so that it is not read as H.
 
 | Measure | Units |
 | --- | --- |
@@ -442,10 +443,10 @@ For numbers that have no room: the time under a status frame, a distance, coordi
 
 ```
 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F    G    H    I    J    K    L    M      N     O    P    
-##.  .#.  ##.  ##.  #.#  ###  ##.  ###  ##.  ##.  .#.  ##.  .##  ##.  ###  ###  .##  #.#  ###  ..#  #.#  #..  #...#  #..#  .#.  ##.
-#.#  ##.  ..#  ..#  #.#  #..  #..  ..#  #.#  #.#  #.#  #.#  #..  #.#  #..  #..  #..  #.#  .#.  ..#  #.#  #..  ##.##  ##.#  #.#  #.#
-#.#  .#.  .#.  .#.  ###  ##.  ###  .#.  ###  ###  ###  ##.  #..  #.#  ##.  ##.  #.#  ###  .#.  ..#  ##.  #..  #.#.#  #.##  #.#  ##.
-#.#  .#.  #..  ..#  ..#  ..#  #.#  .#.  #.#  ..#  #.#  #.#  #..  #.#  #..  #..  #.#  #.#  .#.  #.#  #.#  #..  #...#  #..#  #.#  #..
+##.  .#.  ##.  ##.  ..#  ###  ##.  ###  ##.  ##.  .#.  ##.  .##  ##.  ###  ###  .##  #.#  ###  ..#  #.#  #..  #...#  #..#  .#.  ##.
+#.#  ##.  ..#  ..#  .##  #..  #..  ..#  #.#  #.#  #.#  #.#  #..  #.#  #..  #..  #..  #.#  .#.  ..#  #.#  #..  ##.##  ##.#  #.#  #.#
+#.#  .#.  .#.  .#.  #.#  ##.  ###  .#.  ###  ###  ###  ##.  #..  #.#  ##.  ##.  #.#  ###  .#.  ..#  ##.  #..  #.#.#  #.##  #.#  ##.
+#.#  .#.  #..  ..#  ###  ..#  #.#  .#.  #.#  ..#  #.#  #.#  #..  #.#  #..  #..  #.#  #.#  .#.  #.#  #.#  #..  #...#  #..#  #.#  #..
 .##  ###  ###  ##.  ..#  ##.  .##  .#.  .##  .##  #.#  ##.  .##  ##.  ###  #..  .##  #.#  ###  .#.  #.#  ###  #...#  #..#  .#.  #..
 ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  .....  ....  ...  ...
 3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    5      4     3    3
@@ -1707,109 +1708,116 @@ A held stack is its icon centred on the pointer's place (at -8, -8) with its cou
 
 ### 5.23 Chat
 
-Lines are 10 tall, newest lowest. Under each line a strip of the chat wash as wide as the line's text plus 4 (drawn opaque here); the text starts 2 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server is all `root.4`. Text wraps at 236. Closed, the last 8 lines show and each leaves 8 s after it came. Open, 12 lines show, the wheel scrolls back, and the entry stands 2 under them: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The entry is 240 wide.
+Lines are 10 tall, newest lowest, at the left of the stage with the newest line's bottom 58 above the stage's bottom, over the row of defence and lees. Under each line a strip of the chat wash as wide as the line's text and shadow plus one unit either side (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server is all `stone.lt`. Text wraps at 150, or at half the stage less 64 when that is less, so that chat always ends left of the prompt under the crosshair. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, as wide as the stage less 8, over the hotbar, as the tradition puts it: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
 
 ```
-     0         1         2         3         4         5         6         7         8         9         0         
+     0         1         2         3         4         5         6         7         8         9         0
      01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-  0  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..................
-  1  kknkkkkknknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..................
-  2  kknnkkknnKkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWkkkWKkkkkkkkkkkkkkkkkkkkkWkkkkkkkkkkkkkkkkkkkkkk..................
-  3  kknKnknknKnknnnknnnnkkkkkkWWWWkkWWWWkkkkkkWWWWkWWWWkkWWWWkkkkkkkWWWkWWWWkWWWWkkWWWWkkWWWWkkk..................
-  4  kknKknkKnKnKnKKKkKKKnkgkkkWKKKWkWKKKWkkkkkkWKKKWKKKWkWKKKWkkkkkWkKKKkWKKKWKKKWkWKKKWkWKKKWkk..................
-  5  kknKkkKknKnKnKkkknnnnKkKkkWKkkWKWKkkWKkkkkkWKkkWKkkWKWWWWWKkkkkkWWkkkWKkkWKkkWKWKkkWKWWWWWKk..................
-  6  kknKkkkknKnKnKkknkKKnKkkkkWKkkWKWKkkWKkkkkkWKkkWKkkWKWKKKKKkkkkkkKWkkWKkkWKkkWKWKkkWKWKKKKKk..................
-  7  kknKkkkknKnKnKkkknnnnKgkkkkWWWWKWKkkWKkkkkkkWWkWKkkWKkWWWWkkkkkWWWkKkkWWkkWWWWKWKkkWKkWWWWkk..................
-  8  kkkKkkkkkKkKkKkkkkKKKKkKkkkkKKKKkKkkkKkkkkkkkKKkKkkkKkkKKKKkkkkkKKKkkkkKKkkKKKKkKkkkKkkKKKKk..................
-  9  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..................
- 10  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.................................
- 11  kkggggkkkkkkkkkkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.................................
- 12  kkgKKKgkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.................................
- 13  kkgKkkgKkgggkgkkgkkgkgkggggkkkkkkggggkggggkkggggggkkggggkkkkkkgkkkgkggggkkkkk.................................
- 14  kkgKkkgKgkKKKgKkgKkgKgKgKKKgkkkkkgKKKKkKKKgkgKKgKKgkgKKKgkkkkkgKkkgKgKKKgkkkk.................................
- 15  kkgKkkgKkggkkgKkgKkgKgKgKkkgKkkkkgKkkkkggggKgKkgKkgKgggggKkkkkgKkkgKgKkkgKkkk.................................
- 16  kkgKkkgKkkKgkgKkgKkgKgKgKkkgKkkkkgKkkkgkKKgKgKkgKkgKgKKKKKkkkkgKkkgKgKkkgKkkk.................................
- 17  kkkggggKgggkKkggggggKgKgKkkgKkkkkkgggkkggggKgKkgKkgKkggggkkkkkkggggKgggggKgkk.................................
- 18  kkkkKKKKkKKKkkkKKKKKKkKkKkkkKkkkkkkKKKkkKKKKkKkkKkkKkkKKKKkkkkkkKKKKgKKKKKkKk.................................
- 19  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgKkkkkkkk.................................
- 20  .....................................................................K........................................
+  0  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..............................
+  1  knkkkkknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..............................
+  2  knnkkknnKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk..............................
+  3  knKnknknKnnnnkknnnnnkkkkkWWWWkkWWWWkkkkkkWWWWWWkkWkkkWkkkkkWkkWkkWkWWWWkkWkkkWkk..............................
+  4  knKknkKnKnKKKnknKKKnKgkkkWKKKWkWKKKWkkkkkWKKWKKWkWKkkWKkkkkWKkWKkWKkKKKWkWKkkWKk..............................
+  5  knKkkKknKnnnnnKnKkknKkKkkWKkkWKWKkkWKkkkkWKkWKkWKWKkkWKkkkkWKkWKkWKkWWWWKWKkkWKk..............................
+  6  knKkkkknKnKKKKKnKkknKkkkkWKkkWKWKkkWKkkkkWKkWKkWKWKkkWKkkkkWKkWKkWKWkKKWKWKkkWKk..............................
+  7  knKkkkknKknnnnkknnnnKgkkkkWWWWKWKkkWKkkkkWKkWKkWKkWWWWKkkkkkWWWWWWKkWWWWKkWWWWKk..............................
+  8  kkKkkkkkKkkKKKKkkKKnKkKkkkkKKKKkKkkkKkkkkkKkkKkkKkkKKWKkkkkkkKKKKKKkkKKKKkkKKWKk..............................
+  9  kkkkkkkkkkkkkkknnnnkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWWWkKkkkkkkkkkkkkkkkkkkWWWWkKk..............................
+ 10  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.............................
+ 11  kGGGGGkGkkkkkkkkkkkkkkkGkkkkkkkkkkkGkkGkkkkkkGkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.............................
+ 12  kkKGKKKGKkkkkkkkkkkkkkkGKkkkkkkkkkkGKkGKkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk.............................
+ 13  kkkGKkkGGGGkkGGGGkkkkkkGGGGkkGGGGkkGKkGKkkkkkGkkGGGkkkkkGGGkGkkkGkGGGGkkGGGGGkkkk.............................
+ 14  kkkGKkkGKKKGkGKKKGkkkkkGKKKGkGKKKGkGKkGKkkkkkGKGkKKKkkkkGKKKGKkkGKGKKKGkGKKKGKkkk.............................
+ 15  kkkGKkkGKkkGKGGGGGKkkkkGKkkGKGGGGGKGKkGKkkkkkGKkGGkkkkkkGKkkGKkkGKGKkkGKGKkkGKkkk.............................
+ 16  kkkGKkkGKkkGKGKKKKKkkkkGKkkGKGKKKKKGKkGKkkkkkGKkkKGkkkkkGKkkGKkkGKGKkkGKGKkkGKkkk.............................
+ 17  kkkGKkkGKkkGKkGGGGkkkkkGGGGGKkGGGGkGGkGGkkkkkGKGGGkKkkkkGKkkkGGGGKGKkkGKkGGGGKGkk.............................
+ 18  kkkkKkkkKkkkKkkKKKKkkkkkKKKKKkkKKKKkKKkKKkkkkkKkKKKkkkkkkKkkkkKKKKkKkkkKkkKKGKkKk.............................
+ 19  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkGGGGkKkkk.............................
+ 20  .........................................................................KKKK.................................
  21  ..............................................................................................................
  22  hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
- 23  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 24  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 25  hKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 26  hKKKKWKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 27  hKKKWWWWKWKKWKKWKWWWWKKKKKKWWWWKKWKKKWKWWWWKKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 28  hKKKKWKKKWKKWKKWKWKKKWKKKKKWKKKWKWKKKWKWKKKWKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 29  hKKKKWKKKWKKWKKWKWKKKWKKKKKWKKKWKWKKKWKWKKKWKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 30  hKKKKWKKKWKKWKKWKWKKKWKKKKKWKKKWKWKKKWKWKKKWKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 31  hKKKKKWWKKWWWWWWKKWWWWKKKKKWKKKWKKWWWWKWKKKWKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 32  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 33  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 34  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 23  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKh
+ 24  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKh
+ 25  hKKKKKKKKWKKKKKKKKKKKKKKKWKKKKWKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKWKKWKKKKKKWKKKKKKKKKKKKKKKKKKKKh
+ 26  hKKKKWKKKWKKKKKKKKKKKKKKKWKKKKKKWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKWKKKWKKKKKKKKKKKKKKKKKKKKh
+ 27  hKKKWWWWKWWWWKKWWWWKKKKKKWKKWKWKWKKWWWWKKKKKKWWWKWWWWKKWKKWKKWKKKKKWKKWWWKKKKKWKKWKWWWWKWKKKKKKKKKKKKKKKKKKKKh
+ 28  hKKKKWKKKWKKKWKWKKKWKKKKKWKWKKWKWKKWKKKWKKKKKWKKKWKKKWKWKKWKKWKKKKKWKWKKKKKKKKWKKWKKWKKKWKKKKKKKKKKKKKKKKKKKKh
+ 29  hKKKKWKKKWKKKWKWWWWWKKKKKWWKKKWKWKKWKKKWKKKKKWKKKWKKKWKWKKWKKWKKKKKWKKWWKKKKKKWKKWKKWKKKWKKKKKKKKKKKKKKKKKKKKh
+ 30  hKKKKWKKKWKKKWKWKKKKKKKKKWKWKKWKWKKWKKKWKKKKKWKKKWKKKWKWKKWKKWKKKKKWKKKKWKKKKKWKKWKKWKKKWKKKKKKKKKKKKKKKKKKKKh
+ 31  hKKKKKWWKWKKKWKKWWWWKKKKKWKKWKWKWWKWKKKWKKKKKWKKKKWWWWKKWWWWWWKKKKKWKWWWKKKKKKWWKWKKKWWKWKKKKKKKKKKKKKKKKKKKKh
+ 32  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKh
+ 33  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKWKKKKKKKKKKKKKKKKKKKKh
+ 34  hKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKh
  35  hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
 ```
-`. nothing  g root.4  h root.3  k root.1  K root.0  n growth.lt  W salt`
+`. nothing  g root.4  G stone.lt  h root.3  k root.1  K root.0  n growth.lt  W salt`
 
 ### 5.24 Roster
 
-Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. Header: the server's name at 6, 3 and "3 of 8" right-aligned in `root.4`; a rule of `root.3` at y 15. Rows are 13 tall from y 18: the head at 6, +2; the name's cell at 16; a life line 100 by 1 at 16, +10; the place's name at 148 in `root.4`; the level in the small face right-aligned to 262 in `growth.lt`; the distance right-aligned to 292, left out for oneself and for a friend in another place; three bars for the connection at 298. Left part and right part:
+Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. Header: the server's name at 6, 3 and "3 of 8" right-aligned in `root.4`; a rule of `root.3` at y 15. Rows are 16 tall from y 18: the head (5.25) at 6, +1; the name's cell at 16; the life strip at 16, +11, one clear unit under the name's descenders; the place's name at 148 in `root.4`, cut at 76; the level right-aligned to 244 in `growth.lt`; the distance as "42 m" right-aligned to 292, left out for oneself and for a friend in another place; three bars for the connection at 298. All of it is the text face.
+
+**Life strip.** 41 by 4 beside a name: a frame of `root.0` round two rows, `blood.lt` over `blood` where it is lit and `root.2` where it is spent, a segment line of `root.0` every 8 units. It fills from the left by whole units. A name tag uses the same strip as wide as the tag. Left part and right part:
 
 ```
-     0         1         2         3         4         5         6         7         8         9         0         1         
+     0         1         2         3         4         5         6         7         8         9         0         1
      012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
   0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
   1  Khhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
   2  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
   3  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  4  KhkkkkkWWWWkkkkkkkkkkkkkkkkkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  5  KhkkkkWkKKKKkkkkkkkkkkkkkkkkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  6  KhkkkkWKkkkkWWWWkkWWWWkkWWWkWKkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  7  KhkkkkkWWWkkWKKKWkkKKKWkWKKKWKWkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  8  KhkkkkkkKKWkWKkkWKkWWWWKWKkkWWkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  9  KhkkkkkkkkWKWKkkWKWkKKWKWKkkWKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 10  KhkkkkWWWWkKWWWWWKkWWWWKWKkkWKkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 11  KhkkkkkKKKKkWKKKKKkkKKKKkKkkkKkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 12  KhkkkkkkkkkkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 13  KhkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+  4  KhkkkkkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+  5  KhkkkkWkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+  6  KhkkkkWKkkkkWWWWkkWWWWWWkkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+  7  KhkkkkkWWWkkWKKKWkWKKWKKWkWKKKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+  8  KhkkkkkkKKWkWKkkWKWKkWKkWKWWWWWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+  9  KhkkkkkkkkWKWKkkWKWKkWKkWKWKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 10  KhkkkkWWWWkKkWWWWKWKkWKkWKkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 11  KhkkkkkKKKKkkkKKKKkKkkKkkKkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 12  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 13  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
  14  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
  15  Khhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
  16  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
  17  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
  18  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 19  KhkkkkkkkkkkkkkkWkkkWkkkkkkkWkkkkkkWkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 20  KhkkkkkKKKKKkkkkWWkkWKkkkkkkkKkWkkkkKWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 21  KhkkkkKbbbbbKkkkWKWkWKWWWWkkWkWWWWkWkWKkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 22  KhkkkkKbbbbbKkkkWKWKWKkKKKWkWKkWKKKWKWKWkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 23  KhkkkkKbKbKbKkkkWKkWWKkWWWWKWKkWKkkWKWWkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 24  KhkkkkKbbbbbKkkkWKkkWKWkKKWKWKkWKkkWKWKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 25  KhkkkkKbbbbbKkkkWKkkWKkWWWWKWKkkWWkWKWKkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 26  KhkkkkkKKKKKkkkkkKkkkKkkKKKKkKkkkKKkKkKkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 19  KhkkkkkKKKKKKkkkWWWWWkkkkkkkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 20  KhkkkkKWbbbbBKkkkKWKKKkkkkkkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 21  KhkkkkKbbbbbbKkkkkWKkkWWWWkkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 22  KhkkkkKLLFFFSKkkkkWKkkkKKKWkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 23  KhkkkkKLIFFISKkkkkWKkkkWWWWKWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 24  KhkkkkKLFFFFSKkkkkWKkkWkKKWKWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 25  KhkkkkKDDDDDDKkkkkWKkkkWWWWKWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 26  KhkkkkkKKKKKKkkkkkkKkkkkKKKKkKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
  27  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 28  KhkkkkkkkkkkkkkkRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRKKKKKKKKKKKKKKKKKKKKkkkk
- 29  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 30  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 31  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 32  KhkkkkkkkkkkkkkkWkkkkkWkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 33  KhkkkkkKKKKKkkkkWWkkkWWKkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 34  KhkkkkKnnnnnKkkkWKWkWkWKWkWWWkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 35  KhkkkkKnnnnnKkkkWKkWkKWKWKWKKKkKKKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 36  KhkkkkKnKnKnKkkkWKkkKkWKWKWKkkkWWWWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 37  KhkkkkKnnnnnKkkkWKkkkkWKWKWKkkWkKKWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 38  KhkkkkKnnnnnKkkkWKkkkkWKWKWKkkkWWWWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 39  KhkkkkkKKKKKkkkkkKkkkkkKkKkKkkkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 40  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 41  KhkkkkkkkkkkkkkkRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKkkkk
- 42  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 43  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 44  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 45  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 46  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 28  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 29  KhkkkkkkkkkkkkkkKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 30  KhkkkkkkkkkkkkkkKrrrrrrrKrrrrrrrKrrrrrrrKrrrrrrrKrrrrrrrKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 31  KhkkkkkkkkkkkkkkKRRRRRRRKRRRRRRRKRRRRRRRKRRRRRRRKRRRRRRRKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 32  KhkkkkkkkkkkkkkkKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 33  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 34  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 35  KhkkkkkKKKKKKkkkWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 36  KhkkkkKWnnnnNKkkkWKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 37  KhkkkkKnnnnnnKkkkWKkWkkkWkWkkkWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 38  KhkkkkKLLFFFSKkkkWKkWKkkWKWKkkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 39  KhkkkkKLIFFISKkkkWKkWKkkWKWKkkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 40  KhkkkkKLFFFFSKkkkWKkkWkWkKWKkkWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 41  KhkkkkKDDDDDDKkkWWWkkkWkKkkWWWWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 42  KhkkkkkKKKKKKkkkkKKKkkkKkkkkKKWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 43  KhkkkkkkkkkkkkkkkkkkkkkkkkWWWWkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 44  KhkkkkkkkkkkkkkkkkkkkkkkkkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 45  KhkkkkkkkkkkkkkkKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 46  KhkkkkkkkkkkkkkkKrrrrrrrKrrrrrrrKrrrrrjjKjjjjjjjKjjjjjjjKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 47  KhkkkkkkkkkkkkkkKRRRRRRRKRRRRRRRKRRRRRjjKjjjjjjjKjjjjjjjKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 48  KhkkkkkkkkkkkkkkKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 49  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 50  Khkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+ 51  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 ```
-`. nothing  b arm.lt  h root.3  k root.1  K root.0  n growth.lt  R blood  W salt`
+`. nothing  b arm.lt  B arm  D clay.dk  F clay.face  h root.3  I ink  j root.2  k root.1  K root.0  L clay.lt  n growth.lt  N growth  r blood.lt  R blood  S clay.sh  W salt`
 
 ```
-     0         1         2         3         4         5         6         7         8         9         0     
+     0         1         2         3         4         5         6         7         8         9         0
      0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345
   0  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
   1  hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhK
@@ -1830,14 +1838,14 @@ Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. H
  16  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  17  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  18  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 19  kkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 20  kkkkkkkkkkkkkkkkkkkkkkkkkkkgKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 21  KgggkggggkkgkkkgkggggkkgggggKkkkkkkkkknkkknknkkkkknkknknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkkkK
- 22  kgKKKgKKKgkgKkkgKgKKKgkgKKKgKkkkkkkkkknkkknknkkkknnkknknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkkkK
- 23  KgKkkgKkkgKgKkkgKgKkkgKgKkkgKkkkkkkkkknkkknknkkkkknkknnnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkkkkkK
- 24  KgKkkgKkkgKgKkkgKgKkkgKgKkkgKkkkkkkkkknkkknknkkkkknkkkknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkkkkkK
- 25  KgKkkkggggKkggggKgKkkgKkggggKkkkkkkkkknnnkknkkkkknnnkkknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkWWkkkkkK
- 26  KkKkkkkKKKKkkKKKKkKkkkKkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkWWkkkkkK
+ 19  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkknkkkkkknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 20  kkkkkkkkkkkkkkkkkkkkkkkkkkkkknnKkkkknnKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 21  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkknKkkknknKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkkkK
+ 22  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkknKkknkKnKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkkkK
+ 23  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkknKkknnnnnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkkkkkK
+ 24  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkknKkkkKKnKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkkkkkK
+ 25  kkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnkkkkknKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkWWkkkkkK
+ 26  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkKKKkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkWWkkkkkK
  27  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  28  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  29  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
@@ -1845,64 +1853,71 @@ Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. H
  31  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  32  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  33  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 34  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknkkknknkkkkknkknnkkkkkkkkkkkkWkkWWkkWWkkkkkWkkkWkkkkkkkkkkkkhhkkkkkK
- 35  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknkkknknkkkknnkkkknkkkkkkkkkkWWkkkkWkWkWkkkkWWkWWkkkkkkkkkkkkhhkkkkkK
- 36  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknkkknknkkkkknkkknkkkkkkkkkkkkWkkkWkkWWWkkkkWkWkWkkkkkkkkkWWkhhkkkkkK
- 37  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknkkknknkkkkknkknkkkkkkkkkkkkkWkkWkkkWkWkkkkWkkkWkkkkkkkkkWWkhhkkkkkK
- 38  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnkknkkkkknnnknnnkkkkkkkkkkWWWkWWWkkWWkkkkWkkkWkkkkkkWWkWWkhhkkkkkK
- 39  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkWWkhhkkkkkK
- 40  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 41  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 42  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 34  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 35  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWkkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 36  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknKKKnkkkkkkkkkkkkkkkkkkkkkkkkkkkWWKkkKKKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 37  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknKkknKkkkkkkkkkkkkkkkkkkkkkkkkkWkWKkkkkkWKkkkkWWWWWWkkkkkkkkkkkkhhkkkkkK
+ 38  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnnKkkkkkkkkkkkkkkkkkkkkkkkkWkKWKkkkkWkKkkkkWKKWKKWkkkkkkkkkkkhhkkkkkK
+ 39  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkKKnKkkkkkkkkkkkkkkkkkkkkkkkkWWWWWkkkWkKkkkkkWKkWKkWKkkkkkkkWWkhhkkkkkK
+ 40  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknKkkkkkkkkkkkkkkkkkkkkkkkkkKKWKKkWkKkkkkkkWKkWKkWKkkkkkkkWWkhhkkkkkK
+ 41  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnnkKkkkkkkkkkkkkkkkkkkkkkkkkkkkWKkWWWWWkkkkkWKkWKkWKkkkkWWkWWkhhkkkkkK
+ 42  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkKkkKKKKKkkkkkKkkKkkKkkkkWWkWWkhhkkkkkK
  43  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  44  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
  45  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 46  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+ 46  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 47  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 48  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 49  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 50  kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 51  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
 `. nothing  g root.4  h root.3  k root.1  K root.0  n growth.lt  W salt`
 
-The crew at the top left of the HUD uses the same head, name and life line in rows 12 tall and 92 wide, with no plate: the name has its shadow and is cut at 76.
+The crew at the top left of the HUD uses the same head, name and life strip in rows 15 tall and 92 wide, with no plate: the head at 0, +1, the name's cell at 10 with its shadow, cut at 80, the strip at 10, +11.
 
 ### 5.25 Name tag, ping, compass marks
 
-**Name tag**, over a friend's head and over a townsperson within 12 strides: the name's cell on a strip of the chat wash 11 tall and as wide as the name plus 10 (drawn opaque here), the name 5 in; a flag 2 by 7 in the player's colour at 1, 2; under the strip a line 3 tall of `root.0` with one row of `blood` for their life. A townsperson's tag has no flag and no life line. Tags are centred over the head and snap to units.
+**Name tag**, over a friend's head and over a townsperson within 12 strides: the name's cell on a strip of the chat wash 11 tall and as wide as the name plus 10 (drawn opaque here), the name 5 in; a flag 2 by 7 in the player's colour at 1, 2; under the strip their life strip (5.24) as wide as the tag. A townsperson's tag has no flag and no strip. Tags are centred over the head and snap to units.
 
 ```
-     0         1         2        
+     0         1         2
      01234567890123456789012345678
   0  kkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  1  kkkkkWkkkkkWkWkkkkkkkkkkkkkkk
-  2  knnkkWWkkkWWKkKkkkkkkkkkkkkkk
-  3  knnkkWKWkWkWKWkWWWkWWWWkkkkkk
-  4  knnkkWKkWkKWKWKWKKKkKKKWkkkkk
-  5  knnkkWKkkKkWKWKWKkkkWWWWKkkkk
-  6  knnkkWKkkkkWKWKWKkkWkKKWKkkkk
-  7  knnkkWKkkkkWKWKWKkkkWWWWKkkkk
-  8  knnkkkKkkkkkKkKkKkkkkKKKKkkkk
-  9  kkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 10  kkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+  1  kkkkkWkkkkkWkkkkkkkkkkkkkkkkk
+  2  knnkkWWkkkWWKkkkkkkkkkkkkkkkk
+  3  knnkkWKWkWkWKWWWWkkWWWWWkkkkk
+  4  knnkkWKkWkKWKWKKKWkWKKKWKkkkk
+  5  knnkkWKkkKkWKWWWWWKWKkkWKkkkk
+  6  knnkkWKkkkkWKWKKKKKWKkkWKkkkk
+  7  knnkkWKkkkkWKkWWWWkkWWWWKkkkk
+  8  knnkkkKkkkkkKkkKKKKkkKKWKkkkk
+  9  kkkkkkkkkkkkkkkkkkkWWWWkKkkkk
+ 10  kkkkkkkkkkkkkkkkkkkkKKKKkkkkk
  11  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 12  KRRRRRRRRRRRRRRRRRRRKKKKKKKKK
- 13  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 12  KrrrrrrrKrrrrrrrKjjjjjjjKjjjK
+ 13  KRRRRRRRKRRRRRRRKjjjjjjjKjjjK
+ 14  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 ```
-`. nothing  k root.1  K root.0  n growth.lt  R blood  W salt`
+`. nothing  j root.2  k root.1  K root.0  n growth.lt  r blood.lt  R blood  W salt`
 
-**Marks on the compass**, 7 by 7: the bed, where one fell, where the Guide points, a friend's head in their colour.
+**Marks on the compass**, 7 by 7: the bed, where one fell, where the Guide points; and a friend's **head**, 8 by 8, lit from the top left: a `root.0` outline with its corners left out; hair in two rows of their colour with its shade in the right column (`arm`, `growth`, `ember`, `rose.dk`, `cyan.dk`, `violet.dk`, `blood`, `clay.face` for seats 1 to 8) and one unit of `salt` at the top left; skin in `clay.lt` at the left, `clay.face`, `clay.sh` at the right; `ink` eyes at 2, 4 and 5, 4; a jaw row of `clay.dk`. The hair is what tells the seats apart. The same head stands beside a name in the crew and the roster, on the map and beside a bounty; as a 16 by 16 icon it is drawn 12 wide by the same plan for the crew's side tabs and the map's list.
 
 ```
-     0         1         2         3   
+     0         1         2         3
      0123456789012345678901234567890123
-  0  ...K.....KK...KK...KKKKK....KKKKK.
-  1  ..KnK....KrK.KrK..KyyyyyK..KbbbbbK
-  2  .KnnnK....KrKrK....KyyyK...KbbbbbK
-  3  KnnnnnK....KrK.....KyyyK...KbKbKbK
-  4  KnKKKnK...KrKrK....KyyyK...KbbbbbK
-  5  KnK.KnK..KrK.KrK..KyyyyyK..KbbbbbK
-  6  KKK.KKK..KK...KK..KKKKKKK...KKKKK.
+  0  ...K.....KK...KK...KKKKK...KKKKKK.
+  1  ..KnK....KrK.KrK..KyyyyyK.KWbbbbBK
+  2  .KnnnK....KrKrK....KyyyK..KbbbbbbK
+  3  KnnnnnK....KrK.....KyyyK..KLLFFFSK
+  4  KnKKKnK...KrKrK....KyyyK..KLIFFISK
+  5  KnK.KnK..KrK.KrK..KyyyyyK.KLFFFFSK
+  6  KKK.KKK..KK...KK..KKKKKKK.KDDDDDDK
+  7  ...........................KKKKKK.
 ```
-`. nothing  b arm.lt  K root.0  n growth.lt  r blood.lt  y ember.hi`
+`. nothing  b arm.lt  B arm  D clay.dk  F clay.face  I ink  K root.0  L clay.lt  n growth.lt  r blood.lt  S clay.sh  W salt  y ember.hi`
 
-**Ping**, 9 by 6, in the colour of the player who set it (shown in `cyan.lt`), pointing down at the place; under it the distance in the small face. It stands 8 s in the world and on the compass.
+**Ping**, 9 by 6, in the colour of the player who set it (shown in `cyan.lt`), pointing down at the place; under it the distance in the text face with shadow, as "42 m". It stands 8 s in the world and on the compass.
 
 ```
      0        
@@ -1918,35 +1933,37 @@ The crew at the top left of the HUD uses the same head, name and life line in ro
 
 ### 5.26 Compass strip
 
-A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3; one that lies outside the strip's span waits at that end. Under the plate, in the small face with shadow: the place at the left, the night of the round at the right. Left half:
+A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3; one that lies outside the strip's span waits at that end. Under the plate, the text's cell at y 13, in the text face with shadow and in sentence case: the place as "x -104  y 64  z 2210" at the left, cut short of the night, and "Night 3 of 8" at the right. Left half:
 
 ```
-     0         1         2         3         4         5         6         7         8         9     
+     0         1         2         3         4         5         6         7         8         9
      012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345
   0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
   1  KhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhWWhhhh
-  2  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkk
-  3  KhkkkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkKKKKKkkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  4  KhkkkkkkkkkkkkkkkkkkkkKnKkkkkkkkkkkkkkkkkkkkkkkkKbbbbbKkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  5  KhkkkkkkkkkkkkkkkkkkkKnnnKkkkkkkkgkkkkkkkkkkkkkkKbbbbbKkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkkkk
-  6  KhkkkkkkkkkkkkkkkkkkKnnnnnKkkkkkkgkkkkkkkkkkkkkkKbKbKbKkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkkkk
-  7  KhkkkkkkkkkkkkkkkkkkKnKKKnKkkkkkkkkkkkkkkkkkkkkkKbbbbbKkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  8  KhkkkkkkkkkkkkkkkkkkKnKkKnKkkkkkkkkkkkkkkkkkkkkkKbbbbbKkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  9  KhkkkkkkkkkkkkkkkkkkKKKkKKKkkkkkkkkkkkkkkkkkkkkkkKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkk
+  2  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkKKKKKKkkkkkkkkkkkWkkkWkkkkkkkkkkkkkkkkkkkkWWkkkk
+  3  KhkkkkkkkkkgkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkKWbbbbBKkkkkkkkkkkWWkkWkkkkkkkkkkkkkkkkkkkkkkkkkk
+  4  KhkkkkkkkkkgkkkkkkkkkkKnKkkkkkkkkkkkkkkkkkkkkkkKbbbbbbKkkkkkkkkkkWkWkWkkkkkkkkkkkkkkkkkkkkkkkkkk
+  5  KhkkkkkkkkkgkkkkkkkkkKnnnKkkkkkkkkkkkkgkkkkkkkkKLLFFFSKkkkkkkkkkkWkWkWkkkkkkkkkkkkkkkkkkkkkkkgkk
+  6  KhkkkkkkkkkgkkkkkkkkKnnnnnKkkkkkkkkkkkgkkkkkkkkKLIFFISKkkkkkkkkkkWkkWWkkkkkkkkkkkkkkkkkkkkkkkgkk
+  7  KhkkkkkkkkkgkkkkkkkkKnKKKnKkkkkkkkkkkkkkkkkkkkkKLFFFFSKkkkkkkkkkkWkkkWkkkkkkkkkkkkkkkkkkkkkkkkkk
+  8  KhkkkkkkkkkgkkkkkkkkKnKkKnKkkkkkkkkkkkkkkkkkkkkKDDDDDDKkkkkkkkkkkWkkkWkkkkkkkkkkkkkkkkkkkkkkkkkk
+  9  KhkkkkkkkkkkkkkkkkkkKKKkKKKkkkkkkkkkkkkkkkkkkkkkKKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkk
  10  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWWkkkk
  11  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
  12  ................................................................................................
  13  ................................................................................................
- 14  ................................................................................................
- 15  .W.W........W..WW..W.W.......W.W....WW..W.W.......WWW....WW..WW...W..WW.........................
- 16  .WKWK......WWK.WKW.WKWK......WKWK...WKK.WKWK.......KWK....KW..KW.WWK.WKW........................
- 17  ..W.K...WW..WK.WKWKWWWK.......W.K...WWW.WWWK.......W.K....W.K.W.K.WK.WKWK.......................
- 18  .W.W.....KK.WK.WKWK.KWK.......WK....WKWK.KWK......W.K....W.K.W.K..WK.WKWK.......................
- 19  .WKWK......WWW..WWK..WK.......WK.....WWK..WK......WWW....WWW.WWW.WWW..WWK.......................
- 20  ..K.K.......KKK..KK...K........K......KK...K.......KKK....KKK.KKK.KKK..KK.......................
- 21  ................................................................................................
+ 14  .................W...WWWW.....W.....................WWWW....W...................WWWW..WWWW....W.
+ 15  ................WWK..WKKKW...WWK...................W.KKKK..WWK...................KKKW..KKKW..WWK
+ 16  .W...W...........WK..WK.WWK.W.WK.........W...W.....WK.....W.WK.........WWWW.........WK....WK..WK
+ 17  ..W.W.K....WWW...WK..WKW.WKW.KWK.........WK..WK....WWWW..W.KWK..........KWKK.......W.K...W.K..WK
+ 18  ...W.K......KKK..WK..WW.KWKWWWWW.........WK..WK....WKKKW.WWWWW..........W.K.......W.K...W.K...WK
+ 19  ..W.W............WK..WKK.WK.KKWKK........WK..WK....WK..WK.KKWKK........W.K.......W.K...W.K....WK
+ 20  .W.K.W..........WWW...WWWWK...WK..........WWWWK.....WWWWK...WK.........WWWW.....WWWWW.WWWWW..WWW
+ 21  ..K...K..........KKK...KKKK....K...........KKWK......KKKK....K..........KKKK.....KKKKK.KKKKK..KK
+ 22  .........................................WWWW.K.................................................
+ 23  ..........................................KKKK..................................................
 ```
-`. nothing  b arm.lt  g root.4  h root.3  k root.1  K root.0  n growth.lt  W salt`
+`. nothing  b arm.lt  B arm  D clay.dk  F clay.face  g root.4  h root.3  I ink  k root.1  K root.0  L clay.lt  n growth.lt  S clay.sh  W salt`
 
 ### 5.27 Readout of what is looked at
 
@@ -2124,21 +2141,21 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
  |                             |                                                        |                                                   |
  |                             |                                                        |                                                   |
  |                             |                                                        |                                                   |
+ |                             |                                                        |                                                   |
+ |                             |                                                        |                                                   |
  +-----------------------------+                                                        |                                                   |
- +------------------------------------------------------------------------------+       |                                                   |
- | H11 chat                                                                     |       |                                                   |
- |                                                                              |       |                                                   |
- |                                                                              |       |                                                   |
- |                                                                    +-+       |       |                                                   |
- |                                                                    +-+       |       |                                                   |
- |                                                                              |       +---------------------------------------------------+
- |                                                    +-------------------------------+
- |                                                    +-H13 prompt--------------------+           +-----------------------------------------+
- |                                                                              |                 | H8 tracker                              |
- |                                                                              |                 |                                         |
- |                                                                              |                 |                                         |
- +------------------------------------------------------------------------------+                 |                                         |
-                                                                                                  |                                         |
+ +--------------------------------------------------+                                   |                                                   |
+ | H11 chat                                         |                                   |                                                   |
+ |                                                  |                 +-+               |                                                   |
+ |                                                  |                 +-+               |                                                   |
+ |                                                  |                                   +---------------------------------------------------+
+ |                                                  | +-------------------------------+
+ |                                                  | +-H13 prompt--------------------+           +-----------------------------------------+
+ |                                                  |                                             | H8 tracker                              |
+ |                                                  |                                             |                                         |
+ |                                                  |                                             |                                         |
+ |                                                  |                                             |                                         |
+ +--------------------------------------------------+                                             |                                         |
                                                       "H14"                                       +-----------------------------------------+
 
                                          "H15"                            +-------------------------+        +------------------------------+
@@ -2156,18 +2173,18 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | H1 | compass | 122 | 2 | 182 | 12 | compass strip |
-| H2 | text | 122 | 16 | 182 | 6 | under it, small face: place as "X -104  Y 64  Z 2210" at the left, "NIGHT 3 OF 8" at the right |
+| H2 | text | 122 | 15 | 182 | 10 | under it, text face with shadow: place as "x -104  y 64  z 2210" at the left, "Night 3 of 8" at the right |
 | H3 | boss | 122 | 26 | 182 | 20 | boss bar: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it at y 50 |
 | H4 | readout | 150 | 26 | 126 | 24 | what you look at; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
-| H5 | party | 4 | 4 | 92 | 84 | the crew: one row 12 tall to each friend online, up to seven: head, name, a life line 1 unit thick |
+| H5 | party | 4 | 4 | 92 | 105 | the crew: one row 15 tall to each friend online, up to seven: head, name, a life strip 41 by 4 under the name |
 | H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 20, from the right edge leftward, the time left under each in the small face |
 | H7 | toast | 263 | 32 | 160 | 100 | toasts, 160 by 32, pitch 34, three at most, sliding in from the right |
 | H8 | tracker | 295 | 138 | 128 | 44 | the present step of the Guide: a dark plate; chapter in root.4, step in salt, count and where-to under it |
 | H9 | feed | 327 | 186 | 96 | 40 | pickups: lines 10 tall, newest lowest, right-aligned: "+3 Rubble (12)" in the grade's colour |
-| H10 | text | 395 | 230 | 28 | 6 | "SAVED", small face, for two seconds |
-| H11 | chat | 4 | 90 | 240 | 80 | chat: eight lines 10 tall, newest lowest, each on its own dark strip as wide as its text |
+| H10 | text | 396 | 228 | 27 | 10 | "Saved", text face, for two seconds |
+| H11 | chat | 4 | 111 | 153 | 71 | chat: up to eight lines 10 tall, newest lowest, the newest ending at y 182, each on its own dark strip as wide as its text, wrapped at 150 so that it ends left of the prompt; fewer lines while the crew list stands above |
 | H12 | cross | 209 | 116 | 9 | 9 | crosshair, 9 by 9: salt plus, root.0 outline |
-| H13 | prompt | 163 | 134 | 100 | 12 | prompt: a key cap and a line, centred |
+| H13 | prompt | 163 | 132 | 100 | 14 | prompt: a key cap and a line on a strip of the chat wash 2 wider each side, centred on the crosshair, the cap's top 12 under its centre |
 | H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour, for 1.6 s after a change |
 | H15 | text | 122 | 186 | 70 | 10 | second row, left: shield mark and defence, then the jar mark and lees carried |
 | H16 | pips | 223 | 187 | 81 | 9 | second row, right: ten arm pips, filling from the right |
@@ -3485,7 +3502,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 ### Chat, open
 
-The HUD's chat with its entry (5.23): twelve lines from y 50 to y 170 of the stage and the entry at 4, 172. The crew list is not drawn while chat is open. Enter sends and closes; Esc closes and keeps the text for the next time; Up and Down walk through what was sent before; a line that starts with `/` is a command and its answer comes back as a server line. While chat is open the game takes no key.
+The HUD's chat with its entry (5.23): twelve lines ending where closed chat ends, and the entry along the bottom of the stage at 4, h - 16, over the hotbar. The crew list is not drawn while chat is open. Enter sends and closes; Esc closes and keeps the text for the next time; Up and Down walk through what was sent before; a line that starts with `/` is a command and its answer comes back as a server line. While chat is open the game takes no key.
 
 ### Roster
 

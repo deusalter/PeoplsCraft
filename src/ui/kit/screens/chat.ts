@@ -1,15 +1,15 @@
-// Chat, open (section 6): twelve lines over the HUD from y 50 to y 170 of the stage and the entry at 4, 172. Enter
+// Chat, open (section 6): twelve lines over the HUD, ending where closed chat ends, and the entry along the bottom of
+// the stage, 2 units above its edge, over the hotbar, as the tradition puts it. Enter
 // sends and closes; Esc closes and keeps the text; Up and Down walk through what was sent; a line that starts with /
 // is a command and its answer comes back as a line from the server. The crew list is not drawn while chat is open.
 import { measure } from '../font/measure';
 import type { Node, Ui } from '../node';
 import { type ChatLine, chat } from '../parts/plates';
 import { STILL } from './play/common';
-import { CHAT, PLAYERS, hud } from './play/hud';
+import { CHAT, PLAYERS, chatBottom, chatWrap, hud } from './play/hud';
 import type { NamedScreen } from './index';
 
 const ENTRY = 'chat.entry';
-const W = 240;
 
 interface State { lines: ChatLine[]; entry: string; sent: string[]; walk: number; back: number; focused: boolean; open: boolean }
 const st: State = {
@@ -42,7 +42,7 @@ function setEntry(ui: Ui, v: string): void {
   setTimeout(() => ui.focusOn(ENTRY), 40);
 }
 
-function entry(ui: Ui, y: number): Node {
+function entry(ui: Ui, y: number, W: number): Node {
   return {
     id: ENTRY, x: 0, y, w: W, h: 14, focus: true,
     field: { value: st.entry, limit: 200, textX: 4 },
@@ -98,17 +98,20 @@ function build(ui: Ui): Node {
   const stage = ui.layout.stage;
   if (!st.focused && !STILL) { st.focused = true; setTimeout(() => ui.focusOn(ENTRY), 0); }
   const shown = st.back ? st.lines.slice(0, -st.back) : st.lines;
-  const lines = chat({ x: 0, bottom: 186, lines: shown, open: true, entry: '', caret: false });
+  const bottom = chatBottom(stage.h), wrapAt = chatWrap(stage.w);
+  const lines = chat({ x: 0, bottom, lines: shown, open: true, wrap: wrapAt });
+  const W = stage.w - 8;
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
     kids: [
       ...hud(ui, { crew: false, chat: false, prompt: false, look: { icon: 'cobble', name: 'Rubble' } }),
       {
-        x: stage.x + 4, y: 0, w: W, h: 186,
+        x: stage.x + 4, y: 0, w: wrapAt + 3, h: bottom,
         takes: true,
         on: { wheel: (e) => { st.back = Math.max(0, Math.min(st.lines.length - 1, st.back - e.notches)); ui.invalidate(); return true; } },
-        kids: [lines, entry(ui, 172)],
+        kids: [lines],
       },
+      { x: stage.x + 4, y: stage.h - 16, w: W, h: 14, kids: [entry(ui, 0, W)] },
     ],
   };
 }

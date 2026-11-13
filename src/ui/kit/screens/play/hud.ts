@@ -7,7 +7,7 @@ import { type Colour, GRADES } from '../../palette';
 import { keycap } from '../../parts/keycap';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { bossBar, statusFrame, toast } from '../../parts/notices';
-import { type ChatLine, type CompassMark, type Member, chat, compass, crew, nameTag, ping, readout } from '../../parts/plates';
+import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crew, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
 import { type Stack, stackGrade, stackName, thing } from '../../sample/play-items';
 import { STILL } from './common';
@@ -76,6 +76,12 @@ export function tracker(x: number, y: number, chapter: string, step: string, hav
   });
 }
 
+/** The bottom of the newest chat line: above the row of defence and lees that stands over the life pips. */
+export function chatBottom(stageH: number): number { return stageH - 58; }
+
+/** Where chat wraps on a stage: 150 when wide, and always clear of the prompt centred under the crosshair. */
+export function chatWrap(stageW: number): number { return Math.min(CHAT_WRAP, Math.floor(stageW / 2) - 64); }
+
 export function hud(ui: Ui, o: HudOpts): Node[] {
   const st = ui.layout.stage;
   const W = st.w, H = st.h, cx = Math.floor(W / 2);
@@ -89,7 +95,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     { kind: 'bed', deg: 200 }, { kind: 'guide', deg: 34 }, { kind: 'fell', deg: 302 },
     { kind: 'friend', seat: 2, deg: 8 }, { kind: 'friend', seat: 3, deg: 61 }, { kind: 'friend', seat: 6, deg: 338 }, { kind: 'friend', seat: 5, deg: 130 },
   ];
-  out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, place: 'X -104  Y 64  Z 2210', night: first ? 'NIGHT 1 OF 8' : 'NIGHT 3 OF 8' }));
+  out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, place: 'x -104  y 64  z 2210', night: first ? 'Night 1 of 8' : 'Night 3 of 8' }));
 
   if (o.boss) {
     out.push(bossBar({ x: L(cx - 91), y: 26, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
@@ -99,7 +105,9 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   }
 
   const lowY = narrow ? 26 : 4;
-  if (o.crew !== false && !first) out.push(crew({ x: L(4), y: lowY, members: PLAYERS.slice(1) }));
+  const showCrew = o.crew !== false && !first;
+  const friends = PLAYERS.slice(1);
+  if (showCrew) out.push(crew({ x: L(4), y: lowY, members: friends }));
 
   if (!first) {
     const states = [
@@ -125,19 +133,23 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     const lines = feed.slice(narrow ? 1 : 0);
     const y0 = narrow ? 150 : H - 54;
     lines.forEach(([t, g], i) => out.push(rightLine(R(4), y0 + i * 10, t, GRADES[g].dark, TEXT)));
-    out.push(rightLine(R(4), H - 10, 'SAVED', 'salt'));
+    out.push(rightLine(R(4), H - 12, 'Saved', 'salt', TEXT));
   }
 
-  if (o.chat !== false && !first) out.push(chat({ x: L(4), bottom: 170, lines: CHAT }));
+  if (o.chat !== false && !first) {
+    const top = showCrew ? lowY + friends.length * CREW_ROW + 2 : 4;
+    out.push(chat({ x: L(4), bottom: chatBottom(H), lines: CHAT, wrap: chatWrap(W), most: Math.floor((chatBottom(H) - top) / 10) }));
+  }
 
   out.push(crosshair({ x: L(cx - 4), y: Math.floor(H / 2) - 4 }));
   if (!o.boss && !first && o.prompt !== false) {
     const cap = keycap({ x: 0, y: 0, label: 'E' });
     const text = 'Talk to Kammār';
-    const w = cap.w + 4 + measure(text);
-    const x0 = L(cx - Math.floor(w / 2));
-    out.push({ ...cap, x: x0, y: Math.floor(H / 2) + 14 });
-    out.push({ x: x0 + cap.w + 4, y: Math.floor(H / 2) + 15, w: measure(text) + 1, h: 11, paint: (s) => { s.text(text, 0, 0, 'salt', true); } });
+    const w = cap.w + 4 + measure(text) + 1;
+    const x0 = L(cx - Math.floor(w / 2)), y0 = Math.floor(H / 2) + 12;
+    out.push({ x: x0 - 2, y: y0 - 1, w: w + 4, h: 14, paint: (s) => { s.wash(0, 0, w + 4, 14, 'root.0', 3); } });
+    out.push({ ...cap, x: x0, y: y0 });
+    out.push({ x: x0 + cap.w + 4, y: y0 + 1, w: measure(text) + 1, h: 11, paint: (s) => { s.text(text, 0, 0, 'salt', true); } });
   }
 
   const inHand = first ? null : BAR[0]!;
