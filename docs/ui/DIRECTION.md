@@ -1696,36 +1696,36 @@ For the journal and the codex. 292 by 180. The cover is a margin of leather 6 de
 
 ### 5.20 Tree field, nodes and links
 
-The field is a well whose floor is laid with boards and pans under its frame: a tile 96 by 42 of boards 6 tall with a joint of one unit, each lit along its top row in `timber.dk`, a face of `timber.pit` with two grain lines of `timber.dk` 4 to 9 long, a bottom row of `root.1` over the `root.0` joint, and two butt joints a board placed by a fixed hash. It is timber and not the ground tile so that the tree does not read as one more menu. Nodes are 26 by 26 on a lattice of 40 by 40, each holding a 16 by 16 icon at 5, 5. Three frames: square, cut (its corners cut by 5), spiked (a spike on each side and a stud at each corner). Each is built by the rule for raised shapes: the shape's outer units are outline; the next units in are `hi` where they face up or left and `pit` where they face down or right; the rest is face.
+The field is a well whose floor is laid with boards and pans under its frame: a tile 96 by 42 of boards 6 tall with a joint of one unit, each lit along its top row in `timber.dk`, a face of `timber.pit` with two grain lines of `timber.dk` 4 to 9 long, a bottom row of `root.1` over the `root.0` joint, and two butt joints a board placed by a fixed hash. It is timber and not the ground tile so that the tree does not read as one more menu. Nodes are 26 by 26 on a lattice of 40 by 40, each holding a 16 by 16 icon at 5, 5. Three frames: square, cut (its corners cut by 5), spiked (a body 22 by 22 with its corners cut by two, and on each side a spike 4 wide at its foot and 2 at its tip that stands 2 out from the body; no studs or loose units at the corners, which read as stitching). Each is built by the rule for raised shapes: the shape's outer units are outline; the next units in are `hi` where they face up or left and `pit` where they face down or right; the rest is face.
 
 ```
      0         1         2         3         4         5         6         7         8 
      0123456789012345678901234567890123456789012345678901234567890123456789012345678901
   0  .KKKKKKKKKKKKKKKKKKKKKKKK........KKKKKKKKKKKKKKKK...................KK............
-  1  KWWWWWWWWWWWWWWWWWWWWWWWFK......KWWWWWWWWWWWWWWWFK.......K.K.......KWFK.......K.K.
-  2  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFFK.......KFK.....KWFFFK.....KFK..
-  3  KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFFK.....KFFFKKKKKWFFFFFKKKKKWFFK.
-  4  KWFFFFFFFFFFFFFFFFFFFFFFZK...KWFFFFFFFFFFFFFFFFFFFFFK.....KFFWWWWWFFFFFFWWWWWFZK..
-  5  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFFK.....KWFFFFFFFFFFFFFFFFZK...
-  6  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
-  7  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
-  8  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
-  9  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
- 10  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFFK..
+  1  KWWWWWWWWWWWWWWWWWWWWWWWFK......KWWWWWWWWWWWWWWWFK.................KWFK...........
+  2  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFFK.........KKKKKKKWFFFKKKKKKK....
+  3  KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFFK.......KWWWWWWWFFFFWWWWWWFK...
+  4  KWFFFFFFFFFFFFFFFFFFFFFFZK...KWFFFFFFFFFFFFFFFFFFFFFK.....KWFFFFFFFFFFFFFFFFFFFK..
+  5  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFFK....KWFFFFFFFFFFFFFFFFFFZK..
+  6  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+  7  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+  8  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+  9  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+ 10  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
  11  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK...KWFFFFFFFFFFFFFFFFFFFFFK.
  12  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFFK
  13  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK..KFFFFFFFFFFFFFFFFFFFFFFFZK
  14  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK...KFFFFFFFFFFFFFFFFFFFFFZK.
- 15  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KFFFFFFFFFFFFFFFFFFFZK..
- 16  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
- 17  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
- 18  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
- 19  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
- 20  KWFFFFFFFFFFFFFFFFFFFFFFZK..KFFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
- 21  KWFFFFFFFFFFFFFFFFFFFFFFZK...KFFFFFFFFFFFFFFFFFFFFFZK.....KWFZZZZZFFFFFFZZZZZFFK..
- 22  KWFFFFFFFFFFFFFFFFFFFFFFZK....KFFFFFFFFFFFFFFFFFFFZK.....KFFZKKKKKFFFFFZKKKKKFFFK.
- 23  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KFFFFFFFFFFFFFFFFFZK.......KFK.....KFFFZK.....KFK..
- 24  KFZZZZZZZZZZZZZZZZZZZZZZZK......KFZZZZZZZZZZZZZZZK.......K.K.......KFZK.......K.K.
+ 15  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+ 16  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+ 17  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+ 18  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+ 19  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+ 20  KWFFFFFFFFFFFFFFFFFFFFFFZK..KFFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+ 21  KWFFFFFFFFFFFFFFFFFFFFFFZK...KFFFFFFFFFFFFFFFFFFFFFZK.....KFFFFFFFFFFFFFFFFFFFZK..
+ 22  KWFFFFFFFFFFFFFFFFFFFFFFZK....KFFFFFFFFFFFFFFFFFFFZK.......KFZZZZZZFFFFZZZZZZZK...
+ 23  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KFFFFFFFFFFFFFFFFFZK.........KKKKKKKFFFZKKKKKKK....
+ 24  KFZZZZZZZZZZZZZZZZZZZZZZZK......KFZZZZZZZZZZZZZZZK.................KFZK...........
  25  .KKKKKKKKKKKKKKKKKKKKKKKK........KKKKKKKKKKKKKKKK...................KK............
 ```
 `. nothing  F clay.face  K root.0  W salt  Z clay.pit`
@@ -1736,7 +1736,7 @@ The field is a well whose floor is laid with boards and pans under its frame: a 
 | Open (can be taken now) | `stone.lt` | `stone.sh` | `stone.pit` | full |
 | Earned | `salt` | `clay.face` | `clay.pit` | full |
 
-A node with ranks shows them under it in the small face, as `1/3`. The chosen node has the hotbar's selector round it (5.16), 30 by 30.
+A node with more than one rank shows them as pips on its frame's bottom edge, not as figures: one pip 3 by 3 for each rank, in boxes of `root.0` that share their walls (so 3 ranks are 13 by 5), centred, the boxes' bottom on the frame's bottom outline (row 25 for square and cut, row 22 inside the spiked body). A rank taken is lit, `salt` along its top and left over `clay.lt`; one not taken is a pit, `root.1` along its top and left over `root.2`. The figures are in the tooltip ("Rank 2 of 3"). A chip of figures under every node is the counter of another mod's tree and clutters the field. The chosen node has the hotbar's selector round it (5.16), 30 by 30.
 
 **Links** run only along rows and columns, with square elbows at the midpoint. A link is 3 units wide: `root.0` either side of a core one unit wide. The core is `root.3` to a locked node, `root.4` to an open one, `salt` between two earned ones. Links are drawn under nodes.
 
@@ -2955,9 +2955,9 @@ Size 260 by 206, with tabs standing 21 above and 21 to the left. Material: stone
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | K0 | slab | 0 | 0 | 260 | 206 | stone slab |
 | T1 | tab | 0 | -21 | 24 | 24 | top tabs, one to a job, item icon on each: Melee, Ranged, Crystal-work, Totem, and the cutter's trade |
-| U1 | tab | -21 | 14 | 24 | 24 | side tabs, one to each of the crew online, a head in their colour: one's own first and chosen; another's tree is read, not changed |
+| U1 | tab | -21 | 14 | 24 | 24 | side tabs, one to each of the crew online, a head in their colour, the player's name as the tooltip ("Rook (you)" for one's own): one's own first and chosen; another's tree is read, not changed |
 | K1 | text | 8 | 6 | 100 | 10 | the job's name |
-| K2 | text | 170 | 6 | 82 | 10 | "3 to spend", right-aligned to x 252, in growth.dk |
+| K2 | text | 110 | 6 | 142 | 10 | whose tree it is, right-aligned to x 252: "Yours, 3 to spend" in growth.dk for one's own, "Ishaan's, to read" in ink.faded for another's. Each side tab names its player as its tooltip; a column of heads that differ only by colour says nothing until one is opened |
 | K3 | well | 8 | 18 | 244 | 160 | the field: a sunk well whose floor is the ground tile in stone.dk and stone.pit, panned by dragging; nodes 26 square on a lattice of 40; links between them |
 | K4 | text | 8 | 184 | 196 | 10 | the chosen node: its name, then its rank as "1 of 3" |
 | K5 | button | 208 | 182 | 44 | 16 | "Take"; disabled when the node cannot be taken |

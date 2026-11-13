@@ -1,7 +1,5 @@
 import { PLANKS } from '../art/ground';
-import { NODE_FRAMES, type NodeShape, type NodeState } from '../art/tree';
-import { SMALL } from '../font/face';
-import { centreX, measure } from '../font/measure';
+import { NODE_FOOT, NODE_FRAMES, type NodeShape, type NodeState } from '../art/tree';
 import type { Live, Node, Tip, Ui } from '../node';
 import type { Colour } from '../palette';
 import type { Surface } from '../surface';
@@ -55,6 +53,22 @@ function run(s: Surface, pts: [number, number][], grow: number, c: Colour): void
 }
 
 /**
+ * The ranks of a node (5.20): a pip 3 by 3 for each, in boxes of root.0 that share their walls, standing on the frame's
+ * bottom outline. A rank taken is lit, salt along its top and left; one not yet taken is a pit of root.1 and root.2.
+ */
+function paintPips(s: Surface, shape: NodeShape, have: number, of: number): void {
+  const w = of * 4 + 1, x0 = Math.floor((NODE - w) / 2), y0 = NODE_FOOT[shape] - 4;
+  s.fill(x0, y0, w, 5, 'root.0');
+  for (let i = 0; i < of; i++) {
+    const x = x0 + 1 + i * 4, y = y0 + 1;
+    const lit = i < have;
+    s.fill(x, y, 3, 3, lit ? 'clay.lt' : 'root.2');
+    s.fill(x, y, 3, 1, lit ? 'salt' : 'root.1');
+    s.fill(x, y + 1, 1, 2, lit ? 'salt' : 'root.1');
+  }
+}
+
+/**
  * A tree (5.20): a well whose floor is the ground tile and pans by whole units under its frame, nodes of 26 on a lattice
  * of 40 in square, cut or spiked frames, and links three wide drawn under them.
  */
@@ -66,10 +80,10 @@ export function tree(o: TreeOpts): Node {
   const ox = 8 - px, oy = 8 - py;
   const fw = o.w - 2, fh = o.h - 2;
   const maxX = Math.max(0, Math.max(0, ...o.nodes.map((n) => n.col * LATTICE + NODE + 16)) - fw);
-  const maxY = Math.max(0, Math.max(0, ...o.nodes.map((n) => n.row * LATTICE + NODE + (n.ranks ? 8 : 0) + 16)) - fh);
+  const maxY = Math.max(0, Math.max(0, ...o.nodes.map((n) => n.row * LATTICE + NODE + 16)) - fh);
   let from = { x: px, y: py };
   const nodeKids: Node[] = o.nodes.map((n): Node => ({
-    id: n.id, x: ox + n.col * LATTICE, y: oy + n.row * LATTICE, w: NODE, h: NODE + (n.ranks ? 8 : 0),
+    id: n.id, x: ox + n.col * LATTICE, y: oy + n.row * LATTICE, w: NODE, h: NODE,
     takes: true, focus: true,
     tip: n.tip,
     on: { down: () => o.onChoose?.(n.id) },
@@ -79,13 +93,7 @@ export function tree(o: TreeOpts): Node {
       if (n.state === 'locked') s.icon(n.icon, 5, 5, 'flat', 'root.3');
       else s.icon(n.icon, 5, 5);
       if (n.id === o.chosen || l.focus) paintSelector(s, -2, -2, 30);
-      if (n.ranks) {
-        const t = `${n.ranks[0]}/${n.ranks[1]}`;
-        const tx = centreX(t, 0, NODE, SMALL);
-        // The ranks sit on a scrap of root.0 so that a link passing under them does not run through the figures.
-        s.fill(tx - 2, NODE + 1, measure(t, SMALL) + 4, 9, 'root.0');
-        s.text(t, tx, NODE + 2, n.ranks[0] >= n.ranks[1] ? 'growth.lt' : 'salt', true, SMALL);
-      }
+      if (n.ranks) paintPips(s, n.shape, n.ranks[0], n.ranks[1]);
     },
   }));
   const field: Node = {

@@ -59,7 +59,7 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
     panned.add(panId);
     const cx = 8 + focusNode.col * LATTICE + NODE / 2, cy = 8 + focusNode.row * LATTICE + NODE / 2;
     const maxX = Math.max(0, Math.max(...job.nodes.map((n) => n.col * LATTICE + NODE + 16)) - fieldW);
-    const maxY = Math.max(0, Math.max(...job.nodes.map((n) => n.row * LATTICE + NODE + 8 + 16)) - fieldH);
+    const maxY = Math.max(0, Math.max(...job.nodes.map((n) => n.row * LATTICE + NODE + 16)) - fieldH);
     const clamp = (x: number, m: number) => Math.min(m, Math.max(0, Math.round(x)));
     ui.setScroll(panId, clamp(cx - fieldW / 2, maxX) + clamp(cy - fieldH / 2, maxY) * 100000);
   }
@@ -83,7 +83,7 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
     onChoose: (id) => { if (id === v.chosen && me) v.onTake(id); else v.onChoose(id); },
   });
 
-  const spend = me ? `${v.toSpend} to spend` : `${owner.name}'s, to read`;
+  const spend = me ? `Yours, ${v.toSpend} to spend` : `${owner.name}'s, to read`;
   const kids: Node[] = [
     field,
     { x: 110, y: 6, w: 143, h: 10, paint: (s) => { const t = cut(spend, 142); s.text(t, rightX(t, 252 - 110), 0, me ? 'growth.dk' : 'ink.faded'); } },
