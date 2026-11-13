@@ -421,20 +421,20 @@ for (const b of bosses) {
 
 // ---- townsfolk ----
 for (const n of npcs) {
-  const needs = ['npc:' + n.key, 'mob:' + n.mob];
+  const needs = ['npc:' + n.key, 'mob:' + n.mob], voice = n.key === 'deserter' ? 'sand' : undefined;   // the Deserter is a sand-country man (5.5)
   add('folk.why', n.key, { needs, file: F_NPCS, line: n.line, now: n.why, note: `the game's condition: need ${n.need}` });
-  add('folk.meet', n.key, { needs, planned: true });
-  add('folk.housed', n.key, { needs, file: F_NPCS, line: n.line + 1, now: n.lines.join(' | ') });
+  add('folk.meet', n.key, { needs, voice, planned: true });
+  add('folk.housed', n.key, { needs, voice, file: F_NPCS, line: n.line + 1, now: n.lines.join(' | ') });
   const from = STAGE_FROM[n.key];
   if (!from) { fail(`${F_NPCS}:${n.line}: townsperson '${n.key}' has no first stage in STAGE_FROM`); continue; }
-  for (let s = from; s <= 8; s++) add('folk.stage', `${n.key}.${s}`, { needs: [...needs, 'boss:' + s], planned: true });
-  for (const sit of ['night', 'dark', 'attack', 'idle', 'buy', 'sell', 'short', 'leave']) add('folk.' + sit, n.key, { needs, planned: true });
+  for (let s = from; s <= 8; s++) add('folk.stage', `${n.key}.${s}`, { needs: [...needs, 'boss:' + s], voice, planned: true });
+  for (const sit of ['night', 'dark', 'attack', 'idle', 'buy', 'sell', 'short', 'leave']) add('folk.' + sit, n.key, { needs, voice, planned: true });
 }
 add('folk.extra', 'wayfinder.moon_tonight', { needs: ['npc:wayfinder', 'event:moon'], file: 'src/ui/windows.ts', ...find('src/ui/windows.ts', 'Amāvassa is tonight. The Chandasāvak carry the slivers.') });
 add('folk.extra', 'wayfinder.moon_in', { needs: ['npc:wayfinder', 'event:moon'], file: 'src/ui/windows.ts', ...find('src/ui/windows.ts', 'Amāvassa is in ${moon} night', 'Amāvassa is in {n} night(s).'), note: 'two forms are needed: one night, and {n} nights' });
 add('folk.extra', 'wayfinder.moon_in_one', { needs: ['npc:wayfinder', 'event:moon'], planned: true, note: 'the form for one night' });
 add('folk.extra', 'wayfinder.next', { needs: ['npc:wayfinder'], file: 'src/ui/windows.ts', ...find('src/ui/windows.ts', "'Next: '", 'Next: {said}'), limit: 20, note: 'what comes before the telling of the next task; {said} is the task.said line, and the text may be {said} alone' });
-add('folk.extra', 'deserter.burrower', { needs: ['npc:deserter', 'boss:2'], planned: true, note: 'said once: what was in the body of the burrower when the crew boiled it down (4.4)' });
+add('folk.extra', 'deserter.burrower', { needs: ['npc:deserter', 'boss:2'], voice: 'sand', planned: true, note: 'said once: what was in the body of the burrower when the crew boiled it down (4.4)' });
 add('walker.say', 'dusk', { planned: true, lines: [4, 6] });
 add('walker.say', 'dark', { planned: true, lines: [1, 2], needs: ['event:moon'] });
 add('walker.say', 'raid', { planned: true, lines: [1, 2], needs: ['event:raid'] });

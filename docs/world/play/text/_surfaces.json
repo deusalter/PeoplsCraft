@@ -9291,7 +9291,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -9443,7 +9443,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 70,
    "assign": "people",
    "lines": [
@@ -9595,7 +9595,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -9709,7 +9709,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "note": "said once: what was in the body of the burrower when the crew boiled it down (4.4)",
@@ -9826,7 +9826,7 @@
    "file": "src/data/npcs.ts",
    "line": 31,
    "now": "I marched with them. I will not again. | Mūda is a night inside the light at any fire of ours.",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -9972,7 +9972,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 60,
    "assign": "people",
    "lines": [
@@ -10116,7 +10116,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 90,
    "assign": "people",
    "planned": true
@@ -10236,7 +10236,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "planned": true
@@ -10364,7 +10364,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -10516,7 +10516,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 70,
    "assign": "people",
    "lines": [
@@ -10660,7 +10660,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 70,
    "assign": "people",
    "planned": true
@@ -10991,7 +10991,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -11011,7 +11011,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -11031,7 +11031,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -11051,7 +11051,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -11071,7 +11071,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
@@ -11091,7 +11091,7 @@
    "file": null,
    "line": null,
    "now": "",
-   "voice": "born",
+   "voice": "sand",
    "limit": 110,
    "assign": "people",
    "lines": [
