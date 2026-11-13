@@ -33,9 +33,14 @@ const cache = new Map<string, PixelMap>();
 const code = (c: Colour) => CODE[COLOURS.indexOf(c)];
 const worn = (t: Tones) => t !== BARE && t.join() !== BARE.join();
 
-/** Fills a limb lit from the left: its left column lit, its right column in shade. */
-function limb(g: (Colour | null)[][], x: number, y: number, w: number, h: number, t: Tones): void {
-  for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) g[j][i] = i === x ? t[0] : i === x + w - 1 ? t[2] : t[1];
+/**
+ * Fills a limb lit from the top left: its left column lit, its right column in shade, and with `top` its top row lit
+ * but for its last unit, which stays in shade so that the corner turns from the light.
+ */
+function limb(g: (Colour | null)[][], x: number, y: number, w: number, h: number, t: Tones, top = false): void {
+  for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) {
+    g[j][i] = i === x + w - 1 ? t[2] : i === x || (top && j === y) ? t[0] : t[1];
+  }
 }
 
 /** The figure's pixel map with each worn piece in its tones and the seat's face. */
@@ -57,10 +62,16 @@ export function figureMap(sz: 'small' | 'large', tones: Record<Part, Tones>, sea
   }
   const ty = oy + p.head;
   const chest = worn(tones.body) ? tones.body : TUNIC;
-  limb(g, tx, ty, p.torsoW, p.torsoH, chest);
+  limb(g, tx, ty, p.torsoW, p.torsoH, chest, true);
   for (const ax of [ox, tx + p.torsoW]) {
-    limb(g, ax, ty, p.armW, p.torsoH - p.hands, chest);
+    limb(g, ax, ty, p.armW, p.torsoH - p.hands, chest, true);
     limb(g, ax, ty + p.torsoH - p.hands, p.armW, p.hands, face.skin as Tones);
+  }
+  // Below the shoulder a root.0 line parts each arm from the torso, as the legs are parted, cut from the arm's inner
+  // column so that the torso keeps its own lit and shaded sides and the three read as three pieces, not one slab.
+  for (let j = ty + 2; j < ty + p.torsoH - p.hands; j++) {
+    g[j][tx - 1] = 'root.0'; g[j][tx - 2] = chest[2];
+    g[j][tx + p.torsoW] = 'root.0'; g[j][tx + p.torsoW + 1] = chest[0];
   }
   const ly = ty + p.torsoH;
   const legs = worn(tones.legs) ? tones.legs : TROUSERS;

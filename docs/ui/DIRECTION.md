@@ -2197,7 +2197,7 @@ A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the t
 
 ### 5.29 The body as worn
 
-The player drawn front on, as the tradition puts the player's model in the pack: a person, not a mannequin. Two sizes, built by the same plan: small, 18 by 34 with its outline, for the pack's well; large, 26 by 54, for the States tab. Every limb is lit from the top left: its left column in the lit tone of its ramp, its right column in the shade, the middle in the mid tone; the whole is outlined in `root.0`.
+The player drawn front on, as the tradition puts the player's model in the pack: a person, not a mannequin. Two sizes, built by the same plan: small, 18 by 34 with its outline, for the pack's well; large, 26 by 54, for the States tab. Every limb is lit from the top left: its left column in the lit tone of its ramp, its right column in the shade, the middle in the mid tone, and the torso and the upper arms carry a lit top row, the shoulders, whose last unit stays in shade; the whole is outlined in `root.0`. From the second row of the torso down to the hands a split of `root.0` one unit wide parts each arm from the torso, cut from the arm's inner column, so that a pale chest piece does not read as one slab from hand to hand.
 
 | Part | Small | Large | Drawn in |
 | --- | --- | --- | --- |

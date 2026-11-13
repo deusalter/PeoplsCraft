@@ -961,23 +961,26 @@ export const ICONS: Record<string, PixelMap> = {
     '..KK...K...KK...',
     '................',
   ]),
-  /** The mark of the body panel's second tab: a body with a state upon it. */
+  /**
+   * The mark of the body panel's second tab, the states: an hourglass, since every state runs out. A figure with a mark
+   * on its chest stood beside the Body tab's figure and the two could not be told apart.
+   */
   states: icon('states', [
     '................',
-    '......KKKK......',
-    '.....KLLLSK.....',
-    '.....KLLLSK.....',
-    '......KSSK......',
-    '...KKKKKKKKKK...',
-    '..KLLLLLLLLSSK..',
-    '..KLKKLRrLKKSK..',
-    '..KLK.KRRK.KSK..',
-    '..KSK.KLSK.KSK..',
-    '..KK..KLSK..KK..',
-    '......KSKSK.....',
-    '......KSKSK.....',
-    '......KSKSK.....',
-    '......KKKKK.....',
-    '................',
+    '..KKKKKKKKKKKK..',
+    '..KefffffffTtK..',
+    '..KKKKKKKKKKKK..',
+    '...KWLLLLLLSK...',
+    '...KLooooOOSK...',
+    '....KLooOOSK....',
+    '.....KLoOSK.....',
+    '......KoOK......',
+    '.....KLoLSK.....',
+    '....KWLoLLSK....',
+    '...KWLLOLLLSK...',
+    '...KLooooOOSK...',
+    '..KKKKKKKKKKKK..',
+    '..KTTTTTTTTttK..',
+    '..KKKKKKKKKKKK..',
   ]),
 };
