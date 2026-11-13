@@ -26,14 +26,16 @@ export const TAB_SIZE = 24;
 const CHOSEN_RISE = 21;
 const OTHER_RISE = 18;
 
-type Fill = (x: number, y: number, w: number, h: number, c: Colour) => void;
+export type Fill = (x: number, y: number, w: number, h: number, c: Colour) => void;
+
+/** The tones a tab is drawn in, by role: a slab's ramp, or the book's leather. */
+export type Tones = (r: Role) => Colour;
 
 /**
  * The chosen top tab at `tx`, the slab's outline row at y 0, drawn by the construction of 5.7: it rises 21 and is joined
  * to the slab, whose outline and light edge are gone across its inner width. A side tab is the same, turned.
  */
-function chosenTab(fill: Fill, tx: number, ramp: Ramp): void {
-  const t = (r: Role): Colour => tone(ramp, r);
+export function chosenTab(fill: Fill, tx: number, t: Tones): void {
   const top = -CHOSEN_RISE;
   fill(tx + 1, top, 22, 1, 'root.0');
   fill(tx, top + 1, 1, CHOSEN_RISE, 'root.0');
@@ -54,17 +56,29 @@ function chosenTab(fill: Fill, tx: number, ramp: Ramp): void {
  * A tab not chosen: 18 high, flat `sh` with a light row and column of `lt` and a dark column of `pit`. Its far corner
  * is left out; the tab drawn after it, which shares that column, fills it back.
  */
-function otherTab(fill: Fill, tx: number, ramp: Ramp, first: boolean): void {
+export function otherTab(fill: Fill, tx: number, t: Tones, first: boolean): void {
   const top = -OTHER_RISE;
   fill(tx + (first ? 1 : 0), top, first ? 22 : 23, 1, 'root.0');
   fill(tx, top + 1, 1, OTHER_RISE - 1, 'root.0');
   fill(tx + 23, top + 1, 1, OTHER_RISE - 1, 'root.0');
-  fill(tx + 1, top + 1, 22, OTHER_RISE - 1, tone(ramp, 'sh'));
-  fill(tx + 1, top + 1, 21, 1, tone(ramp, 'lt'));
-  fill(tx + 1, top + 2, 1, OTHER_RISE - 2, tone(ramp, 'lt'));
-  fill(tx + 22, top + 2, 1, OTHER_RISE - 2, tone(ramp, 'pit'));
+  fill(tx + 1, top + 1, 22, OTHER_RISE - 1, t('sh'));
+  fill(tx + 1, top + 1, 21, 1, t('lt'));
+  fill(tx + 1, top + 2, 1, OTHER_RISE - 2, t('lt'));
+  fill(tx + 22, top + 2, 1, OTHER_RISE - 2, t('pit'));
   if (first) fill(tx, 0, 1, 1, 'root.0');
 }
+
+/** The hover and the focus of a tab not chosen: its face lightens to `face`, a ring of salt inside its light edge. */
+export function otherTabState(fill: Fill, tx: number, t: Tones, hover: boolean, focus: boolean): void {
+  if (hover) fill(tx + 2, -OTHER_RISE + 2, 20, OTHER_RISE - 2, t('face'));
+  if (focus) {
+    fill(tx + 2, -OTHER_RISE + 2, 20, 1, 'salt');
+    fill(tx + 2, -OTHER_RISE + 2, 1, OTHER_RISE - 2, 'salt');
+    fill(tx + 21, -OTHER_RISE + 2, 1, OTHER_RISE - 2, 'salt');
+  }
+}
+
+export { CHOSEN_RISE, OTHER_RISE };
 
 /** A slab with tabs along its top or its left edge (5.7). */
 export function tabbedSlab(o: TabbedOpts): Node {
@@ -89,15 +103,11 @@ export function tabbedSlab(o: TabbedOpts): Node {
         const ox = top ? -at : rise, oy = top ? rise : -at;
         s.translate(ox, oy);
         const f = fillFor(s);
-        if (chosen) chosenTab(f, at, o.ramp);
+        const t: Tones = (r) => tone(o.ramp, r);
+        if (chosen) chosenTab(f, at, t);
         else {
-          otherTab(f, at, o.ramp, i === 0);
-          if (l.hover) f(at + 2, -OTHER_RISE + 2, 20, OTHER_RISE - 2, tone(o.ramp, 'face'));
-          if (l.focus) {
-            f(at + 2, -OTHER_RISE + 2, 20, 1, 'salt');
-            f(at + 2, -OTHER_RISE + 2, 1, OTHER_RISE - 2, 'salt');
-            f(at + 21, -OTHER_RISE + 2, 1, OTHER_RISE - 2, 'salt');
-          }
+          otherTab(f, at, t, i === 0);
+          otherTabState(f, at, t, l.hover, l.focus);
         }
         s.translate(-ox, -oy);
         if (top) s.icon(spec.icon, 4, chosen ? 4 : 2);

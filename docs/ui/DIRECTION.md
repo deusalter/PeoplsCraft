@@ -1536,93 +1536,126 @@ A world event (Night raid, Sand March, Amāvassa) is the same with a thin strip 
 
 ### 5.19 Book
 
-For the journal and the codex. 292 by 180. Boards of `timber.sh` with a light row and column of `timber.lt` and a dark row and column of `timber.pit` inside the outline. The block of pages starts 3 units in with a line of `root.0` round it; a page is `clay.lt`. Along the outer edge of each page and along the bottom, two lines (`clay.sh` then `clay.face`) show the leaves under it. The gutter is the middle 6 columns: `clay.face`, `clay.sh`, two of `clay.dk`, `clay.sh`, `clay.face`. Top left corner of the book:
+For the journal and the codex. 292 by 180. The cover is a margin of leather 6 deep, built as a slab is with its own tones: the outline with its corners left out; a light edge two deep on the top and left (`timber.lt`, then `timber.sh`) and a dark edge two deep of `timber.pit` on the bottom and right, `timber.dk` on the diagonal where they meet; two rows of `timber.dk`; then a lip of `timber.sh` one unit deep round the pages. The block of pages starts 6 in with a line of `root.0` round it; a page is `clay.lt`, and under the pages two rows of leaves show, `clay.sh` then `clay.face`. The gutter is the middle 8 columns: two of shade either side of a fold of four, `clay.face`, `clay.sh`, `clay.dk`, `clay.pit`, `clay.pit`, `clay.dk`, `clay.sh`, `clay.face`.
+
+**Tabs** mark the sections, as on a slab (5.7), cut from the cover's leather: 24 wide at a pitch of 23 along the cover's top edge from its left corner, each carrying the 16 by 16 mark of its section, its name as its tooltip. The open one rises 21 and is joined to the cover, in the cover's tones (`timber.lt` and `timber.sh` light edges, `timber.dk` face, `timber.pit` dark edge); the others rise 18, flat `timber.pit` with a light row and column of `timber.sh`, and lighten to `timber.dk` under the pointer. A colour alone never tells the sections apart. The top left corner of the book, its first tab open and its second not:
 
 ```
-     0         1         2     
-     01234567890123456789012345
-  0  .KKKKKKKKKKKKKKKKKKKKKKKKK
-  1  Kfffffffffffffffffffffffff
-  2  Kftttttttttttttttttttttttt
-  3  KftKKKKKKKKKKKKKKKKKKKKKKK
-  4  KftKSFLLLLLLLLLLLLLLLLLLLL
-  5  KftKSFLLLLLLLLLLLLLLLLLLLL
-  6  KftKSFLLLLLLLLLLLLLLLLLLLL
-  7  KftKSFLLLLLLLLLLLLLLLLLLLL
-  8  KftKSFLLLLLLLLLLLLLLLLLLLL
-  9  KftKSFLLLLLLLLLLLLLLLLLLLL
- 10  KftKSFLLLLLLLLLLLLLLLLLLLL
- 11  KftKSFLLLLLLLLLLLLLLLLLLLL
- 12  KftKSFLLLLLLLLLLLLLLLLLLLL
- 13  KftKSFLLLLLLLLLLLLLLLLLLLL
+     0         1         2         3         4         5
+     0123456789012345678901234567890123456789012345678901
+  0  .KKKKKKKKKKKKKKKKKKKKKK.............................
+  1  KfffffffffffffffffffffUK............................
+  2  KftttttttttttttttttttUXK............................
+  3  KftUUUUUUUUUUUUUUUUUUXXKKKKKKKKKKKKKKKKKKKKKKK......
+  4  KftUUUUUUUUUUUUUUUUUUXXKtttttttttttttttttttttXK.....
+  5  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  6  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  7  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  8  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  9  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 10  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 11  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 12  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 13  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 14  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 15  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 16  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 17  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 18  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 19  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 20  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 21  KftUUUUUUUUUUUUUUUUUUXXKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 22  KftUUUUUUUUUUUUUUUUUUUffffffffffffffffffffffffffffff
+ 23  KftUUUUUUUUUUUUUUUUUUttttttttttttttttttttttttttttttt
+ 24  KftUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
+ 25  KftUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
+ 26  KftUUttttttttttttttttttttttttttttttttttttttttttttttt
+ 27  KftUUtKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 28  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 29  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 30  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 31  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 32  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 33  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 34  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 35  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
 ```
-`. nothing  f timber.lt  F clay.face  K root.0  L clay.lt  S clay.sh  t timber.sh`
+`. nothing  f timber.lt  K root.0  L clay.lt  t timber.sh  U timber.dk  X timber.pit`
 
 **Text on a page** is ink. A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
 
-**Ribbons** mark the sections. Each is 12 wide in one colour with its right 2 columns in the `dk` tone, outlined, standing above the top edge of the right-hand board from x 160 at a pitch of 16. The chosen one stands 12 above the boards, the others 7. The gutter and the first three ribbons:
+**The ribbon** of the open section lies in the gutter, the section's colour kept here and nowhere else: 8 wide, outlined, its colour with its right column in the colour's dark tone, from the cover's row 1 down 27 and then cut in a V over 3 rows. The gutter with the ribbon of Creatures:
 
 ```
-     0         1         2         3         4         5         
-     012345678901234567890123456789012345678901234567890123456789
-  0  ......................KKKKKKKKKKKK..........................
-  1  .....................KRRRRRRRRRRqqK.........................
-  2  .....................KRRRRRRRRRRqqK.........................
-  3  .....................KRRRRRRRRRRqqK.........................
-  4  .....................KRRRRRRRRRRqqK.........................
-  5  .....................KRRRRRRRRRRqqK...KKKKKKKKKKKK....KKKKKK
-  6  .....................KRRRRRRRRRRqqK..KBBBBBBBBBBddK..KNNNNNN
-  7  .....................KRRRRRRRRRRqqK..KBBBBBBBBBBddK..KNNNNNN
-  8  .....................KRRRRRRRRRRqqK..KBBBBBBBBBBddK..KNNNNNN
-  9  .....................KRRRRRRRRRRqqK..KBBBBBBBBBBddK..KNNNNNN
- 10  .....................KRRRRRRRRRRqqK..KBBBBBBBBBBddK..KNNNNNN
- 11  .....................KRRRRRRRRRRqqK..KBBBBBBBBBBddK..KNNNNNN
- 12  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 13  ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
- 14  tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt
- 15  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 16  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 17  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 18  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 19  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 20  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 21  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 22  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 23  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 24  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 25  LLLLLFSDDSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+     0         1         2
+     01234567890123456789012345
+  0  KKKKKKKKKKKKKKKKKKKKKKKKKK
+  1  ffffffKRRRRRqKffffffffffff
+  2  ttttttKRRRRRqKtttttttttttt
+  3  UUUUUUKRRRRRqKUUUUUUUUUUUU
+  4  UUUUUUKRRRRRqKUUUUUUUUUUUU
+  5  ttttttKRRRRRqKtttttttttttt
+  6  KKKKKKKRRRRRqKKKKKKKKKKKKK
+  7  LLLLLLKRRRRRqKLLLLLLLLLLLL
+  8  LLLLLLKRRRRRqKLLLLLLLLLLLL
+  9  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 10  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 11  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 12  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 13  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 14  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 15  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 16  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 17  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 18  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 19  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 20  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 21  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 22  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 23  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 24  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 25  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 26  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 27  LLLLLLKRRRRRqKLLLLLLLLLLLL
+ 28  LLLLLLKRRKKRqKLLLLLLLLLLLL
+ 29  LLLLLLKRKZZKqKLLLLLLLLLLLL
+ 30  LLLLLLKKDZZDKKLLLLLLLLLLLL
+ 31  LLLLLLFSDZZDSFLLLLLLLLLLLL
+ 32  LLLLLLFSDZZDSFLLLLLLLLLLLL
+ 33  LLLLLLFSDZZDSFLLLLLLLLLLLL
+ 34  LLLLLLFSDZZDSFLLLLLLLLLLLL
 ```
-`. nothing  B arm  d arm.dk  D clay.dk  f timber.lt  F clay.face  K root.0  L clay.lt  N growth  q blood.dk  R blood  S clay.sh  t timber.sh`
+`. nothing  D clay.dk  f timber.lt  F clay.face  K root.0  L clay.lt  q blood.dk  R blood  S clay.sh  t timber.sh  U timber.dk  Z clay.pit`
 
-**Page arrows**, 16 by 7, in ink at the bottom outer corners of the pages (12 from the outer edge, 164 down from the book's top); `blood.dk` when hovered; not drawn when there is no page that way. Page numbers are in the small face, `ink.faded`, centred under each page. The bottom right corner with its arrow:
+**Page arrows**, 16 by 7, in ink at the bottom outer corners of the pages (12 from the outer edge, 161 down from the book's top); `blood.dk` when hovered; not drawn when there is no page that way. Page numbers are in the small face, `ink.faded`, centred under each page, the cell at y 162. A page's text stops at y 158. The bottom right corner with its arrow:
 
 ```
-     0         1         2         
+     0         1         2
      012345678901234567890123456789
-  0  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
-  1  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
-  2  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
-  3  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
-  4  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
-  5  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
-  6  LLLLLLLLLLLILLLLLLLLLLLLFSKtXK
-  7  LLLLLLLLLLLIILLLLLLLLLLLFSKtXK
-  8  LLIIIIIIIIIIIILLLLLLLLLLFSKtXK
-  9  LLIIIIIIIIIIIIILLLLLLLLLFSKtXK
- 10  LLIIIIIIIIIIIILLLLLLLLLLFSKtXK
- 11  LLLLLLLLLLLIILLLLLLLLLLLFSKtXK
- 12  LLLLLLLLLLLILLLLLLLLLLLLFSKtXK
- 13  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
- 14  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
- 15  LLLLLLLLLLLLLLLLLLLLLLLLFSKtXK
- 16  SSSSSSSSSSSSSSSSSSSSSSSSFSKtXK
- 17  FFFFFFFFFFFFFFFFFFFFFFFFFSKtXK
- 18  KKKKKKKKKKKKKKKKKKKKKKKKKKKtXK
- 19  ttttttttttttttttttttttttttttXK
+  0  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
+  1  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
+  2  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
+  3  LLLLLLLLLLLLLILLLLLLLLLKtUUXXK
+  4  LLLLLLLLLLLLLIILLLLLLLLKtUUXXK
+  5  LLLLIIIIIIIIIIIILLLLLLLKtUUXXK
+  6  LLLLIIIIIIIIIIIIILLLLLLKtUUXXK
+  7  LLLLIIIIIIIIIIIILLLLLLLKtUUXXK
+  8  LLLLLLLLLLLLLIILLLLLLLLKtUUXXK
+  9  LLLLLLLLLLLLLILLLLLLLLLKtUUXXK
+ 10  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
+ 11  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
+ 12  KKKKKKKKKKKKKKKKKKKKKKKKtUUXXK
+ 13  SSSSSSSSSSSSSSSSSSSSSSSKtUUXXK
+ 14  FFFFFFFFFFFFFFFFFFFFFFFKtUUXXK
+ 15  KKKKKKKKKKKKKKKKKKKKKKKKtUUXXK
+ 16  tttttttttttttttttttttttttUUXXK
+ 17  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
+ 18  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
+ 19  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
  20  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
  21  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
-`. nothing  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  t timber.sh  X timber.pit`
+`. nothing  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  t timber.sh  U timber.dk  X timber.pit`
 
 ### 5.20 Tree field, nodes and links
 
@@ -2679,12 +2712,12 @@ Size 176 by 214. Material: clay. Anchor: centre of the screen.
 
 ### Journal: the Guide, bounties and standing
 
-Size 292 by 192. Material: book: timber boards, clay.lt pages. Anchor: centre of the screen.
+Size 292 by 180, with tabs standing 21 above. Material: book (5.19): a leather cover, clay.lt pages. Anchor: centre of the screen. Coordinates are from the book's top left.
 
 ```
-                                                     +--+
-                                                     |  |  +--+ +--+ +--+
-#====================================================+--+==+--+=+--+=+--+========================#
++-------+
+| G1    |+------++------++------+
+#================================================================================================#
 #                                                                                                #
 #   "G2"                                           "G7"                                          #
 #                                                                                                #
@@ -2719,35 +2752,35 @@ Size 292 by 192. Material: book: timber boards, clay.lt pages. Anchor: centre of
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| G0 | book | 0 | 12 | 292 | 180 | the book |
-| G1 | ribbon | 160 | 0 | 12 | 18 | ribbons, pitch 16: Guide (blood), Bounties (arm), Standing (growth), Crew (ember). The chosen one stands 5 units taller |
-| G2 | text | 12 | 22 | 126 | 10 | left page heading: the chapter, as "Iron and Root" |
-| G3 | rule | 12 | 33 | 126 | 1 | rule in clay.sh |
-| G4 | rows | 12 | 36 | 126 | 130 | thirteen step rows 10 tall: a check mark and faded ink when done, the step wedge and ink for the present step, faded ink alone for those to come |
-| G5 | turn | 12 | 176 | 16 | 7 | page back |
-| G6 | text | 68 | 177 | 16 | 6 | page number, small face |
-| G7 | text | 154 | 22 | 126 | 10 | right page heading: the chosen step |
-| G8 | text | 154 | 36 | 126 | 60 | its telling, wrapped to 126, six lines at most |
-| G9 | gauge | 154 | 100 | 126 | 7 | a sunk channel filling in ember, with "3 of 5" right-aligned above it; only for steps that count |
-| G10 | text | 154 | 116 | 126 | 10 | where to: "Nearest altar 212 east", in arm.dk |
-| G11 | text | 154 | 130 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink |
-| G12 | turn | 264 | 176 | 16 | 7 | page on |
-| G13 | text | 210 | 177 | 16 | 6 | page number |
+| G0 | book | 0 | 0 | 292 | 180 | the book |
+| G1 | tabs | 0 | -21 | 93 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Guide (the lamp), Bounties (the note), Standing (the banner), Crew (two heads). The open section's ribbon lies in the gutter in its colour: blood, arm, growth, ember |
+| G2 | text | 12 | 10 | 126 | 10 | left page heading: the chapter, as "Iron and Root" |
+| G3 | rule | 12 | 21 | 126 | 1 | rule in clay.sh |
+| G4 | rows | 12 | 24 | 126 | 130 | thirteen step rows 10 tall: a check mark and faded ink when done, the step wedge and ink for the present step, faded ink alone for those to come |
+| G5 | turn | 12 | 161 | 16 | 7 | page back |
+| G6 | text | 68 | 162 | 16 | 6 | page number, small face |
+| G7 | text | 154 | 10 | 126 | 10 | right page heading: the chosen step |
+| G8 | text | 154 | 24 | 126 | 60 | its telling, wrapped to 126, six lines at most |
+| G9 | gauge | 154 | 88 | 126 | 7 | a sunk channel filling in ember, with "3 of 5" right-aligned above it; only for steps that count |
+| G10 | text | 154 | 104 | 126 | 10 | where to: "Nearest altar 212 east", in arm.dk |
+| G11 | text | 154 | 118 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink |
+| G12 | turn | 264 | 161 | 16 | 7 | page on |
+| G13 | text | 210 | 162 | 16 | 6 | page number |
 
 - **Shows.** One book shared by the crew. Guide: the order of work, a chapter to a left page, the chosen step on the right. Bounties (to come): the left page lists what householders and sand-country people ask, each row with the asker's mark and the heads of the crew who took it; the right page gives the task, the pay and one button, "Take" or "Leave", 60 by 14 at 154, 150. Standing (to come): a page to each people, a sunk channel with five notches for how the crew stands, under it what raises it, what lowers it, and what the next notch opens. Crew: the roster as a page, with each one's level and job.
-- **Clickable.** A step row or a bounty row chooses it. The ribbons. The page arrows. "Take".
-- **Keys.** G or Esc closes. Left and Right turn the page. Up and Down move the choice. 1 to 4 pick a ribbon. Enter presses the page's one button.
+- **Clickable.** A step row or a bounty row chooses it. The tabs. The page arrows. "Take".
+- **Keys.** G or Esc closes. Left and Right turn the page. Up and Down move the choice. 1 to 4 pick a tab. Enter presses the page's one button.
 - **First.** Opens at the Guide, at the page of the present step, with that step chosen.
 - **Narrow.** Unchanged: 292 fits 320.
 
 ### Codex and bestiary (to come)
 
-Size 292 by 192. Material: book. Anchor: centre of the screen.
+Size 292 by 180, with tabs standing 21 above. Material: book (5.19). Anchor: centre of the screen. Coordinates are from the book's top left.
 
 ```
-                                                     +--+
-                                                     |  |  +--+ +--+ +--+  +--+
-#====================================================+--+==+--+=+--+=+--+==+--+==================#
++-------+
+| X1    |+------++------++------++------+
+#================================================================================================#
 #                                                                                                #
 #   "X2"                                           "X5"                                          #
 #                                                                                                #
@@ -2782,21 +2815,21 @@ Size 292 by 192. Material: book. Anchor: centre of the screen.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| X0 | book | 0 | 12 | 292 | 180 | the book |
-| X1 | ribbon | 160 | 0 | 12 | 18 | ribbons: Creatures (blood), Matter (ember), Places (growth), Peoples (arm), Old things (violet) |
-| X2 | text | 12 | 22 | 126 | 10 | heading of the section |
-| X3 | slots | 12 | 36 | 126 | 126 | seven by seven entry slots sunk in the page (ramp clay, floor clay.sh). A kind not yet seen shows its silhouette in clay.face; a kind seen shows its icon |
-| X4 | turn | 12 | 176 | 16 | 7 | page back |
-| X5 | text | 154 | 22 | 126 | 10 | the name, in ink |
-| X6 | text | 154 | 32 | 126 | 10 | how it is said and whose word it is, in faded ink |
-| X7 | well | 154 | 46 | 56 | 56 | picture well, dark |
-| X8 | rows | 214 | 46 | 66 | 56 | short facts, 10 to a row: where, when, what it leaves |
-| X9 | text | 154 | 108 | 126 | 62 | the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not |
-| X10 | turn | 264 | 176 | 16 | 7 | page on |
+| X0 | book | 0 | 0 | 292 | 180 | the book |
+| X1 | tabs | 0 | -21 | 116 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Creatures (a beast's head), Matter (a bar), Places (the map), Peoples (a bust), Old things (a gilt relic). The open section's ribbon lies in the gutter in its colour: blood, ember, growth, arm, violet.lt |
+| X2 | text | 12 | 10 | 126 | 10 | heading of the section |
+| X3 | slots | 12 | 24 | 126 | 126 | seven by seven entry slots sunk in the page (ramp clay, floor clay.sh). A kind not yet seen shows its silhouette in clay.face; a kind seen shows its icon |
+| X4 | turn | 12 | 161 | 16 | 7 | page back |
+| X5 | text | 154 | 10 | 126 | 10 | the name, in ink |
+| X6 | text | 154 | 20 | 126 | 20 | how it is said and whose word it is, in faded ink, wrapped onto a second line when it needs one; what follows moves down by that line |
+| X7 | well | 154 | 32 | 56 | 56 | picture well, dark |
+| X8 | rows | 214 | 32 | 66 | 50 | the facts, in order where (arm.dk, a link), when, what it leaves: each wrapped onto two lines when it needs them rather than cut, five lines in all, the last fact keeping at least one |
+| X9 | text | 154 | 92 | 126 | 66 | the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not, to the page's foot at y 158 |
+| X10 | turn | 264 | 161 | 16 | 7 | page on |
 
 - **Shows.** What the crew has met, shared by everyone on the server. Each entry fills in by the four steps of chapter 8.9 of the world bible; a step not reached is a blank rule, never a row of question marks.
-- **Clickable.** Entry slots, ribbons, page arrows.
-- **Keys.** Arrows move among the entry slots, Page Up and Page Down turn the page, 1 to 5 pick a ribbon, Esc closes.
+- **Clickable.** Entry slots, tabs, page arrows.
+- **Keys.** Arrows move among the entry slots, Page Up and Page Down turn the page, 1 to 5 pick a tab, Esc closes.
 - **First.** Opens where it was last shut; the first time, at Creatures with the first seen entry chosen.
 
 ### Skill tree (to come)

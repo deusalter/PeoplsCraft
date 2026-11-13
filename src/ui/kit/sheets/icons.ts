@@ -17,7 +17,7 @@ const NAMES: Record<string, string> = {
 const TAB_NAMES: Record<string, string> = {
   pack: 'Pack', body: 'Body', patterns: 'Patterns', guide: 'The Guide', bounty: 'Bounties',
   standing: 'Standing', codex: 'Codex', map: 'Map', skills: 'Skills', picture: 'Picture', play: 'Play', sound: 'Sound',
-  interface: 'Interface',
+  interface: 'Interface', creatures: 'Creatures', matter: 'Matter', peoples: 'Peoples', old: 'Old things', crew: 'Crew',
 };
 
 export const iconsSheet: Sheet = {

@@ -5,7 +5,7 @@ import { count, measure as measureInk } from '../font/measure';
 import { cut as inkCut } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
 import { SEATS } from '../palette';
-import { type Ribbon, BOOK_W, book, pageHeading } from '../parts/book';
+import { type Ribbon, BOOK_H, BOOK_TABS, BOOK_W, book, pageHeading } from '../parts/book';
 import { button } from '../parts/button';
 import { channel } from '../parts/gauges';
 import { paintSlot } from '../parts/slot';
@@ -40,10 +40,10 @@ export interface JournalView {
 
 const SECTIONS: JournalSection[] = ['guide', 'bounties', 'standing', 'crew'];
 const RIBBONS: Ribbon[] = [
-  { id: 'jr.rb.guide', colour: 'blood', dark: 'blood.dk', name: 'Guide' },
-  { id: 'jr.rb.bounties', colour: 'arm', dark: 'arm.dk', name: 'Bounties' },
-  { id: 'jr.rb.standing', colour: 'growth', dark: 'growth.dk', name: 'Standing' },
-  { id: 'jr.rb.crew', colour: 'ember', dark: 'ember.dk', name: 'Crew' },
+  { id: 'jr.rb.guide', colour: 'blood', dark: 'blood.dk', name: 'Guide', icon: 'guide' },
+  { id: 'jr.rb.bounties', colour: 'arm', dark: 'arm.dk', name: 'Bounties', icon: 'bounty' },
+  { id: 'jr.rb.standing', colour: 'growth', dark: 'growth.dk', name: 'Standing', icon: 'standing' },
+  { id: 'jr.rb.crew', colour: 'ember', dark: 'ember.dk', name: 'Crew', icon: 'crew' },
 ];
 const PW = 126;
 
@@ -180,9 +180,9 @@ export const journalScreen: Screen<JournalView> = (v, ui) => {
   firstFocus(ui, 'journal', null);
   const pages = v.section === 'guide' ? guidePages(v) : v.section === 'bounties' ? bountyPages(v) : v.section === 'crew' ? crewPages(v) : { left: peoplePage(v.peoples[0]), right: peoplePage(v.peoples[1]) };
   const guide = v.section === 'guide';
-  const at = centred(ui.w, ui.h, BOOK_W, 192);
+  const at = centred(ui.w, ui.h, BOOK_W, BOOK_H);
   const bk = book({
-    id: 'jr.book', x: at.x, y: at.y + 12, ribbons: RIBBONS, chosen: si,
+    id: 'jr.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), ribbons: RIBBONS, chosen: si,
     onRibbon: (i) => { ui.cue('page'); v.onSection(SECTIONS[i]); },
     pages: guide ? [v.chapter * 2 + 1, v.chapter * 2 + 2] : undefined,
     prev: guide && v.chapter > 0 ? () => { ui.cue('page'); v.onPage(v.chapter - 1); } : undefined,

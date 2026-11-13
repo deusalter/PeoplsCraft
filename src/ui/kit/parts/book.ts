@@ -5,13 +5,20 @@ import type { Live, Node } from '../node';
 import { type Colour, SEATS } from '../palette';
 import type { Surface } from '../surface';
 import { type Force, lv, ring } from './common';
+import { CHOSEN_RISE, type Fill, OTHER_RISE, TAB_PITCH, TAB_SIZE, type Tones, chosenTab, otherTab, otherTabState } from './tabs';
 
 export const BOOK_W = 292;
 export const BOOK_H = 180;
 /** A page's text area: 126 wide, 12 from the book's outer edge and 10 from its top; the right page's at x 154. */
 export const PAGE_TEXT = { left: 12, right: 154, top: 10, w: 126 };
+/** The lowest unit a page's text may reach: the arrows and the page numbers stand under it. */
+export const PAGE_BOTTOM = 158;
 
-export interface Ribbon { id: string; colour: Colour; dark: Colour; name: string }
+/**
+ * A section of a book: a tab on the cover's top edge carrying its 16 by 16 mark, and, while it is open, a ribbon of its
+ * colour lying in the gutter. The name is the tab's tooltip.
+ */
+export interface Ribbon { id: string; colour: Colour; dark: Colour; name: string; icon: string }
 
 export interface BookOpts {
   id: string;
@@ -28,74 +35,109 @@ export interface BookOpts {
   force?: { prev?: Force; next?: Force; ribbon?: { i: number; force: Force } };
 }
 
-const MID = BOOK_W / 2 - 3;
+/** The first column of the gutter: 2 of shade, 4 of fold, 2 of shade, round the middle of the book. */
+const GUTTER = BOOK_W / 2 - 4;
 
-/** The boards, the block of pages with its leaves, and the gutter (5.19). */
+/** The leather of the boards, by role, so that the tabs are cut from the same hide as the cover. */
+const LEATHER: Tones = (r) => ({ hi: 'timber.lt', lt: 'timber.sh', face: 'timber.dk', sh: 'timber.pit', dk: 'timber.pit', pit: 'timber.pit' } as const)[r];
+
+/**
+ * The cover, the block of pages and the gutter (5.19). The cover is a margin of leather 6 deep: the outline, a light edge
+ * two deep on the top and left and a dark one on the bottom and right as on a slab, two rows of `timber.dk`, then a lip
+ * of `timber.sh` round the pages. The block of pages has its outline of root.0; two rows of leaves show under the
+ * pages; the gutter is two columns of shade either side of a fold of four.
+ */
 function paintBook(s: Surface): void {
   const w = BOOK_W, h = BOOK_H;
+  const t = LEATHER;
   s.fill(1, 0, w - 2, 1, 'root.0'); s.fill(1, h - 1, w - 2, 1, 'root.0');
   s.fill(0, 1, 1, h - 2, 'root.0'); s.fill(w - 1, 1, 1, h - 2, 'root.0');
-  s.fill(1, 1, w - 2, h - 2, 'timber.sh');
-  s.fill(1, 1, w - 2, 1, 'timber.lt'); s.fill(1, 2, 1, h - 3, 'timber.lt');
-  s.fill(w - 2, 2, 1, h - 3, 'timber.pit'); s.fill(2, h - 2, w - 3, 1, 'timber.pit');
-  // The block of pages, 3 in, with a line of root.0 round it.
-  s.fill(3, 3, w - 6, h - 6, 'root.0');
-  s.fill(4, 4, w - 8, h - 8, 'clay.lt');
-  // The leaves under each page along its outer edge and the bottom.
-  s.fill(4, 4, 1, h - 8, 'clay.sh'); s.fill(5, 4, 1, h - 9, 'clay.face');
-  s.fill(w - 5, 4, 1, h - 8, 'clay.sh'); s.fill(w - 6, 4, 1, h - 9, 'clay.face');
-  s.fill(6, h - 6, w - 12, 1, 'clay.sh'); s.fill(5, h - 5, w - 10, 1, 'clay.face');
-  s.fill(w - 6, h - 6, 1, 2, 'clay.face');
-  // The gutter: face, sh, two of dk, sh, face.
-  const g: Colour[] = ['clay.face', 'clay.sh', 'clay.dk', 'clay.dk', 'clay.sh', 'clay.face'];
-  g.forEach((c, i) => s.fill(MID + i, 4, 1, h - 8, c));
+  s.fill(1, 1, w - 2, h - 2, t('face'));
+  s.fill(1, 1, w - 3, 1, t('hi')); s.fill(1, 2, 1, h - 4, t('hi'));
+  s.fill(2, 2, w - 5, 1, t('lt')); s.fill(2, 3, 1, h - 6, t('lt'));
+  s.fill(w - 2, 2, 1, h - 3, t('pit')); s.fill(2, h - 2, w - 3, 1, t('pit'));
+  s.fill(w - 3, 3, 1, h - 5, t('sh')); s.fill(3, h - 3, w - 5, 1, t('sh'));
+  s.fill(5, 5, w - 10, 1, 'timber.sh'); s.fill(5, h - 6, w - 10, 1, 'timber.sh');
+  s.fill(5, 6, 1, h - 12, 'timber.sh'); s.fill(w - 6, 6, 1, h - 12, 'timber.sh');
+  s.fill(6, 6, w - 12, h - 12, 'root.0');
+  s.fill(7, 7, w - 14, h - 17, 'clay.lt');
+  s.fill(7, h - 9, w - 14, 1, 'clay.sh');
+  s.fill(7, h - 8, w - 14, 1, 'clay.face');
+  const g: Colour[] = ['clay.face', 'clay.sh', 'clay.dk', 'clay.pit', 'clay.pit', 'clay.dk', 'clay.sh', 'clay.face'];
+  g.forEach((c, i) => s.fill(GUTTER + i, 7, 1, h - 14, c));
 }
 
-/** A ribbon: 12 wide in one colour with its right 2 columns in its dark tone, outlined, rising `rise` above the boards. */
-function paintRibbon(s: Surface, r: Ribbon, x: number, rise: number): void {
-  s.fill(x + 1, -rise, 12, 1, 'root.0');
-  s.fill(x, -rise + 1, 1, rise - 1, 'root.0');
-  s.fill(x + 13, -rise + 1, 1, rise - 1, 'root.0');
-  s.fill(x + 1, -rise + 1, 10, rise - 1, r.colour);
-  s.fill(x + 11, -rise + 1, 2, rise - 1, r.dark);
+/** The ribbon of the open section, 8 wide, lying in the gutter from the cover's top edge down 30, its end cut in a V. */
+const RIBBON = [
+  'KccKKcdK',
+  'KcK..KdK',
+  'KK....KK',
+];
+const RIBBON_LONG = 27;
+function paintRibbon(s: Surface, r: Ribbon): void {
+  const x = GUTTER;
+  s.fill(x, 1, 1, RIBBON_LONG, 'root.0'); s.fill(x + 7, 1, 1, RIBBON_LONG, 'root.0');
+  s.fill(x + 1, 1, 5, RIBBON_LONG, r.colour); s.fill(x + 6, 1, 1, RIBBON_LONG, r.dark);
+  RIBBON.forEach((row, j) => {
+    for (let i = 0; i < 8; i++) {
+      const ch = row[i];
+      if (ch === '.') continue;
+      s.fill(x + i, 1 + RIBBON_LONG + j, 1, 1, ch === 'K' ? 'root.0' : ch === 'c' ? r.colour : r.dark);
+    }
+  });
 }
 
-/** The journal and the codex (5.19): a book of 292 by 180 opened to two pages, ribbons above, page arrows at the bottom. */
+/** The journal and the codex (5.19): a book of 292 by 180 opened to two pages, tabs on its top edge, page arrows below. */
 export function book(o: BookOpts): Node {
   const kids: Node[] = [];
-  o.ribbons.forEach((r, i) => {
+  const tab = (i: number): Node => {
+    const r = o.ribbons[i];
     const chosen = i === o.chosen;
-    const rise = chosen ? 12 : 7;
+    const rise = chosen ? CHOSEN_RISE : OTHER_RISE;
+    const at = i * TAB_PITCH;
     const f = o.force?.ribbon?.i === i ? o.force.ribbon.force : undefined;
-    kids.push({
-      id: r.id, x: 159 + i * 16, y: -rise, w: 14, h: rise, takes: true, focus: true,
+    return {
+      id: r.id, x: at, y: -rise, w: TAB_SIZE, h: rise, takes: true, focus: true,
       on: { down: () => o.onRibbon?.(i) },
       tip: (live: Live) => (lv(live, f).hover ? { lines: [{ text: r.name, c: 'salt' }], delay: 0.4 } : null),
-      paint: (s) => { s.translate(0, rise); paintRibbon(s, r, 0, rise); s.translate(0, -rise); },
-    });
-  });
+      paint: (s, live) => {
+        const l = lv(live, f);
+        const fill: Fill = (x, y, w, h, c) => s.fill(x - at, y + rise, w, h, c);
+        if (chosen) chosenTab(fill, at, LEATHER);
+        else { otherTab(fill, at, LEATHER, i === 0); otherTabState(fill, at, LEATHER, l.hover, l.focus); }
+        s.icon(r.icon, 4, chosen ? 4 : 2);
+      },
+    };
+  };
+  o.ribbons.forEach((_, i) => { if (i !== o.chosen) kids.push(tab(i)); });
+  if (o.chosen >= 0 && o.chosen < o.ribbons.length) kids.push(tab(o.chosen));
   const arrow = (id: string, x: number, map: typeof PAGE_ARROW, act: () => void, force?: Force): Node => ({
-    id, x, y: 164, w: 16, h: 7, takes: true, focus: true,
+    id, x, y: 161, w: 16, h: 7, takes: true, focus: true,
     on: { click: act },
     paint: (s, live) => { const l = lv(live, force); s.draw(map, 0, 0, { flat: l.hover || l.focus ? 'blood.dk' : 'ink' }); },
   });
-  if (o.prev) kids.push(arrow(`${o.id}.prev`, 14, PAGE_ARROW_LEFT, o.prev, o.force?.prev));
-  if (o.next) kids.push(arrow(`${o.id}.next`, BOOK_W - 30, PAGE_ARROW, o.next, o.force?.next));
-  if (o.left) kids.push({ x: PAGE_TEXT.left, y: PAGE_TEXT.top, w: PAGE_TEXT.w, h: 150, kids: o.left });
-  if (o.right) kids.push({ x: PAGE_TEXT.right, y: PAGE_TEXT.top, w: PAGE_TEXT.w, h: 150, kids: o.right });
+  if (o.prev) kids.push(arrow(`${o.id}.prev`, 12, PAGE_ARROW_LEFT, o.prev, o.force?.prev));
+  if (o.next) kids.push(arrow(`${o.id}.next`, BOOK_W - 28, PAGE_ARROW, o.next, o.force?.next));
+  if (o.left) kids.push({ x: PAGE_TEXT.left, y: PAGE_TEXT.top, w: PAGE_TEXT.w, h: PAGE_BOTTOM - PAGE_TEXT.top, kids: o.left });
+  if (o.right) kids.push({ x: PAGE_TEXT.right, y: PAGE_TEXT.top, w: PAGE_TEXT.w, h: PAGE_BOTTOM - PAGE_TEXT.top, kids: o.right });
+  const open = o.ribbons[o.chosen];
   return {
     id: o.id, x: o.x, y: o.y, w: BOOK_W, h: BOOK_H,
     paint: (s) => {
       paintBook(s);
+      if (open) paintRibbon(s, open);
       if (o.pages) {
         const [a, b] = o.pages.map(String);
-        s.text(a, centreX(a, PAGE_TEXT.left, PAGE_TEXT.w, SMALL), 166, 'ink.faded', false, SMALL);
-        s.text(b, centreX(b, PAGE_TEXT.right, PAGE_TEXT.w, SMALL), 166, 'ink.faded', false, SMALL);
+        s.text(a, centreX(a, PAGE_TEXT.left, PAGE_TEXT.w, SMALL), 162, 'ink.faded', false, SMALL);
+        s.text(b, centreX(b, PAGE_TEXT.right, PAGE_TEXT.w, SMALL), 162, 'ink.faded', false, SMALL);
       }
     },
     kids,
   };
 }
+
+/** How far a book's tabs stand above it: the chosen one's rise. */
+export const BOOK_TABS = CHOSEN_RISE;
 
 /** A heading on a page: plain ink with a rule of `clay.sh` one unit thick one unit under its cell. */
 export function pageHeading(o: { x: number; y: number; w: number; text: string }): Node {

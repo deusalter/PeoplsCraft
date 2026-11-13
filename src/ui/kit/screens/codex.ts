@@ -4,7 +4,8 @@ import { GROUND } from '../art/ground';
 import { SLOT } from '../art/slot';
 import { box } from '../font/wrap';
 import type { KeyEv, Live, Node, Screen } from '../node';
-import { type Ribbon, BOOK_W, book, pageHeading } from '../parts/book';
+import type { Colour } from '../palette';
+import { type Ribbon, BOOK_H, BOOK_TABS, BOOK_W, PAGE_BOTTOM, PAGE_TEXT, book, pageHeading } from '../parts/book';
 import { ring, sunk } from '../parts/common';
 import { centred } from '../scale';
 import { CODEX, type Entry, type Section } from '../sample/codex';
@@ -24,11 +25,11 @@ export interface CodexView {
 }
 
 const RIBBONS: Ribbon[] = [
-  { id: 'cx.rb.creatures', colour: 'blood', dark: 'blood.dk', name: 'Creatures' },
-  { id: 'cx.rb.matter', colour: 'ember', dark: 'ember.dk', name: 'Matter' },
-  { id: 'cx.rb.places', colour: 'growth', dark: 'growth.dk', name: 'Places' },
-  { id: 'cx.rb.peoples', colour: 'arm', dark: 'arm.dk', name: 'Peoples' },
-  { id: 'cx.rb.old', colour: 'violet.lt', dark: 'violet.dk', name: 'Old things' },
+  { id: 'cx.rb.creatures', colour: 'blood', dark: 'blood.dk', name: 'Creatures', icon: 'creatures' },
+  { id: 'cx.rb.matter', colour: 'ember', dark: 'ember.dk', name: 'Matter', icon: 'matter' },
+  { id: 'cx.rb.places', colour: 'growth', dark: 'growth.dk', name: 'Places', icon: 'map' },
+  { id: 'cx.rb.peoples', colour: 'arm', dark: 'arm.dk', name: 'Peoples', icon: 'peoples' },
+  { id: 'cx.rb.old', colour: 'violet.lt', dark: 'violet.dk', name: 'Old things', icon: 'old' },
 ];
 const PW = 126, COLS = 7, CELLS = 49;
 
@@ -44,11 +45,11 @@ function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolea
   else s.icon(e.icon, 1, 1, 'flat', hot ? 'clay.sh' : 'clay.face');
 }
 
-/** The four steps (X9): a paragraph for each one known, one rule of `clay.sh` for each one not, cut at the box's foot. */
-function steps(e: Entry, creature: boolean): Node {
-  const H = 62;
+/** The four steps (X9): a paragraph for each one known, one rule of `clay.sh` for each one not, cut at the page's foot. */
+function steps(e: Entry, creature: boolean, top: number): Node {
+  const H = PAGE_BOTTOM - PAGE_TEXT.top - top;
   return {
-    x: 0, y: 86, w: PW, h: H,
+    x: 0, y: top, w: PW, h: H,
     paint: (s) => {
       let y = 0;
       const n = creature ? 4 : Math.max(1, e.steps.length);
@@ -63,14 +64,24 @@ function steps(e: Entry, creature: boolean): Node {
   };
 }
 
+/**
+ * The right page (X5 to X9): the name, the word under it on up to two lines, the picture well 56 square at the left,
+ * the facts in the column beside it (where, in arm.dk as a link; when; what it leaves), each wrapped onto as many
+ * lines as it needs rather than cut, five lines in all; then the steps at the page's full width to its foot.
+ */
 function rightPage(e: Entry | undefined, creature: boolean): Node[] {
   if (!e) return [];
   const kids: Node[] = [];
   const known = e.seen;
   kids.push(inkLine(0, 0, PW, known ? e.name : creature ? 'Not yet met' : 'Not yet found', known ? 'ink' : 'ink.faded'));
-  if (known && e.word) kids.push(inkLine(0, 10, PW, e.word, 'ink.faded'));
+  let y = 12;
+  if (known && e.word) {
+    const b = box(e.word, PW, 2);
+    kids.push({ x: 0, y: 10, w: PW, h: b.h, paint: (s) => { for (const l of b.lines) s.text(l.text, 0, l.y, 'ink.faded'); } });
+    y = 10 + b.h + 2;
+  }
   kids.push({
-    x: 0, y: 24, w: 56, h: 56,
+    x: 0, y, w: 56, h: 56,
     paint: (s) => {
       sunk(s, 0, 0, 56, 56, 'clay');
       // The thing stands on a strip of the ground tile at the foot of the picture.
@@ -79,10 +90,23 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
     },
   });
   if (known && e.facts) {
-    e.facts.slice(0, 5).forEach((f, i) => kids.push(typeof f === 'string' ? inkLine(60, 24 + i * 10, 66, f, i === 0 ? 'arm.dk' : 'ink') : inkLine(60, 24 + i * 10, 66, f.text, f.c)));
+    const FW = PW - 60;
+    let fy = 0;
+    const facts = e.facts.slice(0, 3);
+    facts.forEach((f, i) => {
+      const text = typeof f === 'string' ? f : f.text;
+      const c: Colour = typeof f === 'string' ? (i === 0 ? 'arm.dk' : 'ink') : f.c;
+      const room = 5 - fy / 10 - (facts.length - 1 - i);
+      if (room < 1) return;
+      const b = box(text, FW, Math.min(2, room));
+      const at = fy;
+      kids.push({ x: 60, y: y + at, w: FW, h: b.h, paint: (s) => { for (const l of b.lines) s.text(l.text, 0, l.y, c); } });
+      fy += b.h;
+    });
   }
-  if (known) kids.push(steps(e, creature));
-  else if (creature) kids.push(steps({ ...e, steps: [] }, true));
+  y += 60;
+  if (known) kids.push(steps(e, creature, y));
+  else if (creature) kids.push(steps({ ...e, steps: [] }, true, y));
   return kids;
 }
 
@@ -107,9 +131,9 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
   let before = 0;
   for (let k = 0; k < v.section; k++) before += v.sections[k].spreads.length;
   const page = (before + v.spread) * 2 + 1;
-  const at = centred(ui.w, ui.h, BOOK_W, 192);
+  const at = centred(ui.w, ui.h, BOOK_W, BOOK_H);
   const bk = book({
-    id: 'cx.book', x: at.x, y: at.y + 12, ribbons: RIBBONS, chosen: v.section,
+    id: 'cx.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), ribbons: RIBBONS, chosen: v.section,
     onRibbon: (i) => { ui.cue('page'); v.onSection(i); },
     pages: [page, page + 1],
     prev: v.spread > 0 ? () => { ui.cue('page'); v.onSpread(v.spread - 1); } : undefined,

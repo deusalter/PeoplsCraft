@@ -83,13 +83,15 @@ for (const [k, r0] of [['life', 0], ['hunger', 9], ['arm', 20]]) {
 }
 // 5.18 status frame
 compare('status', render(18, 18, (g) => paint(g, mods.statusFrame({ x: 0, y: 0, icon: 'x', good: true, seconds: 999 }))), grab(1508, 0, 18, 0, 18));
-// 5.19 book corners
+// 5.19 book: the top left corner with its open tab and one not, the gutter with the open section's ribbon, the bottom right
 {
-  const g = render(292, 180, (g) => paint(g, mods.book({ id: 'b', x: 0, y: 0, ribbons: [], chosen: -1 })));
-  compare('book top left', g, grab(1544, 0, 14, 0, 26));
-  compare('book bottom right', g, grab(1602, 0, 22, 0, 30).map((r) => r.replace(/I/g, 'L')), 'timber', 262, 158);
+  const rb = [{ id: 'a', colour: 'blood', dark: 'blood.dk', name: 'a', icon: 'x' }, { id: 'c', colour: 'arm', dark: 'arm.dk', name: 'c', icon: 'x' }];
+  const g = render(292, 201, (g) => paint(g, mods.book({ id: 'b', x: 0, y: 21, ribbons: rb, chosen: 0, next: () => {} })));
+  compare('book top left', g, grab(1546, 0, 36, 0, 52));
+  compare('book gutter', g, grab(1592, 0, 35, 0, 26), 'timber', 136, 21);
+  compare('book bottom right', g, grab(1635, 0, 22, 0, 30), 'timber', 262, 179);
 }
 // 5.25 ping, 5.28 crosshair
-compare('crosshair', render(9, 9, (g) => paint(g, mods.crosshair({ x: 0, y: 0 }))), grab(2065, 0, 9, 0, 9));
+compare('crosshair', render(9, 9, (g) => paint(g, mods.crosshair({ x: 0, y: 0 }))), grab(2098, 0, 9, 0, 9));
 await server.close();
 process.exit(faults ? 1 : 0);

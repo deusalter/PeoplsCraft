@@ -21,12 +21,12 @@ export const bookSheet: Sheet = {
   build(ui) {
     const kids: Node[] = [];
     kids.push(book({
-      id: 'book', x: 0, y: 12, chosen: 1, pages: [12, 13],
+      id: 'book', x: 0, y: 21, chosen: 1, pages: [12, 13],
       ribbons: [
-        { id: 'rb.guide', colour: 'growth', dark: 'growth.dk', name: 'The Guide' },
-        { id: 'rb.bounty', colour: 'blood', dark: 'blood.dk', name: 'Bounties' },
-        { id: 'rb.stand', colour: 'arm', dark: 'arm.dk', name: 'Standing' },
-        { id: 'rb.codex', colour: 'ember', dark: 'ember.dk', name: 'Codex' },
+        { id: 'rb.guide', colour: 'growth', dark: 'growth.dk', name: 'The Guide', icon: 'guide' },
+        { id: 'rb.bounty', colour: 'blood', dark: 'blood.dk', name: 'Bounties', icon: 'bounty' },
+        { id: 'rb.stand', colour: 'arm', dark: 'arm.dk', name: 'Standing', icon: 'standing' },
+        { id: 'rb.codex', colour: 'ember', dark: 'ember.dk', name: 'Codex', icon: 'codex' },
       ],
       prev: () => {}, next: () => {},
       force: { next: { hover: true } },
