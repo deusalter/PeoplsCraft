@@ -21,6 +21,9 @@ export interface FieldOpts {
   ui: Ui;
 }
 
+const CARET_REST = 1.5;
+const lastStir = new Map<string, { t: number; v: string }>();
+
 /** A password's characters: a 3 by 3 dot each, at the pitch of a narrow glyph. */
 function dots(s: Surface, n: number, x: number, y: number): number {
   for (let i = 0; i < n; i++) s.fill(x + i * 4, y + 4, 3, 3, 'salt');
@@ -38,7 +41,8 @@ export function field(o: FieldOpts): Node {
     id: o.id, x: o.x, y: o.y, w, h,
     focus: true,
     field: { value: o.value, limit: o.limit, allow: o.allow, password: o.password, textX: 4 },
-    on: { text: (st) => { o.onText?.(st.value); o.ui.wake(); } },
+    // A press focuses the field; building again marks it as moving, so that its caret blinks.
+    on: { text: (st) => { o.onText?.(st.value); o.ui.wake(); }, down: () => o.ui.invalidate() },
     paint: (s) => {
       const st = o.ui.field(o.id);
       const focused = o.show?.focus || o.ui.focused() === o.id;
@@ -65,7 +69,11 @@ export function field(o: FieldOpts): Node {
         const [a, b] = st.compose;
         s.fill(4 + before(a) - scroll, ty + 9, Math.max(1, before(b) - before(a) - 1), 1, 'salt');
       }
-      const on = o.show?.focus ? true : Math.floor(o.ui.t * 2) % 2 === 0;
+      // The caret stays lit for a while after the field takes focus or its text changes, then blinks each 0.5 s.
+      if (!focused) lastStir.delete(o.id);
+      else if (!lastStir.has(o.id) || lastStir.get(o.id)!.v !== value) lastStir.set(o.id, { t: o.ui.t, v: value });
+      const since = focused ? o.ui.t - lastStir.get(o.id)!.t : 0;
+      const on = o.show?.focus || since < CARET_REST ? true : Math.floor((since - CARET_REST) * 2) % 2 === 0;
       if (focused && on) s.fill(4 + caretAt - scroll, ty, 1, 10, 'salt');
       s.unclip();
     },
