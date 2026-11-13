@@ -138,7 +138,7 @@ Three rules follow and are used everywhere below.
 | --- | --- | --- |
 | The dim behind a window | `root.0` at a half | `root.1`, opaque |
 | The dim behind the pause slab | `root.0` at a half, as behind any window | `root.1`, opaque |
-| The strip under a chat line, a name tag and the prompt | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
+| The strip under a chat line, a name tag, the prompt and the name of the thing in hand | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
 | The fall | `blood.dk` at a quarter, a half, then a half held | `blood.dk`, opaque |
@@ -432,7 +432,7 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 
 ### 4.2 The small face
 
-For digits that have no room: a stack count of three digits, the time under a status frame, a page number, the ranks under a node, the life as a number beside the pips. Its letters are kept for the few strings already wired in it, but every HUD readout with a word in it (coordinates, the night, "Saved", a distance with its unit) is the text face in sentence case: at 3 by 5, capitals are hard to tell apart (Z from 2, U from V) and set in capitals they break the rule of case. It is never used for a label or a sentence. The 4 has its diagonal so that it is not read as H.
+For digits that have no room: a stack count of three digits, the time under a status frame, a page number, the ranks under a node. Its letters are kept for the few strings already wired in it, but every HUD readout with a word in it (coordinates, the night, "Saved", a distance with its unit) is the text face in sentence case: at 3 by 5, capitals are hard to tell apart (Z from 2, U from V) and set in capitals they break the rule of case. It is never used for a label or a sentence. The 4 has its diagonal so that it is not read as H.
 
 | Measure | Units |
 | --- | --- |
@@ -1772,7 +1772,7 @@ A held stack is its icon centred on the pointer's place (at -8, -8) with its cou
 
 ### 5.23 Chat
 
-Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its wash ends left of the hotbar's column (x `cx - 91`, 1 unit clear), the newest line's bottom is 48 above the stage's bottom, level with the top of the hotbar's measures and clear of the life count; on a narrower stage it is 58 above, over the row of defence and lees. Under the lines lies one strip of the chat wash as wide as the column (the wrap plus 3, so 144 on a wide stage), the same for every line whatever its length, so that chat reads as one plate and not as highlighted text (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server is all `stone.lt`. Text wraps at 141, so that chat with its wash is 144 wide (x 4 to 148 on a stage 480 wide, left of the hotbar's column and far from the crosshair), or at half the stage less 64 when that is less. A line that wraps continues 4 units in, so that a wrapped row is not read as a new speaker. Only whole lines show: when the oldest line will not fit, all of it is left out. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, as wide as the stage less 8, over the hotbar, as the tradition puts it: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
+Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its wash ends left of the hotbar's column (x `cx - 91`, 1 unit clear), the newest line's bottom is 48 above the stage's bottom, level with the top of the hotbar's measures; on a narrower stage it is 58 above, over the row of defence and lees. Under the lines lies one strip of the chat wash as wide as the column (the wrap plus 3, so 144 on a wide stage), the same for every line whatever its length, so that chat reads as one plate and not as highlighted text (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server is all `stone.lt`. Text wraps at 141, so that chat with its wash is 144 wide (x 4 to 148 on a stage 480 wide, left of the hotbar's column and far from the crosshair), or at half the stage less 64 when that is less. A line that wraps continues 4 units in, so that a wrapped row is not read as a new speaker. Only whole lines show: when the oldest line will not fit, all of it is left out. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, as wide as the stage less 8, over the hotbar, as the tradition puts it: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
 
 ```
      0         1         2         3         4         5         6         7         8         9         0
@@ -1997,7 +1997,7 @@ The crew at the top left of the HUD uses the same head, name and life strip in r
 
 ### 5.26 Compass strip
 
-A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3, a friend's head at y 1, lying over the plate's inner edges; one that lies outside the strip's span waits at that end. Under the plate, the text's cell at y 13, in the text face with shadow and in sentence case: the place as "x -104  y 64  z 2210" at the left, cut short of the night, and "Night 3 of 8" at the right. Left half:
+A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3, a friend's head at y 1, lying over the plate's inner edges; one that lies outside the strip's span waits at that end. Under the plate, the text's cell at y 13, in the text face with shadow and in sentence case: "Night 3 of 8" at the right and, only while the setting Coordinates is on, the place as "x -104  y 64  z 2210" at the left, cut short of the night. Left half:
 
 ```
      0         1         2         3         4         5         6         7         8         9
@@ -2256,7 +2256,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | H1 | compass | 122 | 2 | 182 | 12 | compass strip |
-| H2 | text | 122 | 15 | 182 | 10 | under it, text face with shadow: place as "x -104  y 64  z 2210" at the left, "Night 3 of 8" at the right |
+| H2 | text | 122 | 15 | 182 | 10 | under it, text face with shadow: "Night 3 of 8" at the right; the place as "x -104  y 64  z 2210" at the left only while the setting Coordinates is on (it is off at first) |
 | H3 | boss | 122 | 26 | 182 | 20 | boss bar: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it at y 50 |
 | H4 | readout | 150 | 26 | 126 | 24 | what you look at; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
 | H5 | party | 4 | 4 | 92 | 105 | the crew: one row 15 tall to each friend online, up to seven: head, name, a life strip 41 by 4 under the name |
@@ -2268,10 +2268,10 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | H11 | chat | 4 | 111 | 144 | 71 | chat: up to eight whole lines 10 tall, newest lowest, each on its own dark strip as wide as its text, wrapped at 141, wrapped rows 4 in. On this stage chat would reach the hotbar's column, so the newest ends at y 182; on a stage where it ends left of that column (480 wide and more) it comes down to 48 above the bottom. Fewer lines while the crew list stands above |
 | H12 | cross | 209 | 116 | 9 | 9 | crosshair, 9 by 9: salt plus, root.0 outline |
 | H13 | prompt | 163 | 132 | 100 | 14 | prompt: a key cap and a line on a strip of the chat wash 2 wider each side, centred on the crosshair, the cap's top 12 under its centre |
-| H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour, for 1.6 s after a change |
+| H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour with shadow, for 1.6 s after a change, on a strip of the chat wash 2 wider than the name each side and 11 tall from its cell's top, so that growth.lt holds on noon grass |
 | H15 | text | 122 | 186 | 70 | 10 | second row, left: shield mark and defence, then the jar mark and lees carried |
 | H16 | pips | 223 | 187 | 81 | 9 | second row, right: ten arm pips, filling from the right |
-| H17 | pips | 122 | 198 | 81 | 9 | first row, left: ten life pips; the life as a number in the small face ends at x 119 |
+| H17 | pips | 122 | 198 | 81 | 9 | first row, left: ten life pips. No number stands beside them: the pips already say it, and the life's number is in the pack's body panel |
 | H18 | text | 205 | 197 | 17 | 10 | level, centred on x 213, growth.lt with shadow |
 | H19 | pips | 223 | 198 | 81 | 9 | first row, right: ten hunger pips, filling from the right |
 | H20 | strip | 122 | 209 | 182 | 5 | practice strip, thin, eighteen segments |

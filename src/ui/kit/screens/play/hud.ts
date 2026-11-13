@@ -1,6 +1,6 @@
 // The HUD of section 6, laid out on the stage: each part keeps its distance from the stage's edge, its top or bottom,
 // or its centre line, as the wireframe's third it stands in says. The HUD takes no pointer.
-import { SMALL, TEXT } from '../../font/face';
+import { TEXT } from '../../font/face';
 import { count, measure, rightX } from '../../font/measure';
 import type { Node, Ui } from '../../node';
 import { type Colour, GRADES } from '../../palette';
@@ -57,7 +57,7 @@ const BAR: (Stack | null)[] = [
   { key: 'torch', n: 41 }, { key: 'cooked_meat', n: 12 }, { key: 'salve', n: 5 }, { key: 'recall_stone', n: 1 }, { key: 'oak_planks', n: 48 },
 ];
 
-function rightLine(right: number, y: number, text: string, c: Colour, face = SMALL): Node {
+function rightLine(right: number, y: number, text: string, c: Colour, face = TEXT): Node {
   return { x: rightX(text, right, face), y, w: measure(text, face) + 1, h: face.height + 1, paint: (s) => { s.text(text, 0, 0, c, true, face); } };
 }
 
@@ -81,7 +81,7 @@ export function chatWrap(stageW: number): number { return Math.min(CHAT_WRAP, Ma
 
 /**
  * The bottom of the newest chat line. When chat with its wash ends left of the hotbar's column, it comes down to 48
- * above the stage's bottom, level with the top of the hotbar's measures and clear of the life count; on a stage too
+ * above the stage's bottom, level with the top of the hotbar's measures; on a stage too
  * narrow for that it stands above the row of defence and lees.
  */
 export function chatBottom(stageW: number, stageH: number): number {
@@ -102,7 +102,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     { kind: 'bed', deg: 200 }, { kind: 'guide', deg: 34 }, { kind: 'fell', deg: 302 },
     { kind: 'friend', seat: 2, deg: 8 }, { kind: 'friend', seat: 3, deg: 61 }, { kind: 'friend', seat: 6, deg: 338 }, { kind: 'friend', seat: 5, deg: 130 },
   ];
-  out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, place: 'x -104  y 64  z 2210', night: first ? 'Night 1 of 8' : 'Night 3 of 8' }));
+  out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, night: first ? 'Night 1 of 8' : 'Night 3 of 8' }));
 
   if (o.boss) {
     out.push(bossBar({ x: L(cx - 91), y: 26, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
@@ -173,14 +173,15 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   const inHand = first ? null : BAR[0]!;
   if (inHand) {
     const name = stackName(inHand), c = GRADES[stackGrade(inHand)].dark;
-    out.push({ x: L(cx - Math.floor(measure(name) / 2)), y: H - 66, w: measure(name) + 1, h: 11, paint: (s) => { s.text(name, 0, 0, c, true); } });
+    // On the chat's strip, 2 wider each side and one taller than the text, so a grade's colour holds on bright grass.
+    const nw = measure(name) + 1;
+    out.push({ x: L(cx - Math.floor(measure(name) / 2)) - 2, y: H - 66, w: nw + 4, h: 11, paint: (s) => { s.wash(0, 0, nw + 4, 11, 'root.0', 3); s.text(name, 2, 0, c, true); } });
   }
   const carried = first ? '{shield} 0   {lees} 0' : `{shield} 9   {lees} ${count(1240)}`;
   out.push({ x: L(cx - 91), y: H - 54, w: measure(carried) + 1, h: 11, paint: (s) => { s.text(carried, 0, 0, 'salt', true); } });
   const life = first ? [100, 100] : [84, 100], hunger = first ? [20, 20] : [9, 20], arm = first ? [60, 60] : [38, 60];
   out.push(pips({ x: L(cx + 10), y: H - 53, kind: 'arm', now: arm[0], max: arm[1], fromRight: true }));
   out.push(pips({ x: L(cx - 91), y: H - 42, kind: 'life', now: life[0], max: life[1], mending: !first && !STILL }));
-  out.push(rightLine(L(cx - 94), H - 40, String(life[0]), 'salt'));
   const level = first ? '1' : '14';
   out.push({ x: L(cx - Math.floor(measure(level) / 2)), y: H - 43, w: measure(level) + 1, h: 11, paint: (s) => { s.text(level, 0, 0, 'growth.lt', true); } });
   out.push(pips({ x: L(cx + 10), y: H - 42, kind: 'hunger', now: hunger[0], max: hunger[1], fromRight: true }));
