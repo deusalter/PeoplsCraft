@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check && vite build",
+    "build": "npm run check && vite build --outDir dist/client && vite build -c vite.server.config.ts",
     "preview": "vite preview",
     "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.sim.json --noEmit && tsc -p tsconfig.server.json --noEmit && node scripts/lint-sim.mjs",
     "smoke": "node scripts/smoke.mjs",
     "node": "node scripts/run.mjs",
-    "test": "node scripts/test.mjs"
+    "test": "node scripts/test.mjs",
+    "start": "if [ ! -f dist/server/main.js ] || [ ! -f dist/client/index.html ] || [ -n \"$(find src server index.html package.json vite.config.ts vite.server.config.ts -newer dist/server/main.js -print 2>/dev/null | head -n 1)\" ]; then npm run build; fi && node dist/server/main.js"
   },
   "dependencies": {
     "three": "^0.187.0"
@@ -18,8 +19,13 @@
   "devDependencies": {
     "@types/node": "^22.20.5",
     "@types/three": "^0.187.0",
+    "@types/ws": "^8.18.2",
     "playwright-core": "^1.65.0",
     "typescript": "^7.0.2",
-    "vite": "^8.3.7"
+    "vite": "^8.3.7",
+    "ws": "^8.23.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

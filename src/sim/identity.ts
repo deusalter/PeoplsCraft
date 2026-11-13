@@ -9,7 +9,7 @@ const K = new Uint32Array([
 ]);
 const rotr = (x: number, n: number): number => (x >>> n) | (x << (32 - n));
 
-/** SHA-256 of a string's UTF-16 code units below 256 (tokens are hex), as 64 hex characters. `crypto.subtle` does not
+/** SHA-256 of a string's UTF-16 code units below 256 (tokens are hex), as 64 hex characters. The browser's own digest does not
  *  exist on a plain-http page, so this is written out. */
 export function sha256Hex(text: string): string {
   const n = text.length, len = ((n + 9 + 63) >> 6) << 6, msg = new Uint8Array(len), w = new Uint32Array(64);

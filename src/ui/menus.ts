@@ -2,6 +2,7 @@
 import { GAME_TITLE } from '../core/constants';
 import { strSeed } from '../core/noise';
 import type { Game } from '../game';
+import { NAME_RE, TOKEN_KEY } from '../net/protocol';
 import { GfxSettings, PRESETS } from '../render/gfx';
 import { type WorldSummary, deleteWorld, listWorlds } from '../storage/idb';
 import { claimWorld } from '../storage/lock';
@@ -113,8 +114,39 @@ export function noSaveText(code: string | undefined): { menu: string; banner: st
       banner: 'This browser is blocking storage. Progress is lost when the tab closes.', pause: 'Saving is unavailable in this browser' };
 }
 
+const line = (parent: HTMLElement, text: string): void => { el('div', '', parent, text).style.cssText = 'text-align:center;color:var(--dim);font-size:12px'; };
+
 /** The world the title menu was asked to open: one of the list, or a new one that exists once it is first saved. */
 export interface WorldChoice { id: string; name: string; seed: number; seedText: string }
+
+/** What a server answers at `GET ./info`. */
+export interface ServerInfo { server: true; name: string; players: number; max: number; password: boolean }
+/** A server the title menu was asked to join. `address` as the player typed it, or the page's own origin. */
+export interface JoinChoice { address: string; name: string; password?: string }
+export interface JoinMenu {
+  /** The server that served this page, when one did: its address is the page's own and is not asked for. */
+  here: ServerInfo | null;
+  /** An address to offer (the last one joined, or `?server=`). */
+  address: string;
+  /** Start joining. What it returns gives the attempt up. */
+  onJoin: (j: JoinChoice) => () => void;
+  /** Open on the join screen rather than the home screen. */
+  open?: boolean;
+}
+const NAME_KEY = 'peopls.name', SERVER_KEY = 'peopls.server';
+const remembered = (k: string): string => { try { return localStorage.getItem(k) ?? ''; } catch { return ''; } };
+const remember = (k: string, v: string): void => { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } };
+/** The name this browser last joined with. */
+export const savedName = (): string => remembered(NAME_KEY);
+/** This browser's token (4.2): 32 random hex characters, made once and kept. A page that cannot keep it is a new player
+ *  each time it loads. */
+export function playerToken(): string {
+  const t = remembered(TOKEN_KEY);
+  if (/^[0-9a-f]{32}$/.test(t)) return t;
+  const n = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+  remember(TOKEN_KEY, n);
+  return n;
+}
 
 export class TitleMenu {
   private root: HTMLElement;
@@ -122,10 +154,10 @@ export class TitleMenu {
   private back: (() => void) | null = null;
   private onEsc = (e: KeyboardEvent): void => { if (e.code === 'Escape' && this.back) { e.preventDefault(); this.back(); } };
   constructor(ui: HTMLElement, private settings: Settings, private onPlay: (w: WorldChoice) => void, private canSave = true,
-    private noSaveWhy = noSaveText(undefined).menu) {
+    private noSaveWhy = noSaveText(undefined).menu, private net: JoinMenu | null = null) {
     this.root = el('div', '#menu', ui); this.root.classList.add('solid');
     window.addEventListener('keydown', this.onEsc);
-    void this.home();
+    if (net?.open) this.join(); else void this.home();
   }
   private head(sub: string): void {
     this.root.innerHTML = '';
@@ -136,6 +168,8 @@ export class TitleMenu {
   private async home(): Promise<void> {
     this.head('a voxel sandbox of lost lights'); this.back = null;
     const col = el('div', 'col', this.root), worlds: WorldSummary[] = this.canSave ? await listWorlds().catch(() => []) : [];
+    const here = this.net?.here;
+    if (this.net) el('button', 'btn' + (here ? ' gold' : ''), col, here ? `Join ${here.name}` : 'Join a server').onclick = () => this.join();
     const list = worlds.length ? el('div', 'scroll worlds', col) : col;
     for (const w of worlds) {
       const row = el('div', 'world', list), info = el('div', '', row);
@@ -178,7 +212,50 @@ export class TitleMenu {
     this.back = () => void this.home();
     el('button', 'btn', this.root, 'Back').onclick = this.back;
   }
-  private play(w: WorldChoice): void { window.removeEventListener('keydown', this.onEsc); this.root.remove(); this.onPlay(w); }
+  private play(w: WorldChoice): void { this.close(); this.onPlay(w); }
+  /** Take the menu down for good. */
+  close(): void { window.removeEventListener('keydown', this.onEsc); this.root.remove(); }
+
+  /** The join screen. `why`: what went wrong with the last attempt. */
+  join(why = ''): void {
+    const net = this.net;
+    if (!net) return;
+    const here = net.here;
+    this.head('join a world');
+    const col = el('div', 'col', this.root);
+    let addr: HTMLInputElement | null = null;
+    if (here) line(col, `${here.name} · ${here.players} of ${here.max} playing`);
+    else { addr = el('input', '', col); addr.type = 'text'; addr.placeholder = 'Address (host:port)'; addr.maxLength = 200; addr.value = net.address || remembered(SERVER_KEY); }
+    const name = el('input', '', col); name.type = 'text'; name.placeholder = 'Your name'; name.maxLength = 16; name.value = savedName();
+    let pw: HTMLInputElement | null = null;
+    if (!here || here.password) {
+      pw = el('input', '', col); pw.type = 'password'; pw.placeholder = here ? 'Password' : 'Password (if the server has one)'; pw.maxLength = 128;
+      pw.style.cssText = 'background:#0c0e13;border:1px solid #000;box-shadow:inset 0 0 0 1px #3b4254;color:var(--text);font:inherit;padding:8px 10px;outline:none';
+    }
+    const msg = el('div', 'warn', col, why);
+    const go = el('button', 'btn gold', col, 'Join');
+    for (const i of [addr, name, pw]) if (i) i.onkeydown = (e) => { if (e.key === 'Enter') go.click(); };
+    go.onclick = () => {
+      const n = name.value.trim(), a = addr ? addr.value.trim() : '';
+      if (!NAME_RE.test(n)) { msg.textContent = 'A name is 1 to 16 letters, digits, spaces, _ or -.'; name.focus(); return; }
+      if (addr && !a) { msg.textContent = 'Which server? Type its address, for example 192.168.1.20:8080.'; addr.focus(); return; }
+      remember(NAME_KEY, n);
+      if (addr) remember(SERVER_KEY, a);
+      const stop = net.onJoin({ address: a, name: n, password: pw?.value || undefined });
+      this.status('Connecting...', () => { stop(); this.join(); });
+    };
+    this.back = () => void this.home();
+    el('button', 'btn', col, 'Back').onclick = this.back;
+    (addr && !addr.value ? addr : !name.value ? name : pw ?? go).focus();
+  }
+  /** A join under way: what it is doing, and a way to give it up. */
+  status(text: string, cancel: () => void): void {
+    this.head('join a world');
+    const col = el('div', 'col', this.root);
+    line(col, text);
+    this.back = cancel;
+    el('button', 'btn', col, 'Cancel').onclick = cancel;
+  }
 }
 
 export class GameMenu {

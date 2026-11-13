@@ -101,6 +101,18 @@ export class Session {
     this.welcomed = false; this.error = null;
     this.send({ t: 'hello', proto: PROTO, build: h.build, data: dataHash(), name: h.name, token: h.token, password: h.password, view: h.view });
   }
+  /** Say `h` now if the transport is open, and again every time it opens anew: a transport that reconnects by itself
+   *  (the WebSocket's) comes back as a new connection, which the host takes only after a hello, and its `welcome` starts
+   *  every mirror over. The caller's own `onOpen` still runs, after the hello. What arrived on the connection before
+   *  and is still queued is delivered first: the welcome behind it puts right whatever it said. */
+  join(h: Hello): void {
+    const t = this.transport, prev = t.onOpen;
+    t.onOpen = () => { this.joins++; this.hello(h); if (prev) prev(); };
+    if (t.state === 'open') { this.joins++; this.hello(h); }
+  }
+  /** Hellos said by `join`: 1 after the first connection, one more for each reconnection. */
+  joins = 0;
+
   /** Once a tick: every RTT_EVERY seconds the host is sent this client's clock, and echoes it. */
   probe(): void {
     const now = this.clock();
