@@ -91,8 +91,8 @@ export const slotsSheet: Sheet = {
     kids.push(slab({
       x: 248, y: 174, w: 176, h: 50, ramp: 'stone', title: 'Title in sentence case', titleRoom: sortW + 16,
       kids: [
-        button({ id: 'title.sort', x: 168 - 12 - 2 - sortW, y: 3, w: sortW, h: 12, label: 'Sort' }),
-        button({ id: 'title.plus', x: 156, y: 3, w: 12, h: 12, label: '+' }),
+        button({ id: 'title.sort', x: 168 - 12 - 2 - sortW, y: 3, w: sortW, h: 12, label: 'Sort', ramp: 'stone' }),
+        button({ id: 'title.plus', x: 156, y: 3, w: 12, h: 12, label: '+', ramp: 'stone' }),
         ink(8, 20, 'A long title is cut before', 'ink.faded'),
         ink(8, 30, 'the buttons of its row.', 'ink.faded'),
       ],

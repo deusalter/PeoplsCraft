@@ -42,10 +42,10 @@ export const controlsSheet: Sheet = {
     kids.push(button({ id: 'btn.wide', x: 0, y: 112, w: 200, label: 'Back to the world' }));
     kids.push(button({ id: 'btn.cycle', x: 102, y: 0, w: 98, label: 'Graphics: low' }));
     // Small buttons on a slab.
-    const sm = (y: number, h: 12 | 14 | 16, label: string, force = {}) => button({ id: `sm.${h}.${label}`, x: 8, y, w: measure(label) + 10, h, label, force });
+    const sm = (y: number, h: 12 | 14 | 16, label: string, force = {}) => button({ id: `sm.${h}.${label}`, x: 8, y, w: measure(label) + 10, h, label, force, ramp: 'clay' });
     kids.push(slab({
       x: 102, y: 22, w: 98, h: 87, ramp: 'clay', title: 'Small ones',
-      kids: [sm(18, 12, 'Sort'), sm(33, 14, 'Take all'), sm(50, 16, 'Mend', { hover: true }), plusButton({ id: 'sm.plus', x: 60, y: 18 }), ink(8, 70, '12, 14, 16 tall', 'ink.faded')],
+      kids: [sm(18, 12, 'Sort'), sm(33, 14, 'Take all'), sm(50, 16, 'Mend', { hover: true }), plusButton({ id: 'sm.plus', x: 60, y: 18, ramp: 'clay' }), ink(8, 70, '12, 14, 16 tall', 'ink.faded')],
     }));
     // Tabs on the top edge, the second chosen, the third hovered; side tabs on a stone slab.
     kids.push(tabbedSlab({
