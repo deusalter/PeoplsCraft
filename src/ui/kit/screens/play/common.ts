@@ -171,10 +171,10 @@ export function stackSlot(b: Bench, p: Place, o: StackSlotOpts): Node {
         b.ui.cue(h.held ? 'take' : 'put');
         b.after();
       },
-      pass: (e) => { if (e.button === 2 && o.locked === undefined && !o.press) { h.pass(p); b.after(); } },
-      drop: (e: DragEv) => { if (e.button === 0 && o.locked === undefined && !o.press) { h.drop(p); b.after(); } },
+      pass: (e) => { if (e.button === 2 && o.locked === undefined && o.show === undefined) { h.pass(p); b.after(); } },
+      drop: (e: DragEv) => { if (e.button === 0 && o.locked === undefined && o.show === undefined) { h.drop(p); b.after(); } },
       key: (k) => {
-        if (o.locked !== undefined || o.press) return false;
+        if (o.locked !== undefined || o.show !== undefined) return false;
         if (/^[1-9]$/.test(k.key)) { h.swapWithBar(p, Number(k.key) - 1); b.after(); return true; }
         if (k.key === 'q' || k.key === 'Q') { h.dropFrom(p, k.ctrl); b.after(); return true; }
         return false;
