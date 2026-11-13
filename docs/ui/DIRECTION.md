@@ -2392,12 +2392,12 @@ The pack is the main slab, 176 by 182, centred on the screen, with one row of ta
 
 ### Chest
 
-Size 176 by 172. Material: timber. Anchor: centre of the screen.
+Size 197 by 172: the slab 176 by 172 and a panel 22 by 42 fastened to its right side. Material: timber. Anchor: centre of the screen, the panel counted.
 
 ```
 #==========================================================#
-#  "C1"            +-------------++---------+ +--------+   #
-#                  +-C2 button---++-C3------+ +-C4-----+   #
+#  "C1"                                       +--------+   #
+#                                             +-C4-----+   #
 #  .----..----..----..----..----..----..----..----..----.  #
 #  |C5  ||    ||    ||    ||    ||    ||    ||    ||    |  #
 #  '----''----''----''----''----''----''----''----''----'  #
@@ -2431,9 +2431,10 @@ Size 176 by 172. Material: timber. Anchor: centre of the screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | C0 | slab | 0 | 0 | 176 | 172 | timber slab |
 | C1 | text | 8 | 6 | 40 | 10 | "Chest", or "Supply Crate" |
-| C2 | button | 56 | 3 | 44 | 12 | "Take all" |
-| C3 | button | 102 | 3 | 34 | 12 | "Stash": moves out of the pack every kind the chest already holds |
-| C4 | button | 138 | 3 | 30 | 12 | "Sort" the chest |
+| P0 | panel | 175 | 17 | 22 | 42 | a timber panel fastened to the slab's right side beside the chest's slots, sharing its outline column |
+| C2 | button | 178 | 21 | 16 | 16 | "Take all": a stone button carrying a salt arrow pointing down, named by its tooltip |
+| C3 | button | 178 | 39 | 16 | 16 | "Stash", an arrow pointing up: moves out of the pack every kind the chest already holds |
+| C4 | button | 138 | 3 | 30 | 12 | "Sort" the chest, the only button in the title row, its right edge 8 in |
 | C5 | slots | 8 | 18 | 162 | 54 | the chest, nine by three |
 | C6 | text | 8 | 76 | 40 | 10 | "Pack" |
 | C7 | button | 138 | 73 | 30 | 12 | "Sort" the pack |
@@ -2442,7 +2443,7 @@ Size 176 by 172. Material: timber. Anchor: centre of the screen.
 
 - **Shows.** Twenty-seven slots of the box over the pack. Two players may have one chest open; each sees the other's changes as they land.
 - **Clickable.** Slots and the four buttons. Shift and left click sends a stack across.
-- **Keys.** E or Esc closes. Tab walks: chest grid, pack, hotbar, then the buttons left to right. 1 to 9 and Q as in the pack.
+- **Keys.** E or Esc closes. Tab walks: chest grid, pack, hotbar, then Sort, Take all and Stash. 1 to 9 and Q as in the pack.
 - **First.** Focus on the first chest slot. Nothing is drawn as focused until a key moves it.
 
 ### Workbench, Anvil and Line Frame

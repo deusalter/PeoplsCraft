@@ -3,6 +3,7 @@ import { cut } from '../font/wrap';
 import type { Live, Node, Tip } from '../node';
 import type { Colour } from '../palette';
 import type { Surface } from '../surface';
+import type { PixelMap } from '../pixmap';
 import { type Force, lv, outline } from './common';
 
 export interface ButtonOpts {
@@ -125,4 +126,26 @@ export function smallButton(o: Omit<ButtonOpts, 'w'> & { w?: number }, measureLa
 /** The 12 by 12 button that adds: a plus of salt with its shadow. */
 export function plusButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'>): Node {
   return button({ ...o, w: 12, h: 12, label: '+' });
+}
+
+/**
+ * A square button that carries a mark in place of a label (5.6): the small button's stone, the mark centred on it in
+ * salt with its shadow, dropping a unit while pressed. Its name is said by its tooltip.
+ */
+export function iconButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'> & { size?: number; mark: PixelMap; name: string; says?: string }): Node {
+  const n = o.size ?? 16;
+  return {
+    id: o.id, x: o.x, y: o.y, w: n, h: n,
+    focus: !o.disabled,
+    takes: true,
+    paint: (s, live) => {
+      const l = lv(live, o.force);
+      paintButton(s, n, n, '', l, o.disabled);
+      const drop = !o.disabled && l.down && l.hover ? 1 : 0;
+      const x = Math.floor((n - o.mark.w) / 2), y = Math.floor((n - 2 - o.mark.h) / 2) + drop;
+      s.map(o.mark, x, y);
+    },
+    tip: o.tip ?? (() => ({ lines: [{ text: o.name, c: 'salt' }, ...(o.says ? [{ text: o.says, c: 'root.4' as const }] : [])], delay: 0.4 })),
+    on: o.disabled ? undefined : { click: () => o.onPress?.() },
+  };
 }
