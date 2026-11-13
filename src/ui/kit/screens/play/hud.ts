@@ -100,17 +100,17 @@ export function tracker(right: number, y: number, step: string, have: string): N
   };
 }
 
-/** Where chat wraps on a stage: 141 when wide, and always clear of the prompt centred under the crosshair. */
+/** Where chat wraps on a stage: 237 at Middle, and always clear of the prompt centred under the crosshair. */
 export function chatWrap(stageW: number): number { return Math.min(CHAT_WRAP, Math.floor(stageW / 2) - 64); }
 
 /**
  * The bottom of the newest chat line. When chat with its wash ends left of the hotbar's column, it comes down to 48
- * above the stage's bottom, level with the top of the hotbar's measures; on a stage too
- * narrow for that it stands above the row of defence and lees.
+ * above the stage's bottom, level with the top of the hotbar's measures; when it reaches over that column it stands
+ * 68 above, clear of the name of the thing in hand.
  */
 export function chatBottom(stageW: number, stageH: number): number {
   const clear = 4 + chatWrap(stageW) + 3 <= Math.floor(stageW / 2) - 91 - 1;
-  return stageH - (clear ? 48 : 58);
+  return stageH - (clear ? 48 : 68);
 }
 
 export function hud(ui: Ui, o: HudOpts): Node[] {

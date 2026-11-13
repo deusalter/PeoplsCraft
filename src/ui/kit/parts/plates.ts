@@ -180,17 +180,17 @@ export interface ChatOpts {
   lines: ChatLine[];
   /** Open, twelve lines show; closed, eight. */
   open?: boolean;
-  /** Where lines wrap: 141 on a wide stage, so that chat with its wash is 144 wide; less on a narrow one (5.23). */
+  /** Where lines wrap: the setting's width less 3, held clear of the prompt under the crosshair (5.23). */
   wrap?: number;
   /** The most lines that may show, fewer than the eight or twelve when the crew list stands above. */
   most?: number;
 }
 
-/** Where chat lines wrap on a wide stage: with the wash, chat is 144 wide and ends left of the hotbar's column. */
-export const CHAT_WRAP = 141;
+/** Where chat lines wrap at the setting Middle: with the wash, chat is 240 wide where the stage has room for it. */
+export const CHAT_WRAP = 237;
 
 /** A wrapped line starts this far in, so that it is not read as a new speaker. */
-export const CHAT_INDENT = 4;
+export const CHAT_INDENT = 8;
 
 /** `pad`: units added before the run, beyond the face's gap. */
 interface Run { text: string; c: Colour; pad?: number }
@@ -225,7 +225,7 @@ function paintRuns(s: Surface, runs: Run[], x: number, y: number): number {
 
 /**
  * Chat (5.23): lines 10 tall, newest lowest, all on one strip of the chat wash at three quarters, as wide as the column
- * (the wrap plus 3) whatever each line's length; the text starts 1 in, and a wrapped line's text 4 further. The wash is
+ * (the wrap plus 3) whatever each line's length; the text starts 1 in, and a wrapped line's text 8 further. The wash is
  * strong enough that the server's lines read on a noon sky. The entry is not part of this: it stands at the bottom of the screen (6, Chat, open).
  */
 export function chat(o: ChatOpts): Node {
