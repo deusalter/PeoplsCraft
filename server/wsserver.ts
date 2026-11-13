@@ -23,13 +23,24 @@ class WsConn implements Conn {
   heard: number;
   frames = 0; framesAt: number;
   private done = false;
-  constructor(readonly id: number, readonly addr: string, private ws: WebSocket, now: number) { this.heard = this.framesAt = now; }
+  private corked = false;
+  constructor(readonly id: number, readonly addr: string, private ws: WebSocket, private sock: Duplex, now: number) { this.heard = this.framesAt = now; }
   get buffered(): number { return this.ws.bufferedAmount; }
   get open(): boolean { return !this.done && this.ws.readyState === WebSocket.OPEN; }
-  send(m: S2C): void { if (this.open) this.ws.send(JSON.stringify(m)); }
-  sendBin(b: ArrayBuffer): void { if (this.open) this.ws.send(b, { binary: true }); }
+  send(m: S2C): void { if (this.open) { this.hold(); this.ws.send(JSON.stringify(m)); } }
+  sendBin(b: ArrayBuffer): void { if (this.open) { this.hold(); this.ws.send(b, { binary: true }); } }
+  /** What the host sends in one turn of the event loop (its steps, a kick) leaves in one write once that turn is over:
+   *  a write per frame would wake the client, and the scheduler with it, in the middle of a step. */
+  private hold(): void {
+    if (this.corked) return;
+    this.corked = true;
+    this.sock.cork();
+    process.nextTick(this.letGo);
+  }
+  private letGo = (): void => { this.corked = false; this.sock.uncork(); };
   close(code: string): void {
     if (this.done) return;
+    this.hold();
     this.done = true;
     // the reason carries the code for a client that missed the `error` before it; 4000 and up are the application's
     this.ws.close(4000, code.slice(0, 64));
@@ -66,14 +77,14 @@ export function attachWs(server: Server, path: string, env: HostEnv, connect: (c
   const onUpgrade = (req: IncomingMessage, socket: Duplex, head: Buffer): void => {
     const p = (req.url ?? '').split('?')[0];
     if (p !== path) { socket.destroy(); return; }
-    wss.handleUpgrade(req, socket, head, (ws) => take(ws, req));
+    wss.handleUpgrade(req, socket, head, (ws) => take(ws, req, socket));
   };
   server.on('upgrade', onUpgrade);
 
-  function take(ws: WebSocket, req: IncomingMessage): void {
+  function take(ws: WebSocket, req: IncomingMessage, socket: Duplex): void {
     ws.binaryType = 'arraybuffer';
     const addr = (req.socket.remoteAddress ?? '?').replace(/^::ffff:/, '');
-    const c = new WsConn(nextId++, addr, ws, env.now());
+    const c = new WsConn(nextId++, addr, ws, socket, env.now());
     conns.set(ws, c);
     ws.on('message', (data: RawData, isBinary: boolean) => {
       const now = env.now();

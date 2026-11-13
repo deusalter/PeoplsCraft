@@ -3895,6 +3895,22 @@ backoff that runs out while the page is hidden dials when it is shown. This depa
 tab told `shutdown` or `slow` retries when it is shown rather than at once; 7.9's "reconnects by itself when the tab is
 shown again" now holds for every close. The first dial of a join is made whether the page is hidden or not.
 
+D44. Stage 4, the abuse step p99 under a loaded machine (6.6, 10.2, 11). An independent check ran scenario `abuse` nine
+times with the 1-minute load average between 8 and 11 and saw the step p99 over 10 ms in four (11.8, 14.1, 16.5 and
+18.9 ms), while a control (the same server and bots, no floods or malformed frames) stayed under 3 ms. Timing each
+phase of each slow step, with the process's CPU time and its context switches beside the wall time, showed the steps
+over 6 ms using 0.5 to 2 ms of CPU and the rest off the CPU: preempted (involuntary switches, no voluntary ones), in
+phases with nothing to block on, a drain of no messages included. No garbage collection paused for more than 1.3 ms.
+What the abuse adds is about 90 sockets a second welcomed and closed, so a step wrote a frame to a socket for nearly
+every message it sent (welcome, `st`, `stats`, `pl`, `error`, the close), and each write woke the receiving process in
+the middle of the step on a machine with no core to spare. A `WsConn` now corks its socket at the first frame of a turn
+of the event loop and uncorks it once that turn is over (`process.nextTick`): what the host sends in its steps, or in a
+kick from a timer, leaves in one write per socket after the steps of that wake. The host's code, its send order and
+the `Conn` interface are unchanged, and `buffered` counts the held bytes, so `BUF_CE` and `BUF_SLOW` still see them.
+The step times of 6.6 item 3 therefore no longer hold the system calls of those writes, which follow the steps on the
+same thread. Before the change this tree failed one run in three at load averages of 8 to 10, as the check had; after
+it `abuse` passed 12 of 12 runs (step p99 1.4 to 7.2 ms) at load averages from 5 to 11. A machine loaded enough can still hold the tick thread off the CPU for longer than a step; the server cannot prevent that.
+
 ---
 
 ## 14. Review log
