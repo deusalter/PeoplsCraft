@@ -215,7 +215,11 @@ export class Sim {
         break;
       }
       case 'ping': this.sink.emit({ dim: p.dim }, ['pg', p.slot, m.x, m.y, m.z]); break;
-      case 'rtt': p.rtt = Math.min(m.last, RTT_MAX_MS) / 1000; this.sink.send(p.slot, { t: 'rtt', c: m.c, tick: this.tick }); break;
+      case 'rtt':
+        // a stepped host answers within the step that heard it: the wall-clock round trip says nothing of how far the client
+        // is behind, and would put the page's timing into the lead of a shot and the reach of a blow (10.1)
+        if (!this.opt.manual) p.rtt = Math.min(m.last, RTT_MAX_MS) / 1000;
+        this.sink.send(p.slot, { t: 'rtt', c: m.c, tick: this.tick }); break;
     }
   }
   handleMove(p: SimPlayer, v: DataView): void { handleMove(this, p, v); }

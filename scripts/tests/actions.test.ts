@@ -507,3 +507,15 @@ test('st: the ack always, the inventory and the box only where they changed, nul
   invOp(sim, p, r.seq(), { o: 'close' });
   assert.deepEqual(stOf(sim, p), { t: 'st', ack: 5, box: null });
 });
+
+test('on a manual clock the round trip a client reports reaches no step: the lead of a shot and the reach of a blow stay as at 0', () => {
+  for (const manual of [true, false]) {
+    const store = new Flat(), sent: [number, S2C][] = [];
+    const sink: Sink = { emit: () => {}, send: (slot, m) => { sent.push([slot, m]); }, broadcast: () => {} };
+    const sim = new Sim(worldRecord(), { cheats: true, maxPlayers: 8, solo: true, manual }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => {} });
+    const p = sim.join('a', 'a', null, true);
+    sim.handle(p, { t: 'rtt', c: 1234, last: 180 });
+    assert.equal(p.rtt, manual ? 0 : 0.18, manual ? 'a wall-clock round trip on a stepped clock' : 'on its own clock the host leads by it');
+    assert.ok(sent.some(([, m]) => m.t === 'rtt' && m.c === 1234), 'the probe is echoed either way');
+  }
+});

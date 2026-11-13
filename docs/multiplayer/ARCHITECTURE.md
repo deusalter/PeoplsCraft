@@ -3634,6 +3634,12 @@ closes the page's connection (a malformed message, a sequence out of order, a ha
 `WorkerTransport` set its state on `closed` but left the step's promise pending, the frame never ended, and the error
 screen, `T.frame`, `T.step` and `T.cmd` waited for ever. `closed` now settles every pending step, as `close()` did
 (`scripts/tests/workerclient.test.ts`).
+(b) A round trip measured on the page's wall clock reached the step under a manual clock: `rtt` carries the last one as
+`last`, `p.rtt` took it, and the lead of a shot (`min(rtt / 2, 0.15)`) and the reach of a blow grew with it, so two
+`&det` runs that shot or fought after the second probe gave different `simhash`. A stepped host answers within the
+step that heard the client, so the wall-clock figure says nothing of how far behind the client is: on a manual clock
+`p.rtt` stays 0 and the probe is still echoed. A host on its own clock (the server, solo from the title menu) is as
+before (`scripts/tests/actions.test.ts`).
 
 ---
 
