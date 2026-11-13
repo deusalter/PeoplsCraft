@@ -215,14 +215,10 @@ function paintRuns(s: Surface, runs: Run[], x: number, y: number): number {
   return cx - x;
 }
 
-function runsWidth(runs: Run[]): number {
-  return runs.reduce((w, r, i) => w + measure(r.text) + (i === 2 ? 3 : i > 0 ? TEXT.gap : 0), 0);
-}
-
 /**
- * Chat (5.23): lines 10 tall, newest lowest, each on a strip of the chat wash at three quarters, as wide as its text
- * and shadow plus one unit either side; the text starts 1 in, and a wrapped line's strip 4 further. The wash is strong enough that the grey lines of the
- * server read on a noon sky. The entry is not part of this: it stands at the bottom of the screen (6, Chat, open).
+ * Chat (5.23): lines 10 tall, newest lowest, all on one strip of the chat wash at three quarters, as wide as the column
+ * (the wrap plus 3) whatever each line's length; the text starts 1 in, and a wrapped line's text 4 further. The wash is
+ * strong enough that the server's lines read on a noon sky. The entry is not part of this: it stands at the bottom of the screen (6, Chat, open).
  */
 export function chat(o: ChatOpts): Node {
   const at = o.wrap ?? CHAT_WRAP;
@@ -238,11 +234,9 @@ export function chat(o: ChatOpts): Node {
   return {
     x: o.x, y: o.bottom - h, w: at + 3, h,
     paint: (s) => {
-      rows.forEach((r, i) => {
-        const y = i * 10;
-        s.wash(r.indent, y, runsWidth(r.runs) + 3, 10, 'root.0', 3);
-        paintRuns(s, r.runs, r.indent + 1, y);
-      });
+      // One strip the column's width under every line, so that chat reads as one plate and not as highlighted text.
+      if (h) s.wash(0, 0, at + 3, h, 'root.0', 3);
+      rows.forEach((r, i) => { paintRuns(s, r.runs, r.indent + 1, i * 10); });
     },
   };
 }
