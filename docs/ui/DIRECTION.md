@@ -1353,7 +1353,7 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
 
 ### 5.15 Pips and strips of the HUD
 
-**Pips.** 9 by 9, ten to a row at a pitch of 8, so a row is 81 wide. Each is drawn 7 wide in columns 1 to 7 of its cell, so one clear column stands between neighbours and no two pips share an outline. Life is a drop in blood. Hunger is a bowl on a foot in ember, lit at the left of its rim and shaded at the right, heaped with food in `ember.hi` and `ember.lt` only while full; an empty bowl has its rim closed by a line and no heap, and a half bowl is filled under the rim with no heap. The arm is a hand in arm blue: three fingers and a thumb inside the 7 columns, the fingertips in `arm.lt`, the last column in `arm.dk`. A pip is full, half (its left five columns lit) or empty (`root.2`). Each row below shows full, half, empty.
+**Pips.** 9 by 9, ten to a row at a pitch of 8, so a row is 81 wide. Each is drawn 7 wide in columns 1 to 7 of its cell, so one clear column stands between neighbours and no two pips share an outline. Life is a drop in blood. Hunger is one bowl outline for every state: a rim of `timber.lt` 7 wide, a body of `timber.face` narrowing 7 to 5 with a `timber.sh` right edge, a stem and a foot 5 wide. Full, a heap of food 3 wide stands above the rim in ember with two units of `ember.lt` at its top left and `ember.dk` at its bottom right. Empty is the same outline with no heap, the bowl `root.2` with a `root.3` edge along its top and left. Half is the full pip's left five columns, heap and all, beside the empty one's rest. (The bowl is 7 wide, not 9, so that a clear column still stands between neighbours.) The arm is a hand in arm blue: three fingers and a thumb inside the 7 columns, the fingertips in `arm.lt`, the last column in `arm.dk`. A pip is full, half (its left five columns lit) or empty (`root.2`). Each row below shows full, half, empty.
 
 ```
      0         1         2        
@@ -1368,15 +1368,15 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
   7  ..KRqqK.....KRqjK.....KjjjK..
   8  ...KKK.......KKK.......KKK...
   9  .............................
- 10  .............................
- 11  ...KKK.......................
- 12  ..KyyoK......................
- 13  .KKyooKK...KKKKKKK...KKKKKKK.
- 14  .KoOOOuK...KoOOjjK...KjjjjjK.
- 15  .KOOOuuK...KOOOjjK...KjjjjjK.
- 16  ..KOuuK.....KOujK.....KjjjK..
- 17  ...KuK.......KuK.......KjK...
- 18  ...KKK.......KKK.......KKK...
+ 10  ...KKK.......KK..............
+ 11  ..KooOK.....Koo..............
+ 12  .KKOOuKK...KKOOKKK...KKKKKKK.
+ 13  .KfffffK...KfffhhK...KhhhhhK.
+ 14  .KTTTTtK...KTTTjjK...KhjjjjK.
+ 15  ..KTTtK.....KTTjK.....KhjjK..
+ 16  ...KtK.......KtK.......KjK...
+ 17  ..KTTtK.....KTTjK.....KhjjK..
+ 18  ..KKKKK.....KKKKK.....KKKKK..
  19  .............................
  20  ..K.K.K.....K.K.K.....K.K.K..
  21  .KbKbKbK...KbKbKjK...KjKjKjK.
@@ -1388,7 +1388,7 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
  27  ..KBBdK.....KBBjK.....KjjjK..
  28  ...KKK.......KKK.......KKK...
 ```
-`. nothing  b arm.lt  B arm  d arm.dk  j root.2  K root.0  o ember.lt  O ember  q blood.dk  r blood.lt  R blood  u ember.dk  y ember.hi`
+`. nothing  b arm.lt  B arm  d arm.dk  f timber.lt  h root.3  j root.2  K root.0  o ember.lt  O ember  q blood.dk  r blood.lt  R blood  t timber.sh  T timber.face  u ember.dk`
 
 A pip is a tenth of the measure's maximum. With `v = 10 * now / max`, pip `i` (counted from 0 at the end the row fills from) is full when `v >= i + 0.75`, half when `v >= i + 0.25`, else empty; while `now` is above nothing the first pip is at least half. The life row fills from the left. The hunger and arm rows are right-aligned and fill from the right, drawn mirrored.
 
