@@ -130,6 +130,8 @@ export interface StackSlotOpts {
   extra?: TipLine[];
   /** A press the screen handles itself (a result, a locked place); return true to stop the hand's own. */
   press?(e: PointerEv): boolean;
+  /** What the slot shows in place of its store's stack: a result. */
+  show?: Stack | null;
   /** Draws the slot as locked, showing what is built into it. */
   locked?: Stack | null;
   mark?: SlotMark;
@@ -140,7 +142,7 @@ export interface StackSlotOpts {
 export function stackSlot(b: Bench, p: Place, o: StackSlotOpts): Node {
   const id = `${p.store}.${p.i}`;
   const h = b.hand;
-  const stack = o.locked !== undefined ? o.locked : h.get(p);
+  const stack = o.show !== undefined ? o.show : o.locked !== undefined ? o.locked : h.get(p);
   const accepts = !!o.showAccepts && !!h.held && h.takes(p, h.held);
   const mark: SlotMark | undefined = b.refused(id) ? 'refused' : o.mark ?? (o.locked !== undefined ? 'locked' : accepts ? 'accepts' : undefined);
   const size = o.large ? 26 : 18;
