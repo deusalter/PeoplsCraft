@@ -110,7 +110,7 @@ Three rules follow and are used everywhere below.
 | The hovered button's label | `ember.hi` | not used |
 | One of the eight players | their colour, below | their colour as a 2 by 7 flag beside a name in ink |
 
-**The eight players.** A player's colour goes by the seat the server gave them, 1 to 8: 1 `arm.lt`, 2 `growth.lt`, 3 `ember.lt`, 4 `rose.lt`, 5 `cyan.lt`, 6 `violet.lt`, 7 `blood.lt`, 8 `salt`. It marks their head on the compass, the map and the roster, their flag on a name tag, their name in chat and their ping.
+**The eight players.** A player's colour goes by the seat the server gave them, 1 to 8: 1 `arm.lt`, 2 `growth.lt`, 3 `ember.lt`, 4 `rose.lt`, 5 `cyan.lt`, 6 `violet.lt`, 7 `blood.lt`, 8 `salt`. It frames their head on the compass, the map and the roster, their flag on a name tag, their name in chat and their ping.
 
 **Measured contrast** of the pairs the screens use (WCAG ratio):
 
@@ -1823,7 +1823,7 @@ Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its 
 
 ### 5.24 Roster
 
-Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. Header: the server's name at 6, 3 and "3 of 8" right-aligned in `root.4`; a rule of `root.3` at y 15. Rows are 16 tall from y 18: the head (5.25) at 6, +1; the name's cell at 16; the life strip at 16, +11, one clear unit under the name's descenders; the place's name at 148 in `root.4`, cut at 76; the level right-aligned to 244 in `growth.lt`; the distance as "42 m" right-aligned to 292, left out for oneself and for a friend in another place; three bars for the connection at 298. All of it is the text face.
+Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. Header: the server's name at 6, 3 and "3 of 8" right-aligned in `root.4`; a rule of `root.3` at y 15. Rows are 16 tall from y 18: the head (5.25) at 5, +0; the name's cell at 18; the life strip at 18, +11, one clear unit under the name's descenders; the place's name at 148 in `root.4`, cut at 76; the level right-aligned to 244 in `growth.lt`; the distance as "42 m" right-aligned to 292, left out for oneself and for a friend in another place; three bars for the connection at 298. All of it is the text face.
 
 **Life strip.** 41 by 4 beside a name: a frame of `root.0` round two rows, `blood.lt` over `blood` where it is lit and `root.2` where it is spent, a segment line of `root.0` every 8 units. It fills from the left by whole units. A name tag uses the same strip as wide as the tag. Left part and right part:
 
@@ -1943,7 +1943,7 @@ Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. H
 ```
 `. nothing  g root.4  h root.3  k root.1  K root.0  n growth.lt  W salt`
 
-The crew at the top left of the HUD uses the same head, name and life strip in rows 15 tall and 92 wide, with no plate: the head at 0, +1, the name's cell at 10 with its shadow, cut at 80, the strip at 10, +11.
+The crew at the top left of the HUD uses the same head, name and life strip in rows 15 tall and 92 wide, with no plate: the head at 0, +0, the name's cell at 12 with its shadow, cut at 80, the strip at 12, +11.
 
 ### 5.25 Name tag, ping, compass marks
 
@@ -1970,7 +1970,7 @@ The crew at the top left of the HUD uses the same head, name and life strip in r
 ```
 `. nothing  j root.2  k root.1  K root.0  n growth.lt  r blood.lt  R blood  W salt`
 
-**Marks on the compass**, 7 by 7: the bed, where one fell, where the Guide points; and a friend's **head**, 8 by 8, lit from the top left: a `root.0` outline with its corners left out; hair in two rows of their colour with its shade in the right column (`arm`, `growth`, `ember`, `rose.dk`, `cyan.dk`, `violet.dk`, `blood`, `clay.face` for seats 1 to 8) and one unit of `salt` at the top left; skin in `clay.lt` at the left, `clay.face`, `clay.sh` at the right; `ink` eyes at 2, 4 and 5, 4; a jaw row of `clay.dk`. The hair is what tells the seats apart. The same head stands beside a name in the crew and the roster, on the map and beside a bounty; as a 16 by 16 icon it is drawn 12 wide by the same plan for the crew's side tabs and the map's list.
+**Marks on the compass**, 7 by 7: the bed, where one fell, where the Guide points; and a friend's **head**, 10 by 10. The head is a person, not a chip: an 8 by 8 face lit from the top left, each seat its own, with its own hair or cloth (a long parted fall, a short crop with stubble, a close crop and a full beard, a knot on the crown, a hood wrapped to the eyes, red tufts and freckles, long grey hair under a band, a bare pate with a grey beard), its own skin on a ramp of three tones from the clay or timber ramp with the next darker tone for the mouth, eyes of one `root.0` unit under a brow of the hair's dark tone, and a mouth or beard row. The seat's colour is only the frame, one unit deep round the face with its corners left out; where the hair or a pate leaves the square, `root.1` shows inside the frame. The same head stands beside a name in the crew and the roster, on the map and beside a bounty. As a 16 by 16 icon, for the crew's side tabs and the map's list, the face is 10 by 10 (its forehead and chin rows and the two edge columns of the face drawn twice, never scaled), framed in the seat's colour and outlined in `root.0`.
 
 ```
      0         1         2         3
@@ -2002,7 +2002,7 @@ The crew at the top left of the HUD uses the same head, name and life strip in r
 
 ### 5.26 Compass strip
 
-A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3; one that lies outside the strip's span waits at that end. Under the plate, the text's cell at y 13, in the text face with shadow and in sentence case: the place as "x -104  y 64  z 2210" at the left, cut short of the night, and "Night 3 of 8" at the right. Left half:
+A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3, a friend's head at y 1, lying over the plate's inner edges; one that lies outside the strip's span waits at that end. Under the plate, the text's cell at y 13, in the text face with shadow and in sentence case: the place as "x -104  y 64  z 2210" at the left, cut short of the night, and "Night 3 of 8" at the right. Left half:
 
 ```
      0         1         2         3         4         5         6         7         8         9

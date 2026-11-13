@@ -108,7 +108,7 @@ function paintMarks(s: Surface, v: MapView): void {
   }
   mark(FELL.x, FELL.z, (u, w) => s.map(COMPASS_MARKS.fell, u - 3, w - 3));
   for (const p of v.pings) mark(p.x, p.z, (u, w) => s.draw(PING, u - 4, w - 6, { tint: SEATS[p.seat - 1] }));
-  for (const p of v.places) if (p.kind === 'friend') mark(p.x, p.z, (u, w) => s.map(HEADS[p.seat! - 1], u - 4, w - 4));
+  for (const p of v.places) if (p.kind === 'friend') mark(p.x, p.z, (u, w) => s.map(HEADS[p.seat! - 1], u - 5, w - 5));
   mark(ME.x, ME.z, (u, w) => s.draw(OWN_ARROW[ME.facing], u - 3, w - 3, { tint: SEATS[0] }));
 }
 
@@ -132,7 +132,7 @@ function paintStore(s: Surface, v: MapView): void {
     else s.fill(x - 1, y, 2, len, 'stone.lt');
   }
   const [u, w] = unitOf(v, STORE.at.x, STORE.at.z);
-  s.map(HEADS[STORE.at.seat - 1], u - 4, w - 4);
+  s.map(HEADS[STORE.at.seat - 1], u - 5, w - 5);
 }
 
 export const mapScreen: Screen<MapView> = (v, ui) => {

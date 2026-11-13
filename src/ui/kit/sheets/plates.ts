@@ -35,7 +35,7 @@ export const platesSheet: Sheet = {
       x: 196, y: 34, w: 120, h: 8,
       paint: (s) => {
         s.map(COMPASS_MARKS.bed, 0, 1); s.map(COMPASS_MARKS.fell, 10, 1); s.map(COMPASS_MARKS.guide, 20, 1);
-        HEADS.forEach((h, i) => s.map(h, 32 + i * 10, 0));
+        HEADS.forEach((h, i) => s.map(h, 32 + i * 12, -1));
       },
     });
     // The crew at the top left.

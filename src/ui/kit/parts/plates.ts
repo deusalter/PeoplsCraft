@@ -45,7 +45,8 @@ export function compass(o: CompassOpts): Node {
     paint: (s) => {
       s.nine(PLATE, 0, 0, COMPASS_W, 12);
       const mid = 90;
-      s.clip(2, 2, COMPASS_W - 3, 9);
+      // A friend's head with its frame is 10 tall and lies over the plate's inner edges.
+      s.clip(2, 1, COMPASS_W - 3, 10);
       for (let k = 0; k < 16; k++) {
         const deg = k * 22.5, d = along(deg, o.heading);
         if (Math.abs(d) > HALF) continue;
@@ -59,7 +60,7 @@ export function compass(o: CompassOpts): Node {
       for (const m of o.marks ?? []) {
         const d = Math.max(-HALF + 3, Math.min(HALF - 3, along(m.deg, o.heading)));
         const x = mid + d - 3;
-        if (m.kind === 'friend') s.map(HEADS[m.seat - 1], x, 2);
+        if (m.kind === 'friend') s.map(HEADS[m.seat - 1], x - 1, 1);
         else s.map(COMPASS_MARKS[m.kind], x, 3);
       }
       s.unclip();
@@ -268,7 +269,7 @@ export interface Member {
   bars: number;
 }
 
-/** The head of a player (art/heads.ts), 8 by 8. */
+/** The head of a player (art/heads.ts), 10 by 10 with its frame. */
 function head(s: Surface, seat: number, x: number, y: number): void { s.map(HEADS[seat - 1], x, y); }
 
 /** The roster (5.24), held open with Tab: a plain dark plate 312 wide, a header, rows 16 tall from y 18. */
@@ -285,9 +286,9 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
       s.fill(1, 15, w - 3, 1, 'root.3');
       o.members.forEach((m, i) => {
         const y = 18 + i * 16;
-        head(s, m.seat, 6, y + 1);
-        s.text(cut(m.name, 126), 16, y, 'salt', true);
-        paintLife(s, 16, y + 11, LIFE_W, m.life);
+        head(s, m.seat, 5, y);
+        s.text(cut(m.name, 126), 18, y, 'salt', true);
+        paintLife(s, 18, y + 11, LIFE_W, m.life);
         s.text(cut(m.place, 76), 148, y, 'root.4', true);
         const lv = String(m.level);
         s.text(lv, rightX(lv, 244), y, 'growth.lt', true);
@@ -310,9 +311,9 @@ export function crew(o: { x: number; y: number; members: Member[] }): Node {
     x: o.x, y: o.y, w: 92, h: o.members.length * CREW_ROW,
     paint: (s) => o.members.forEach((m, i) => {
       const y = i * CREW_ROW;
-      head(s, m.seat, 0, y + 1);
-      s.text(cut(m.name, 80), 10, y, 'salt', true);
-      paintLife(s, 10, y + 11, LIFE_W, m.life);
+      head(s, m.seat, 0, y);
+      s.text(cut(m.name, 80), 12, y, 'salt', true);
+      paintLife(s, 12, y + 11, LIFE_W, m.life);
     }),
   };
 }

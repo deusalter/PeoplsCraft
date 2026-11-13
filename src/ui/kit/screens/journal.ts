@@ -78,7 +78,7 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
 }
 
 function heads(g: Parameters<NonNullable<Node['paint']>>[0], seats: number[], right: number, y: number): void {
-  seats.forEach((seat, k) => g.map(HEADS[seat - 1], right - 7 - k * 9, y));
+  seats.forEach((seat, k) => g.map(HEADS[seat - 1], right - 9 - k * 11, y));
 }
 
 function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
@@ -87,10 +87,10 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
     left.push(pageRow({
       id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen: i === v.bounty, onChoose: () => v.onChoose(i),
       paint: (g, live) => {
-        const room = PW - 21 - b.took.length * 9 - 2;
+        const room = PW - 21 - b.took.length * 11 - 2;
         g.text(inkCut(b.asker, room), 21, 1, b.barred ? 'ink.faded' : 'ink');
         g.text(inkCut(b.task, PW - 22), 21, 10, 'ink.faded');
-        heads(g, b.took, PW - 1, 2);
+        heads(g, b.took, PW - 1, 1);
         g.translate(0, 1);
         paintSlot(g, { ramp: 'clay', stack: { icon: b.icon, n: b.n } }, live);
         g.translate(0, -1);
