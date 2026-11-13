@@ -343,6 +343,28 @@ test('a takeover ends what the older connection had under way: its window, its d
   assert.ok(st.inv && st.ack === 0); assert.equal(st.box, undefined, 'and no box in the first state');
 });
 
+test('a `close` over the rate cap of the sequenced messages still closes the window; the ops around it are refused', async () => {
+  const r = await rig(false), sim = r.host.sim, tok = 'a'.repeat(32), id = playerIdOf(tok)!, realm = sim.realms[0];
+  const a = client(r.host, { local: false });
+  a.hello('Ada', tok); await enter(r, a);
+  const p = sim.players.get(id)!, x = Math.floor(a.pos[0]) + 1, z = Math.floor(a.pos[2]);
+  realm.setBlock(x, GROUND, z, B.chest);
+  a.s.act({ t: 'use', seq: 1, x, y: GROUND, z, id: B.chest });
+  await run(r, 2, a);
+  assert.equal(p.window?.mode, 'chest');
+  // the burst of 120 spent in one step, and more behind it
+  let seq = 1;
+  for (let i = 0; i < 130; i++) a.s.send({ t: 'op', seq: ++seq, o: 'sel', i: i % 9 });
+  a.s.send({ t: 'op', seq: ++seq, o: 'close' });
+  a.s.send({ t: 'op', seq: ++seq, o: 'sel', i: 3 });
+  await run(r, 1, a);
+  assert.deepEqual(a.closed, []);
+  assert.equal(p.ackSeq, seq, 'every one acknowledged');
+  assert.equal(p.window, null, 'the close was run');
+  assert.equal(realm.viewers.size, 0);
+  assert.notEqual(p.inv.sel, 3, 'the op behind it, over the cap, was refused');
+});
+
 test('chunk requests bunched by a stall of the link pass; a flood beyond 12 a second, once its burst is spent, closes with `rate`', async () => {
   let ms = 0;
   const r = await rig(false, new MemStorage(), 4, () => ms), a = client(r.host, { local: false }), b = client(r.host, { local: false });

@@ -308,13 +308,16 @@ export class SimHost {
     if ('seq' in m && m.seq !== p.ackSeq + 1) { this.kick(l, 'proto', 'sequence out of order'); return; }
     if (!c.local) {
       if (SEQ_KIND[m.t]) {
-        if (!this.allow(l, 'seq')) {
+        // a `close` refused would leave the host holding a window the client has already taken down
+        const must = m.t === 'op' && m.o === 'close';
+        if (!this.allow(l, 'seq') && !must) {
           // never dropped: it counts as refused, and the `st` of this step acknowledges it
           const seq = (m as { seq: number }).seq;
           p.ackSeq = seq; p.invDirty = true;
           if (m.t === 'edit' || m.t === 'use') sim.sink.send(p.slot, { t: 'rej', seq, cells: [] });
           return;
         }
+        if (l.closed) return;
       } else if (m.t === 'chunks') { if (!this.chunksAllowed(l)) { this.kick(l, 'rate', 'Too many chunk requests.'); return; } }
       else if (m.t === 'chat') { if (!this.window(l.chatAt, 300, CHAT_PER_5S)) return; }
       else if (m.t in RATE && !this.allow(l, m.t as keyof typeof RATE)) return;
