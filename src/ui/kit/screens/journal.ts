@@ -1,6 +1,7 @@
 // The journal (section 6, Journal): one book shared by the crew, with ribbons for the Guide, bounties, standing and the
 // crew. The Guide gives a chapter to the left page and the chosen step to the right.
-import { HEADS } from '../art/heads';
+import { HEADS, HEAD_SIZE } from '../art/heads';
+import type { SilhouetteName } from '../art/silhouettes';
 import { count, measure as measureInk } from '../font/measure';
 import { cut as inkCut } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
@@ -160,6 +161,8 @@ function peoplePage(p: People): Node[] {
   ];
 }
 
+const WORN_SLOTS: SilhouetteName[] = ['head', 'body', 'legs', 'trinket', 'trinket'];
+
 function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: 'Crew' })];
   v.crew.forEach((m, i) => {
@@ -176,17 +179,32 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
   });
   const m = v.crew[v.member];
   const dist = m.at ? Math.round(Math.hypot(m.at[0], m.at[1])) : 0;
+  // Their face beside who and where they are, what they wear as five slots, and the bounties they took as rows of a
+  // slot and two lines, as the bounty page lists them.
   const right: Node[] = [
     pageHeading({ x: 0, y: 0, w: PW, text: inkCut(m.name, PW) }),
-    inkLine(0, 14, PW, `Level ${m.level}, ${m.job}`),
-    inkLine(0, 26, PW, m.online ? `In ${m.place}` : 'Not here now', m.online ? 'ink' : 'ink.faded'),
+    { x: 0, y: 14, w: HEAD_SIZE, h: HEAD_SIZE, paint: (g) => g.map(HEADS[m.seat - 1], 0, 0) },
+    inkLine(14, 14, PW - 14, `Level ${m.level}, ${m.job}`),
+    inkLine(14, 24, PW - 14, m.online ? `In ${m.place}` : 'Not here now', m.online ? 'ink' : 'ink.faded'),
   ];
-  if (m.online && m.at) right.push(inkLine(0, 38, PW, `${count(dist)} strides from you`, 'arm.dk'));
-  if (m.seat === v.seat) right.push(inkLine(0, 38, PW, 'You', 'ink.faded'));
-  right.push(inkLine(0, 56, PW, 'Bounties taken'));
+  if (m.seat === v.seat) right.push(inkLine(14, 34, PW - 14, 'You', 'ink.faded'));
+  else if (m.online && m.at) right.push(inkLine(14, 34, PW - 14, `${count(dist)} strides from you`, 'arm.dk'));
+  right.push(inkLine(0, 48, PW, 'Worn'));
+  WORN_SLOTS.forEach((sil, k) => {
+    const icon = m.worn[k];
+    right.push({ x: k * 18, y: 58, w: 18, h: 18, paint: (g, live) => paintSlot(g, { ramp: 'clay', stack: icon ? { icon, n: 1 } : null, silhouette: sil }, live) });
+  });
+  right.push(inkLine(0, 82, PW, 'Bounties taken'));
   const taken = v.bounties.filter((b) => b.took.includes(m.seat));
-  if (!taken.length) right.push(inkLine(0, 66, PW, 'None', 'ink.faded'));
-  taken.slice(0, 4).forEach((b, k) => right.push(inkLine(0, 66 + k * 10, PW, `${b.task} for ${b.asker}`, 'ink.faded')));
+  if (!taken.length) right.push(inkLine(0, 92, PW, 'None', 'ink.faded'));
+  taken.slice(0, 3).forEach((b, k) => right.push({
+    x: 0, y: 92 + k * 20, w: PW, h: 18,
+    paint: (g, live) => {
+      paintSlot(g, { ramp: 'clay', stack: { icon: b.icon, n: b.n } }, live);
+      g.text(inkCut(b.task, PW - 22), 21, 0, 'ink');
+      g.text(inkCut(`for ${b.asker}`, PW - 22), 21, 9, 'ink.faded');
+    },
+  }));
   return { left, right };
 }
 
