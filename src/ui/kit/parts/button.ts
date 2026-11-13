@@ -75,7 +75,29 @@ function tooling(s: Surface, w: number, h: number, key: string, box: [number, nu
   }
 }
 
-/** Paints a button at the origin (5.6): always dressed stone, whatever it stands on. */
+/**
+ * The bevel inside a button's outline, lit from the top left like every slab: `light` on the first row and column (and
+ * `light2` just inside it, when pressed), `dark` on the last row and column with `dark2` outside it when given. The two
+ * units where light meets dark, top right and bottom left, are left to the face.
+ */
+function bevel(s: Surface, w: number, h: number, light: Colour, light2: Colour | null, face: Colour, dark: Colour, dark2: Colour | null): void {
+  s.fill(1, 1, w - 2, h - 2, face);
+  const o = dark2 ? 1 : 0;
+  if (dark2) {
+    s.fill(2, h - 2, w - 3, 1, dark2);
+    s.fill(w - 2, 2, 1, h - 4, dark2);
+  }
+  s.fill(2, h - 2 - o, w - 3 - o, 1, dark);
+  s.fill(w - 2 - o, 2, 1, h - 4 - o, dark);
+  s.fill(1, 1, w - 3, 1, light);
+  s.fill(1, 2, 1, h - 4, light);
+  if (light2) {
+    s.fill(2, 2, w - 5, 1, light2);
+    s.fill(2, 3, 1, h - 6, light2);
+  }
+}
+
+/** Paints a button at the origin (5.6): dressed stone on menus and the ground tile. */
 export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, key = label): void {
   const hot = !disabled && (live.hover || live.focus);
   const pressed = !disabled && live.down && live.hover;
@@ -87,16 +109,10 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
     s.fill(1, h - 2, w - 2, 1, 'stone.dk');
     text = 'root.4'; shadow = false;
   } else if (pressed) {
-    s.fill(1, 1, w - 2, 1, 'stone.pit');
-    s.fill(1, 2, w - 2, 1, 'stone.dk');
-    s.fill(1, 3, w - 2, h - 5, 'stone.sh');
-    s.fill(1, h - 2, w - 2, 1, 'stone.dk');
+    bevel(s, w, h, 'stone.pit', 'stone.dk', 'stone.sh', 'stone.dk', null);
     drop = 1;
   } else {
-    s.fill(1, 1, w - 2, 1, live.hover ? 'stone.hi' : 'stone.lt');
-    s.fill(1, 2, w - 2, h - 5, 'stone.sh');
-    s.fill(1, h - 3, w - 2, 1, 'stone.dk');
-    s.fill(1, h - 2, w - 2, 1, 'stone.pit');
+    bevel(s, w, h, live.hover ? 'stone.hi' : 'stone.lt', null, 'stone.sh', 'stone.dk', 'stone.pit');
     if (live.hover) text = 'ember.hi';
   }
   const t = cut(label, w - 4);
