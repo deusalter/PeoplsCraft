@@ -48,9 +48,12 @@ export const iconsSheet: Sheet = {
     // Marks of a state.
     const marks = Object.keys(STATE_MARKS);
     kids.push(plate({
-      x: 305, y: 130, w: 169, h: 50,
-      kids: [salt(5, 3, 'Marks of a state'), ...marks.map((m, i): Node => ({ x: 6 + i * 16, y: 20, w: 7, h: 7, paint: (s) => s.map(STATE_MARKS[m], 0, 0) })),
-        salt(5, 32, 'Lock, alert, new, up, down', 'root.4')],
+      x: 305, y: 130, w: 169, h: 52,
+      kids: [salt(5, 3, 'Marks of a state'), ...marks.map((m, i): Node => ({
+        x: 5 + i * 20, y: 16, w: 18, h: 18,
+        kids: [slot({ id: `mk.${m}`, x: 0, y: 0, ramp: 'dark', stack: { icon: ['helm', 'tonic', 'crystal', 'ingot', 'coal'][i], n: 1 } }), { x: 11, y: 0, w: 7, h: 7, paint: (s) => s.map(STATE_MARKS[m], 0, 0) }],
+      })),
+        salt(5, 37, 'Lock, alert, new, more, less', 'root.4')],
     }));
     kids.push(salt(305, 186, 'Every icon is 16 units'));
     kids.push(salt(305, 198, 'square, outlined in'));

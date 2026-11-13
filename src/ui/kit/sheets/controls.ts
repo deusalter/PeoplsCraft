@@ -54,7 +54,7 @@ export const controlsSheet: Sheet = {
       kids: [ink(8, 20, 'The chosen tab', 'ink.faded'), ink(8, 30, 'joins the face.', 'ink.faded')],
     }));
     kids.push(tabbedSlab({
-      id: 'sided', x: 352, y: 0, w: 122, h: 104, ramp: 'stone', title: 'Side tabs', edge: 'left', tabs: TABS.slice(0, 4), chosen: 0,
+      id: 'sided', x: 352, y: 0, w: 122, h: 82, ramp: 'stone', title: 'Side tabs', edge: 'left', tabs: TABS.slice(0, 3), chosen: 1,
       kids: [ink(8, 20, 'Folded panels', 'ink.faded'), ink(8, 30, 'of a narrow', 'ink.faded'), ink(8, 40, 'screen.', 'ink.faded')],
     }));
     // A list in a well, with its track and a thumb; a second well whose thumb is hovered.
