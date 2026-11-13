@@ -328,6 +328,27 @@ test('a townsperson whose shop is open stands to trade: the shop stays open howe
   assert.ok(Math.hypot(npc.x - 0.5, npc.z - 4.5) > 0.5, 'walks once nobody is trading');
 });
 
+test('a bed set by a use reaches its player in the stats that follows the acknowledgement, in the same step', () => {
+  const r = rig(), { sim, p, store } = r;
+  for (const x of [1, 2, -1, -2]) store.setBlock(x, GROUND, 0, B.bedroll);
+  for (let i = 0; i < 20; i++) sim.step();
+  // every phase of the four-a-second look: none of them may hold the bed back
+  for (let k = 0; k < 15; k++) {
+    for (let i = 0; i < k; i++) sim.step();
+    // a body that sent no move for a second is stalled; this one is taken to keep sending them
+    p.lastMoveTick = sim.tick; p.stalled = false;
+    const x = [1, 2, -1, -2][k % 4];
+    r.sent.length = 0;
+    assert.equal(onUse(sim, p, { t: 'use', seq: r.seq(), x, y: GROUND, z: 0, id: B.bedroll }), true, `use at phase ${k}`);
+    sim.step();
+    const mine = r.sent.filter((s) => s[0] === p.slot).map((s) => s[1]);
+    const st = mine.findIndex((m) => m.t === 'st'), stats = mine.findIndex((m) => m.t === 'stats');
+    assert.ok(st >= 0 && (mine[st] as S2COf<'st'>).ack === p.ackSeq, `the acknowledgement at phase ${k}`);
+    assert.ok(stats > st, `a stats after it at phase ${k}`);
+    assert.deepEqual((mine[stats] as S2COf<'stats'>).bed, [x, GROUND, 0]);
+  }
+});
+
 test('a consumable draws on the use credit: one per 0.35 s, bunched by up to ACT_SURPLUS', () => {
   const r = rig(), { sim, p } = r;
   hold(p, 'apple', 20, 3); p.stats.hunger = 2;

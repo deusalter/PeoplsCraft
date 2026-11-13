@@ -1214,7 +1214,7 @@ Host to client
 | `welcome` | `proto`, `boot` (random per host start), `you: {slot, id}`, `world: {name, seed, seedText}`, `dim`, `pos: [x, y, z, yaw, pitch]`, `tp`, `tick`, `clock`, `flags: string[]`, `quest`, `event`, `spawn: [x, z]`, `cfg: {cheats, simRadius, viewMax, maxPlayers}`, `players: PlayerInfo[]` | hello accepted (first join, resume or takeover) | reset every mirror, clear the world, set seed and dim, clamp the view to `cfg.viewMax`, teleport, freeze, start loading. If `boot` differs from the previous one: toast "Server restarted". |
 | `error` | `code`, `msg` | before closing | 4.2 |
 | `st` | `ack`, `inv?: InvWire`, `box?: BoxWire \| null` | once per tick per player when `ackSeq` advanced, the inventory, attributes or points changed, or the viewed container changed (forge progress: 5 Hz) | reconcile (5.3). `box: null`: the sim closed the window (5.2); the client closes it too. |
-| `stats` | `level`, `xp`, `buffs: [key, seconds][]`, `salveCd`, `recallT`, `modes: {creative, hidden, god, fly}`, `bed`, `deathAt`, `sleeping` (attributes and points travel in `st.inv`, where the `spend` op can be reconciled) | on change, at most 4 per second | replace the mirror, `stats.recompute(inv)`. If `modes.creative \|\| modes.fly` differs from what the mirror held, `player.flying` takes the new value: this is how the `creative` and `fly` commands reach the body that flies. A `welcome` resets the mirror to no modes, so the first `stats` of a creative or granted player puts it in flight. |
+| `stats` | `level`, `xp`, `buffs: [key, seconds][]`, `salveCd`, `recallT`, `modes: {creative, hidden, god, fly}`, `bed`, `deathAt`, `sleeping` (attributes and points travel in `st.inv`, where the `spend` op can be reconciled) | on change, at most 4 per second, and in the step of every acknowledged action, right after its `st` (D36 (g)) | replace the mirror, `stats.recompute(inv)`. If `modes.creative \|\| modes.fly` differs from what the mirror held, `player.flying` takes the new value: this is how the `creative` and `fly` commands reach the body that flies. A `welcome` resets the mirror to no modes, so the first `stats` of a creative or granted player puts it in flight. |
 | `hurt` | `dmg`, `fx`, `fz`, `knock`, `cause`, `dodged?` | the sim damaged this player | flash with the direction formula of today's `hurtPlayer`, shake, add knockback to `player.kbx / kbz`, `vy = 5` when on the ground and `kr > 0.3`, sound |
 | `dead` | `cause`, `lost`, `at: [dim, x, y, z]` | death; also right after `welcome` for a record loaded with `hp <= 0` (`cause: ''`, `lost: 0`) | close windows, death screen (same texts as `Game.onDeath`; for `cause: ''` today's "You did not get back up") |
 | `tp` | `id`, `dim`, `x`, `y`, `z`, `yaw?`, `pitch?`, `load`, `msg?` | movement correction, respawn, recall, portal crossing, cheat `tp` / `dim`, arrival after `land()` | set `player.tp = id`; if `dim` changed: clear world, entity store and predictions, `world.setDim`; `player.teleport`; if `load`: freeze, loading screen with `msg`, send `ready {tp: id}` when loaded |
@@ -3438,8 +3438,8 @@ random state change in every step; `seated()` counts the players that hold a slo
 for their chunks at the next step when a body was put somewhere, instead of at the next whole second;
 `statsNow(p)` is the first `stats` of a connection; `playerInfo(p)` builds a roster entry.
 (g) Replication (6.1 step 7). `st`: `invDirty`, or a change of `inv.rev`, of the unspent points or of the
-attributes since the last look (a pickup, a kill's coins, a level). `stats`: looked at four times a second and
-after every command, sent when it differs from the last one with every countdown rounded up to a second, so a
+attributes since the last look (a pickup, a kill's coins, a level). `stats`: looked at four times a second,
+after every command and after every acknowledged action, sent when it differs from the last one with every countdown rounded up to a second, so a
 running buff costs one message a second and the HUD's seconds tick. `time`: every 5 s and when the clock moved by
 anything but its own step. `pl {upd}` and `where` go out only while more than one player is online.
 (h) Leaving. `Sim.leave`, the linger countdown, parking and the eviction on `committed` are built in their plain
@@ -3503,6 +3503,12 @@ blocks from its home and the 7 blocks of D34 (c) ended the shop under the player
 asked back without a click. Today's game kept a shop open whatever the townsperson did; now the townsperson
 waits, which a solo player sees as a trader who does not walk away mid-trade. Walking away from it still ends
 the shop at 7 blocks.
+(g) What an action does to `stats` reaches its player with the acknowledgement of that action (4.3, 6.1 step 7).
+Every acknowledged `edit`, `use`, `item` and `fire` marks `statsDirty` as well as `invDirty`, so the `stats` goes
+out in the same step, right after the `st` that carries the `ack`. A bed set by a `use` changed only `p.bed`,
+which waited for the next of the four looks a second: up to 15 ticks after the acknowledgement, and the client's
+spawn point (`game.spawn`) was still empty when the action had already been answered. The same held for a buff
+from a meal or a salve's cooldown. A `stats` that equals the last one sent is still not sent.
 
 ---
 

@@ -383,7 +383,8 @@ export function fillCredits(p: SimPlayer): void {
   p.useCredit = Math.max(p.useCredit, ACT_SURPLUS + USE_COST);
   p.digCredit = Math.max(p.digCredit, DIG_SURPLUS);
 }
-const acked = (p: SimPlayer, seq: number): void => { p.ackSeq = seq; p.invDirty = true; };
+// what the action did to `stats` (a bed, a buff, a cooldown) goes out right after the `st` that acknowledges it
+const acked = (p: SimPlayer, seq: number): void => { p.ackSeq = seq; p.invDirty = true; p.statsDirty = true; };
 const live = (p: SimPlayer): boolean => active(p) && !p.stats.dead;
 /** The cells as they are, flat (x, y, z, id): what a refused edit sends back. */
 function truth(realm: Realm, cells: readonly (readonly [number, number, number])[]): number[] {
