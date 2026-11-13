@@ -1,5 +1,5 @@
 import { FRAMED_PLATE } from '../art/slab';
-import { SMALL } from '../font/face';
+import { SMALL_SHADOWED } from '../font/face';
 import { centreX, clock, measure } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { Node } from '../node';
@@ -108,7 +108,7 @@ export function statusFrame(o: StatusOpts): Node {
       s.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: o.good ? 'growth' : 'blood' });
       s.icon(o.icon, 1, 1);
       const t = clock(o.seconds);
-      s.text(t, centreX(t, 0, 18, SMALL), 20, o.seconds <= 10 ? 'blood.lt' : 'salt', false, SMALL);
+      s.text(t, centreX(t, 0, 18, SMALL_SHADOWED), 20, o.seconds <= 10 ? 'blood.lt' : 'salt', true, SMALL_SHADOWED);
     },
   };
 }

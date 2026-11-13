@@ -72,6 +72,8 @@ export const TEXT: Face = {
 export const SMALL: Face = {
   name: 'small', height: 6, gap: 1, glyphs: smallGlyphs, symbols: new Map(), tofu: smallTofu, upper: true,
 };
+/** The small face set 2 apart, for a short line of it with a shadow, whose shadow would otherwise fill the gap. */
+export const SMALL_SHADOWED: Face = { ...SMALL, gap: 2 };
 
 export interface Token { readonly g: Glyph; readonly src: string }
 

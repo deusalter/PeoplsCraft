@@ -456,7 +456,7 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 
 ### 4.2 The small face
 
-For digits that have no room: a stack count of three digits, the time under a status frame, a page number, the ranks under a node. Its letters are kept for the few strings already wired in it, but every HUD readout with a word in it (coordinates, the night, "Saved", a distance with its unit) is the text face in sentence case: at 3 by 5, capitals are hard to tell apart (Z from 2, U from V) and set in capitals they break the rule of case. It is never used for a label or a sentence. The 4 has its diagonal so that it is not read as H.
+For digits that have no room: a stack count of three digits, the time under a status frame, a page number, the ranks under a node. Its letters are kept for the few strings already wired in it, but every HUD readout with a word in it (coordinates, the night, "Saved", a distance with its unit) is the text face in sentence case: at 3 by 5, capitals are hard to tell apart (Z from 2, U from V) and set in capitals they break the rule of case. It is never used for a label or a sentence. The 4 has its diagonal so that it is not read as H. The 0 is a full box with square corners and the 8 has a pinched waist, so that neither has the cut corners of D and B and "0:08" is never read as "D:DB". Under a status frame, on the world, the time has its shadow like any text there, and its glyphs stand 2 apart so that the shadow does not fill the gap between them.
 
 | Measure | Units |
 | --- | --- |
@@ -468,11 +468,11 @@ For digits that have no room: a stack count of three digits, the time under a st
 
 ```
 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F    G    H    I    J    K    L    M      N     O    P    
-##.  .#.  ##.  ##.  ..#  ###  ##.  ###  ##.  ##.  .#.  ##.  .##  ##.  ###  ###  .##  #.#  ###  ..#  #.#  #..  #...#  #..#  .#.  ##.
+###  .#.  ##.  ##.  ..#  ###  ##.  ###  ###  ##.  .#.  ##.  .##  ##.  ###  ###  .##  #.#  ###  ..#  #.#  #..  #...#  #..#  .#.  ##.
 #.#  ##.  ..#  ..#  .##  #..  #..  ..#  #.#  #.#  #.#  #.#  #..  #.#  #..  #..  #..  #.#  .#.  ..#  #.#  #..  ##.##  ##.#  #.#  #.#
-#.#  .#.  .#.  .#.  #.#  ##.  ###  .#.  ###  ###  ###  ##.  #..  #.#  ##.  ##.  #.#  ###  .#.  ..#  ##.  #..  #.#.#  #.##  #.#  ##.
+#.#  .#.  .#.  .#.  #.#  ##.  ###  .#.  .#.  ###  ###  ##.  #..  #.#  ##.  ##.  #.#  ###  .#.  ..#  ##.  #..  #.#.#  #.##  #.#  ##.
 #.#  .#.  #..  ..#  ###  ..#  #.#  .#.  #.#  ..#  #.#  #.#  #..  #.#  #..  #..  #.#  #.#  .#.  #.#  #.#  #..  #...#  #..#  #.#  #..
-.##  ###  ###  ##.  ..#  ##.  .##  .#.  .##  .##  #.#  ##.  .##  ##.  ###  #..  .##  #.#  ###  .#.  #.#  ###  #...#  #..#  .#.  #..
+###  ###  ###  ##.  ..#  ##.  .##  .#.  ###  .##  #.#  ##.  .##  ##.  ###  #..  .##  #.#  ###  .#.  #.#  ###  #...#  #..#  .#.  #..
 ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  .....  ....  ...  ...
 3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    3    5      4     3    3
 
