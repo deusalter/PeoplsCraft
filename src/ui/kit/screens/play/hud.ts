@@ -7,7 +7,7 @@ import { type Colour, GRADES } from '../../palette';
 import { keycap } from '../../parts/keycap';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
-import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crew, nameTag, ping, readout } from '../../parts/plates';
+import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
 import { type Stack, stackGrade, stackName, thing } from '../../sample/play-items';
 
@@ -62,13 +62,16 @@ export interface HudOpts {
   first?: boolean;
   /** The crew list is not drawn while chat is open or the roster is held. */
   crew?: boolean;
-  /** Chat closed, with its last lines. */
+  /** Chat closed, with lines that came in the last 8 s; a still HUD has none, so it is drawn only when asked for. */
   chat?: boolean;
   /** Friends' tags and a ping in the world. */
   world?: boolean;
   /** The prompt under the crosshair; not drawn while chat is open. */
   prompt?: boolean;
 }
+
+/** The second boss bar or event strip: 12 under the first one's strip. */
+const BOSS2_Y = 26 + 20 + 12;
 
 const BAR: (Stack | null)[] = [
   { key: 'iron_pickaxe', n: 1 }, { key: 'iron_sword', n: 1, mod: 'keen' }, { key: 'iron_bow', n: 1 }, { key: 'arrow', n: 64 },
@@ -79,19 +82,24 @@ function rightLine(right: number, y: number, text: string, c: Colour, face = TEX
   return { x: rightX(text, right, face), y, w: measure(text, face) + 1, h: face.height + 1, paint: (s) => { s.text(text, 0, 0, c, true, face); } };
 }
 
-/** The Guide's present step: a dark plate with the chapter in grey, the step in salt, the count and where to go under it. */
-export function tracker(x: number, y: number, chapter: string, step: string, have: string, where: string): Node {
-  return plate({
-    x, y, w: 128, h: 44,
-    kids: [{
-      x: 0, y: 0, w: 128, h: 44, paint: (s) => {
-        s.text(chapter, 5, 3, 'root.4', true);
-        s.text(`{step} ${step}`, 5, 15, 'salt', true);
-        s.text(have, 5, 28, 'salt', true);
-        s.text(where, rightX(where, 121), 28, 'arm.lt', true);
-      },
-    }],
-  });
+/** The height of the Guide's present step on the HUD: one line on a strip of the chat wash. */
+export const TRACKER_H = 12;
+
+/**
+ * The Guide's present step (H8), folded to one line right-aligned at `right`: the step mark, the step in salt and the
+ * count in `root.4`, on one strip of the chat wash a unit wider than the text all round, with no frame, as chat has.
+ */
+export function tracker(right: number, y: number, step: string, have: string): Node {
+  const t = `{step} ${step}`, c = `  ${have}`;
+  const w = measure(t) + measure(c) + 1;
+  return {
+    x: right - w - 1, y, w: w + 2, h: TRACKER_H,
+    paint: (s) => {
+      s.wash(0, 0, w + 2, TRACKER_H, 'root.0', 3);
+      const x = 1 + s.text(t, 1, 1, 'salt', true);
+      s.text(c, x, 1, 'root.4', true);
+    },
+  };
 }
 
 /** Where chat wraps on a stage: 141 when wide, and always clear of the prompt centred under the crosshair. */
@@ -124,7 +132,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
 
   if (o.boss) {
     out.push(bossBar({ x: L(cx - 91), y: 26, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
-    out.push(bossBar({ x: L(cx - 91), y: 50, name: 'Night raid', f: 0.4, event: 'blood' }));
+    out.push(bossBar({ x: L(cx - 91), y: BOSS2_Y, name: 'Night raid', f: 0.4, event: 'blood' }));
   } else if (o.look) {
     const lk = o.look;
     const said = lk.ore ? oreLine(lk.ore, first ? null : BAR[0]?.key ?? null) : { line: lk.line, refusal: false };
@@ -144,7 +152,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   const lowY = narrow ? 26 : 4;
   const showCrew = o.crew !== false && !first;
   const friends = PLAYERS.slice(1);
-  if (showCrew) out.push(crew({ x: L(4), y: lowY, members: friends }));
+  if (showCrew) out.push(crewHeads({ x: L(4), y: lowY, members: friends }));
 
   if (!first) {
     const states = [
@@ -152,29 +160,26 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
       { icon: 'swiftroot', good: true, seconds: 8 }, { icon: 'spore_sac', good: false, seconds: 38 },
     ];
     states.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + i * 20), y: lowY, ...s })));
+    // The Guide's step stands under the status frames, and the one toast shown 4 under it.
+    const stepY = lowY + 28;
+    out.push(tracker(R(4), stepY, 'Smelt iron', '2 of 3'));
     const toasts = [
+      { frame: 'blood' as Colour, icon: 'raid_skull', title: 'A Night raid comes', line: 'Hold the doors till dawn' },
       { frame: 'growth' as Colour, icon: 'ingot', title: 'Smelt iron', line: 'A step of the Guide' },
-      { frame: 'blood' as Colour, icon: 'raid_skull', title: 'A Night raid comes', line: 'Hold the doors till first light' },
       { frame: GRADES[2].frame, icon: 'warden_bell', title: 'Kankāl Bell', line: 'Found in a Sealed Store' },
     ];
-    // The column stands under the status frames. Where its left edge would come within 4 of the boss strips' end it
-    // starts under the strips instead, so that neither covers the other; it never runs into the Guide's step.
+    // Where the column's left edge would come within 4 of the boss strips' end it starts under the strips instead.
     const tx = R(4 + TOAST_W);
     const clash = o.boss && tx < L(cx + 91 + 4);
-    let ty = clash ? 50 + 22 + 2 : lowY + 28;
-    const floor = (narrow ? 126 : 138) - 2;
+    let ty = clash ? Math.max(BOSS2_Y + 22 + 4, stepY + TRACKER_H + 4) : stepY + TRACKER_H + 4;
+    const floor = (narrow ? 150 : H - 54) - 2;
     for (const t of toasts.slice(0, TOAST_MOST)) {
       const h = toastHeight(t);
       if (ty + h > floor) break;
       out.push(toast({ x: tx, y: ty, ...t }));
       ty += h + TOAST_GAP;
     }
-  }
-
-  if (narrow) out.push(rightLine(R(4), 126, first ? 'Gather wood' : 'Smelt iron', 'salt', TEXT));
-  else out.push(first
-    ? tracker(R(4 + 128), 138, 'Empty Hands', 'Gather wood', '0 of 4', 'Any log')
-    : tracker(R(4 + 128), 138, 'Iron and Root', 'Smelt iron', '2 of 3', 'Stone Furnace'));
+  } else out.push(tracker(R(4), lowY, 'Gather wood', '0 of 4'));
 
   if (!first) {
     const feed: [string, number][] = [['+3 Rubble (12)', 0], ['+1 Bone (7)', 0], ['+2 Shade Flesh (6)', 1], ['+1 Kankāl Bell', 2]];
@@ -184,7 +189,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     out.push(rightLine(R(4), H - 12, 'Saved', 'salt', TEXT));
   }
 
-  if (o.chat !== false && !first) {
+  if (o.chat === true && !first) {
     const top = showCrew ? lowY + friends.length * CREW_ROW + 2 : 4;
     out.push(chat({ x: L(4), bottom: chatBottom(W, H), lines: CHAT, wrap: chatWrap(W), most: Math.floor((chatBottom(W, H) - top) / 10) }));
   }
@@ -193,9 +198,9 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   const inHand = first ? null : BAR[0]!;
   if (inHand) {
     const name = stackName(inHand), c = GRADES[stackGrade(inHand)].dark;
-    // On the chat's strip, 2 wider each side and one taller than the text, so a grade's colour holds on bright grass.
+    // No plate: the grade's colour with its shadow, as the tradition writes it, over the row of defence and lees.
     const nw = measure(name) + 1;
-    out.push({ x: L(cx - Math.floor(measure(name) / 2)) - 2, y: H - 66, w: nw + 4, h: 11, paint: (s) => { s.wash(0, 0, nw + 4, 11, 'root.0', 3); s.text(name, 2, 0, c, true); } });
+    out.push({ x: L(cx - Math.floor(measure(name) / 2)), y: H - 66, w: nw, h: 11, paint: (s) => { s.text(name, 0, 0, c, true); } });
   }
   const carried = first ? '{shield} 0   {lees} 0' : `{shield} 9   {lees} ${count(1240)}`;
   out.push({ x: L(cx - 91), y: H - 54, w: measure(carried) + 1, h: 11, paint: (s) => { s.text(carried, 0, 0, 'salt', true); } });

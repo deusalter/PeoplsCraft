@@ -3,7 +3,7 @@ import { SMALL_SHADOWED } from '../font/face';
 import { centreX, clock, measure } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { Node } from '../node';
-import type { Colour } from '../palette';
+import { type Colour, GRADES } from '../palette';
 import { paintStrip } from './hud';
 import { paintSlot } from './slot';
 
@@ -20,17 +20,17 @@ export function frameText(frame: Colour): Colour {
   }
 }
 
-export const TOAST_W = 140;
+export const TOAST_W = 160;
 export const TOAST_H = 32;
 /** The gap between two toasts in the column. */
 export const TOAST_GAP = 2;
-/** The most toasts shown at once; the rest wait. */
-export const TOAST_MOST = 2;
-const TOAST_TEXT = TOAST_W - 36;
+/** The most toasts shown at once; the rest wait their turn. */
+export const TOAST_MOST = 1;
+const TOAST_TEXT = TOAST_W - 30 - 6;
 
 export interface ToastOpts {
   x: number; y: number;
-  /** `growth` for a step of the Guide, a grade's frame for a thing found, `blood` for a warning, `root.4` otherwise. */
+  /** What kind it is: `growth` a step of the Guide, a grade's frame a thing found, `blood` a warning, `root.4` else. */
   frame: Colour;
   icon?: string;
   title: string;
@@ -39,27 +39,43 @@ export interface ToastOpts {
   slide?: number;
 }
 
+/** The title's tone on the clay face, for each kind of toast: the light-face tone of what its frame meant on dark. */
+export function toastTitle(frame: Colour): Colour {
+  switch (frame) {
+    case 'growth': case 'growth.lt': return 'growth.dk';
+    case 'blood': case 'blood.lt': return 'blood.dk';
+    case 'arm': case 'arm.lt': return 'arm.dk';
+    case 'root.4': return 'ink';
+    default: return GRADES.find((g) => g.frame === frame)?.light ?? 'ink';
+  }
+}
+
 /** A toast's height: 32, or 42 when its second line wraps onto a third. */
 export function toastHeight(o: Pick<ToastOpts, 'line'>): number {
   return o.line && box(o.line, TOAST_TEXT, 2).lines.length > 1 ? TOAST_H + 10 : TOAST_H;
 }
 
 /**
- * A toast (5.17): a framed dark plate 140 wide, a dark slot at 6, 7, its first line at 30, 5, its second at 30, 16.
- * The second line wraps onto a third rather than being cut, and the plate grows 10 to hold it.
+ * A toast (5.17): a small clay slab 160 wide handed in from the right, opaque, with the outline cut at its corners, a
+ * light edge one deep on the top and left and a dark edge two deep on the bottom and right. The icon stands on the
+ * face at 8, 8; the title in its kind's tone at 30, 7; the second line in ink at 30, 18, wrapping onto a third.
  */
 export function toast(o: ToastOpts): Node {
   const dx = o.slide ?? 0;
   const h = toastHeight(o);
+  const w = TOAST_W;
   return {
-    x: o.x + dx, y: o.y, w: TOAST_W, h,
+    x: o.x + dx, y: o.y, w, h,
     paint: (s) => {
-      s.nine(FRAMED_PLATE, 0, 0, TOAST_W, h, { tint: o.frame });
-      s.translate(6, 7);
-      paintSlot(s, { ramp: 'dark', stack: o.icon ? { icon: o.icon, n: 1 } : null }, REST);
-      s.translate(-6, -7);
-      s.text(cut(o.title, TOAST_TEXT), 30, 5, frameText(o.frame), true);
-      if (o.line) for (const l of box(o.line, TOAST_TEXT, 2).lines) s.text(l.text, 30, 16 + l.y, 'root.4', true);
+      s.fill(1, 0, w - 2, 1, 'root.0'); s.fill(1, h - 1, w - 2, 1, 'root.0');
+      s.fill(0, 1, 1, h - 2, 'root.0'); s.fill(w - 1, 1, 1, h - 2, 'root.0');
+      s.fill(1, 1, w - 2, h - 2, 'clay.face');
+      s.fill(1, 1, w - 3, 1, 'salt'); s.fill(1, 2, 1, h - 4, 'salt');
+      s.fill(2, h - 3, w - 3, 1, 'clay.sh'); s.fill(w - 3, 2, 1, h - 4, 'clay.sh');
+      s.fill(1, h - 2, w - 2, 1, 'clay.pit'); s.fill(w - 2, 1, 1, h - 2, 'clay.pit');
+      if (o.icon) s.icon(o.icon, 8, 8);
+      s.text(cut(o.title, TOAST_TEXT), 30, 7, toastTitle(o.frame));
+      if (o.line) for (const l of box(o.line, TOAST_TEXT, 2).lines) s.text(l.text, 30, 18 + l.y, 'ink');
     },
   };
 }

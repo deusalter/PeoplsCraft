@@ -108,7 +108,7 @@ function build(ui: Ui): Node {
     }],
   }));
 
-  kids.push(tracker(336, 86, 'Iron and Root', 'Smelt iron', '2 of 3', 'Stone Furnace'));
+  kids.push(tracker(474, 86, 'Smelt iron', '2 of 3'));
   kids.push({
     x: 336, y: 134, w: 138, h: 36,
     paint: (s) => {

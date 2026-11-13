@@ -14,7 +14,7 @@ The interface is made of the four things every hearth on this ground already has
 
 Three rules follow and are used everywhere below.
 
-1. **Laid on a bench, or held up.** A container is a light slab (clay, timber, stone) with ink on it. A readout is a dark plate with salt on it. No screen mixes the two roles: there is no dark window and no light HUD part.
+1. **Laid on a bench, or held up.** A container is a light slab (clay, timber, stone) with ink on it. A readout is a dark plate with salt on it, or bare salt on the world with its shadow. No screen mixes the two roles: there is no dark window. The one light part of the HUD is the toast, which is not a readout but a small slab handed in from the edge, as the tradition hands its notices.
 2. **A hollow that fills.** Progress, fuel, heat, a count toward a step, loading: each is a shape sunk in its slab that fills unit by unit in a flat colour. Nothing spins and nothing is a number with a percent sign.
 3. **Plain.** A part carries no ornament. If a line is on a slab it separates two things or joins two things.
 
@@ -139,7 +139,7 @@ Three rules follow and are used everywhere below.
 | --- | --- | --- |
 | The dim behind a window | `root.0` at a half | `root.1`, opaque |
 | The dim behind the pause slab | `root.0` at a half, as behind any window | `root.1`, opaque |
-| The strip under a chat line, a name tag, the prompt and the name of the thing in hand | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
+| The strip under a chat line, a name tag, the prompt and the Guide's step on the HUD | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A pattern the pack cannot afford, over its cell in a pattern list (5.4) | `root.0` at a half | not drawn; the icon flat in `root.4` |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
@@ -193,8 +193,8 @@ Three rules follow and are used everywhere below.
 | HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at and the prompt 6 under it: centred on the stage, measured down from its top edge |
 | HUD, top left | The crew |
 | HUD, left, above the pips | Chat |
-| HUD, top right | Status frames, then toasts under them |
-| HUD, right | The Guide's present step, then pickups, then "Saved" at the bottom right corner |
+| HUD, top right | Status frames, the Guide's present step on one line under them, then the toast |
+| HUD, right | Pickups, then "Saved" at the bottom right corner |
 | HUD, centre | Crosshair |
 | Above everything | The tooltip, then the held stack, then the pointer |
 
@@ -1460,45 +1460,45 @@ A thing that is cooling (a salve, the Recall Stone) has the cooling wash over it
 
 ### 5.17 Toast
 
-A dark plate 140 by 32 with a frame that says what kind it is: `growth` for a step of the Guide, a grade's colour for a thing found, `blood` for a warning, `root.4` otherwise. A dark slot at 6, 7 with the icon at 7, 8; the first line's cell at 30, 5 in the frame's `lt` tone; the second at 30, 16 in `root.4`. The first line is cut with `…` at 104; the second wraps onto a third rather than being cut, and the plate grows to 42 to hold it, cut with `…` only after that third line. It slides in from the stage's right edge 16 units a frame, stays 5 s, and slides out the same way. Two at most, 2 apart, in a column 4 from the stage's right edge under the status frames (y 32). While a boss bar is up, and the column's left edge would come within 4 units of the strips' right end (`cx + 91 + 4`), the column starts at y 74, under the second strip, so that neither covers the other. A toast that would run into the Guide's step waits. Its left 100 units (the rest is face and frame):
+A small clay slab 160 by 32, opaque, handed in from the right edge: the one light part of the HUD (rule 1). An outline of `root.0` with its corner units left out; a light edge one deep of `salt` along the top and left; a dark edge two deep along the bottom and right, `clay.sh` then `clay.pit`; the face `clay.face`. The 16 by 16 icon stands on the face at 8, 8, with no slot. The first line's cell at 30, 7 in the light-face tone of what the toast is: `growth.dk` for a step of the Guide, a grade's light-face tone for a thing found, `blood.dk` for a warning, `ink` otherwise. The second line's cell at 30, 18 in `ink`. Both have no shadow. The first line is cut with `…` at 124; the second wraps onto a third rather than being cut, and the slab grows to 42 to hold it. It slides in from the stage's right edge 16 units a frame, stays 5 s, and slides out the same way. One shows at a time; the rest wait their turn. It stands 4 from the stage's right edge, 4 under the Guide's step (which stands under the status frames). While a boss bar is up, and its left edge would come within 4 units of the strips' right end (`cx + 91 + 4`), it starts 4 under the second strip instead. Its left 40 units (`i` the icon's cells, `t` and `n` the first and second lines' cells):
 
 ```
-     0         1         2         3         4         5         6         7         8         9         
-     0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
-  1  KNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
-  2  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  3  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  4  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  5  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  6  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkknnnnkkkkkkkknkkkkknkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  7  KNkkkkKKKKKKKKKKKKKKKKKkkkkkkknKKKnkkkkkkkkKkkkknKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  8  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkknKkkkKnkkknknknnnnnKnnnnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-  9  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkknKnnnknKkknKnKnKKKnKnKKKnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 10  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkknKkKnKnKkknKnKnKkknKnnnnnKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 11  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkknKkknKnKkknKnKnKkknKnKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 12  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkknnnnKknnnnKnKknnnnKknnnnkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 13  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkkkKKKKkkKKKKkKkkKKKKkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 14  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 15  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 16  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 17  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkgkkkkkgkkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkgkkkkkkk
- 18  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkggkkkggKkkkkkkgKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgKkkkgKkkkkkk
- 19  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkgKgkgkgKggggkkgKkgkggggkkkkkkggggkkkkkkgkkgkkgkggggkkgggkgKkgkggggkkgg
- 20  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkgKkgkKgKkKKKgkgKgkKgKKKgkkkkkkKKKgkkkkkgKkgKkgKgKKKgkgKKKgKgkKgKKKgkgK
- 21  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkgKkkKkgKkggggKggkKkgggggKkkkkkggggKkkkkgKkgKkgKgKkkgKgKkkggkKkgKkkgKgg
- 22  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkgKkkkkgKgkKKgKgKgkkgKKKKKkkkkgkKKgKkkkkgKkgKkgKgKkkgKgKkkgKgkkgKkkgKgK
- 23  KNkkkkKKKKKKKKKKKKKKKKKhkkkkkkgKkkkkgKkggggKgKkgkkggggkkkkkkggggKkkkkkggggggKkggggKgKkkgKkgkgggggKkg
- 24  KNkkkkkhhhhhhhhhhhhhhhhhkkkkkkkKkkkkkKkkKKKKkKkkKkkKKKKkkkkkkKKKKkkkkkkKKKKKKkkKKKKkKkkkKkkKkKKKKKkk
- 25  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 26  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 27  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 28  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 29  KNkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 30  KNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
- 31  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+     0         1         2         3         
+     0123456789012345678901234567890123456789
+  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+  1  KWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+  2  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+  3  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+  4  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+  5  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+  6  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+  7  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFtttttttttt
+  8  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+  9  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 10  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 11  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 12  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 13  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 14  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 15  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 16  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFtttttttttt
+ 17  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFFFFFFFFFFF
+ 18  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFnnnnnnnnnn
+ 19  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFnnnnnnnnnn
+ 20  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFnnnnnnnnnn
+ 21  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFnnnnnnnnnn
+ 22  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFnnnnnnnnnn
+ 23  KWFFFFFFiiiiiiiiiiiiiiiiFFFFFFnnnnnnnnnn
+ 24  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFnnnnnnnnnn
+ 25  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFnnnnnnnnnn
+ 26  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFnnnnnnnnnn
+ 27  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFnnnnnnnnnn
+ 28  KWFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+ 29  KWSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+ 30  KZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+ 31  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 ```
-`. nothing  g root.4  h root.3  k root.1  K root.0  n growth.lt  N growth`
+`. nothing  F clay.face  K root.0  S clay.sh  W salt  Z clay.pit`
 
 ### 5.18 Boss bar and status frame
 
@@ -1971,7 +1971,7 @@ Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. H
 ```
 `. nothing  g root.4  h root.3  k root.1  K root.0  n growth.lt  W salt`
 
-The crew at the top left of the HUD uses the same head, name and life strip in rows 15 tall and 92 wide, with no plate: the head at 0, +0, the name's cell at 12 with its shadow, cut at 80, the strip at 12, +11.
+The crew at the top left of the HUD is folded to heads: a column 12 wide, rows 15 tall, with no plate and no names: the head (5.25) at 1, +0 and under it a life strip 12 by 4 at 0, +10. The names are on the roster, held open with Tab. A HUD that wrote seven names, places and strips down the left took a fifth of the screen from the world.
 
 ### 5.25 Name tag, ping, compass marks
 
@@ -2245,65 +2245,65 @@ Shared by every container: the pack is nine by three slots at x 8, the hotbar ro
 On a stage 427 by 240. A part in the left third keeps its distance from the stage's left edge, a part in the right third from the right edge, a part in the middle from the centre line; parts above y 60 keep their distance from the top, parts below y 180 from the bottom, the crosshair from the centre.
 
 ```
-                                         +-----------------------------------------------------------+
- +-----------------------------+         +-H1 compass------------------------------------------------+      +-------------------------------+
- | H5 party                    |                                                                            | H6 status                     |
- |                             |         "H2"                                                               |                               |
- |                             |         +-----------------------------------------------------------+      +-------------------------------+
- |                             |         | H3 boss                                                   |
- |                             |         |                                                           |
- |                             |         |                                                           |
- |                             |         |                                                           |
- |                             |         +-----------------------------------------------------------+
- |                             |
- |                             |                                                              +---------------------------------------------+
- |                             |                                                              | H7 toast                                    |
- |                             |                                                              |                                             |
- |                             |                                                              |                                             |
- |                             |                                                              |                                             |
- +-----------------------------+                                                              +---------------------------------------------+
- +--------------------------------------------------+
- | H11 chat                                         |
- |                                                  |                 +-+
- |                                                  |                 +-+
- |                                                  |
- |                                                  | +-------------------------------+
- |                                                  | +-H13 prompt--------------------+           +-----------------------------------------+
- |                                                  |                                             | H8 tracker                              |
- |                                                  |                                             |                                         |
- |                                                  |                                             |                                         |
- |                                                  |                                             |                                         |
- +--------------------------------------------------+                                             |                                         |
-                                                      "H14"                                       +-----------------------------------------+
-
-                                         "H15"                            +-------------------------+        +------------------------------+
-                                                                          +-H16 pips----------------+        | H9 feed                      |
-                                         +-------------------------+"H18" +-------------------------+        |                              |
-                                         +-H17 pips----------------+      +-H19 pips----------------+        |                              |
-                                         [H20                                                        ]       |                              |
-                                         +-----------------------------------------------------------+       |                              |
-                                         | H21 hotbar                                                |       +------------------------------+
-                                         |                                                           |
-                                         +-----------------------------------------------------------+                              "H10"
-
+                                          +-------------------------------------------------------------+
+ +---+                                    | H1 compass                                                  |     +----------------------------------+
+ | H5|                                    +-------------------------------------------------------------+     | H6 status                        |
+ |   |                                    "H2"                                                                |                                  |
+ |   |                                    +-------------------------------------------------------------+     +----------------------------------+
+ |   |                                    | H3 boss                                                     |     +----------------------------------+
+ |   |                                    |                                                             |     | H8 step                          |
+ |   |                                    |                                                             |     +----------------------------------+
+ |   |                                    +-------------------------------------------------------------+
+ |   |
+ |   |                                    +-------------------------------------------------------------+
+ |   |                                    | H3 event                                                    |
+ |   |                                    +-------------------------------------------------------------+
+ |   |
+ |   |                                                                                    +------------------------------------------------------+
+ |   |                                                                                    | H7 toast                                             |
+ |   |                                                                                    |                                                      |
+ |   |                                                                                    |                                                      |
+ +---+                                                                                    |                                                      |
+                                                                       +---+              +------------------------------------------------------+
+ +-------------------------------------------------+                   |   |
+ | H11 chat, only for 8 s after a line             |                   +---+
+ |                                                 |
+ |                                                 |
+ |                                                 |
+ |                                                 |
+ |                                                 |
+ |                                                 |
+ |                                                 |
+ |                                                 |      "H14"
+ +-------------------------------------------------+
+                                          "H15"                             +---------------------------+       +--------------------------------+
+                                                                            | H16 pips                  |       | H9 feed                        |
+                                          +-H17 pips-----------------+"H18" +-H19 pips------------------+       |                                |
+                                          +--------------------------+      +---------------------------+       |                                |
+                                          +-H20---------------------------------------------------------+       |                                |
+                                          +-------------------------------------------------------------+       |                                |
+                                          | H21 hotbar                                                  |       +--------------------------------+
+                                          |                                                             |
+                                          |                                                             |                              "H10"
+                                          +-------------------------------------------------------------+
 ```
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | H1 | compass | 122 | 2 | 182 | 12 | compass strip |
 | H2 | text | 122 | 15 | 182 | 10 | under it, text face with shadow: "Night 3 of 8" at the right; the place as "x -104  y 64  z 2210" at the left only while the setting Coordinates is on (it is off at first) |
-| H3 | boss | 122 | 26 | 182 | 20 | boss bar: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it at y 50 |
+| H3 | boss | 122 | 26 | 182 | 20 | boss bar: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it 12 below the first strip, at y 58. Two at most |
 | H4 | readout | 150 | 26 | 126 | 24 | what you look at; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
-| H5 | party | 4 | 4 | 92 | 105 | the crew: one row 15 tall to each friend online, up to seven: head, name, a life strip 41 by 4 under the name |
+| H5 | party | 4 | 4 | 12 | 105 | the crew folded to heads (5.24): one row 15 tall to each friend online, up to seven: the head 10 by 10, a life strip 12 by 4 under it; no names |
 | H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 20, from the right edge leftward, the time left under each in the small face |
-| H7 | toast | 283 | 74 | 140 | 32 | toasts, 140 by 32 (42 when the second line wraps), 2 apart, two at most, sliding in from the right. On this stage the column would reach under the strips, so while a boss bar is up it starts at y 74 and one shows; otherwise it starts at y 32 under the status frames |
-| H8 | tracker | 295 | 138 | 128 | 44 | the present step of the Guide: a dark plate; chapter in root.4, step in salt, count and where-to under it |
+| H7 | toast | 263 | 82 | 160 | 32 | one toast, a clay slab 160 by 32 (42 when the second line wraps), sliding in from the right for 5 s. On this stage it would reach under the strips, so while a boss bar is up it starts 4 under the second strip, at y 82; otherwise 4 under the Guide's step, at y 48 |
+| H8 | tracker | 323 | 32 | 100 | 12 | the present step of the Guide folded to one line under the status frames, right-aligned: the step mark and the step in salt, the count in root.4 ("Smelt iron  2 of 3"), on one strip of the chat wash a unit wider than the text all round, no frame; the chapter and where to go are in the journal |
 | H9 | feed | 327 | 186 | 96 | 40 | pickups: lines 10 tall, newest lowest, right-aligned: "+3 Rubble (12)" in the grade's colour |
 | H10 | text | 396 | 228 | 27 | 10 | "Saved", text face, for two seconds |
-| H11 | chat | 4 | 111 | 144 | 71 | chat: up to eight whole lines 10 tall, newest lowest, each on its own dark strip as wide as its text, wrapped at 141, wrapped rows 4 in. On this stage chat would reach the hotbar's column, so the newest ends at y 182; on a stage where it ends left of that column (480 wide and more) it comes down to 48 above the bottom. Fewer lines while the crew list stands above |
+| H11 | chat | 4 | 111 | 144 | 71 | chat: up to eight whole lines 10 tall, newest lowest, each on its own dark strip as wide as its text, wrapped at 141, wrapped rows 4 in. On this stage chat would reach the hotbar's column, so the newest ends at y 182; on a stage where it ends left of that column (480 wide and more) it comes down to 48 above the bottom. Fewer lines while the crew list stands above. Each line leaves 8 s after it came, so a still HUD shows no chat at all |
 | H12 | cross | 209 | 116 | 9 | 9 | crosshair, 9 by 9: salt plus, root.0 outline |
 | H13 | prompt | 163 | 56 | 100 | 14 | prompt: a key cap and what E does to the thing the readout names ("Talk"), on a strip of the chat wash 2 wider each side, centred on the stage 6 under the readout plate. There is one look target: the readout and the prompt always name the same thing, and no prompt is drawn when the thing cannot be used (a Tama, a block) |
-| H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour with shadow, for 1.6 s after a change, on a strip of the chat wash 2 wider than the name each side and 11 tall from its cell's top, so that growth.lt holds on noon grass |
+| H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour with its shadow, for 1.6 s after a change, on no plate and no strip, as the tradition writes it; it stands over the row of defence and lees, 66 above the stage's bottom |
 | H15 | text | 122 | 186 | 70 | 10 | second row, left: shield mark and defence, then the jar mark and lees carried |
 | H16 | pips | 223 | 187 | 81 | 9 | second row, right: ten arm pips, filling from the right |
 | H17 | pips | 122 | 198 | 81 | 9 | first row, left: ten life pips. No number stands beside them: the pips already say it, and the life's number is in the pack's body panel |
@@ -2317,7 +2317,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 - **Keys.** 1 to 9 and the wheel choose a hotbar cell. Enter or T opens chat. Tab holds the roster open. V sets a ping. E, G and M open the pack, the journal and the map.
 - **First.** A new arrival sees the hotbar empty with its first cell chosen, ten life pips, ten hunger pips, ten arm pips, the compass, and the first step of the Guide at the right.
 - **Floating numbers** over a struck creature are the text face with shadow, `salt` for a blow, `ember.hi` for a critical one with an exclamation mark after it, `growth.lt` for mending. They rise by whole units and are cut after 0.85 s.
-- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; toasts start at y 54, or under the strips while a boss bar is up, and two show at most; the Guide's step is one line, its title, right-aligned at y 126; pickups stand above the arm row, three lines at most, from y 150.
+- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; the Guide's step stands under the status frames at y 54 and the toast 4 under it, or under the strips while a boss bar is up; pickups stand above the arm row, three lines at most, from y 150.
 - **A blow from a side** shows as a wedge 9 by 5 of `blood` with a `root.0` outline, 40 units from the centre toward the side it came from, in one of eight directions, for 1 s.
 
 ### Pack, with the body panel and the patterns made by hand

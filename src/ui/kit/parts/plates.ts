@@ -304,6 +304,24 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
 /** The pitch of the crew's rows: the name's cell 10, one clear unit under its descenders, the life strip 4. */
 export const CREW_ROW = 15;
 
+/** The width of the crew on the HUD folded to heads: a head 10 wide with a unit either side for its life strip. */
+export const CREW_HEADS_W = 12;
+
+/**
+ * The crew at the top left of the HUD (5.24), folded: each friend's head 10 by 10 in a column 12 wide, their life a
+ * strip 12 by 4 under it, rows 15 tall, no plate and no names; the names are on the roster, held open with Tab.
+ */
+export function crewHeads(o: { x: number; y: number; members: Member[] }): Node {
+  return {
+    x: o.x, y: o.y, w: CREW_HEADS_W, h: o.members.length * CREW_ROW,
+    paint: (s) => o.members.forEach((m, i) => {
+      const y = i * CREW_ROW;
+      head(s, m.seat, 1, y);
+      paintLife(s, 0, y + 10, CREW_HEADS_W, m.life);
+    }),
+  };
+}
+
 /** The crew at the top left of the HUD (5.24): the roster's head, name and life strip in rows 15 tall, no plate. */
 export function crew(o: { x: number; y: number; members: Member[] }): Node {
   return {

@@ -52,7 +52,7 @@ export const hudSheet: Sheet = {
     kids.push(toast({ x: 200, y: 76, frame: 'growth', icon: 'patterns', title: 'A step of the Guide', line: 'Build a kiln' }));
     kids.push(toast({ x: 200, y: 110, frame: GRADES[3].frame, icon: 'crystal', title: 'Shard of the Hollow', line: 'Found in the deep' }));
     kids.push(toast({ x: 200, y: 144, frame: 'blood', icon: 'haunch', title: 'You are starving', line: 'Eat something' }));
-    kids.push({ x: 200, y: 178, w: 140, h: 32, clip: true, kids: [toast({ x: 0, y: 0, frame: 'root.4', icon: 'key', title: 'Saved', line: 'Hearth of Ash', slide: 48 })] });
+    kids.push({ x: 200, y: 178, w: 160, h: 32, clip: true, kids: [toast({ x: 0, y: 0, frame: 'root.4', icon: 'key', title: 'Saved', line: 'Hearth of Ash', slide: 48 })] });
     kids.push(salt(364, 76, 'Toasts slide'));
     kids.push(salt(364, 88, 'in from the'));
     kids.push(salt(364, 100, 'right, 16'));
