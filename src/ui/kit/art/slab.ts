@@ -43,16 +43,19 @@ export const PLATE = coded([
   '.KKK.',
 ], 'plate', [2, 2, 2, 2]);
 
-/** The framed dark plate (5.2, 5.12): a frame one unit deep all round in the colour given when it is drawn. */
+/**
+ * The framed dark plate (5.2, 5.12): inside the outline a frame one unit deep in the colour given when it is drawn,
+ * stepped down to its shade on the bottom and right, so it is lit like a part and not drawn as a line round a box.
+ */
 export const FRAMED_PLATE = pixmap({
   rows: [
     '.KKK.',
-    'KcccK',
-    'KckcK',
-    'KcccK',
+    'KccsK',
+    'KcksK',
+    'KcssK',
     '.KKK.',
   ],
-  key: { K: 'root.0', c: 'tint', k: 'root.1' },
+  key: { K: 'root.0', c: 'tint', s: 'shade', k: 'root.1' },
   slice: [2, 2, 2, 2],
 }, 'plate.framed');
 
@@ -63,14 +66,14 @@ export const FRAMED_PLATE = pixmap({
 export const HARM_PLATE = pixmap({
   rows: [
     '..KKK..',
-    '.KcccK.',
-    'KckkkcK',
-    'KckkkcK',
-    'KckkkcK',
-    '.KcccK.',
+    '.KccsK.',
+    'KckkksK',
+    'KckkksK',
+    'KckkksK',
+    '.KcssK.',
     '..KKK..',
   ],
-  key: { K: 'root.0', c: 'tint', k: 'root.1' },
+  key: { K: 'root.0', c: 'tint', s: 'shade', k: 'root.1' },
   slice: [3, 3, 3, 3],
 }, 'plate.harm');
 
@@ -78,13 +81,13 @@ export const HARM_PLATE = pixmap({
 export const NAMED_PLATE = pixmap({
   rows: [
     '.KKKKK.',
-    'KcccccK',
-    'KcWWWcK',
-    'KcWkWcK',
-    'KcWWWcK',
-    'KcccccK',
+    'KccccsK',
+    'KcWWLsK',
+    'KcWkLsK',
+    'KcLLLsK',
+    'KcssssK',
     '.KKKKK.',
   ],
-  key: { K: 'root.0', c: 'tint', W: 'salt', k: 'root.1' },
+  key: { K: 'root.0', c: 'tint', s: 'shade', W: 'salt', L: 'clay.lt', k: 'root.1' },
   slice: [3, 3, 3, 3],
 }, 'plate.named');

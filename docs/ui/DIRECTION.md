@@ -1212,93 +1212,93 @@ A channel 14 tall, sunk into its host the way a slot is: `root.0` along its top 
 
 ### 5.12 Tooltip
 
-A dark plate with a frame in the colour of the thing's grade (`root.4` for Surface and for anything that is not an item). The first cell is at 5, 3. Lines advance 10. After the first line 2 extra units. Width is the widest line plus 10; height is 10 to the line plus 7, plus the 2 when there is more than one line. Lines wrap at 180.
+A dark plate with a frame in the colour of the thing's grade (`root.4` for Surface and for anything that is not an item), one unit deep inside the `root.0` outline. The frame is lit like every part: its top and left in the grade's colour, its right and bottom one step down in the same ramp (`root.4` to `root.3`, `growth.lt` to `growth`, `cyan.lt` to `cyan.dk`, `violet.lt` to `violet.dk`, `dusk.lt` to `ember`, `rose.lt` to `rose.dk`, `ember.hi` to `ember.lt`, `blood` to `blood.dk`). A frame one flat colour all round read as a hairline drawn round a box. The status frames (5.18) and every framed plate take the same step. The first cell is at 5, 3. Lines advance 10. After the first line 2 extra units. Width is the widest line plus 10; height is 10 to the line plus 7, plus the 2 when there is more than one line. Lines wrap at 180.
 
-Order of lines: the name in the grade's colour; the grade and kind in `root.4` ("Deep, tool"); what it does in `salt`, each stat once with any modifier already in it ("+4 defence" for Thick Iron Greaves, never "+2 defence" and then "+2 more defence"); lines that compare, `growth.lt` or `blood.lt`, which name the stat's change and what it is set against and do not repeat the stat ("+3 over Hide Trousers"); a set line in `arm.lt`; the telling of the thing in `root.4`; last, what the mouse does here in `root.4` with the mouse symbols.
+Order of lines: the name in the grade's colour; the grade and kind in `root.4` ("Deep grade, tool": the word grade is written, since "Upper, tool" alone does not say what Upper is); what it does in `salt`, each stat once with any modifier already in it ("+4 defence" for Thick Iron Greaves, never "+2 defence" and then "+2 more defence"); lines that compare, `growth.lt` or `blood.lt`, which name the stat's change and what it is set against and do not repeat the stat ("+3 over Hide Trousers"); a set line in `arm.lt`; the telling of the thing in `root.4`; last, what the mouse does here in `root.4` with the mouse symbols.
 
 ```
      0         1         2         3         4         5         
      012345678901234567890123456789012345678901234567890123456789
   0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
-  1  KccccccccccccccccccccccccccccccccccccccccccccccccccccccccccK
-  2  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
-  3  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
-  4  KckkkckkkckccckkkkkkkkkkkckkkkkkkkcccckkckkkkkkckkkkkkkkkkcK
-  5  KckkkcKkkcKkKKKkkkkkkkkkkcKkkkkkkkcKKKckkKkkkkkcKkkkkkkkkkcK
-  6  KckkkcKkkcKkckkccckcccckkcKkckkkkkcKkkcKckcccckcKkckkkkkkkcK
-  7  KckkkcccccKkcKkcKKKkKKKckcKckKkkkkcccckKcKcKKKKcKckKkkkkkkcK
-  8  KckkkcKKKcKkcKkcKkkkccccKcckKkkkkkcKKKKkcKcKkkkcckKkkkkkkkcK
-  9  KckkkcKkkcKkcKkcKkkckKKcKcKckkkkkkcKkkkkcKcKkkkcKckkkkkkkkcK
- 10  KckkkcKkkcKkcKkcKkkkccccKcKkckkkkkcKkkkkcKkccckcKkckkkkkkkcK
- 11  KckkkkKkkkKkkKkkKkkkkKKKKkKkkKkkkkkKkkkkkKkkKKKkKkkKkkkkkkcK
- 12  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 13  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 14  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 15  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 16  KckkkggggkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkcK
- 17  KckkkgKKKgkkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkkkkkkkkkkkkgKkkkcK
- 18  KckkkgKkkgKggggkkggggkkggggkkkkkkkkkggggkggggkkggggkkgKkkkcK
- 19  KckkkgKkkgKgKKKgkgKKKgkgKKKgkkkkkkkkkgKKKgKKKgkgKKKgkgKkkkcK
- 20  KckkkgKkkgKgggggKgggggKgKkkgKkkkkkkkkgKkkgKkkgKgKkkgKgKkkkcK
- 21  KckkkgKkkgKgKKKKKgKKKKKgKkkgKkkkkkkkkgKkkgKkkgKgKkkgKgKkkkcK
- 22  KckkkggggkKkggggkkggggkgggggKkgkkkkkkkggkkggggKkggggKggkkkcK
- 23  KckkkkKKKKkkkKKKKkkKKKKgKKKKKgkKkkkkkkkKKkkKKKKkkKKKKkKKkkcK
- 24  KckkkkkkkkkkkkkkkkkkkkkgKkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 25  KckkkkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 26  KckkkkkkkkknnnnkkkkkkkkkkkkkkkkkkkkkkkkkkknkkkkkkkkkkkkkkkcK
- 27  KckkkkknkkkkKKKnkkkkkkkkkkkkkkkkkkkkkkkkkknKkkkkkkkkkkkkkkcK
- 28  KckkkkknKkkkkkknKkkkknnnknnnnkknnnnkknnnnknnnnkkkkkkkkkkkkcK
- 29  KckkknnnnnkkkknkKkkkknKKKnKKKnkkKKKnknKKKKnKKKnkkkkkkkkkkkcK
- 30  KckkkkKnKKKkknkKkkkkknKkknnnnnKknnnnKnKkkknKkknKkkkkkkkkkkcK
- 31  KckkkkknKkkknkKkkkkkknKkknKKKKKnkKKnKnKkkknKkknKkkkkkkkkkkcK
- 32  KckkkkkkKkknnnnnkkkkknKkkknnnnkknnnnKknnnknKkknKkkkkkkkkkkcK
- 33  KckkkkkkkkkkKKKKKkkkkkKkkkkKKKKkkKKKKkkKKKkKkkkKkkkkkkkkkkcK
- 34  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 35  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 36  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkcK
- 37  KccccccccccccccccccccccccccccccccccccccccccccccccccccccccccK
+  1  KcccccccccccccccccccccccccccccccccccccccccccccccccccccccccCK
+  2  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+  3  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+  4  KckkkckkkckccckkkkkkkkkkkckkkkkkkkcccckkckkkkkkckkkkkkkkkkCK
+  5  KckkkcKkkcKkKKKkkkkkkkkkkcKkkkkkkkcKKKckkKkkkkkcKkkkkkkkkkCK
+  6  KckkkcKkkcKkckkccckcccckkcKkckkkkkcKkkcKckcccckcKkckkkkkkkCK
+  7  KckkkcccccKkcKkcKKKkKKKckcKckKkkkkcccckKcKcKKKKcKckKkkkkkkCK
+  8  KckkkcKKKcKkcKkcKkkkccccKcckKkkkkkcKKKKkcKcKkkkcckKkkkkkkkCK
+  9  KckkkcKkkcKkcKkcKkkckKKcKcKckkkkkkcKkkkkcKcKkkkcKckkkkkkkkCK
+ 10  KckkkcKkkcKkcKkcKkkkccccKcKkckkkkkcKkkkkcKkccckcKkckkkkkkkCK
+ 11  KckkkkKkkkKkkKkkKkkkkKKKKkKkkKkkkkkKkkkkkKkkKKKkKkkKkkkkkkCK
+ 12  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 13  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 14  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 15  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 16  KckkkggggkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkCK
+ 17  KckkkgKKKgkkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkkkkkkkkkkkkgKkkkCK
+ 18  KckkkgKkkgKggggkkggggkkggggkkkkkkkkkggggkggggkkggggkkgKkkkCK
+ 19  KckkkgKkkgKgKKKgkgKKKgkgKKKgkkkkkkkkkgKKKgKKKgkgKKKgkgKkkkCK
+ 20  KckkkgKkkgKgggggKgggggKgKkkgKkkkkkkkkgKkkgKkkgKgKkkgKgKkkkCK
+ 21  KckkkgKkkgKgKKKKKgKKKKKgKkkgKkkkkkkkkgKkkgKkkgKgKkkgKgKkkkCK
+ 22  KckkkggggkKkggggkkggggkgggggKkgkkkkkkkggkkggggKkggggKggkkkCK
+ 23  KckkkkKKKKkkkKKKKkkKKKKgKKKKKgkKkkkkkkkKKkkKKKKkkKKKKkKKkkCK
+ 24  KckkkkkkkkkkkkkkkkkkkkkgKkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 25  KckkkkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 26  KckkkkkkkkknnnnkkkkkkkkkkkkkkkkkkkkkkkkkkknkkkkkkkkkkkkkkkCK
+ 27  KckkkkknkkkkKKKnkkkkkkkkkkkkkkkkkkkkkkkkkknKkkkkkkkkkkkkkkCK
+ 28  KckkkkknKkkkkkknKkkkknnnknnnnkknnnnkknnnnknnnnkkkkkkkkkkkkCK
+ 29  KckkknnnnnkkkknkKkkkknKKKnKKKnkkKKKnknKKKKnKKKnkkkkkkkkkkkCK
+ 30  KckkkkKnKKKkknkKkkkkknKkknnnnnKknnnnKnKkkknKkknKkkkkkkkkkkCK
+ 31  KckkkkknKkkknkKkkkkkknKkknKKKKKnkKKnKnKkkknKkknKkkkkkkkkkkCK
+ 32  KckkkkkkKkknnnnnkkkkknKkkknnnnkknnnnKknnnknKkknKkkkkkkkkkkCK
+ 33  KckkkkkkkkkkKKKKKkkkkkKkkkkKKKKkkKKKKkkKKKkKkkkKkkkkkkkkkkCK
+ 34  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 35  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 36  KckkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkCK
+ 37  KcCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCK
  38  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
-`. nothing  c cyan.lt  g root.4  k root.1  K root.0  n growth.lt`
+`. nothing  c cyan.lt  C cyan.dk  g root.4  k root.1  K root.0  n growth.lt`
 
-**A named old thing** has a second frame of `salt` inside the first; its first cell is at 6, 4 and it is 2 wider and 2 taller than the rule above gives. Its first line is its own name; its second says what it is.
+**A named old thing** has a second frame of `salt` inside the first, stepped to `clay.lt` on its right and bottom; its first cell is at 6, 4 and it is 2 wider and 2 taller than the rule above gives. Its first line is its own name; its second says what it is.
 
 ```
      0         1         2         3         4         5         6        
      012345678901234567890123456789012345678901234567890123456789012345678
   0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
-  1  KyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyK
-  2  KyWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWyK
-  3  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
-  4  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
-  5  KyWkkkyyyykkkkkkkkykkkkkkkkkkkkkkkkyyyykkkkkkkkkkkkkkkkkkkkkkkykkkWyK
-  6  KyWkkkyKKKykkkkkkkkKkkkkkkkkkkkkkkykKKKKkkkkkkkkkkkkkkkkkkkkkkyKkkWyK
-  7  KyWkkkyKkkkKyyyykkykyyykyyyykkkkkkyKkkkkykkykkykyyyykkyyykyyyyyKkkWyK
-  8  KyWkkkyKkkkkkKKKykyKyKKKyKKKykkkkkkyyykkyKkyKkyKyKKKykyKKKyKKKyKkkWyK
-  9  KyWkkkyKkkkkkyyyyKyKyKkkyKkkyKkkkkkkKKykyKkyKkyKyKkkyKyKkkyKkkyKkkWyK
- 10  KyWkkkyKkkykykKKyKyKyKkkyKkkyKkkkkkkkkyKyKkyKkyKyKkkyKyKkkyKkkyKkkWyK
- 11  KyWkkkkyyyyKkyyyyKyKyKkkyKkkyKkkkkyyyykKkyyyyyyKkyyyyKyKkkkyyyyKkkWyK
- 12  KyWkkkkkKKKKkkKKKKkKkKkkkKkkkKkkkkkKKKKkkkKKKKKKkkKKKKkKkkkkKKKKkkWyK
- 13  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
- 14  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
- 15  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
- 16  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
- 17  KyWkkkggggkkgkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkkkkkkkWyK
- 18  KyWkkkgKKKgkgKkkkkkgKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgKkkkkkkkkkWyK
- 19  KyWkkkgKkkgKgKkgggggKkkkkkkkkgggkgkkgkkgkggggkkgggkgggggKkkkkkkkkkWyK
- 20  KyWkkkgKkkgKgKkgKKKgKkkkkkkkgkKKKgKkgKkgKgKKKgkgKKKgKKKgKkkkkkkkkkWyK
- 21  KyWkkkgKkkgKgKkgKkkgKkkkkkkkkggkkgKkgKkgKgKkkgKgKkkgKkkgKkkkkkkkkkWyK
- 22  KyWkkkgKkkgKgKkgKkkgKkkkkkkkkkKgkgKkgKkgKgKkkgKgKkkgKkkgKkkkkkkkkkWyK
- 23  KyWkkkkggggKggkkggggKkgkkkkkgggkKkggggggKkggggKgKkkkggggKkkkkkkkkkWyK
- 24  KyWkkkkkKKKKkKKkkKKKKgkKkkkkkKKKkkkKKKKKKkkKKKKkKkkkkKKKKkkkkkkkkkWyK
- 25  KyWkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
- 26  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
- 27  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkWyK
- 28  KyWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWyK
- 29  KyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyK
+  1  KyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyoK
+  2  KyWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWLoK
+  3  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+  4  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+  5  KyWkkkyyyykkkkkkkkykkkkkkkkkkkkkkkkyyyykkkkkkkkkkkkkkkkkkkkkkkykkkLoK
+  6  KyWkkkyKKKykkkkkkkkKkkkkkkkkkkkkkkykKKKKkkkkkkkkkkkkkkkkkkkkkkyKkkLoK
+  7  KyWkkkyKkkkKyyyykkykyyykyyyykkkkkkyKkkkkykkykkykyyyykkyyykyyyyyKkkLoK
+  8  KyWkkkyKkkkkkKKKykyKyKKKyKKKykkkkkkyyykkyKkyKkyKyKKKykyKKKyKKKyKkkLoK
+  9  KyWkkkyKkkkkkyyyyKyKyKkkyKkkyKkkkkkkKKykyKkyKkyKyKkkyKyKkkyKkkyKkkLoK
+ 10  KyWkkkyKkkykykKKyKyKyKkkyKkkyKkkkkkkkkyKyKkyKkyKyKkkyKyKkkyKkkyKkkLoK
+ 11  KyWkkkkyyyyKkyyyyKyKyKkkyKkkyKkkkkyyyykKkyyyyyyKkyyyyKyKkkkyyyyKkkLoK
+ 12  KyWkkkkkKKKKkkKKKKkKkKkkkKkkkKkkkkkKKKKkkkKKKKKKkkKKKKkKkkkkKKKKkkLoK
+ 13  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+ 14  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+ 15  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+ 16  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+ 17  KyWkkkggggkkgkkkkkkgkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgkkkkkkkkkkLoK
+ 18  KyWkkkgKKKgkgKkkkkkgKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkgKkkkkkkkkkLoK
+ 19  KyWkkkgKkkgKgKkgggggKkkkkkkkkgggkgkkgkkgkggggkkgggkgggggKkkkkkkkkkLoK
+ 20  KyWkkkgKkkgKgKkgKKKgKkkkkkkkgkKKKgKkgKkgKgKKKgkgKKKgKKKgKkkkkkkkkkLoK
+ 21  KyWkkkgKkkgKgKkgKkkgKkkkkkkkkggkkgKkgKkgKgKkkgKgKkkgKkkgKkkkkkkkkkLoK
+ 22  KyWkkkgKkkgKgKkgKkkgKkkkkkkkkkKgkgKkgKkgKgKkkgKgKkkgKkkgKkkkkkkkkkLoK
+ 23  KyWkkkkggggKggkkggggKkgkkkkkgggkKkggggggKkggggKgKkkkggggKkkkkkkkkkLoK
+ 24  KyWkkkkkKKKKkKKkkKKKKgkKkkkkkKKKkkkKKKKKKkkKKKKkKkkkkKKKKkkkkkkkkkLoK
+ 25  KyWkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+ 26  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+ 27  KyWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkLoK
+ 28  KyWLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLoK
+ 29  KyooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooK
  30  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
-`. nothing  g root.4  k root.1  K root.0  W salt  y ember.hi`
+`. nothing  g root.4  k root.1  K root.0  L clay.lt  o ember.lt  W salt  y ember.hi`
 
 ### 5.13 Progress arrow
 

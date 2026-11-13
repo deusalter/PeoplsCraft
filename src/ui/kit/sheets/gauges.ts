@@ -16,7 +16,7 @@ const PICK: Tip = {
   frame: GRADES[2].frame,
   lines: [
     { text: 'Delver’s pick', c: GRADES[2].dark },
-    { text: 'Deep, tool', c: 'root.4' },
+    { text: 'Deep grade, tool', c: 'root.4' },
     { text: 'Breaks stone and ore.', c: 'salt' },
     { text: '+2 against stone', c: 'growth.lt' },
     { text: '-1 reach', c: 'blood.lt' },

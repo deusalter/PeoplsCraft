@@ -167,7 +167,7 @@ function slotGrid(id: string, cols: number, rows: number, ramp: Ramp, fill: (i: 
         frame: GRADES[item.grade].frame,
         lines: [
           { text: item.icon === 'block' ? 'Turf of the low field' : item.icon === 'ingot' ? 'Bar of lees-iron' : 'Shard of the Hollow', c: GRADES[item.grade].dark },
-          { text: `${GRADES[item.grade].name}, ${item.icon === 'shard' ? 'stone' : 'material'}`, c: 'root.4' },
+          { text: `${GRADES[item.grade].name} grade, ${item.icon === 'shard' ? 'stone' : 'material'}`, c: 'root.4' },
           { text: 'Laid in a kiln it gives one bar.', c: 'salt' },
           { text: '{lmb} take   {rmb} take half', c: 'root.4' },
         ],
@@ -240,7 +240,7 @@ const partsScreen: DemoScreen = {
     const at = centred(ui.w, ui.h, W, H);
     const tipSample = {
       frame: GRADES[2].frame,
-      lines: [{ text: 'Delver’s pick', c: GRADES[2].dark }, { text: 'Deep, tool', c: 'root.4' as Colour }, { text: '+12% speed in stone', c: 'growth.lt' as Colour }, { text: 'Cracks under iron', c: 'blood.lt' as Colour }],
+      lines: [{ text: 'Delver’s pick', c: GRADES[2].dark }, { text: 'Deep grade, tool', c: 'root.4' as Colour }, { text: '+12% speed in stone', c: 'growth.lt' as Colour }, { text: 'Cracks under iron', c: 'blood.lt' as Colour }],
     };
     const tb = tipBox(tipSample);
     const named = { frame: GRADES[6].frame, named: true, lines: [{ text: 'The Kiln-Mother', c: GRADES[6].dark }, { text: 'Old, a lamp', c: 'root.4' as Colour }] };

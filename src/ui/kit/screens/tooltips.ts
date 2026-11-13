@@ -29,7 +29,7 @@ function namedTip(s: Stack): Tip {
     named: true, frame: GRADES[6].frame,
     lines: [
       { text: t.name, c: GRADES[6].dark },
-      { text: `Old, a ${t.kind}`, c: 'root.4' },
+      { text: `Old grade, a ${t.kind}`, c: 'root.4' },
       ...(t.does ?? []).map((d) => ({ text: d, c: 'salt' as const })),
       { text: t.tell ?? '', c: 'root.4' },
       { text: '{lmb} take', c: 'root.4' },

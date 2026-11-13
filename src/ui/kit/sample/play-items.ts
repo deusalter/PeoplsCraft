@@ -229,7 +229,7 @@ export type Hint = 'slot' | 'none' | string;
  */
 export function stackTip(s: Stack, hint: Hint = 'slot', extra: TipLine[] = []): Tip {
   const t = thing(s.key), g = stackGrade(s);
-  const lines: TipLine[] = [{ text: stackName(s), c: GRADES[g].dark }, { text: `${GRADES[g].name}, ${t.kind}`, c: 'root.4' }];
+  const lines: TipLine[] = [{ text: stackName(s), c: GRADES[g].dark }, { text: `${GRADES[g].name} grade, ${t.kind}`, c: 'root.4' }];
   const mod = s.mod ? MODS[s.mod] : undefined;
   const def = (t.def ?? 0) + (mod?.def ?? 0);
   for (const d of t.does ?? []) lines.push({ text: t.def !== undefined && d === `+${t.def} defence` ? `${def < 0 ? '' : '+'}${def} defence` : d, c: 'salt' });

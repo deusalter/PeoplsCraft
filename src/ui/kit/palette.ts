@@ -105,6 +105,16 @@ export const GRADES: readonly { name: string; dark: Colour; light: Colour; frame
   { name: 'Old', dark: 'ember.hi', light: 'gilt.dk', frame: 'ember.hi' },
 ];
 
+/**
+ * The step under each frame colour, inside its own ramp: a coloured frame takes it on its bottom and right edges so
+ * that it is lit from the top left like every other part, not a flat line round the plate.
+ */
+export const SHADE: Partial<Record<Colour, Colour>> = {
+  'root.4': 'root.3', 'growth.lt': 'growth', 'growth': 'growth.dk', 'cyan.lt': 'cyan.dk', 'violet.lt': 'violet.dk',
+  'dusk.lt': 'ember', 'rose.lt': 'rose.dk', 'ember.hi': 'ember.lt', 'ember.lt': 'ember', 'blood.lt': 'blood', 'blood': 'blood.dk',
+  'arm.lt': 'arm', 'arm': 'arm.dk', 'salt': 'clay.lt',
+};
+
 /** The colour of each of the eight seats, 1 to 8 (index 0 is seat 1). */
 export const SEATS: readonly Colour[] = ['arm.lt', 'growth.lt', 'ember.lt', 'rose.lt', 'cyan.lt', 'violet.lt', 'blood.lt', 'salt'];
 

@@ -1,18 +1,20 @@
-import { type Colour, type Ramp, type Role, CODE, COLOURS, RGB, ROLES, ci, isColour, isRole, toneIndex } from './palette';
+import { type Colour, type Ramp, type Role, CODE, COLOURS, RGB, ROLES, SHADE, ci, isColour, isRole, toneIndex } from './palette';
 
 /**
  * All art is data: rows of characters and a key. `'tint'` in a key stands for the colour given when the map is
- * drawn, which is how the letters are coloured.
+ * drawn, which is how the letters are coloured; `'shade'` stands for the step under that colour (SHADE), which is
+ * how a coloured frame is turned from the light on its bottom and right.
  */
 export interface PixelMapSrc {
   rows: string[];
-  key: Record<string, Colour | Role | 'tint'>;
+  key: Record<string, Colour | Role | 'tint' | 'shade'>;
   slice?: [left: number, top: number, right: number, bottom: number];
 }
 
 export const NONE = -1;
 export const ROLE_BASE = 64;
 export const TINT = 80;
+export const SHADE_CELL = 81;
 
 export interface PixelMap {
   readonly id: number;
@@ -50,6 +52,7 @@ export function pixmap(src: PixelMapSrc, name = 'map'): PixelMap {
   for (const [ch, v] of Object.entries(src.key)) {
     if (ch.length !== 1 || ch === '.') throw new Error(`pixmap ${name}: bad key character ${JSON.stringify(ch)}`);
     if (v === 'tint') codes.set(ch, TINT);
+    else if (v === 'shade') codes.set(ch, SHADE_CELL);
     else if (isRole(v)) codes.set(ch, ROLE_BASE + ROLES.indexOf(v));
     else if (isColour(v)) codes.set(ch, ci(v));
     else throw new Error(`pixmap ${name}: ${JSON.stringify(v)} is neither a colour, a role nor tint`);
@@ -62,7 +65,7 @@ export function pixmap(src: PixelMapSrc, name = 'map'): PixelMap {
       if (ch === '.') { cells[y * w + x] = NONE; continue; }
       const v = codes.get(ch);
       if (v === undefined) throw new Error(`pixmap ${name}: character ${JSON.stringify(ch)} at ${x}, ${y} has no key`);
-      if (v === TINT) tint = true; else if (v >= ROLE_BASE) roles = true;
+      if (v === TINT || v === SHADE_CELL) tint = true; else if (v >= ROLE_BASE) roles = true;
       cells[y * w + x] = v;
     }
   }
@@ -106,10 +109,11 @@ export function resolve(m: PixelMap, v: Variant = {}): Int16Array {
   const out = new Int16Array(m.cells.length);
   const ramp = v.ramp ?? 'clay';
   const t = ci(v.tint ?? 'salt');
+  const sh = ci(SHADE[v.tint ?? 'salt'] ?? v.tint ?? 'salt');
   const f = v.flat ? ci(v.flat) : -1;
   for (let i = 0; i < out.length; i++) {
     const c = m.cells[i];
-    out[i] = c === NONE ? NONE : f >= 0 ? f : c === TINT ? t : c >= ROLE_BASE ? toneIndex(ramp, c - ROLE_BASE) : c;
+    out[i] = c === NONE ? NONE : f >= 0 ? f : c === TINT ? t : c === SHADE_CELL ? sh : c >= ROLE_BASE ? toneIndex(ramp, c - ROLE_BASE) : c;
   }
   return out;
 }
