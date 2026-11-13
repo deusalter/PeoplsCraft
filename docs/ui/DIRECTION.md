@@ -1166,20 +1166,20 @@ A sunk dark field, 14 tall in a window and 20 tall in the form of a full-screen 
 
 ### 5.10 Checkbox
 
-12 by 12, with the edges of a well. On: the check mark in `salt`, 7 by 5 at 2, 3. Hovered or focused: a frame of `salt` inside. Its label is ink on the slab, cell at x + 15, y + 1.
+12 by 12, with the edges of a well. On: the check mark in `salt`, 7 by 6 and two units thick, at 2, 2, with its shadow of `root.0` one unit right and down like any letter on dark; a tick one unit thin in a dark box was too faint a difference between on and off. Hovered or focused: a frame of `salt` inside. Its label is ink on the slab, cell at x + 15, y + 1.
 
 ```
      0         1         2     
      01234567890123456789012345
   0  KKKKKKKKKKK...KKKKKKKKKKK.
   1  KkkkkkkkkkkW..KkkkkkkkkkkW
-  2  KkkkkkkkkkkW..KkkkkkkkkkkW
-  3  KkkkkkkkWkkW..KkkkkkkkkkkW
-  4  KkkkkkkWkkkW..KkkkkkkkkkkW
-  5  KkWkkkWkkkkW..KkkkkkkkkkkW
-  6  KkkWkWkkkkkW..KkkkkkkkkkkW
-  7  KkkkWkkkkkkW..KkkkkkkkkkkW
-  8  KkkkkkkkkkkW..KkkkkkkkkkkW
+  2  KkkkkkkkWkkW..KkkkkkkkkkkW
+  3  KkkkkkkWWKkW..KkkkkkkkkkkW
+  4  KkWkkkWWKKkW..KkkkkkkkkkkW
+  5  KkWWkWWKKkkW..KkkkkkkkkkkW
+  6  KkkWWWKKkkkW..KkkkkkkkkkkW
+  7  KkkkWKKkkkkW..KkkkkkkkkkkW
+  8  KkkkkKkkkkkW..KkkkkkkkkkkW
   9  KkkkkkkkkkkW..KkkkkkkkkkkW
  10  KkkkkkkkkkkW..KkkkkkkkkkkW
  11  .WWWWWWWWWWW...WWWWWWWWWWW

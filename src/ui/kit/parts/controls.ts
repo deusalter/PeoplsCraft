@@ -94,7 +94,7 @@ export interface CheckOpts {
   onToggle?: (on: boolean) => void;
 }
 
-/** A checkbox (5.10): 12 by 12 with the edges of a well, the check in salt at 2, 3; its label in ink at x + 15, y + 1. */
+/** A checkbox (5.10): 12 by 12 with the edges of a well, the check in salt with its shadow at 2, 2; its label in ink at x + 15, y + 1. */
 export function checkbox(o: CheckOpts): Node {
   const lw = o.label ? measure(o.label) : 0;
   const w = o.label ? 15 + lw : 12;
@@ -107,7 +107,7 @@ export function checkbox(o: CheckOpts): Node {
       const l = lv(live, o.force);
       sunk(s, 0, 0, 12, 12, o.host);
       if (l.hover || l.focus) ring(s, 1, 1, 10, 10, 'salt');
-      if (o.on) s.map(CHECK, 2, 3);
+      if (o.on) s.map(CHECK, 2, 2);
       if (o.label) s.text(o.label, 15, 1, dark ? 'salt' : 'ink', dark);
     },
   };
