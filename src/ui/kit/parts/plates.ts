@@ -269,6 +269,8 @@ export interface Member {
   metres?: number;
   /** Bars of connection, 0 to 3. */
   bars: number;
+  /** The one who plays: "here" in the distance column. */
+  self?: boolean;
 }
 
 /** A skull of bone 7 by 7, lit from the top left: the face of a friend who has fallen, until they rise. */
@@ -288,7 +290,9 @@ function head(s: Surface, seat: number, x: number, y: number, fallen = false): v
 
 /** The roster (5.24), held open with Tab: a plain dark plate 312 wide, a header, rows 16 tall from y 18. */
 export function roster(o: { cx: number; y: number; server: string; members: Member[]; seats?: number }): Node {
-  const w = 312, h = 18 + o.members.length * 16 + 2;
+  // Columns 6 apart: name 110, place 70, level to 221, distance to 267, then the connection's cell of 9 by 7.
+  const NAME = 18, PLACE = NAME + 110 + 6, LEVEL_R = PLACE + 70 + 6 + 11, DIST_R = LEVEL_R + 6 + 40, PING_X = DIST_R + 6;
+  const w = PING_X + 9 + 6, h = 18 + o.members.length * 16 + 2;
   return {
     x: o.cx - Math.floor(w / 2), y: o.y, w, h,
     paint: (s) => {
@@ -301,19 +305,36 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
       o.members.forEach((m, i) => {
         const y = 18 + i * 16;
         head(s, m.seat, 5, y, m.life <= 0);
-        s.text(cut(m.name, 126), 18, y, 'salt', true);
-        paintLife(s, 18, y + 11, LIFE_W, m.life);
-        s.text(cut(m.place, 76), 148, y, 'root.4', true);
+        s.text(cut(m.name, 110), NAME, y, 'salt', true);
+        paintLife(s, NAME, y + 11, LIFE_W, m.life);
+        s.text(cut(m.place, 70), PLACE, y, 'root.4', true);
         const lv = String(m.level);
-        s.text(lv, rightX(lv, 244), y, 'growth.lt', true);
-        if (m.metres !== undefined) {
+        s.text(lv, rightX(lv, LEVEL_R), y, 'growth.lt', true);
+        if (m.self) s.text('here', rightX('here', DIST_R), y, 'root.4', true);
+        else if (m.metres !== undefined) {
           const d = `${count(m.metres)} m`;
-          s.text(d, rightX(d, 292), y, 'salt', true);
+          s.text(d, rightX(d, DIST_R), y, 'salt', true);
+        } else {
+          // Not known: a dash, so that the empty place is not read as a gap in the table.
+          s.fill(DIST_R - 4, y + 5, 5, 1, 'root.0');
+          s.fill(DIST_R - 5, y + 4, 5, 1, 'root.4');
         }
-        for (let b = 0; b < 3; b++) s.fill(298 + b * 3, y + 7 - b * 2, 2, 2 + b * 2, b < m.bars ? 'salt' : 'root.3');
+        paintBars(s, PING_X, y + 1, m.bars);
       });
     },
   };
+}
+
+/**
+ * The connection in a cell of 9 by 7: three bars 2 wide, 1 apart, 3, 5 and 7 tall. One bar is lit in blood; none is a
+ * cross in blood, so that a lost connection is told by its mark and not only by grey bars.
+ */
+function paintBars(s: Surface, x: number, y: number, bars: number): void {
+  if (bars <= 0) { s.text('{cross}', x + 2, y + 1, 'blood.lt', true); return; }
+  for (let b = 0; b < 3; b++) {
+    const bh = 3 + b * 2;
+    s.fill(x + 1 + b * 3, y + 7 - bh, 2, bh, b < bars ? (bars === 1 ? 'blood.lt' : 'salt') : 'root.3');
+  }
 }
 
 /** The pitch of the crew's rows: the name's cell 10, one clear unit under its descenders, the life strip 4. */

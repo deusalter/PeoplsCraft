@@ -12,7 +12,8 @@ function build(ui: Ui): Node {
     x: 0, y: 0, w: ui.w, h: ui.h,
     kids: [
       ...hud(ui, { crew: false, prompt: false, notices: false }),
-      roster({ cx: st.x + Math.floor(st.w / 2), y: 30, server: SERVER, members: PLAYERS }),
+      // A friend inside a Sealed Store is in another place, so the roster cannot say how far.
+      roster({ cx: st.x + Math.floor(st.w / 2), y: 30, server: SERVER, members: PLAYERS.map((m) => (m.place.startsWith('a Sealed') ? { ...m, metres: undefined } : m)) }),
     ],
   };
 }

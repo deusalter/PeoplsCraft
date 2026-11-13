@@ -29,7 +29,7 @@ import { STILL } from './common';
 
 /** Everyone on the sample server who is here, from the one sample crew: seat 1 is the one who plays. */
 export const PLAYERS: Member[] = CREW.filter((m) => m.online).map((m) => ({
-  seat: m.seat, name: m.name, life: m.life, place: m.place, level: m.level, metres: strides(m), bars: m.bars,
+  seat: m.seat, name: m.name, life: m.life, place: m.place, level: m.level, metres: strides(m), bars: m.bars, self: m.seat === 1,
 }));
 
 export { SERVER };
