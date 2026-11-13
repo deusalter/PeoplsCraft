@@ -114,6 +114,14 @@ function harness(h: SimHost, path: string, q: URLSearchParams): unknown {
 }
 
 /** 4.1: true once `limit` steps have failed inside `windowMs`. `total` is the host's running count of failed steps. */
+/** The stop of a server (8.1): the players are told and the clock stops first, so that nothing changes after the last
+ *  save, which is tried three times. Resolves whether it was written. */
+export async function lastSave(h: SimHost, failing: () => boolean, env: Pick<HostEnv, 'log'>): Promise<boolean> {
+  try { return (await h.stop(3)) && !failing(); } catch (e) {
+    env.log('error', 'the stop failed: ' + (e instanceof Error ? e.message : String(e)));
+    return false;
+  }
+}
 export function stepFaults(limit = 20, windowMs = 60000): (total: number, now: number) => boolean {
   const at: number[] = [];
   let seen = 0;
@@ -175,10 +183,7 @@ async function main(): Promise<number> {
     env.log(code ? 'error' : 'info', `stopping: ${why}`);
     ending = (async () => {
       let rc = code;
-      // 8.1: the last save is tried three times
-      for (let i = 0; i < 3; i++) { await h.save(); if (!storage.saveFailing) break; }
-      if (storage.saveFailing) rc = rc || 1;
-      try { await h.stop(); } catch (e) { env.log('error', 'the last save failed: ' + (e instanceof Error ? e.message : String(e))); rc = rc || 1; }
+      if (!(await lastSave(h, () => storage.saveFailing, env))) rc = rc || 1;
       ws.close();
       await new Promise<void>((ok) => { http.close(() => ok()); http.closeAllConnections(); });
       return rc;

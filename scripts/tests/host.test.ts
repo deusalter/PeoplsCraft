@@ -17,6 +17,7 @@ import { hashBlocks } from '../../src/sim/genjob';
 import { playerIdOf, sha256Hex } from '../../src/sim/identity';
 import { active } from '../../src/sim/player';
 import { MemStorage, StorageError } from '../../src/sim/storage';
+import { lastSave } from '../../server/main';
 
 const GROUND = 64;
 function flat(dim: number, cx: number, cz: number): GenResult {
@@ -521,4 +522,36 @@ test('a connection that says hello and never `ready` loses its seat after LOAD_C
   // a client that has said ready while the host is still landing it is not the one that is slow
   await enter(r, b);
   assert.equal(b.closed.length, 0);
+});
+
+test('a server stop saves after the players are told, tries three times, and says when the last save failed', async () => {
+  /** Commits succeed while `room` lasts, then fail as a full disk does; each notes how many players were still linked. */
+  class Filling extends MemStorage {
+    room = Infinity; failing = false; linked: number[] = []; host: SimHost | null = null;
+    override async commit(batch: Parameters<MemStorage['commit']>[0]): Promise<void> {
+      this.linked.push((this.host as unknown as { links: unknown[] }).links.length);
+      if (this.room-- <= 0) { this.failing = true; throw new StorageError('full', 'no room'); }
+      this.failing = false;
+      return super.commit(batch);
+    }
+  }
+  const stopWith = async (room: number): Promise<{ ok: boolean; linked: number[]; a: Client }> => {
+    const storage = new Filling(), r = await rig(false, storage), a = client(r.host, { local: false });
+    storage.host = r.host;
+    a.hello('Ada', 'a'.repeat(32));
+    await enter(r, a);
+    r.host.sim.handle([...r.host.sim.players.values()][0], { t: 'cmd', id: 1, text: 'give cobble 3' });
+    storage.room = room; storage.linked = [];
+    const ok = await lastSave(r.host, () => storage.failing, { log: () => {} });
+    a.s.pump();
+    return { ok, linked: storage.linked, a };
+  };
+  const good = await stopWith(Infinity);
+  assert.equal(good.ok, true);
+  assert.deepEqual(good.linked, [0], 'one save, made once every player was told and dropped');
+  assert.equal(good.a.of('error').at(-1)?.code, 'shutdown');
+  // the disk fills while the stop saves: nothing is saved after the kicks, and that is reported
+  const full = await stopWith(0);
+  assert.equal(full.ok, false, 'a last save that failed is reported');
+  assert.deepEqual(full.linked, [0, 0, 0], 'tried three times, all after the kicks');
 });

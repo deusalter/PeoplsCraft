@@ -479,15 +479,18 @@ export class SimHost {
     this.saving = run;
     return run;
   }
-  /** A last save, then the storage is closed. */
-  async stop(): Promise<void> {
+  /** The players are told, the last save is tried up to `tries` times, then the storage is closed. Resolves whether
+   *  the last save was written. */
+  async stop(tries = 1): Promise<boolean> {
     this.stopped = true;
     if (this.timer !== null) this.env.clearTimer(this.timer);
     if (this.saveTimer !== null) { this.env.clearTimer(this.saveTimer); this.saveTimer = null; }
     if (this.changeTimer !== null) { this.env.clearTimer(this.changeTimer); this.changeTimer = null; }
     for (const l of [...this.links]) this.kick(l, 'shutdown', 'The host is stopping.');
-    await this.save();
+    for (let i = 0; i < tries; i++) { await this.save(); if (!this.saveFailed) break; }
+    const ok = !this.saveFailed;
     await this.storage.close();
     this.source.dispose();
+    return ok;
   }
 }

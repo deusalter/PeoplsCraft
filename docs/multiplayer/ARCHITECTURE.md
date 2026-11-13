@@ -3849,6 +3849,13 @@ for every other. The winner renames its own lock over the stale one only while t
 stale; a claim left by a process that died before that rename is itself stale and is taken over through the claim of
 its own text. Claims stay for an hour, for a server that read the same stale lock and is slow to try, and are then
 deleted by the next server to take the lock. These files beside `server.lock` are not in the 8.1 listing.
+(h) A stop did not retry the save that counted, nor report it (8.1 failure table). `main.ts` saved up to three times
+while the clock ran and players were still connected, and only then called `SimHost.stop`, which told the players,
+dropped them and saved once more; that save's failure was neither retried nor looked at, since `save()` never
+rejects. What changed during the first saves, and what the drops changed (windows closed by `leave('drop')`), could be
+lost on a full disk while the process exited 0. `SimHost.stop(tries)` now tells the players and stops the clock
+first, then tries the last save up to `tries` times and resolves whether it was written; the server passes 3 and exits
+with 1 when it was not. Solo and the tests' hosts pass nothing and save once, as before.
 
 ---
 
