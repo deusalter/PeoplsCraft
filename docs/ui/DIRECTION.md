@@ -527,43 +527,17 @@ A slab 24 by 14:
 ```
 `. nothing  1 hi  2 lt  3 face  4 sh  6 pit  K root.0   (digits are tones of the host slab's ramp; shown in timber)`
 
-It is drawn as nine slices with corners 3 by 3. The face of clay and timber is flat: no grain, no speckle, no second tone. Stone is dressed, as the stance says, and so not the grey of a plain slab: over its face lies the **tooling**, a tile 24 by 24 laid from the face's top left corner (3, 3), of short level strokes of `lt` 3 to 5 long, one to a course of six rows and staggered course to course (at 3, 2; 15, 8; 9, 14; 20, 20 wrapping). A light stroke is the bright floor of a chisel's cut; it is used rather than a dark one because a dark stroke beside ink reads as a dash. A stone slab 60 by 30:
+It is drawn as nine slices with corners 3 by 3. The face of clay and timber is flat: no grain, no speckle, no second tone. Stone is dressed, as the stance says, and so not the grey of a plain slab: its face carries a few **chisel marks**, lit from the top left. A mark is a pit: its walls that face down or right, turned from the light, are `sh`, and the lip it throws up on its far side is `lt`. There are two shapes, a chip 2 by 2 and a cut 3 by 1 with its lip under it:
 
 ```
-     0         1         2         3         4         5
-     012345678901234567890123456789012345678901234567890123456789
-  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
-  1  K1111111111111111111111111111111111111111111111111111111113K
-  2  K1222222222222222222222222222222222222222222222222222222236K
-  3  K1233333333333333333333333333333333333333333333333333333346K
-  4  K1233333333333333333333333333333333333333333333333333333346K
-  5  K1233322223333333333333333333322223333333333333333333322246K
-  6  K1233333333333333333333333333333333333333333333333333333346K
-  7  K1233333333333333333333333333333333333333333333333333333346K
-  8  K1233333333333333333333333333333333333333333333333333333346K
-  9  K1233333333333333333333333333333333333333333333333333333346K
- 10  K1233333333333333333333333333333333333333333333333333333346K
- 11  K1233333333333333322222333333333333333333322222333333333346K
- 12  K1233333333333333333333333333333333333333333333333333333346K
- 13  K1233333333333333333333333333333333333333333333333333333346K
- 14  K1233333333333333333333333333333333333333333333333333333346K
- 15  K1233333333333333333333333333333333333333333333333333333346K
- 16  K1233333333333333333333333333333333333333333333333333333346K
- 17  K1233333333322233333333333333333333322233333333333333333346K
- 18  K1233333333333333333333333333333333333333333333333333333346K
- 19  K1233333333333333333333333333333333333333333333333333333346K
- 20  K1233333333333333333333333333333333333333333333333333333346K
- 21  K1233333333333333333333333333333333333333333333333333333346K
- 22  K1233333333333333333333333333333333333333333333333333333346K
- 23  K1223333333333333333333222223333333333333333333222223333346K
- 24  K1233333333333333333333333333333333333333333333333333333346K
- 25  K1233333333333333333333333333333333333333333333333333333346K
- 26  K1233333333333333333333333333333333333333333333333333333346K
- 27  K1344444444444444444444444444444444444444444444444444444446K
- 28  K3666666666666666666666666666666666666666666666666666666666K
- 29  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+     0     
+     01234 
+  0  44.444
+  1  42..22
 ```
-`. nothing  1 hi  2 lt  3 face  4 sh  6 pit  K root.0   (digits are tones of the host slab's ramp; shown in stone)`
+`. the face  2 lt  4 sh   (the chip at 0, 0; the cut at 3, 0)`
+
+The face from (3, 3) is cut into cells of 14 by 14. Each cell holds one mark or none (a little over half hold one), a cut in about a third of them and a chip in the rest, at a place within the cell fixed by a hash of the cell's column and row, so the marks have no row, column or rhythm and the same slab looks the same on every paint. A mark is drawn only where the whole of it stands 2 units clear of every part on the slab (slot, well, gauge, button, picture) and of every line of text, the title included, and 1 unit clear of the slab's edges. A mark never crosses a letter or touches a slot. An earlier tooling of light dashes in staggered courses was dropped: it read as wallpaper, and its dashes struck through the words they crossed.
 
 | Slab | Ramp | Used for |
 | --- | --- | --- |

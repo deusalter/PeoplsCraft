@@ -1,7 +1,9 @@
-import { FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB, TOOLING } from '../art/slab';
+import { CHIP, CUT, DRESSING_CELL, FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB, cellHash } from '../art/slab';
+import { measure } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Node } from '../node';
-import type { Colour, Ramp } from '../palette';
+import { type Colour, type Ramp, tone } from '../palette';
+import type { Surface } from '../surface';
 
 export interface SlabOpts {
   id?: string;
@@ -14,18 +16,57 @@ export interface SlabOpts {
   kids?: Node[];
 }
 
-/** A window slab (5.1) of clay, timber or stone, with its title (5.3); stone carries its tooling. */
+const CLEAR = 2;
+
+/**
+ * The rectangles a stone face must keep clear of chisel marks, from the slab's top left: every node that paints,
+ * and inside a node that holds others, each of them too, since a container may paint less than its box.
+ */
+function parts(kids: Node[] | undefined, ox: number, oy: number, out: number[][]): void {
+  for (const k of kids ?? []) {
+    if (k.paint) out.push([ox + k.x, oy + k.y, k.w, k.h]);
+    parts(k.kids, ox + k.x, oy + k.y, out);
+  }
+}
+
+/**
+ * The chisel marks of a stone face (5.1): the face is cut into cells of 14, and each cell holds one mark or none, a
+ * chip or a cut, at a place of its own within it, so that there is no row, column or rhythm to read. A mark is drawn
+ * only where all of it stands 2 clear of every part and every line of text.
+ */
+function dress(s: Surface, w: number, h: number, keep: number[][]): void {
+  const fx = 3, fy = 3, fw = w - 6, fh = h - 6, C = DRESSING_CELL;
+  const clear = (x: number, y: number) =>
+    x >= fx + 1 && y >= fy + 1 && x < fx + fw - 1 && y < fy + fh - 1 &&
+    keep.every(([rx, ry, rw, rh]) => x < rx - CLEAR || y < ry - CLEAR || x >= rx + rw + CLEAR || y >= ry + rh + CLEAR);
+  for (let j = 0; j * C < fh; j++) for (let i = 0; i * C < fw; i++) {
+    const r = cellHash(i, j, 0);
+    if (r % 100 >= 55) continue;
+    const m = (r >>> 8) % 3 === 0 ? CUT : CHIP;
+    const mx = fx + i * C + ((r >>> 12) % (C - 3)), my = fy + j * C + ((r >>> 20) % (C - 2));
+    if (!m.every(([dx, dy]) => clear(mx + dx, my + dy))) continue;
+    for (const [dx, dy, role] of m) s.fill(mx + dx, my + dy, 1, 1, tone('stone', role));
+  }
+}
+
+/** A window slab (5.1) of clay, timber or stone, with its title (5.3); stone carries its chisel marks. */
 export function slab(o: SlabOpts): Node {
   const { w, h, ramp } = o;
-  return {
+  const title = o.title ? cut(o.title, w - 16 - (o.titleRoom ?? 0)) : '';
+  const node: Node = {
     id: o.id, x: o.x, y: o.y, w, h,
     paint: (s) => {
       s.nine(SLAB, 0, 0, w, h, ramp);
-      if (ramp === 'stone') s.tile(TOOLING, 3, 3, w - 6, h - 6, 0, 0, 'stone');
-      if (o.title) s.text(cut(o.title, w - 16 - (o.titleRoom ?? 0)), 8, 6, 'ink');
+      if (ramp === 'stone') {
+        const keep: number[][] = title ? [[8, 6, measure(title) + 1, 10]] : [];
+        parts(node.kids, 0, 0, keep);
+        dress(s, w, h, keep);
+      }
+      if (title) s.text(title, 8, 6, 'ink');
     },
     kids: o.kids,
   };
+  return node;
 }
 
 /** A side panel fastened to a main slab: as tall as it, overlapping it by one unit so that they share an outline column. */

@@ -15,37 +15,24 @@ export const SLAB = coded([
 ], 'slab', [3, 3, 3, 3]);
 
 /**
- * The tooling of dressed stone (5.1), a tile 24 by 24 laid over the face of a stone slab from its corner: short level
- * strokes of `lt`, the bright floor of the cuts a claw chisel leaves, one to a course of six rows and staggered course
- * to course, so that the face reads as worked stone and not as the grey of a plain slab. It is sparse, and a light
- * stroke never reads as a dash beside dark ink as a dark one does, so text on it keeps its contrast.
+ * The chisel marks of a stone face (5.1), lit from the top left. Each is a pit: its walls that face down or right,
+ * turned from the light, in `sh`, and the lip it throws up on its far side in `lt`. Two shapes: a chip 2 by 2 and a
+ * cut 3 by 1 with its lip under it.
  */
-export const TOOLING = coded([
-  '........................',
-  '........................',
-  '...2222.................',
-  '........................',
-  '........................',
-  '........................',
-  '........................',
-  '........................',
-  '...............22222....',
-  '........................',
-  '........................',
-  '........................',
-  '........................',
-  '........................',
-  '.........222............',
-  '........................',
-  '........................',
-  '........................',
-  '........................',
-  '........................',
-  '2...................2222',
-  '........................',
-  '........................',
-  '........................',
-], 'tooling');
+export type Mark = readonly (readonly [number, number, 'sh' | 'lt'])[];
+export const CHIP: Mark = [[0, 0, 'sh'], [1, 0, 'sh'], [0, 1, 'sh'], [1, 1, 'lt']];
+export const CUT: Mark = [[0, 0, 'sh'], [1, 0, 'sh'], [2, 0, 'sh'], [1, 1, 'lt'], [2, 1, 'lt']];
+
+/** The face is scattered in cells of this many units; a cell holds one mark or none, at a place of its own. */
+export const DRESSING_CELL = 14;
+
+/** A whole number from 0 to 2^32 for a cell, the same on every paint, unlike its neighbours'. */
+export function cellHash(i: number, j: number, k: number): number {
+  let h = (Math.imul(i + 1, 0x27d4eb2d) ^ Math.imul(j + 7, 0x165667b1) ^ Math.imul(k + 3, 0x9e3779b1)) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0;
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
 
 /** The plain dark plate (5.2): a light edge of `root.3` along the top and left only. */
 export const PLATE = coded([
