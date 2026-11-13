@@ -9,6 +9,7 @@ import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
 import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
+import { BODY_STATES } from '../../sample/states';
 import { CREW, SERVER, seat, strides } from '../../sample/crew';
 import { type Stack, stackGrade, stackName, thing } from '../../sample/play-items';
 
@@ -154,11 +155,9 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   if (showCrew) out.push(crewHeads({ x: L(4), y: lowY, members: friends }));
 
   if (!first) {
-    const states = [
-      { icon: 'loaf', good: true, seconds: 252 }, { icon: 'ironbark', good: true, seconds: 151 },
-      { icon: 'swiftroot', good: true, seconds: 8 }, { icon: 'spore_sac', good: false, seconds: 38 },
-    ];
-    states.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + i * 20), y: lowY, ...s })));
+    // Left to right in the order the pack's States tab lists them, so the two never disagree.
+    const n = BODY_STATES.length;
+    BODY_STATES.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + (n - 1 - i) * 20), y: lowY, icon: s.icon, good: s.good, seconds: s.seconds })));
     // The Guide's step stands under the status frames, and the one toast shown 4 under it.
     const stepY = lowY + 28;
     if (o.notices !== false) out.push(tracker(R(4), stepY, 'Smelt iron', '2 of 3'));

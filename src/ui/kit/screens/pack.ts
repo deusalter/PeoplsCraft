@@ -3,7 +3,7 @@
 // panels leave the sides and the main slab carries three side tabs: Pack, Body, Making.
 import { FRAMED_PLATE } from '../art/slab';
 import { clock, count, measure, rightX } from '../font/measure';
-import { box, cut } from '../font/wrap';
+import { cut } from '../font/wrap';
 import type { Node, Ui } from '../node';
 import { frameWell } from '../parts/well';
 import { progressArrow } from '../parts/gauges';
@@ -18,6 +18,7 @@ import { BARE, FIGURE_SIZE, type Part, type Tones, figure, floor } from './play/
 import { Hand, type Place, store } from './play/hand';
 import { type Grid, type PanelState, RECIPE_W, gridMatch, recipeControls, recipePanel, resultSlot } from './play/making';
 import { seat } from '../sample/crew';
+import { BODY_STATES } from '../sample/states';
 import { type NamedScreen, SCREEN_FILES } from './index';
 
 const WEAR_SLOTS: Part[] = ['head', 'body', 'legs'];
@@ -164,39 +165,25 @@ function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
   return out;
 }
 
-const STATES_LIST: { icon: string; name: string; good: boolean; seconds: number; part: Part; ends: string }[] = [
-  { icon: 'loaf', name: 'Well Fed', good: true, seconds: 252, part: 'body', ends: 'Ends when the time runs out' },
-  { icon: 'ironbark', name: 'Toughened', good: true, seconds: 151, part: 'body', ends: 'Ends when the time runs out' },
-  { icon: 'spore_sac', name: 'Spore in a wound', good: false, seconds: 38, part: 'body', ends: 'A salve ends it' },
-];
-
 /**
- * The States tab: the figure alone in a well, standing on the ground, and under it one row 20 tall to each state: its
- * framed icon, its name in the colour of what it does to the body, wrapped to two lines rather than cut, and the time
- * left right-aligned on the row's first line. Icons laid on the figure itself floated on the dark at no fixed place.
+ * The States tab: its title, then from 18 under it one row 22 tall to each state the HUD shows, in the HUD's order:
+ * its framed icon, its name on the first line in the colour of what it does to the body, and on the second, in faded
+ * ink, what it does, and the time left right-aligned on that line, blood.dk under ten seconds. The figure is not drawn again here: the pack beside it already shows the body.
  */
-function statesParts(st: PackState): Node[] {
-  const wear = st.hand.stores.wear;
-  const tones = { head: materialTones(wear[0]), body: materialTones(wear[1]), legs: materialTones(wear[2]) };
-  const ww = BODY_W - 16, wh = 80, ground = 8;
-  const fig = FIGURE_SIZE.large, fx = Math.floor((ww - 2 - fig.w) / 2), fy = wh - 2 - ground - fig.h + 1;
-  const out: Node[] = [frameWell({
-    x: 8, y: 16, w: ww, h: wh, host: 'clay',
-    kids: [floor(0, wh - 2 - ground, ww - 2, ground, fx + Math.floor(fig.w / 2)), figure(fx, fy, 'large', tones)],
-  })];
-  STATES_LIST.forEach((s, i) => {
-    const y = 100 + i * 20, rw = BODY_W - 16;
+function statesParts(): Node[] {
+  const rw = BODY_W - 16;
+  const out: Node[] = [ink(8, 6, 'States')];
+  BODY_STATES.forEach((s, i) => {
+    const y = 24 + i * 22;
     const time = clock(s.seconds);
-    const nameW = rw - 22 - measure(time) - 4;
-    const name = box(s.name, nameW, 2);
     out.push({
-      id: `states.row.${i}`, x: 8, y, w: rw, h: 20, takes: true,
+      id: `states.row.${i}`, x: 8, y, w: rw, h: 22, takes: true,
       paint: (sf) => {
-        sf.nine(FRAMED_PLATE, 0, 1, 18, 18, { tint: s.good ? 'growth' : 'blood' });
-        sf.icon(s.icon, 1, 2);
-        const one = name.lines.length === 1;
-        for (const l of name.lines) sf.text(l.text, 22, (one ? 5 : 0) + l.y, s.good ? 'growth.dk' : 'blood.dk');
-        sf.text(time, rightX(time, rw), one ? 5 : 0, s.seconds <= 10 ? 'blood.dk' : 'ink.faded');
+        sf.nine(FRAMED_PLATE, 0, 2, 18, 18, { tint: s.good ? 'growth' : 'blood' });
+        sf.icon(s.icon, 1, 3);
+        sf.text(cut(s.name, rw - 22), 22, 1, s.good ? 'growth.dk' : 'blood.dk');
+        sf.text(cut(s.does, rw - 22 - measure(time) - 4), 22, 11, 'ink.faded');
+        sf.text(time, rightX(time, rw), 11, s.seconds <= 10 ? 'blood.dk' : 'ink.faded');
       },
       tip: () => ({ lines: [{ text: s.name, c: s.good ? 'growth.lt' : 'blood.lt' }, { text: s.ends, c: 'root.4' }], delay: 0 }),
     });
@@ -274,7 +261,7 @@ function wide(st: PackState, b: Bench, ui: Ui): Node {
   });
   const kids: Node[] = [];
   if (making) kids.push(recipePanel({ b, st: st.panel, id: 'pack.recipes', x: left + 175, y: 0, h: BODY_H, ramp: 'clay', stations: ['hand'], wellH: 96, hintY: 152, grid: st.grid }));
-  else kids.push(slab({ x: 0, y: 0, w: BODY_W, h: BODY_H, ramp: 'clay', kids: st.bodyTab === 1 ? statesParts(st) : bodyParts(st, ui, false) }));
+  else kids.push(slab({ x: 0, y: 0, w: BODY_W, h: BODY_H, ramp: 'clay', kids: st.bodyTab === 1 ? statesParts() : bodyParts(st, ui, false) }));
   kids.push(main);
   return overWorld(ui, win, kids, { outside: () => { st.hand.dropHeld(); b.after(); } });
 }
