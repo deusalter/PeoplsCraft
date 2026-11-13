@@ -15,6 +15,8 @@ export interface Surface {
   /** The virtual screen in units. */
   readonly w: number;
   readonly h: number;
+  /** Washes are drawn as their opaque stand-ins, so nothing under one shows. */
+  readonly strict?: boolean;
   fill(x: number, y: number, w: number, h: number, c: Colour): void;
   wash(x: number, y: number, w: number, h: number, c: Colour, quarters: 1 | 2 | 3): void;
   map(m: PixelMap, x: number, y: number, ramp?: Ramp): void;

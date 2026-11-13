@@ -1,16 +1,15 @@
 // Making by pattern, as the pack, the Workbench, the Anvil, the Line Frame and the Joining Bench share it: the grid
 // and its result, and the recipe panel fastened to the right with its tabs, search, "Can make", kind and cells.
-import { DARK_SLOT } from '../../art/slot';
 import type { Node, PointerEv, TipLine, Ui } from '../../node';
 import type { Ramp } from '../../palette';
-import { paintButton } from '../../parts/button';
 import { checkbox, field } from '../../parts/controls';
 import { paintCount } from '../../parts/slot';
 import { slab } from '../../parts/slab';
 import { tabbedSlab } from '../../parts/tabs';
 import { TRACK_W, paintThumb } from '../../parts/well';
-import { sunk } from '../../parts/common';
-import { PATTERNS, type Pattern, fits, kindOf, layout, matchGrid, needs } from '../../sample/play-patterns';
+import { ring, sunk } from '../../parts/common';
+import type { Surface } from '../../surface';
+import { PATTERNS, type Pattern, fits, layout, matchGrid, needs } from '../../sample/play-patterns';
 import { type Stack, stackTip, thing } from '../../sample/play-items';
 import { type Bench, ink, stackSlot } from './common';
 import type { Hand } from './hand';
@@ -28,10 +27,8 @@ const MADE_AT: Record<Station, string> = {
   hand: 'Made by hand', workbench: 'Made at the Workbench', anvil: 'Made at the Anvil', runeloom: 'Made at the Line Frame', tinker: 'Made at the Joining Bench',
 };
 
-export const KINDS = ['All', 'Tools', 'Weapons', 'Armour', 'Trinkets', 'Blocks', 'Other'] as const;
-
 /** What the recipe panel remembers between builds. */
-export interface PanelState { search: string; canMake: boolean; kind: number; tab: number }
+export interface PanelState { search: string; canMake: boolean; tab: number }
 
 export const CARRIED = ['pack', 'bar'];
 
@@ -148,6 +145,20 @@ function patternTip(h: Hand, p: Pattern, here: boolean, station: Station): Retur
   return stackTip({ key: p.out, n: p.n }, here ? '{lmb} lay out   {rmb} make' : 'none', extra);
 }
 
+/**
+ * A cell of the pattern list, sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its
+ * bottom and right, a floor of the well's own `root.1`, or `root.2` under the pointer.
+ */
+function paintCell(s: Surface, hover: boolean): void {
+  s.fill(0, 0, 17, 1, 'root.0');
+  s.fill(0, 1, 1, 16, 'root.0');
+  s.fill(1, 17, 17, 1, 'root.3');
+  s.fill(17, 1, 1, 16, 'root.3');
+  s.fill(17, 0, 1, 1, 'root.1');
+  s.fill(0, 17, 1, 1, 'root.1');
+  s.fill(1, 1, 16, 16, hover ? 'root.2' : 'root.1');
+}
+
 /** The cells of the patterns in a dark well, five to a row, moving by whole rows, with a track when they do not fit. */
 function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean, ui: Ui): Node {
   const { b } = o;
@@ -167,13 +178,15 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
       id, x: c * 18, y: r * 18, w: 18, h: 18, takes: true, focus: true,
       anim: b.refused(id),
       paint: (s, live) => {
-        s.nine(DARK_SLOT, 0, 0, 18, 18);
-        if (b.refused(id)) {
-          s.fill(1, 1, 16, 1, 'blood'); s.fill(1, 16, 16, 1, 'blood'); s.fill(1, 2, 1, 14, 'blood'); s.fill(16, 2, 1, 14, 'blood');
-        } else if (live.hover) s.fill(1, 1, 16, 16, 'root.2');
-        if (live.focus) { s.fill(1, 1, 16, 1, 'salt'); s.fill(1, 16, 16, 1, 'salt'); s.fill(1, 2, 1, 14, 'salt'); s.fill(16, 2, 1, 14, 'salt'); }
-        s.icon(thing(p.out).icon, 1, 1, makeable ? 'full' : 'flat', 'root.4');
-        paintCount(s, p.n, 15, 15, makeable ? 'salt' : 'root.4');
+        paintCell(s, live.hover);
+        if (b.refused(id)) ring(s, 1, 1, 16, 16, 'blood');
+        else if (live.focus) ring(s, 1, 1, 16, 16, 'salt');
+        // A pattern the pack cannot afford keeps its whole icon under a half wash of root.0, so its shape still reads;
+        // where washes are drawn opaque the wash would hide it, and it is drawn flat instead.
+        if (makeable) s.icon(thing(p.out).icon, 1, 1);
+        else if (s.strict) s.icon(thing(p.out).icon, 1, 1, 'flat', 'root.4');
+        else { s.icon(thing(p.out).icon, 1, 1); s.wash(1, 1, 16, 16, 'root.0', 2); }
+        paintCount(s, p.n, 15, 15);
       },
       tip: () => patternTip(b.hand, p, here && fitsGrid, station),
       on: {
@@ -214,25 +227,7 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
   };
 }
 
-/** The kind button: a click steps on, a right click steps back; its label is the present kind. */
-function kindButton(o: PanelOpts, ui: Ui): Node {
-  const label = KINDS[o.st.kind];
-  return {
-    id: `${o.id}.kind`, x: 60, y: 16, w: 48, h: 14, takes: true, focus: true,
-    paint: (s, live) => paintButton(s, 48, 14, label, live),
-    tip: () => ({ lines: [{ text: 'Kind of thing', c: 'salt' }, { text: '{lmb} next   {rmb} back', c: 'root.4' }], delay: 0.4 }),
-    on: {
-      click: (e) => {
-        o.st.kind = (o.st.kind + (e.button === 2 ? KINDS.length - 1 : 1)) % KINDS.length;
-        ui.setScroll(`${o.id}.cells`, 0);
-        ui.cue('press');
-        ui.invalidate();
-      },
-    },
-  };
-}
-
-/** The panel's controls from its top left: search, kind, "Can make", the cells, and the line of what the mouse does. */
+/** The panel's controls from its top left: search, "Can make", the cells, and the line of what the mouse does. */
 export function recipeControls(o: PanelOpts): Node[] {
   const { b, st } = o;
   const ui = b.ui;
@@ -240,15 +235,13 @@ export function recipeControls(o: PanelOpts): Node[] {
   const here = st.tab === 0;
   const q = st.search.trim().toLowerCase();
   const list = PATTERNS.filter((p) => p.station === station
-    && (st.kind === 0 || kindOf(p) === KINDS[st.kind])
     && (!q || thing(p.out).name.toLowerCase().includes(q))
     && (!st.canMake || canMake(b.hand, p)));
   const out: Node[] = [
     field({
-      id: `${o.id}.search`, x: 8, y: 16, w: 50, value: st.search, placeholder: 'Search', limit: 24, host: o.ramp, ui,
+      id: `${o.id}.search`, x: 8, y: 16, w: o.compact ? 100 : o.wellW ?? 98, value: st.search, placeholder: 'Search', limit: 24, host: o.ramp, ui,
       onText: (v) => { st.search = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); },
     }),
-    kindButton(o, ui),
     checkbox({ id: `${o.id}.can`, x: o.compact ? 112 : 8, y: o.compact ? 17 : 35, on: st.canMake, label: 'Can make', host: o.ramp, onToggle: (v) => { st.canMake = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); } }),
     cellWell(o, list, station, here, ui),
   ];

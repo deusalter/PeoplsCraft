@@ -33,7 +33,7 @@ function open(): State {
     return [p.store === 'pack' ? 'bar' : 'pack'];
   };
   const grid: Grid = { store: 'piece', w: 2, ghost: Array(4).fill(null), among: PATTERNS.filter((p) => p.station === 'tinker') };
-  state = { hand, grid, panel: { search: '', canMake: false, kind: 0, tab: 0 }, bench: null, side: 0 };
+  state = { hand, grid, panel: { search: '', canMake: false, tab: 0 }, bench: null, side: 0 };
   return state;
 }
 

@@ -7,7 +7,7 @@ import { progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
 import { PATTERNS } from '../sample/play-patterns';
 import type { Stack } from '../sample/play-items';
-import { Bench, overWorld, packBlock, place, stackGrid } from './play/common';
+import { Bench, ink, overWorld, packBlock, place, stackGrid } from './play/common';
 import { Hand, store } from './play/hand';
 import { type Grid, type PanelState, type Station, STATION_ICON, STATION_NAME, gridMatch, layOut, recipeControls, recipePanel, resultSlot } from './play/making';
 import { tabbedSlab } from '../parts/tabs';
@@ -74,7 +74,7 @@ function open(id: string, k: Kind): State {
   const grid: Grid = { store: 'grid', w: 3, ghost: Array(9).fill(null), among: PATTERNS.filter((p) => p.station === k.station || p.station === 'hand') };
   const first = PATTERNS.find((p) => p.out === k.laid);
   if (first) layOut(hand, grid, first);
-  st = { hand, grid, panel: { search: '', canMake: false, kind: 0, tab: 0 }, bench: null, side: 0 };
+  st = { hand, grid, panel: { search: '', canMake: false, tab: 0 }, bench: null, side: 0 };
   states.set(id, st);
   return st;
 }
@@ -90,6 +90,10 @@ function build(ui: Ui, id: string): Node {
     progressArrow({ x: 91, y: 36, f: matched ? 1 : 0, ramp: k.ramp, colour: k.arrow }),
     resultSlot(b, g, 122, 31, k.ramp, true),
   ];
+  // Pieces on the grid that make nothing say why under the arrow: a laid pattern short of a piece, or no join at all.
+  const laid = st.hand.stores.grid.some((s) => s);
+  const short = g.ghost.filter((x, i) => x && !st.hand.stores.grid[i]).length;
+  if (!matched && (laid || short)) making.push(ink(91, 59, short ? (short === 1 ? 'One piece short' : `${short} pieces short`) : 'Nothing joins', 'ink.faded'));
   const pack = packBlock(b, k.ramp, 73, 84);
   const outside = () => { st.hand.dropHeld(); b.after(); };
   if (!ui.layout.wide) {

@@ -10,7 +10,7 @@ The mock screens of the HUD, the pack, the chest, the stations, the shop, the re
 
 **Moving parts in a photograph.** A browser driven by a script reports `navigator.webdriver`. There the furnace's arrow and flame, the pot's night, the mending pips and the fall's wash stand at a fixed phase, so the frame the shot takes is the frame the grid check paints. Anywhere else they move by the clock.
 
-**Making.** A cell of a pattern the pack cannot afford draws its icon flat in `root.4`, as a row that cannot be used does. Its tooltip lists what goes in, each line `growth.lt` when carried and `blood.lt` when not. A cell read through another station's tab, or a pattern too large for the grid, answers a press with the refusal frame and its tooltip says where it is made. A pattern laid out that the pack cannot fill leaves the silhouettes of what is missing on the grid.
+**Making.** A cell of a pattern the pack cannot afford keeps its whole icon under a half wash of `root.0` and its count in salt (5.4). The panel has no kind button: search and "Can make" are its two filters, and a button that stepped through kinds under a label of "All" read as a second, unclear filter. Its tooltip lists what goes in, each line `growth.lt` when carried and `blood.lt` when not. A cell read through another station's tab, or a pattern too large for the grid, answers a press with the refusal frame and its tooltip says where it is made. A pattern laid out that the pack cannot fill leaves the silhouettes of what is missing on the grid.
 
 **The figure.** The body as worn is built from rectangles lit on their top and left and shaded on their right and bottom, outlined in `root.0`. A worn piece takes its material's tones (iron in stone, hide in timber, Hīrak in cyan); the rest of the body is a silhouette in `root.3` and `root.2`.
 
@@ -22,6 +22,6 @@ The mock screens of the HUD, the pack, the chest, the stations, the shop, the re
 
 **Reworking bench.** It is the Sealed Bench of the old things (8.8), built round the Guhamāt Remains. The modifier it draws is one of the game's own for that kind of piece.
 
-**Narrow.** Under 400 units the Workbench, the Anvil, the Line Frame and the Joining Bench carry two side tabs, the station and its patterns; the patterns stand in the grid's place with "Can make" beside the kind button and a well eight cells wide under them. The pack does the same with its three tabs, as the direction says.
+**Narrow.** Under 400 units the Workbench, the Anvil, the Line Frame and the Joining Bench carry two side tabs, the station and its patterns; the patterns stand in the grid's place with "Can make" beside the search field and a well eight cells wide under them. The pack does the same with its three tabs, as the direction says.
 
 **Layout check.** `scripts/uilayout.mjs` builds every mock screen under Node at 320, 400, 427, 480 and 573 units wide, paints it on a grid surface, and fails on a part off the screen or off the grid, on two stops for Tab that overlap (tabs that share an outline column excepted), and on a screen that throws. With `--png <dir>` it writes what the grid holds, which is how the narrow screens are seen, since the shot script takes the wide ones.

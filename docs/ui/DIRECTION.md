@@ -140,6 +140,7 @@ Three rules follow and are used everywhere below.
 | The dim behind the pause slab | `root.0` at a half, as behind any window | `root.1`, opaque |
 | The strip under a chat line, a name tag, the prompt and the name of the thing in hand | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
+| A pattern the pack cannot afford, over its cell in a pattern list (5.4) | `root.0` at a half | not drawn; the icon flat in `root.4` |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
 | The fall | `blood.dk` at a quarter, a half, then a half held | `blood.dk`, opaque |
 | Crossing a gate | `violet.dk` at a quarter, a half, three quarters as the crossing fills | `violet.dk`, opaque |
@@ -692,6 +693,8 @@ The hover changes the floor under the icon and nothing else. It does not tint th
 
 **A thing that is missing** (a pattern laid out that the pack cannot fill, a kind not yet seen in the codex) is drawn as its icon's silhouette in one flat tone, `sh` of the host ramp, never as a faded icon.
 
+**A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: it keeps its whole icon, and over the cell's floor and icon lies a wash of `root.0` at a half; its count is `salt` with its shadow over the wash like any count. Where washes are drawn opaque the icon is drawn flat in `root.4` instead. A cell of the list is sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.1`, `root.2` under the pointer.
+
 **The large slot**, 26 by 26, for the result of a station. Floor 24 by 24; the icon at 5, 5.
 
 ```
@@ -834,7 +837,7 @@ A bar, a key, a piece to rework:
 
 ### 5.6 Button
 
-Always dressed stone, on any slab and on the ground tile. The classic button is 200 by 20; half is 98 by 20 (two with a gap of 4); the worlds screen uses 136 by 20. Inside windows a small button is 12, 14 or 16 tall and as wide as its label plus 10.
+A button 20 tall is dressed stone, on any slab and on the ground tile: these are the buttons of the menus. The classic button is 200 by 20; half is 98 by 20 (two with a gap of 4); the worlds screen uses 136 by 20. Inside windows a small button is 12, 14 or 16 tall and as wide as its label plus 10, and it is a raised piece of the slab it stands on, in that slab's ramp (below), so that a grey stone button is never pasted on clay or timber.
 
 Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall carries tooling: three to five chisel strokes, each 2 to 4 units long and one wide, level, rising or falling, in `stone.dk` with one unit of `stone.lt` under its lower end; and about one single pit of `stone.dk` to every 25 units of width. Their places come from a hash of the button's id (or its label), so no two buttons in a column carry the same marks and no lattice forms down a stack. Strokes stand only in the bands from x 3 to 30 and from `w - 30` to `w - 3`, at least 6 units apart, and nothing is cut inside the label's box widened by 2 units. The diagrams show one such draw. Smaller buttons have no tooling. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
 
@@ -894,7 +897,7 @@ Pressed and disabled. Pressed: the bevel turns over: the first row and column `s
 ```
 `. nothing  g root.4  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
 
-Small buttons, 12, 14 and 16 tall, and the 12 by 12 "+":
+Small buttons in stone, 12, 14 and 16 tall, and the 12 by 12 "+" (on a column of rows 12 apart the "+" is 11 by 11, so that a unit stays clear between two):
 
 ```
      0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5    
@@ -918,7 +921,27 @@ Small buttons, 12, 14 and 16 tall, and the 12 by 12 "+":
 ```
 `. nothing  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
 
-A button that steps through values (the kind of pattern, a graphics preset) is this same button; its label is the present value.
+**The small button of a slab.** Inside the outline: the first row and column `hi`, the face `face`, the last row and column `dk` with a row and a column of `sh` inside them; the two units where light meets dark are face. The label is `ink` with no shadow, centred, its cell at `y = floor((h - 9) / 2)`. Hovered, the face turns `lt`. Pressed, the bevel turns over: the first row and column `dk` with `sh` inside them, the face `sh`, the last row and column `face`, and the label drops one unit. Disabled: a flat face of `sh`, the label `ink.faded`. Keyboard focus gives the outline `salt`. No tooling. On the Anvil, the furnaces and the map the ramp is stone, with the same roles. A clay "Sort", 30 by 12, normal and hovered:
+
+```
+     0         1         2         3         4         5         6     
+     0123456789012345678901234567890123456789012345678901234567890123
+  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+  1  KWWWWWWWWWWWWWWWWWWWWWWWWWWWFK...KWWWWWWWWWWWWWWWWWWWWWWWWWWWLK
+  2  KWFFFFIIIIFFFFFFFFFFFFFFFFFSDK...KWLLLLIIIILLLLLLLLLLLLLLLLLSDK
+  3  KWFFFIFFFFFFFFFFFFFFFFIFFFFSDK...KWLLLILLLLLLLLLLLLLLLLILLLLSDK
+  4  KWFFFIFFFFFIIIIFFIIIFIIIIFFSDK...KWLLLILLLLLIIIILLIIILIIIILLSDK
+  5  KWFFFFIIIFFIFFFIFIFFFFIFFFFSDK...KWLLLLIIILLILLLILILLLLILLLLSDK
+  6  KWFFFFFFFIFIFFFIFIFFFFIFFFFSDK...KWLLLLLLLILILLLILILLLLILLLLSDK
+  7  KWFFFFFFFIFIFFFIFIFFFFIFFFFSDK...KWLLLLLLLILILLLILILLLLILLLLSDK
+  8  KWFFFIIIIFFFIIIIFIFFFFFIIFFSDK...KWLLLIIIILLLIIIILILLLLLIILLSDK
+  9  KWSSSSSSSSSSSSSSSSSSSSSSSSSSDK...KWSSSSSSSSSSSSSSSSSSSSSSSSSSDK
+ 10  KFDDDDDDDDDDDDDDDDDDDDDDDDDDDK...KLDDDDDDDDDDDDDDDDDDDDDDDDDDDK
+ 11  .KKKKKKKKKKKKKKKKKKKKKKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+```
+`. nothing  D clay.dk  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  W salt`
+
+A button that steps through values (a graphics preset) is this same button; its label is the present value.
 
 ### 5.7 Tabs
 
@@ -2353,7 +2376,7 @@ The pack is the main slab, 176 by 182, centred on the screen, with one row of ta
 | S1 | text | 8 | 6 | 96 | 10 | the player's name |
 | S2 | text | 8 | 17 | 40 | 10 | "Level 14" in ink |
 | S3 | strip | 52 | 19 | 52 | 5 | practice strip, thin, from 6 after the level to x 104, a segment to 8 units; the practice in numbers ("320 of 900 to level 15") is its tooltip |
-| S4 | rows | 8 | 28 | 96 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 88; a 12 by 12 button "+" at x 92 while there are points |
+| S4 | rows | 8 | 28 | 96 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 88; while there are points, a clay button "+" 11 by 11 at x 92 at the top of each row, so that one clear unit parts each from the next |
 | S5 | text | 8 | 77 | 96 | 10 | "3 to spend", only while there are points |
 | S6 | rule | 8 | 89 | 96 | 2 | cut line |
 | S7 | rows | 8 | 92 | 96 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 104: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
@@ -2378,15 +2401,14 @@ The pack is the main slab, 176 by 182, centred on the screen, with one row of ta
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | R0 | slab | 175 | 0 | 116 | 166 | recipe panel, plain: the pack lists only what two hands can make, so it has no station tabs and no tab row of its own |
 | R1 | text | 183 | 6 | 60 | 10 | "By hand" |
-| R2 | field | 183 | 16 | 50 | 14 | search; placeholder "Search"; longer text scrolls inside the field |
+| R2 | field | 183 | 16 | 98 | 14 | search, as wide as the well; placeholder "Search"; longer text scrolls inside the field |
 | R3 | check | 183 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
-| R4 | button | 235 | 16 | 48 | 14 | kind of thing: All, Tools, Weapons, Armour, Trinkets, Blocks, Other; a click steps on, a right click steps back |
 | R5 | well | 183 | 52 | 98 | 96 | dark well: five pattern cells of 18 to the row, then a scroll track 6 wide |
 | R6 | text | 183 | 152 | 100 | 10 | "{lmb} lay out {rmb} make", in faded ink |
 
 - **Shows.** What is carried and worn, what the body can do, and what two hands can make. The figure well shows the player with their own face and each worn piece drawn on the body. The body panel holds the level, the four attributes and the seven totals. The recipe panel, opened with Making, lists every pattern that can be laid on the two by two grid; the patterns of a station are read at that station.
-- **Clickable.** Every slot (see Behaviour). "Sort". The "+" beside an attribute spends a point. A pattern cell: left click lays the pattern on the grid, right click makes one straight into the pack, shift and left click makes as many as the pack affords. The search field. "Can make". The kind button. Tabs.
-- **Keys.** E or Esc closes. 1 to 9 swaps the hovered slot with that hotbar slot. Q drops one from the hovered slot, Ctrl and Q the stack. Tab walks: search, "Can make", kind, pattern cells, grid, result, equipment, trinkets, pack, hotbar, "Sort", attributes. Arrows move inside a grid. Enter is a left click on the focused part, Shift and Enter a shift click. G opens the journal. Typing a letter while nothing has focus puts it in the search field.
+- **Clickable.** Every slot (see Behaviour). "Sort". The "+" beside an attribute spends a point. A pattern cell: left click lays the pattern on the grid, right click makes one straight into the pack, shift and left click makes as many as the pack affords. The search field. "Can make". Tabs.
+- **Keys.** E or Esc closes. 1 to 9 swaps the hovered slot with that hotbar slot. Q drops one from the hovered slot, Ctrl and Q the stack. Tab walks: search, "Can make", pattern cells, grid, result, equipment, trinkets, pack, hotbar, "Sort", attributes. Arrows move inside a grid. Enter is a left click on the focused part, Shift and Enter a shift click. G opens the journal. Typing a letter while nothing has focus puts it in the search field.
 - **First.** No part has focus. The pointer stands where it last stood. The first Tab press lands on the search field.
 - **Narrow.** Under 400 units of width the two panels leave the sides. The main slab stands alone with three side tabs on its left edge: Pack, Body, Making. Body and Making each replace the upper 92 units of the slab (the pack grid and hotbar stay).
 
@@ -2457,8 +2479,8 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
                                                           +------++------+
 #=========================================================#======================================#
 #  "B1"                                                   #  "R1"                                #
-#         .----..----..----.                              #  +---------------++--------------+   #
-#         |B2  ||    ||    |                              #  +-R2 field------++-R4 button----+   #
+#         .----..----..----.                              #  +------------------------------+    #
+#         |B2  ||    ||    |                              #  +-R2 field---------------------+    #
 #         '----''----''----'                              #                                      #
 #         .----..----..----.             .-------.        #  +--+                                #
 #         |    ||    ||    |             |       |        #  +--+                                #
@@ -2498,15 +2520,15 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | B8 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | R0 | slab | 175 | 0 | 116 | 166 | recipe panel, fastened to the right side and sharing the outline column |
 | R1 | text | 183 | 6 | 80 | 10 | "Patterns", since the slab beside it already names the station; through another station's tab, whose patterns they are: "Anvil patterns", "Patterns by hand". The tabs stay on the panel, not on the main slab: they change only what the panel lists |
-| R2 | field | 183 | 16 | 50 | 14 | search; placeholder "Search"; longer text scrolls inside the field |
+| R2 | field | 183 | 16 | 98 | 14 | search, as wide as the well; placeholder "Search"; longer text scrolls inside the field |
 | R3 | check | 183 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
-| R4 | button | 235 | 16 | 48 | 14 | kind of thing: All, Tools, Weapons, Armour, Trinkets, Blocks, Other; a click steps on, a right click steps back |
 | R5 | well | 183 | 52 | 98 | 92 | dark well: five by 5 pattern cells of 18, then a scroll track 6 wide |
 | R6 | text | 183 | 148 | 100 | 10 | "{lmb} lay out {rmb} make", in faded ink |
 | T1 | tab | 175 | -21 | 24 | 24 | this station, chosen |
 | T2 | tab | 198 | -18 | 24 | 18 | other stations built |
 
 - **Shows.** The grid, what it makes, and the patterns of the station. The Line Frame has the same parts; its slab is timber and its arrow fills in arm blue instead of ember, because the work there is line and crystal.
+- **Says why.** While pieces lie on the grid and nothing comes of them, one line in `ink.faded` stands at 91, 59, under the arrow: "One piece short" (or "2 pieces short") when a laid pattern lacks what the pack could not fill, else "Nothing joins".
 - **Clickable.** As the pack. A pattern read through another station's tab cannot be laid here; its cell answers with the refusal frame and the line "Made at the Anvil".
 - **Keys.** As the pack.
 - **First.** The first Tab press lands on the search field.
