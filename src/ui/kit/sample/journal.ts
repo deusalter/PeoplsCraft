@@ -93,6 +93,8 @@ export interface Bounty {
   took: number[];
   /** Too far, or the standing is too low: shown in blood. */
   barred?: string;
+  /** The same, short enough for the list's second line. */
+  why?: string;
 }
 
 export const BOUNTIES: Bounty[] = [
@@ -106,7 +108,7 @@ export const BOUNTIES: Bounty[] = [
     telling: 'Thirty-two coal to the fire in the Kāsa. They pay nothing in lees; their standing with the crew rises by one step.' },
   { id: 'b.bars', asker: 'Kāru', task: 'Four iron bars', icon: 'ingot', n: 4, pay: 18, took: [3, 5, 6],
     telling: 'For hinges and the frame of a Joining Bench. Kāru moves in once Vanahar has fallen and asks again each dawn.' },
-  { id: 'b.crystal', asker: 'Vejja', task: 'Six crystal', icon: 'crystal', n: 6, pay: 75, took: [], barred: 'Needs the second notch with the householders',
+  { id: 'b.crystal', asker: 'Vejja', task: 'Six crystal', icon: 'crystal', n: 6, pay: 75, took: [], barred: 'Needs the second notch with the householders', why: 'needs standing',
     telling: 'Crystal from geodes, to grind for salves. Vejja asks it only of a crew the householders stand by.' },
 ];
 
