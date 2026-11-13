@@ -640,15 +640,15 @@ Slots stand in grids with no gap, so a grid of nine is 162 wide. The hotbar row 
 States, left to right: hovered (floor `sh`); accepts the held stack (a frame of `growth` on the floor's edge; shown on equipment, fuel and ore slots while a fitting thing is held); refused (the same frame in `blood`, for 0.3 s after a click the game refuses); chosen (frame of `salt`: the hotbar slot in hand, as seen in the pack); locked (floor `face`: a place that shows a thing built in and takes nothing). Colour alone does not tell a state: accepts and refused each carry a mark 7 by 7 over the floor's top right corner, at `x = size - 8`, `y = 1`, a check of `growth.lt` or a cross of `blood.lt` on a badge of `root.1` with a `root.0` outline whose corners are left out; locked carries the lock of the marks of a state (7 by 7) at 1, 1 over the icon.
 
 ```
-     0      
+     0         1     
      0123456789012345
-  0  .KKKKK.  .KKKKK.
-  1  KrkkkrK  KkkkknK
-  2  KkrkrkK  KkkknkK
-  3  KkkrkkK  KnknkkK
-  4  KkrkrkK  KknkkkK
-  5  KrkkkrK  KkkkkkK
-  6  .KKKKK.  .KKKKK.
+  0  .KKKKK....KKKKK.
+  1  KrkkkrK..KkkkknK
+  2  KkrkrkK..KkkknkK
+  3  KkkrkkK..KnknkkK
+  4  KkrkrkK..KknkkkK
+  5  KrkkkrK..KkkkkkK
+  6  .KKKKK....KKKKK.
 ```
 `. nothing  k root.1  K root.0  n growth.lt  r blood.lt`
 
