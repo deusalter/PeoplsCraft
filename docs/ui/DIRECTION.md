@@ -144,7 +144,6 @@ Three rules follow and are used everywhere below.
 | The dim behind the pause slab | `root.0` at a half, as behind any window | `root.1`, opaque |
 | The strip under a chat line, a name tag, the prompt and the Guide's step on the HUD | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
-| A pattern the pack cannot afford, over its cell in a pattern list (5.4) | `root.0` at a half | not drawn; the icon flat in `root.4` |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
 | The fall | `blood.pit` at a quarter, a half, then three quarters held. Over the noon sky `blood.dk` at a half read as a lilac wash, which is the violet glow this interface refuses | `blood.pit`, opaque |
 | Crossing a gate | `violet.dk` at a quarter, a half, three quarters as the crossing fills | `violet.dk`, opaque |
@@ -724,7 +723,7 @@ The hover changes the floor under the icon and nothing else. It does not tint th
 
 **A thing that is missing** (a pattern laid out that the pack cannot fill, a kind not yet seen in the codex) is drawn as its icon's silhouette in one flat tone, `dk` of the host ramp, never as a faded icon.
 
-**A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: it keeps its whole icon, and over the cell's floor and icon lies a wash of `root.0` at a half; its count is `salt` with its shadow over the wash like any count. Where washes are drawn opaque the icon is drawn flat in `root.4` instead. A cell of the list is sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.1`, `root.2` under the pointer.
+**A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: its icon is drawn flat in `root.4`, so its outline still reads, and the lock of a locked slot stands over the cell's bottom right corner at 10, 10, where the count would be; no count is written. A half wash of `root.0` over the whole icon was tried first: on the dark floor a washed icon differed from a makeable one only a little in brightness. A cell of the list is sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.1`, `root.2` under the pointer.
 
 **The large slot**, 26 by 26, for the result of a station. Floor 24 by 24; the icon at 5, 5.
 
@@ -2516,8 +2515,7 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | R3 | check | 183 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
 | R5 | well | 183 | 52 | 98 | 92 | dark well: five by 5 pattern cells of 18, then a scroll track 6 wide |
 | R6 | text | 183 | 148 | 100 | 10 | "{lmb} lay out {rmb} make", in faded ink |
-| T1 | tab | 175 | -21 | 24 | 24 | this station, chosen |
-| T2 | tab | 198 | -18 | 24 | 18 | other stations built |
+| T1 to T5 | tab | 175 + 23 i | -21 or -18 | 24 | 24 or 18 | the five stations in one order on every making screen: By hand, Workbench, Anvil, Line Frame, Joining Bench. The one whose patterns are listed is chosen (24 tall); another whose patterns may be read here is a plain tab (18); one whose patterns cannot be read here is drawn flat, a face of `dk` with no light or dark edge and its icon flat in `sh`, and its tooltip says "Its patterns are not read here". A tab never moves: when each screen put itself first, the same station stood in a different place on every screen |
 
 - **Shows.** The grid, what it makes, and the patterns of the station. The Line Frame has the same parts; its slab is timber and its arrow fills in arm blue instead of ember, because the work there is line and crystal.
 - **Says why.** While pieces lie on the grid and nothing comes of them, one line in `ink.faded` stands at 91, 59, under the arrow: "One piece short" (or "2 pieces short") when a laid pattern lacks what the pack could not fill, else "Nothing joins".

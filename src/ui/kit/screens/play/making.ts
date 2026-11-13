@@ -5,7 +5,7 @@ import type { Ramp } from '../../palette';
 import { coded } from '../../pixmap';
 import { measure } from '../../font/measure';
 import { checkbox, field } from '../../parts/controls';
-import { paintCount } from '../../parts/slot';
+import { LOCK, paintCount } from '../../parts/slot';
 import { slab } from '../../parts/slab';
 import { tabbedSlab } from '../../parts/tabs';
 import { TRACK_W, paintThumb } from '../../parts/well';
@@ -24,6 +24,8 @@ export const STATION_NAME: Record<Station, string> = {
 export const STATION_ICON: Record<Station, string> = {
   hand: 'patterns', workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker_bench',
 };
+/** The one order of the tabs on every making screen, so that each station's tab keeps its place from screen to screen. */
+const ORDER: Station[] = ['hand', 'workbench', 'anvil', 'runeloom', 'tinker'];
 /** "Made at the Anvil": where a pattern read through another station's tab is made. */
 const MADE_AT: Record<Station, string> = {
   hand: 'Made by hand', workbench: 'Made at the Workbench', anvil: 'Made at the Anvil', runeloom: 'Made at the Line Frame', tinker: 'Made at the Joining Bench',
@@ -184,12 +186,10 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
         paintCell(s, live.hover);
         if (b.refused(id)) ring(s, 1, 1, 16, 16, 'blood');
         else if (live.focus) ring(s, 1, 1, 16, 16, 'salt');
-        // A pattern the pack cannot afford keeps its whole icon under a half wash of root.0, so its shape still reads;
-        // where washes are drawn opaque the wash would hide it, and it is drawn flat instead.
-        if (makeable) s.icon(thing(p.out).icon, 1, 1);
-        else if (s.strict) s.icon(thing(p.out).icon, 1, 1, 'flat', 'root.4');
-        else { s.icon(thing(p.out).icon, 1, 1); s.wash(1, 1, 16, 16, 'root.0', 2); }
-        paintCount(s, p.n, 15, 15);
+        // A pattern the pack cannot afford is flat in root.4 with the lock where its count would stand: under a half
+        // wash its icon differed from a makeable one only a little in brightness on the dark floor.
+        if (makeable) { s.icon(thing(p.out).icon, 1, 1); paintCount(s, p.n, 15, 15); }
+        else { s.icon(thing(p.out).icon, 1, 1, 'flat', 'root.4'); s.map(LOCK, 10, 10); }
       },
       tip: () => patternTip(b.hand, p, here && fitsGrid, station),
       on: {
@@ -302,11 +302,19 @@ export function recipePanel(o: PanelOpts): Node {
   const title = tab === 0 ? 'Patterns' : station === 'hand' ? 'Patterns by hand' : `${STATION_NAME[station]} patterns`;
   // With one station there is nothing to choose between, and the panel carries no tab row of its own.
   if (o.stations.length === 1) return slab({ x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title, kids: recipeControls(o) });
+  // All five stations stand in one order on every screen; one whose patterns cannot be read here is drawn flat.
   return tabbedSlab({
     id: o.id, x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title, edge: 'top',
-    tabs: o.stations.map((s) => ({ id: `${o.id}.tab.${s}`, icon: STATION_ICON[s], name: STATION_NAME[s] })),
-    chosen: st.tab,
-    onTab: (i) => { st.tab = i; ui.setScroll(`${o.id}.cells`, 0); ui.cue('tab'); ui.invalidate(); },
+    tabs: ORDER.map((s) => ({
+      id: `${o.id}.tab.${s}`, icon: STATION_ICON[s], name: STATION_NAME[s],
+      off: !o.stations.includes(s), why: 'Its patterns are not read here',
+    })),
+    chosen: ORDER.indexOf(station),
+    onTab: (i) => {
+      const j = o.stations.indexOf(ORDER[i]);
+      if (j < 0) return;
+      st.tab = j; ui.setScroll(`${o.id}.cells`, 0); ui.cue('tab'); ui.invalidate();
+    },
     kids: recipeControls(o),
   });
 }

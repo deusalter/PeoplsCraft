@@ -9,6 +9,9 @@ export interface TabSpec {
   icon: string;
   /** Its name is its tooltip. */
   name: string;
+  /** A tab that cannot be chosen here: drawn flat, its icon a flat shape, with `why` under its name. */
+  off?: boolean;
+  why?: string;
 }
 
 export interface TabbedOpts extends SlabOpts {
@@ -78,6 +81,16 @@ export function otherTabState(fill: Fill, tx: number, t: Tones, hover: boolean, 
   }
 }
 
+/** A tab that cannot be chosen here: flat `dk` inside its outline, with no light edge and no dark column. */
+export function offTab(fill: Fill, tx: number, t: Tones, first: boolean): void {
+  const top = -OTHER_RISE;
+  fill(tx + (first ? 1 : 0), top, first ? 22 : 23, 1, 'root.0');
+  fill(tx, top + 1, 1, OTHER_RISE - 1, 'root.0');
+  fill(tx + 23, top + 1, 1, OTHER_RISE - 1, 'root.0');
+  fill(tx + 1, top + 1, 22, OTHER_RISE - 1, t('dk'));
+  if (first) fill(tx, 0, 1, 1, 'root.0');
+}
+
 export { CHOSEN_RISE, OTHER_RISE };
 
 /** A slab with tabs along its top or its left edge (5.7). */
@@ -94,9 +107,11 @@ export function tabbedSlab(o: TabbedOpts): Node {
     return {
       id: spec.id,
       x: top ? at : -rise, y: top ? -rise : at, w: top ? TAB_SIZE : rise, h: top ? rise : TAB_SIZE,
-      takes: true, focus: true,
-      on: { down: () => o.onTab?.(i) },
-      tip: (live: Live) => (lv(live, force).hover ? { lines: [{ text: spec.name, c: 'salt' }], delay: 0.4 } : null),
+      takes: true, focus: !spec.off,
+      on: spec.off ? undefined : { down: () => o.onTab?.(i) },
+      tip: (live: Live) => (lv(live, force).hover
+        ? { lines: [{ text: spec.name, c: 'salt' }, ...(spec.off && spec.why ? [{ text: spec.why, c: 'root.4' as Colour }] : [])], delay: 0.4 }
+        : null),
       paint: (s, live) => {
         const l = lv(live, force);
         // The node's origin is the tab's corner; the construction is written from the slab's corner.
@@ -105,13 +120,15 @@ export function tabbedSlab(o: TabbedOpts): Node {
         const f = fillFor(s);
         const t: Tones = (r) => tone(o.ramp, r);
         if (chosen) chosenTab(f, at, t);
+        else if (spec.off) offTab(f, at, t, i === 0);
         else {
           otherTab(f, at, t, i === 0);
           otherTabState(f, at, t, l.hover, l.focus);
         }
         s.translate(-ox, -oy);
-        if (top) s.icon(spec.icon, 4, chosen ? 4 : 2);
-        else s.icon(spec.icon, chosen ? 4 : 2, 4);
+        const [ix, iy] = top ? [4, chosen ? 4 : 2] : [chosen ? 4 : 2, 4];
+        if (spec.off) s.icon(spec.icon, ix, iy, 'flat', tone(o.ramp, 'sh'));
+        else s.icon(spec.icon, ix, iy);
       },
     };
   };
