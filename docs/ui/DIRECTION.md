@@ -2497,7 +2497,7 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | B7 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | B8 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | R0 | slab | 175 | 0 | 116 | 166 | recipe panel, fastened to the right side and sharing the outline column |
-| R1 | text | 183 | 6 | 60 | 10 | "Workbench": the station whose patterns are listed |
+| R1 | text | 183 | 6 | 80 | 10 | "Patterns", since the slab beside it already names the station; through another station's tab, whose patterns they are: "Anvil patterns", "Patterns by hand". The tabs stay on the panel, not on the main slab: they change only what the panel lists |
 | R2 | field | 183 | 16 | 50 | 14 | search; placeholder "Search"; longer text scrolls inside the field |
 | R3 | check | 183 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
 | R4 | button | 235 | 16 | 48 | 14 | kind of thing: All, Tools, Weapons, Armour, Trinkets, Blocks, Other; a click steps on, a right click steps back |

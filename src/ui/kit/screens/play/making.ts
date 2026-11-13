@@ -260,11 +260,15 @@ export function recipeControls(o: PanelOpts): Node[] {
 export function recipePanel(o: PanelOpts): Node {
   const { b, st } = o;
   const ui = b.ui;
-  const station = o.stations[Math.min(st.tab, o.stations.length - 1)];
+  const tab = Math.min(st.tab, o.stations.length - 1);
+  const station = o.stations[tab];
+  // The main slab already names the station, so the panel says what it lists: this station's patterns, or, through
+  // another tab, whose patterns they are.
+  const title = tab === 0 ? 'Patterns' : station === 'hand' ? 'Patterns by hand' : `${STATION_NAME[station]} patterns`;
   // With one station there is nothing to choose between, and the panel carries no tab row of its own.
-  if (o.stations.length === 1) return slab({ x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title: STATION_NAME[station], kids: recipeControls(o) });
+  if (o.stations.length === 1) return slab({ x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title, kids: recipeControls(o) });
   return tabbedSlab({
-    id: o.id, x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title: STATION_NAME[station], edge: 'top',
+    id: o.id, x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title, edge: 'top',
     tabs: o.stations.map((s) => ({ id: `${o.id}.tab.${s}`, icon: STATION_ICON[s], name: STATION_NAME[s] })),
     chosen: st.tab,
     onTab: (i) => { st.tab = i; ui.setScroll(`${o.id}.cells`, 0); ui.cue('tab'); ui.invalidate(); },
