@@ -134,13 +134,15 @@ function goodsWell(st: State, ui: Ui): Node {
         if (b.refused(r.id)) ring(s, 0, 0, rw, ROW_H, 'blood');
         else if (live.hover && can) s.fill(0, 0, rw, ROW_H, 'root.2');
         if (live.focus) ring(s, 0, 0, rw, ROW_H, 'salt');
-        s.icon(thing(g.key).icon, 1, 1, can ? 'full' : 'flat', 'root.4');
-        const price = (r.sold ? '{back} ' : '') + priceText(k, g.price);
+        // A price out of reach is told by the price alone, in blood after a cross: the icon and the name keep their
+        // look and grade, and a silhouette is kept for what has not been seen.
+        s.icon(thing(g.key).icon, 1, 1);
+        const price = (can ? '' : '{cross} ') + (r.sold ? '{back} ' : '') + priceText(k, g.price);
         const px = rightX(price, rw - 3);
         s.text(price, px, 4, can ? 'salt' : 'blood.lt', true);
         let name = stackName(st0);
         if (r.n && r.n > 1) name += ` (${r.n})`;
-        s.text(cut(name, px - 5 - 20), 20, 4, can ? GRADES[stackGrade(st0)].dark : 'root.4', true);
+        s.text(cut(name, px - 5 - 20), 20, 4, GRADES[stackGrade(st0)].dark, true);
       },
       tip: () => {
         const extra: TipLine[] = [{ text: can ? `${priceText(k, g.price)} each` : `${priceText(k, g.price)}: you carry ${count(purse(k))}`, c: can ? 'growth.lt' : 'blood.lt' }];
