@@ -5,15 +5,17 @@
 import { raised } from '../art/raised';
 import { centreX, count } from '../font/measure';
 import type { Node, Ui } from '../node';
+import type { Colour } from '../palette';
 import { button } from '../parts/button';
 import { chat, nameTag } from '../parts/plates';
 import { since } from './play/common';
 import type { NamedScreen } from './index';
 
-interface Fall { by: string; shed: number; where: string; server: boolean }
+/** `lie` is where the shed lees lie, as the compass's place line writes it. */
+interface Fall { by: string; shed: number; where: string; lie?: string; server: boolean }
 
 const FALLS: Record<string, Fall> = {
-  fall: { by: 'to a Tama', shed: 14, where: 'Vana', server: true },
+  fall: { by: 'to a Tama', shed: 14, where: 'Vana', lie: 'x -104  z 2210', server: true },
   'fall-alone': { by: 'from a height', shed: 0, where: 'Pabbat', server: false },
 };
 
@@ -27,17 +29,21 @@ function build(ui: Ui, id: string): Node {
   const quarters = t < 0.1 ? 1 : 2;
   const col = Math.floor((ui.w - 200) / 2), top = Math.floor((ui.h - 240) / 2);
   const title = raised('You fell');
-  const line = (y: number, text: string): Node => ({
-    x: col, y: top + y, w: 201, h: 11, paint: (s) => { s.text(text, centreX(text, 0, 200), 0, 'salt', true); },
+  const line = (y: number, text: string, c: Colour = 'salt'): Node => ({
+    x: col, y: top + y, w: 201, h: 11, paint: (s) => { s.text(text, centreX(text, 0, 200), 0, c, true); },
   });
   const kids: Node[] = [
     { x: col + Math.floor((200 - title.w) / 2), y: top + 56, w: title.w, h: title.h, paint: (s) => s.map(title, 0, 0) },
     line(86, f.by),
   ];
-  if (f.shed) kids.push(line(98, `{lees} ${count(f.shed)} shed in ${f.where}`));
+  let y = 86;
+  if (f.shed) kids.push(line((y += 12), `{lees} ${count(f.shed)} shed in ${f.where}`));
+  if (f.shed && f.lie) kids.push(line((y += 12), `Lees lie at ${f.lie}`, 'arm.lt'));
+  // The buttons stand 6 under the last line, so the column holds together however many lines there are.
+  const by = y + 10 + 6;
   kids.push(
-    button({ id: 'fall.rise', x: col, y: top + 118, w: 200, label: 'Rise again', disabled: !awake, onPress: () => { fellAt = ui.t; ui.invalidate(); } }),
-    button({ id: 'fall.leave', x: col, y: top + 142, w: 200, label: f.server ? 'Leave' : 'Save and leave', disabled: !awake, onPress: () => ui.cue('press') }),
+    button({ id: 'fall.rise', x: col, y: top + by, w: 200, label: 'Rise again', disabled: !awake, onPress: () => { fellAt = ui.t; ui.invalidate(); } }),
+    button({ id: 'fall.leave', x: col, y: top + by + 24, w: 200, label: f.server ? 'Leave' : 'Save and leave', disabled: !awake, onPress: () => ui.cue('press') }),
   );
   const over: Node[] = [];
   if (f.server) {

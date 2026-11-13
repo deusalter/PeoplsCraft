@@ -3541,8 +3541,9 @@ Size 427 by 240. Material: the world under a flat wash of blood.dk at half stren
 | D1 | raised | 175 | 56 | 78 | 22 | "You fell" in raised letters (5.28), centred on the column |
 | D2 | text | 113 | 86 | 200 | 10 | what did it, centred, salt with shadow: "to a Tama", "from a height", "to hunger" |
 | D3 | text | 113 | 98 | 200 | 10 | what was shed, centred, salt with shadow: the jar mark and "14 shed in the wood"; left out when nothing was |
-| D4 | button | 113 | 118 | 200 | 20 | "Rise again" |
-| D5 | button | 113 | 142 | 200 | 20 | "Save and leave"; on a server "Leave" |
+| D3b | text | 113 | 110 | 200 | 10 | where the shed lees lie, centred, in arm.lt with shadow as a place to go: "Lees lie at x -104  z 2210"; left out with D3 |
+| D4 | button | 113 | 126 | 200 | 20 | "Rise again", 6 under the last line drawn: at y 126 with D3 and D3b, at 102 when nothing was shed |
+| D5 | button | 113 | 150 | 200 | 20 | "Save and leave"; on a server "Leave"; 4 under D4 |
 
 - **Shows.** The wash comes up in three steps over 0.3 s; the buttons are disabled for 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and the chat stay drawn over the wash.
 - **Clickable.** The two buttons.
