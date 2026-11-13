@@ -2322,7 +2322,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 
 ### Pack, with the body panel and the patterns made by hand
 
-The pack is the main slab, 176 by 182, centred on the screen, with one row of tabs standing 21 above it. Material: clay. The tab chosen fastens one panel to the main slab and nothing else: Body or States, a panel 112 by 166 at its top left, narrower and 16 shorter, flush with its top and sharing its left outline column; or Making, the recipe panel 116 by 166 at its right, flush with its top. The recipe panel is closed until Making is chosen, as the tradition keeps its recipe book. Skills opens the tree. So the window is never three equal columns: one slab stands, one smaller panel hangs from it. With Body chosen (x counted from the body panel's left; the main slab's left is x 111):
+The pack is the main slab, 176 by 182, centred on the screen, with one row of tabs standing 21 above it. Material: clay. The tab chosen fastens one panel to the main slab and nothing else: Body or States, a panel 136 by 166 at its top left, narrower and 16 shorter, flush with its top and sharing its left outline column; or Making, the recipe panel 116 by 166 at its right, flush with its top. The recipe panel is closed until Making is chosen, as the tradition keeps its recipe book. Skills opens the tree. So the window is never three equal columns: one slab stands, one smaller panel hangs from it. With Body chosen (x counted from the body panel's left; the main slab's left is x 135):
 
 ```
                                      +-------+
@@ -2380,32 +2380,32 @@ The pack is the main slab, 176 by 182, centred on the screen, with one row of ta
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| T1 | tab | 111 | -21 | 24 | 24 | the main slab's tabs, the only tab row: Body (the person), States, Making (the pattern grid), Skills (opens the tree) |
-| T2 | tab | 134 | -18 | 24 | 18 | States |
-| T3 | tab | 157 | -18 | 24 | 18 | Making |
-| T4 | tab | 180 | -18 | 24 | 18 | Skills |
-| S0 | slab | 0 | 0 | 112 | 166 | body panel, plain, no tabs of its own |
-| S1 | text | 8 | 6 | 96 | 10 | the player's name; one too long for 96 is cut with "…" and its tooltip gives it whole with the level under it |
+| T1 | tab | 135 | -21 | 24 | 24 | the main slab's tabs, the only tab row: Body (the person), States, Making (the pattern grid), Skills (opens the tree) |
+| T2 | tab | 158 | -18 | 24 | 18 | States |
+| T3 | tab | 181 | -18 | 24 | 18 | Making |
+| T4 | tab | 204 | -18 | 24 | 18 | Skills |
+| S0 | slab | 0 | 0 | 136 | 166 | body panel, plain, no tabs of its own |
+| S1 | text | 8 | 6 | 120 | 10 | the player's name; one too long for 120 is cut with "…" and its tooltip gives it whole with the level under it |
 | S2 | text | 8 | 17 | 40 | 10 | "Level 14" in ink |
-| S3 | strip | 52 | 19 | 52 | 5 | practice strip, thin, from 6 after the level to x 104, a segment to 8 units; the practice in numbers ("320 of 900 to level 15") is its tooltip |
-| S4 | rows | 8 | 28 | 96 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 88; while there are points, a clay button "+" 11 by 11 at x 92 at the top of each row, so that one clear unit parts each from the next |
-| S5 | text | 8 | 77 | 96 | 10 | "3 to spend", only while there are points |
-| S6 | rule | 8 | 89 | 96 | 2 | cut line |
-| S7 | rows | 8 | 92 | 96 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 104: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
-| M0 | slab | 111 | 0 | 176 | 182 | main slab |
-| M1 | text | 119 | 6 | 40 | 10 | "Pack" |
-| M2 | button | 249 | 3 | 30 | 12 | "Sort": merges and orders the pack, leaves the hotbar |
-| M3 | slots | 119 | 16 | 18 | 54 | head, body, legs, each with its silhouette |
-| M4 | well | 139 | 16 | 50 | 54 | figure well: the body as worn (5.29), standing on one course of the ground tile 8 tall along the well's floor |
-| M5 | slots | 195 | 25 | 36 | 36 | the two by two grid |
-| M6 | arrow | 235 | 37 | 22 | 15 | progress arrow, empty until a pattern matches, then full |
-| M7 | slots | 261 | 34 | 18 | 18 | what the grid makes |
-| M8 | slots | 119 | 74 | 90 | 18 | five trinket slots with the ring silhouette |
-| M9 | text | 215 | 78 | 64 | 10 | lees carried: the jar mark and the number, right-aligned to x 279 |
-| M10 | slots | 119 | 98 | 162 | 54 | the pack, nine by three |
-| M11 | slots | 119 | 156 | 162 | 18 | the hotbar row, four units below the pack |
+| S3 | strip | 52 | 19 | 76 | 5 | practice strip, thin, from 6 after the level to x 128, a segment to 8 units; the practice in numbers ("320 of 900 to level 15") is its tooltip |
+| S4 | rows | 8 | 28 | 120 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 112; while there are points, a clay button "+" 11 by 11 at x 116 at the top of each row, so that one clear unit parts each from the next |
+| S5 | text | 8 | 77 | 120 | 10 | "3 to spend", only while there are points |
+| S6 | rule | 8 | 89 | 120 | 2 | cut line |
+| S7 | rows | 8 | 92 | 120 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 128: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
+| M0 | slab | 135 | 0 | 176 | 182 | main slab |
+| M1 | text | 143 | 6 | 40 | 10 | "Pack" |
+| M2 | button | 273 | 3 | 30 | 12 | "Sort": merges and orders the pack, leaves the hotbar |
+| M3 | slots | 143 | 16 | 18 | 54 | head, body, legs, each with its silhouette |
+| M4 | well | 163 | 16 | 50 | 54 | figure well: the body as worn (5.29), standing on one course of the ground tile 8 tall along the well's floor |
+| M5 | slots | 219 | 25 | 36 | 36 | the two by two grid |
+| M6 | arrow | 259 | 37 | 22 | 15 | progress arrow, empty until a pattern matches, then full |
+| M7 | slots | 285 | 34 | 18 | 18 | what the grid makes |
+| M8 | slots | 143 | 74 | 90 | 18 | five trinket slots with the ring silhouette |
+| M9 | text | 239 | 78 | 64 | 10 | lees carried: the jar mark and the number, right-aligned to x 303 |
+| M10 | slots | 143 | 98 | 162 | 54 | the pack, nine by three |
+| M11 | slots | 143 | 156 | 162 | 18 | the hotbar row, four units below the pack |
 
-**States chosen.** The body panel shows instead a well 96 by 84 at 8, 16 with the large figure standing on the ground tile and a framed state beside the part of the body it sits on, then a row 19 tall to each state from y 104: its frame, its name, the time left in the small face right-aligned.
+**States chosen.** The body panel shows instead a well 120 by 84 at 8, 16 with the large figure standing on the ground tile and a framed state beside the part of the body it sits on, then a row 19 tall to each state from y 104: its frame, its name at x 22 on the row's top, and under the name, at y 11, the time left in the small face. The panel is 136 wide so that a name up to 97 units stands whole; with the time beside the name, the most urgent state's name was the one cut.
 
 **Making chosen.** No panel stands at the left; the main slab's left is x 0 and the recipe panel's is x 175:
 

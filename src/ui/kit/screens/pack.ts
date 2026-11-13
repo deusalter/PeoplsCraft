@@ -121,7 +121,7 @@ function totals(st: PackState): [string, string][] {
 }
 
 /** The width and height of the body panel when wide: narrower and shorter than the main slab, fastened at its top left. */
-const BODY_W = 112, BODY_H = 166;
+const BODY_W = 136, BODY_H = 166;
 
 /**
  * The body panel's own parts, from its top left, as the wide pack and the narrow Body tab both lay them. The level and
@@ -187,9 +187,9 @@ function statesParts(st: PackState): Node[] {
       paint: (sf) => {
         sf.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: s.good ? 'growth' : 'blood' });
         sf.icon(s.icon, 1, 1);
-        const t = clock(s.seconds);
-        sf.text(t, rightX(t, rw - 1, SMALL), 6, s.seconds <= 10 ? 'blood.dk' : 'ink.faded', false, SMALL);
-        sf.text(cut(s.name, rightX(t, rw - 1, SMALL) - 25), 22, 4, 'ink');
+        // The time stands under the name, so a long name is never cut to make room for it.
+        sf.text(cut(s.name, rw - 23), 22, 0, 'ink');
+        sf.text(clock(s.seconds), 22, 11, s.seconds <= 10 ? 'blood.dk' : 'ink.faded', false, SMALL);
       },
       tip: () => ({ lines: [{ text: s.name, c: s.good ? 'growth.lt' : 'blood.lt' }, { text: s.ends, c: 'root.4' }], delay: 0 }),
     });
