@@ -206,8 +206,10 @@ export class SimHost {
     if (p) {
       if (p.parked && sim.seated() + this.joining.size >= o.maxPlayers) return this.kick(l, 'full', 'The world is full.');
       const old = this.bound.get(p);
-      if (old) { this.bound.delete(p); this.kick(old, 'replaced', 'Joined from somewhere else.'); }
-      p.name = name;
+      // what the older connection had under way (a window, a dig, a sleep) ends as if it had dropped
+      if (old) { this.bound.delete(p); this.kick(old, 'replaced', 'Joined from somewhere else.'); sim.leave(p, 'drop'); }
+      // `nameTaken` reads the world's list: the new name is held, and the old one free, from here on
+      p.name = name; sim.world.names[id] = { name, seen: sim.world.names[id]?.seen ?? 0 };
       sim.resume(p); this.bind(p, l);
       return;
     }

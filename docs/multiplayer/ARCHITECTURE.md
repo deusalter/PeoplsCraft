@@ -1146,8 +1146,10 @@ if joining.has(id):                    // a load for this id is already under wa
     joining.get(id).conn.close('replaced'); joining.get(id).conn = conn; return     // the newest socket inherits it
 p = sim.players.get(id)
 if p:                                  // in memory: online, lingering or parked. No storage read (3.6 rule 2).
-    if p.online: unbind(p)             // old socket: close('replaced'), its undrained inbox is discarded
+    if p.online: unbind(p)             // old socket: close('replaced'), its undrained inbox is discarded;
+                                       // then sim.leave(p, 'drop'): its window, its dig and its sleep end with it
     if p.parked: capacity check (else error full)
+    p.name = name; world.names[id].name = name   // the new name is taken and the old one free for the next hello
     sim.resume(p); bind(p, conn); return   // always through loading: the new client starts from an empty world
 capacity check (else error full)       // capacity counts players that hold a slot: online and lingering
 joining.set(id, {conn, name})          // the name counts as taken for other hellos from here on
@@ -3476,6 +3478,13 @@ changed, and what a solo player can notice that D18 and D35 (n) did not list.
 amount in one move, and by as much again every second. Every move that is not flying, in liquid or within 1 s of
 a `hurt` is now held to `riseY` as it stands, and only then may take a new base. What is given up is what
 D30 (b) says and no more.
+(b) A takeover goes through `sim.leave(p, 'drop')` (4.2). The older connection was unbound before it was closed,
+so the leave that a closing connection brings never ran, and `resume` clears neither a window nor a dig nor a
+sleep: the host went on holding a chest open for a client that had started again from nothing, the portal
+refused that player, and the first `st` of the new connection carried the old box.
+(c) A known id that says hello under another name while it is in memory takes that name in `world.names` at
+once (4.2). The list was written only by `Sim.join` and by a save, so until the next save the new name could be
+given to a second player and the old one to nobody.
 
 ---
 

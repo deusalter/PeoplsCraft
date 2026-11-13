@@ -298,3 +298,47 @@ test('a connection that closes leaves its player lingering; hello again resumes 
   assert.notEqual(sim.players.get(id), p);
   assert.equal(sim.players.get(id)!.fresh, false);
 });
+
+test('a player that comes back under another name holds the new name at once, and the old one is free', async () => {
+  const r = await rig(false), sim = r.host.sim, tok = 'a'.repeat(32), id = playerIdOf(tok)!;
+  const a = client(r.host, { local: false });
+  a.hello('Al', tok); await enter(r, a);
+  assert.equal(sim.world.names[id].name, 'Al');
+  a.t.close();
+  const b = client(r.host, { local: false });
+  b.hello('Bob', tok); await run(r, 2, b);
+  assert.equal(b.of('welcome').length, 1);
+  assert.equal(sim.players.get(id)!.name, 'Bob');
+  assert.equal(sim.world.names[id].name, 'Bob', 'the name the world knows the record by');
+  const c = client(r.host, { local: false });
+  c.hello('bob', 'c'.repeat(32)); await run(r, 2, c);
+  assert.equal(c.of('error')[0]?.code, 'name_taken');
+  assert.equal(c.of('welcome').length, 0);
+  const d = client(r.host, { local: false });
+  d.hello('Al', 'd'.repeat(32)); await run(r, 2, d);
+  assert.equal(d.of('error').length, 0); assert.equal(d.of('welcome').length, 1, 'the name it left is anybody\'s');
+});
+
+test('a takeover ends what the older connection had under way: its window, its dig, its sleep', async () => {
+  const r = await rig(false), sim = r.host.sim, tok = 'a'.repeat(32), id = playerIdOf(tok)!, realm = sim.realms[0];
+  const a = client(r.host, { local: false });
+  a.hello('Ada', tok); await enter(r, a);
+  const p = sim.players.get(id)!, x = Math.floor(a.pos[0]) + 1, z = Math.floor(a.pos[2]);
+  realm.setBlock(x, GROUND, z, B.chest);
+  a.s.act({ t: 'use', seq: 1, x, y: GROUND, z, id: B.chest });
+  a.s.act({ t: 'dig', on: true, x, y: GROUND - 1, z: z + 1 });
+  await run(r, 2, a);
+  assert.equal(p.window?.mode, 'chest'); assert.ok(p.dig); assert.ok(realm.viewers.get(`${x},${GROUND},${z}`)?.has(p));
+  assert.equal(a.of('st').at(-1)!.ack, 1);
+  p.sleeping = true;
+  // the socket has died without the host hearing of it; the client is back on a new one
+  const b = client(r.host, { local: false });
+  b.hello('Ada', tok); await run(r, 2, a, b);
+  assert.deepEqual(a.closed, ['replaced']);
+  assert.equal(sim.players.get(id), p); assert.ok(p.online && p.loading);
+  assert.equal(p.window, null, 'no window the new client never opened');
+  assert.equal(realm.viewers.size, 0);
+  assert.equal(p.dig, null); assert.equal(p.sleeping, false);
+  const st = b.of('st')[0];
+  assert.ok(st.inv && st.ack === 0); assert.equal(st.box, undefined, 'and no box in the first state');
+});
