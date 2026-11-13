@@ -1,12 +1,15 @@
 // The built server as a friend would run it: the client and the server built into a folder of their own,
 // `node server/main.js` started there on a free port with a password, and spoken to over plain http and
-// real WebSockets. The keepalive case waits out the 10 s of silence the protocol allows.
+// real WebSockets, and by headless Chrome through the join screen. The keepalive case waits out the 10 s of
+// silence the protocol allows. The `npm start` case runs the start script of package.json in a folder of its own.
 import assert from 'node:assert/strict';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { type AddressInfo, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { after, before, test } from 'node:test';
+import { type BrowserContext, type Page, chromium } from 'playwright-core';
 import { WebSocket } from 'ws';
 import { Session } from '../../src/client/session';
 import { MAX_JSON, PASSWORD_TRIES, PROTO, type S2C, WS_SILENCE, dataHash } from '../../src/net/protocol';
@@ -173,6 +176,100 @@ test('a silent socket is closed by the keepalive', async () => {
   b.ws.close(); await b.closed;
 });
 
+// A name that is not this machine's loopback, as a LAN address is to a friend's browser: a page from it is not a secure context.
+const LAN = 'peopls-host.test';
+/** Headless Chrome with the flags the smoke harness uses, so that the page's WebGL starts as it does there. */
+async function chrome(): Promise<{ ctx: BrowserContext; page: Page; errors: string[]; close(): Promise<void> }> {
+  const profile = mkdtempSync(join(tmpdir(), 'pc-servertest-chrome-'));
+  writeFileSync(join(profile, 'Local State'), JSON.stringify({ performance_tuning: { battery_saver_mode: { state: 0 } } }));
+  const ctx = await chromium.launchPersistentContext(profile, {
+    channel: 'chrome', headless: true, viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1,
+    args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--mute-audio', `--host-resolver-rules=MAP ${LAN} 127.0.0.1`],
+  });
+  const page = ctx.pages()[0] ?? await ctx.newPage(), errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  // a socket refused while a test holds the server down is Chrome's report of what the test did, not the page's error
+  page.on('console', (m) => { if (m.type() === 'error' && !/favicon|status of 404|^WebSocket connection to .* failed/.test(m.text() + (m.location().url ?? ''))) errors.push(m.text()); });
+  return { ctx, page, errors, close: async () => { await ctx.close(); rmSync(profile, { recursive: true, force: true }); } };
+}
+// the title menu is `#menu.solid`; the game's own pause menu is a hidden `#menu`
+const inPlay = (page: Page, ms = 60000): Promise<unknown> =>
+  page.waitForFunction(() => !!document.getElementById('hud') && !document.querySelector('#menu.solid'), null, { timeout: ms });
+const said = (page: Page, text: string, ms = 20000): Promise<unknown> =>
+  page.waitForFunction((t) => document.body.innerText.includes(t), text, { timeout: ms });
+
+test('a page the server served offers to join it, refuses a wrong password on the join screen, and plays with the right one through a restart', async () => {
+  const b = await chrome();
+  try {
+    const { page } = b, lan = `http://${LAN}:${new URL(base).port}`;
+    await page.goto(lan + '/', { waitUntil: 'load' });
+    assert.equal(await page.evaluate(() => isSecureContext), false, 'plain http from a LAN host');
+    await page.getByRole('button', { name: 'Join Peopls Craft' }).click();
+    await said(page, 'Peopls Craft · 0 of 8 playing');
+    assert.equal(await page.locator('#menu input[placeholder="Address (host:port)"]').count(), 0, 'the address is the page\'s own');
+    await page.locator('#menu input[placeholder="Your name"]').fill('Hal');
+    await page.locator('#menu input[type=password]').fill('not-it');
+    await page.getByRole('button', { name: 'Join', exact: true }).click();
+    await said(page, 'Wrong password.');
+    assert.equal(await page.locator('#menu input[placeholder="Your name"]').inputValue(), 'Hal', 'the join screen again, with the name kept');
+    await page.locator('#menu input[type=password]').fill(PASSWORD);
+    await page.locator('#menu input[type=password]').press('Enter');
+    await inPlay(page);
+    const kept = await page.evaluate(() => ({ token: localStorage.getItem('peopls.token'), name: localStorage.getItem('peopls.name') }));
+    assert.match(kept.token ?? '', /^[0-9a-f]{32}$/);
+    assert.equal(kept.name, 'Hal');
+    assert.match(logs.join(''), /Hal joined \(127\.0\.0\.1\)/);
+
+    const port = new URL(base).port;
+    await halt();
+    await said(page, 'Connection lost. Reconnecting...');
+    await serve(port);
+    await page.waitForFunction(() => !document.body.innerText.includes('Connection lost.'), null, { timeout: 30000 });
+    assert.match(logs.join(''), /Hal joined/, 'joined the new boot by itself');
+    assert.equal(await page.locator('#menu.solid').count(), 0, 'still in play, not sent back to the title');
+
+    // the same browser loads the page again: the same token, the name offered
+    await page.goto(lan + '/', { waitUntil: 'load' });
+    await page.getByRole('button', { name: 'Join Peopls Craft' }).click();
+    assert.equal(await page.locator('#menu input[placeholder="Your name"]').inputValue(), 'Hal');
+    assert.equal(await page.evaluate(() => localStorage.getItem('peopls.token')), kept.token);
+    assert.deepEqual(b.errors, []);
+  } finally { await b.close(); }
+});
+
+test('`?server=` opens the join screen with an address field, and `&name=` joins at once', async () => {
+  const b = await chrome();
+  try {
+    const { page } = b;
+    await page.goto(base + '/?server=', { waitUntil: 'load' });
+    const addr = page.locator('#menu input[placeholder="Address (host:port)"]');
+    await addr.waitFor();
+    await page.locator('#menu input[placeholder="Your name"]').fill('Ivy');
+    await page.getByRole('button', { name: 'Join', exact: true }).click();
+    await said(page, 'Which server?');
+    await addr.fill('ftp://x');
+    await page.getByRole('button', { name: 'Join', exact: true }).click();
+    await said(page, 'That is not an address.');
+    // nobody listens there: the screen says it keeps trying, and Cancel gives up
+    const shut = createServer();
+    await new Promise<void>((ok) => shut.listen(0, '127.0.0.1', ok));
+    const nobody = `127.0.0.1:${(shut.address() as AddressInfo).port}`;
+    await new Promise((ok) => shut.close(ok));
+    await addr.fill(nobody);
+    await page.getByRole('button', { name: 'Join', exact: true }).click();
+    await said(page, 'Cannot reach the server. Trying again...');
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await addr.waitFor();
+    assert.equal(await page.evaluate(() => localStorage.getItem('peopls.server')), nobody);
+
+    const host = new URL(base).host;
+    await page.goto(`${base}/?server=${host}&name=Ivy&password=${PASSWORD}`, { waitUntil: 'load' });
+    await inPlay(page);
+    assert.match(logs.join(''), /Ivy joined/);
+    assert.deepEqual(b.errors, []);
+  } finally { await b.close(); }
+});
+
 test('a session on the WebSocket transport says hello again by itself when the server comes back from a restart', async () => {
   const t = new WsTransport(serverUrl(base)!), s = new Session(t), got: S2C[] = [], closes: string[] = [];
   t.onClose = (c) => { closes.push(c); };
@@ -213,6 +310,47 @@ test('a wrong password is refused with `password`, and after five wrong ones in 
   await b.closed;
   assert.equal(errorOf(b), 'password');
   assert.match((b.got.find((m) => m.t === 'error') as { msg: string }).msg, /Too many/);
+});
+
+test('`npm start` builds when the build is missing or older than a source, and otherwise runs the server it has', async () => {
+  // The start script as package.json has it, in a folder of its own whose `build` copies this file's build and counts.
+  const dir = mkdtempSync(join(tmpdir(), 'pc-start-')), pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  pkg.scripts = { start: pkg.scripts.start, build: `echo x >> builds && mkdir -p dist && cp -R ${JSON.stringify(join(out, 'client'))} ${JSON.stringify(join(out, 'server'))} dist/` };
+  writeFileSync(join(dir, 'package.json'), JSON.stringify(pkg));
+  const builds = (): number => { try { return readFileSync(join(dir, 'builds'), 'utf8').split('\n').filter(Boolean).length; } catch { return 0; } };
+  const start = async (): Promise<void> => {
+    const p = spawn('npm', ['start', '--', '--data', join(dir, 'world'), '--port', '0', '--host', '127.0.0.1', '--name', 'Start test'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+    let said = '';
+    try {
+      const origin = await new Promise<string>((ok, no) => {
+        const t = setTimeout(() => no(new Error('npm start did not listen:\n' + said)), 30000);
+        const read = (d: Buffer): void => { said += d.toString(); const m = /listening on (http:\/\/[^/\s]+)\//.exec(said); if (m) { clearTimeout(t); ok(m[1]); } };
+        p.stdout!.on('data', read); p.stderr!.on('data', read);
+        p.on('exit', (c) => { clearTimeout(t); no(new Error(`npm start exited (${c}):\n` + said)); });
+      });
+      const page = await fetch(origin + '/');
+      assert.equal(page.status, 200);
+      assert.match(await page.text(), /<canvas/);
+      assert.equal(((await (await fetch(origin + '/info')).json()) as { name: string }).name, 'Start test', 'the flags after -- reach the server');
+    } finally {
+      const gone = new Promise((ok) => p.once('exit', ok));
+      try { process.kill(-p.pid!, 'SIGTERM'); } catch { /* already gone */ }
+      await Promise.race([gone, new Promise((ok) => setTimeout(ok, 5000))]);
+      try { process.kill(-p.pid!, 'SIGKILL'); } catch { /* already gone */ }
+    }
+  };
+  try {
+    await start();
+    assert.equal(builds(), 1, 'no build yet: built');
+    await start();
+    assert.equal(builds(), 1, 'a build newer than every source: run as it is');
+    mkdirSync(join(dir, 'src'));
+    const later = new Date(Date.now() + 60000);
+    writeFileSync(join(dir, 'src', 'edited.ts'), '');
+    utimesSync(join(dir, 'src', 'edited.ts'), later, later);
+    await start();
+    assert.equal(builds(), 2, 'a source newer than the build: built again');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 /** A socket of the browser's shape that the test drives by hand. */
