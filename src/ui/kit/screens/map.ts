@@ -1,11 +1,11 @@
 // The world map (section 6, World map): a stone slab with a tab for each place the crew can chart, the chart in a well
 // that pans and zooms by whole steps, the known places in a list, and Travel where the world allows a crossing.
-import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW } from '../art/chart';
+import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_LIT, MAP_SHALLOWS, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW } from '../art/chart';
 import { GROUND, GROUND_H, GROUND_W } from '../art/ground';
 import { HEADS } from '../art/heads';
 import { COMPASS_MARKS, PING } from '../art/marks';
 import { SILHOUETTES } from '../art/silhouettes';
-import { clock, count } from '../font/measure';
+import { clock, count, measure } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { KeyEv, Node, Screen, Ui } from '../node';
 import { type Colour, SEATS } from '../palette';
@@ -39,7 +39,8 @@ export interface MapView {
   onClose(): void;
 }
 
-const W = 312, H = 212, CW = 210, CH = 168, ZOOMS = [8, 4, 2];
+// The chart is 178 by 168 so that the list beside it is 110 wide and its places' names are not cut.
+const W = 312, H = 212, CW = 178, CH = 168, ZOOMS = [8, 4, 2], LIST_X = 194, LIST_W = 110;
 const TABS: { key: ChartTab; icon: string; name: string }[] = [
   { key: 'ground', icon: 'turf', name: 'The Living Ground' },
   { key: 'store', icon: 'codex:place_dungeon', name: STORE.name },
@@ -67,36 +68,52 @@ function nearWay(x: number, z: number): boolean {
 }
 
 /**
- * The living ground, a unit to `zoom` strides, drawn as a map is: each unit one of the eight kinds in its flat tone,
- * ground not yet walked as parchment. A unit with a lower neighbour takes its kind's edge tone, so shores and cliffs
- * are lines of one unit; parchment next to known ground takes `clay.sh`, the edge of what is charted.
+ * The living ground, drawn at one scale: cells of 2 by 2 units, each one of the eight kinds in its flat tone, ground not
+ * yet walked as parchment. A cell whose neighbour above or to the left stands lower takes its kind's lit tone, one whose
+ * neighbour below or to the right stands lower its edge tone, so that rises read lit from the top left; water beside
+ * land is the shallows, a band one cell wide. Where parchment meets the known a rule of one unit of root.0 runs along it.
  */
+const CELL = 2;
 function paintGround(s: Surface, v: MapView): void {
-  const z = v.zoom, cx = v.centre.x, cz = v.centre.z;
-  const gw = CW + 2, gh = CH + 2;
+  const z = v.zoom * CELL, cx = v.centre.x, cz = v.centre.z;
+  const nw = CW / CELL, nh = CH / CELL, gw = nw + 2, gh = nh + 2;
   const kinds: MapKind[] = new Array(gw * gh);
   for (let row = 0; row < gh; row++) {
     for (let u = 0; u < gw; u++) {
-      const wx = cx + (u - 1 - CW / 2) * z, wz = cz + (row - 1 - CH / 2) * z;
+      const wx = cx + (u - 1 - nw / 2 + 0.5) * z, wz = cz + (row - 1 - nh / 2 + 0.5) * z;
       kinds[row * gw + u] = walked(wx, wz) ? groundAt(wx, wz) : 'unknown';
     }
   }
   const at = (u: number, row: number) => kinds[(row + 1) * gw + u + 1];
-  for (let row = 0; row < CH; row++) {
+  const lower = (n: MapKind, k: MapKind) => n !== 'unknown' && MAP_HEIGHT[n] < MAP_HEIGHT[k];
+  for (let row = 0; row < nh; row++) {
     let run = 0, runC: Colour | null = null;
-    for (let u = 0; u <= CW; u++) {
+    for (let u = 0; u <= nw; u++) {
       let c: Colour | null = null;
-      if (u < CW) {
+      if (u < nw) {
         const k = at(u, row);
-        const near = [at(u, row - 1), at(u - 1, row), at(u + 1, row), at(u, row + 1)];
-        const edge = k === 'unknown' ? near.some((n) => n !== 'unknown') : near.some((n) => n !== 'unknown' && MAP_HEIGHT[n] < MAP_HEIGHT[k]);
-        c = MAP_TONES[k][edge ? 1 : 0];
+        const up = at(u, row - 1), left = at(u - 1, row), down = at(u, row + 1), right = at(u + 1, row);
+        if (k === 'unknown') c = MAP_TONES.unknown[0];
+        else if (k === 'water') c = [up, left, down, right].some((n) => n !== 'unknown' && n !== 'water') ? MAP_SHALLOWS : MAP_TONES.water[0];
+        else if (lower(up, k) || lower(left, k)) c = MAP_LIT[k];
+        else if (lower(down, k) || lower(right, k)) c = MAP_TONES[k][1];
+        else c = MAP_TONES[k][0];
       }
       if (c !== runC) {
-        if (runC) s.fill(u - run, row, run, 1, runC);
+        if (runC) s.fill((u - run) * CELL, row * CELL, run * CELL, CELL, runC);
         runC = c; run = 0;
       }
       run++;
+    }
+  }
+  for (let row = 0; row < nh; row++) {
+    for (let u = 0; u < nw; u++) {
+      if (at(u, row) !== 'unknown') continue;
+      const x = u * CELL, y = row * CELL;
+      if (at(u, row - 1) !== 'unknown') s.fill(x, y, CELL, 1, 'root.0');
+      if (at(u, row + 1) !== 'unknown') s.fill(x, y + CELL - 1, CELL, 1, 'root.0');
+      if (at(u - 1, row) !== 'unknown') s.fill(x, y, 1, CELL, 'root.0');
+      if (at(u + 1, row) !== 'unknown') s.fill(x + CELL - 1, y, 1, CELL, 'root.0');
     }
   }
 }
@@ -155,7 +172,17 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
   const ground = v.tab === 'ground';
   const place = v.places[v.chosen];
   let from = { ...v.centre };
-  const hover = { x: 0, z: 0, on: false };
+  const hover = { x: 0, z: 0, on: false, friend: null as Place | null };
+  // The friend whose head is under the pointer, so that heads told apart only by their frame can be named.
+  const friendAt = (ex: number, ey: number): Place | null => {
+    if (!ground) return null;
+    for (const p of v.places) {
+      if (p.kind !== 'friend') continue;
+      const [u, w] = unitOf(v, p.x, p.z);
+      if (ex >= u - 5 && ex < u + 5 && ey >= w - 5 && ey < w + 5) return p;
+    }
+    return null;
+  };
   const chart: Node = {
     id: `map.chart.${v.tab}`, x: 0, y: 0, w: CW, h: CH, takes: true,
     paint: (s) => (ground ? (paintGround(s, v), paintMarks(s, v)) : paintStore(s, v)),
@@ -166,8 +193,12 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
       },
       drag: (e) => { if (e.phase !== 'end' && e.button === 0) v.onPan(from.x - e.dx * v.zoom, from.z - e.dy * v.zoom); },
       wheel: (e) => { v.onZoom(e.notches > 0 ? -1 : 1); return true; },
-      move: (e) => { hover.on = true; hover.x = Math.round(v.centre.x + (e.x - CW / 2) * v.zoom); hover.z = Math.round(v.centre.z + (e.y - CH / 2) * v.zoom); },
-      leave: () => { hover.on = false; ui.wake(); },
+      move: (e) => {
+        hover.on = true; hover.x = Math.round(v.centre.x + (e.x - CW / 2) * v.zoom); hover.z = Math.round(v.centre.z + (e.y - CH / 2) * v.zoom);
+        const f = friendAt(e.x, e.y);
+        if (f !== hover.friend) { hover.friend = f; ui.wake(); }
+      },
+      leave: () => { hover.on = false; hover.friend = null; ui.wake(); },
     },
   };
   const rows: RowSpec[] = v.places.map((p) => {
@@ -176,30 +207,45 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
   const cooling = place?.cooling !== undefined;
   const builtOpen = cooling && v.cooling(ui.t) <= 0;
   const kids: Node[] = [
-    frameWell({ x: 8, y: 18, w: 212, h: 170, host: 'stone', kids: [chart] }),
+    frameWell({ x: 8, y: 18, w: CW + 2, h: CH + 2, host: 'stone', kids: [chart] }),
     {
-      x: 8, y: 194, w: 170, h: 10,
+      x: 8, y: 194, w: CW - 32, h: 10,
       paint: (s) => {
         const t = !hover.on ? (ground ? 'Point at the chart' : STORE.name)
           : ground ? `X ${hover.x}  Z ${hover.z}, ${walked(hover.x, hover.z) ? countryAt(hover.x, hover.z).name : 'not walked'}` : `X ${hover.x}  Z ${hover.z}`;
-        s.text(cut(t, 170), 0, 0, hover.on ? 'ink' : 'ink.faded');
+        s.text(cut(t, CW - 32), 0, 0, hover.on ? 'ink' : 'ink.faded');
       },
     },
-    button({ id: 'map.out', x: 190, y: 192, w: 14, h: 14, ramp: 'stone', label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1) }),
-    button({ id: 'map.in', x: 206, y: 192, w: 14, h: 14, ramp: 'stone', label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1) }),
+    button({ id: 'map.out', x: CW - 20, y: 192, w: 14, h: 14, ramp: 'stone', label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1) }),
+    button({ id: 'map.in', x: CW - 4, y: 192, w: 14, h: 14, ramp: 'stone', label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1) }),
     well({
-      id: 'map.places', x: 226, y: 18, w: 78, h: 128, host: 'stone', ui, rows, chosen: v.chosen,
+      id: 'map.places', x: LIST_X, y: 18, w: LIST_W, h: 130, rowH: 16, host: 'stone', ui, rows, chosen: v.chosen,
       onChoose: (i) => { v.onChoose(i); v.onPan(v.places[i].x, v.places[i].z); },
     }),
-    button({ id: 'map.travel', x: 226, y: 152, w: 78, h: 16, ramp: 'stone', label: 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
+    button({ id: 'map.travel', x: LIST_X, y: 152, w: LIST_W, h: 16, ramp: 'stone', label: 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
     {
-      x: 226, y: 172, w: 78, h: 30, anim: cooling,
+      x: LIST_X, y: 172, w: LIST_W, h: 30, anim: cooling,
       paint: (s) => {
         if (!place) return;
         const left = Math.ceil(v.cooling(ui.t));
         if (cooling && (left <= 0) !== builtOpen) ui.invalidate();
         const t = !cooling ? `${place.crossing}. ${way(place)}` : left > 0 ? `${place.crossing}, cooling ${clock(left)}` : `${place.crossing}, ready`;
-        for (const l of box(t, 78, 3).lines) s.text(l.text, 0, l.y, cooling && left <= 0 ? 'growth.dk' : 'ink');
+        for (const l of box(t, LIST_W, 3).lines) s.text(l.text, 0, l.y, cooling && left <= 0 ? 'growth.dk' : 'ink');
+      },
+    },
+    {
+      // The name tag (5.25) of the friend under the pointer, over their head, drawn last so that neither the chart's
+      // edge nor the list cuts it.
+      x: 0, y: 0, w: W, h: H,
+      paint: (s) => {
+        const f = hover.friend;
+        if (!f) return;
+        const [u, w] = unitOf(v, f.x, f.z);
+        const tw = measure(f.name) + 10;
+        const tx = Math.max(0, Math.min(W - tw, 9 + u - Math.floor(tw / 2))), ty = 19 + w - 5 - 13;
+        s.fill(tx, ty, tw, 11, 'root.1');
+        s.fill(tx + 1, ty + 2, 2, 7, SEATS[f.seat! - 1]);
+        s.text(f.name, tx + 5, ty, 'salt', true);
       },
     },
   ];

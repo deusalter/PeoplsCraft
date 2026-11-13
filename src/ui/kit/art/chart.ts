@@ -20,6 +20,14 @@ export const MAP_TONES: Record<MapKind, readonly [face: Colour, edge: Colour]> =
   unknown: ['clay.face', 'clay.sh'],
 };
 
+/** The lit tone of each kind, for a cell of it whose neighbour above or to the left stands lower: the light falls on it. */
+export const MAP_LIT: Record<MapKind, Colour> = {
+  water: 'arm', sand: 'salt', grass: 'growth.lt', forest: 'growth', stone: 'stone.lt', snow: 'salt', settlement: 'timber.face', unknown: 'clay.face',
+};
+
+/** Water beside land: the shallows, a band one cell wide along every shore. */
+export const MAP_SHALLOWS: Colour = 'arm';
+
 /** How high each kind stands, for the shore and cliff lines. */
 export const MAP_HEIGHT: Record<MapKind, number> = { water: 0, sand: 1, grass: 2, forest: 3, settlement: 4, stone: 5, snow: 6, unknown: -1 };
 

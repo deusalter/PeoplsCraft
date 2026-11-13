@@ -32,15 +32,17 @@ export function paintRow(s: Surface, r: RowSpec, w: number, live: Live, chosen: 
   if (live.focus && !chosen) ring(s, 0, 0, w, h, 'salt');
   if (r.body) { r.body(s, w, h, live); return; }
   const off = r.disabled;
-  if (r.icon) s.icon(r.icon, 1, 1, off ? 'flat' : 'full', 'root.4');
+  // A row shorter than 18 (the map's 16) holds its icon from its top and its text a little higher.
+  const short = h < ROW_H, ty = short ? Math.floor((h - 9) / 2) : 4;
+  if (r.icon) s.icon(r.icon, 1, short ? 0 : 1, off ? 'flat' : 'full', 'root.4');
   let right = w - 3;
   if (r.num !== undefined) {
     const t = typeof r.num === 'number' ? count(r.num) : r.num;
     const x = rightX(t, right);
-    s.text(t, x, 4, off ? 'root.4' : r.numColour ?? 'salt', true);
+    s.text(t, x, ty, off ? 'root.4' : r.numColour ?? 'salt', true);
     right = x - 5;
   }
-  s.text(cut(r.name, right - 20 + 1), 20, 4, off ? 'root.4' : r.colour ?? 'salt', true);
+  s.text(cut(r.name, right - 20 + 1), 20, ty, off ? 'root.4' : r.colour ?? 'salt', true);
 }
 
 export interface WellOpts {
