@@ -24,12 +24,12 @@
  "beast.habit:glimmerfin": "Shoals of two to five keep together in any open water and turn as one.",
  "beast.once:glimmerfin": "A feeder that was after one of us came to the edge of the water and stopped there. The fish went on swimming round our legs.",
 
- "beast.sight:gloomshade": "Tama come up everywhere at night, and in the caves by day as well. They are dark and upright, the height of a person. Anything dead left on the ground brings them.",
+ "beast.sight:gloomshade": "Tama come up everywhere at night, and in the caves at all hours. They are dark and upright, the height of a person. Anything dead left on the ground brings them.",
  "beast.kill:gloomshade": "Bone, and a dark raw flesh that is the matter of other feeders it has eaten. One had a long bone in it of a kind no grazing animal here has.",
  "beast.habit:gloomshade": "Night brings it out over the whole living ground, and the caves have it at any hour. A lamp does not turn one that is already up, and it walks into the light. Full sun takes it apart.",
  "beast.once:gloomshade": "At midday one came out of the brood nest in a Broken Store and fell apart at the wall in the sun. The nest puts them out by day as well.",
 
- "beast.sight:thornling": "By day Kantak stand among the bushes and pass for bushes: waist-high bramble and sapling with a red bud on top. At night they walk.",
+ "beast.sight:thornling": "By day Kantak stand among the bushes and pass for them: waist-high bramble and sapling with a red bud on top. At night they walk.",
  "beast.kill:thornling": "Thorn and plant fibre. The green growth it eats is what it is made of, and that is what came out of it.",
  "beast.habit:thornling": "By day it stands still among the bushes until a body comes within fourteen strides of it. After dark it walks.",
  "beast.once:thornling": "One went down at our walls in a Night raid. Since Vanahar was killed, its packs come for the stores at dusk.",
@@ -52,7 +52,7 @@
  "beast.sight:cinder_wisp": "Live coals hang in the air over the sand at night and throw embers. They come to warm ash, and the fires of the sand people have them overhead.",
  "beast.kill:cinder_wisp": "When it went out, a little Ember Dust fell where it had hung. There was no body round the coal. The dust burns twice as long as coal does.",
  "beast.habit:cinder_wisp": "From ten strides it throws embers, hanging in the air, and it comes no closer.",
- "beast.once:cinder_wisp": "Deep under the living ground, one hung beside molten rock in the middle of the day. The coal that comes up on the sand at night is down there by day as well.",
+ "beast.once:cinder_wisp": "Deep under the living ground, one hung beside molten rock in the middle of the day. The coal that comes up on the sand at night is down there whatever the hour.",
 
  "beast.sight:stonegnawer": "Under the ground, at every depth from the turf nearly to the floor, low six-legged crawlers go about plated in scale the colour of stone.",
  "beast.kill:stonegnawer": "Plates of Stone Scale and lumps of coal. It eats rock, and coal where it finds it, and the plates are the stone it has eaten.",
