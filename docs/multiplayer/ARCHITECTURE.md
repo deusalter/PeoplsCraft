@@ -3646,6 +3646,18 @@ answer and the worker was torn down before the next one, so the world opened on 
 button for. `respawn` has no `seq`, so `session.unsaved` did not hold the page either. The host now keeps the
 connections that asked during a commit and sends them nothing for it; the commit chained after it, which holds what
 they had said, answers them (`scripts/tests/host.test.ts`).
+(d) Nothing stopped two tabs from playing one world, each in a worker of its own. A commit writes the world record and
+every player record whole but only the edit maps its own host dirtied, so storage came to hold one tab's chunks with
+the other's player and shared state: items vanished or doubled, flags and the quest index went back. A world deleted
+from one tab's menu while another played it came back at that tab's next commit with every older edit gone. Both
+break 8.2's one consistent older state. A world is now held by one tab through the Web Locks API
+(`storage/lock.ts`, the browser's own, no package): the page takes `cairnlight:world:<id>` before it opens or
+deletes the world and keeps it while it plays; another tab is told 'This world is open in another tab. Close it there
+to play it here.' in place of the world, and its Delete says 'Open in another tab'. The worker holds
+`cairnlight:host:<id>` from before its host opens storage until it ends, and a page waits for that lock after taking
+its own, so a tab just closed finishes its last commit before another reads or deletes the world. A refusal is
+tried again for 2 s, since a reloaded tab ("Save and quit to title") may let go a moment after the new page asks.
+Where the browser has no Web Locks nothing is held, as before. Smoke `sameworld`.
 
 ---
 

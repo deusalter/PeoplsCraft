@@ -10,6 +10,7 @@ import type { FromWorker, ToWorker, WorkerInit } from './net/worker-client';
 import { type ChunkSource, InlineSource } from './sim/chunksource';
 import { MemStorage } from './sim/storage';
 import { IdbStorage } from './storage/idb';
+import { holdHost } from './storage/lock';
 import { WorkerPool } from './world/pool';
 
 const scope = self as unknown as { postMessage(m: unknown, t?: Transferable[]): void; onmessage: ((e: MessageEvent) => void) | null };
@@ -48,6 +49,7 @@ function source(fallback: number, clock: WorkerInit['clock']): ChunkSource {
 
 async function open(o: WorkerInit): Promise<void> {
   dev = o.dev;
+  if (o.save) await holdHost(o.id);
   const src = source(o.seed, o.clock);
   const h = new SimHost(env, o.save ? new IdbStorage(o.id) : new MemStorage(), src, {
     id: o.id, name: o.name, seed: o.seed, seedText: o.seedText, cheats: true, password: null, maxPlayers: 1,

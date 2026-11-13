@@ -13,6 +13,7 @@ import { WorkerTransport } from './net/worker-client';
 import { InlineSource } from './sim/chunksource';
 import { MemStorage, type Storage } from './sim/storage';
 import { IdbStorage, deleteWorld, storageReady } from './storage/idb';
+import { claimWorld } from './storage/lock';
 import './style.css';
 import { TitleMenu, type WorldChoice, applyUiScale, loadSettings, noSaveText } from './ui/menus';
 import { el } from './ui/hud';
@@ -55,7 +56,14 @@ async function boot(): Promise<void> {
   };
   // A world from the title menu runs in the simulation's worker on its own clock. `?quick` runs it in this page, stepped by
   // the game's frames, and `?quick&worker` in the worker, stepped by the game's frames over messages.
-  const play = async (w: WorldChoice, quick: boolean): Promise<void> => {
+  const inUse = (): void => {
+    const box = el('div', '#loading', ui);
+    box.innerHTML = '<h1>PEOPLS CRAFT</h1><div class="msg"></div>';
+    (box.querySelector('.msg') as HTMLElement).textContent = 'This world is open in another tab. Close it there to play it here.';
+  };
+  /** `held`: this page already holds the world (D38). The hold lasts as long as the page. */
+  const play = async (w: WorldChoice, quick: boolean, held = false): Promise<void> => {
+    if (canSave && !held && !(await claimWorld(w.id))) { document.getElementById('menu')?.remove(); inUse(); return; }
     const inWorker = !quick || q.has('worker'), det = q.has('det');
     // one core is the simulation's when it has a thread of its own
     const pool = new WorkerPool(inWorker ? WorkerPool.soloSize(cores) : Math.max(2, Math.min(6, cores - 2)));
@@ -92,8 +100,9 @@ async function boot(): Promise<void> {
   // ?quick=<seed> skips the menu with a throwaway world (used by automated checks)
   if (q.has('quick')) {
     const seedText = q.get('quick') || 'cairn', id = 'quick-' + seedText;
+    if (canSave && !(await claimWorld(id))) { inUse(); return; }
     if (q.has('fresh') && canSave) await deleteWorld(id);
-    await play({ id, name: 'Quick world', seed: /^-?\d+$/.test(seedText) ? Number(seedText) | 0 : strSeed(seedText), seedText }, true);
+    await play({ id, name: 'Quick world', seed: /^-?\d+$/.test(seedText) ? Number(seedText) | 0 : strSeed(seedText), seedText }, true, true);
     return;
   }
   new TitleMenu(ui, settings, (w) => void play(w, false), canSave, noSaveText(noSave?.code).menu);

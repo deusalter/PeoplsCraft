@@ -4,6 +4,7 @@ import { strSeed } from '../core/noise';
 import type { Game } from '../game';
 import { GfxSettings, PRESETS } from '../render/gfx';
 import { type WorldSummary, deleteWorld, listWorlds } from '../storage/idb';
+import { claimWorld } from '../storage/lock';
 import { el } from './hud';
 
 export interface Settings { preset: string; gfx: GfxSettings; sens: number; sfx: number; music: number; bob: boolean;
@@ -141,7 +142,14 @@ export class TitleMenu {
       el('div', 'nm', info, w.name); el('div', 'mt', info, `seed ${w.seedText} · ${new Date(w.played).toLocaleDateString()} · level ${w.level}`);
       el('div', 'sp', row);
       const del = el('button', 'btn sm bad', row, 'Delete');
-      del.onclick = async (e) => { e.stopPropagation(); if (del.textContent === 'Sure?') { await deleteWorld(w.id); void this.home(); } else del.textContent = 'Sure?'; };
+      del.onclick = async (e) => {
+        e.stopPropagation();
+        if (del.textContent !== 'Sure?') { del.textContent = 'Sure?'; return; }
+        const release = await claimWorld(w.id);
+        if (!release) { del.textContent = 'Open in another tab'; return; }
+        try { await deleteWorld(w.id); } finally { release(); }
+        void this.home();
+      };
       row.onclick = () => this.play(w);
     }
     el('button', 'btn gold', col, worlds.length ? 'New world' : 'Begin').onclick = () => this.create();
