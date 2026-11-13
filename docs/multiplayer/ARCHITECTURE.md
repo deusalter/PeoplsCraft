@@ -1981,6 +1981,7 @@ interval measured on arrival refuses honest swings. The sim keeps two credits pe
   the held weapon, 0.6 for a summon (today's `atkCd = 0.6`). An `atk` or `fire` is accepted when
   `actCredit >= cost`; then `actCredit -= cost`.
 - `useCredit` works the same way for consumables with `cost = 0.35` (today's `useCd`).
+- On arrival (`travel.ts arrive`) each credit is raised to its cap, as the client's timers start at 0 (D36 (e)).
 
 A steady stream at the weapon's rate keeps the credit level; messages may bunch by up to `ACT_SURPLUS`
 (0.5 s) without loss; over any stretch the number of accepted swings is what the weapon's rate allows
@@ -3485,6 +3486,12 @@ refused that player, and the first `st` of the new connection carried the old bo
 (c) A known id that says hello under another name while it is in memory takes that name in `world.names` at
 once (4.2). The list was written only by `Sim.join` and by a save, so until the next save the new name could be
 given to a second player and the old one to nobody.
+(e) A player comes into play with full credits (7.3). `arrive` sets `actCredit`, `useCredit` and `digCredit` to
+at least their caps, `ACT_SURPLUS + cost`, `ACT_SURPLUS + 0.35` and `DIG_SURPLUS`. They started at 0 on every
+join and filled only while active, while the client's `atkCd` and `useCd` start at 0: a swing within one
+cooldown of the loading screen lifting played its sound and did nothing, and a meal eaten within 0.35 s came
+back on the next `st`. The time spent loading is time the player could not act in, so the cap given at the
+arrival is no more than standing idle for that time would have given.
 
 ---
 

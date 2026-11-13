@@ -368,6 +368,13 @@ export function tickCredits(p: SimPlayer, dt: number): void {
   p.useCredit = Math.min(p.useCredit + dt, ACT_SURPLUS + USE_COST);
   p.digCredit = Math.min(p.digCredit + dt, DIG_SURPLUS + (p.dig ? digNeed(p.dig.bt) : 0));
 }
+/** A player coming into play holds what one who stood idle would: its client starts with no cooldown, and the time
+ *  spent loading is time it could not act in. */
+export function fillCredits(p: SimPlayer): void {
+  p.actCredit = Math.max(p.actCredit, ACT_SURPLUS + actCost(p));
+  p.useCredit = Math.max(p.useCredit, ACT_SURPLUS + USE_COST);
+  p.digCredit = Math.max(p.digCredit, DIG_SURPLUS);
+}
 const acked = (p: SimPlayer, seq: number): void => { p.ackSeq = seq; p.invDirty = true; };
 const live = (p: SimPlayer): boolean => active(p) && !p.stats.dead;
 /** The cells as they are, flat (x, y, z, id): what a refused edit sends back. */

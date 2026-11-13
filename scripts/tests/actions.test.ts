@@ -15,6 +15,7 @@ import type { SimPlayer } from '../../src/sim/player';
 import type { RealmStore } from '../../src/sim/realm';
 import { attackRate, breakTime, breakTimeMin } from '../../src/sim/rules';
 import { Sim } from '../../src/sim/sim';
+import { arrive } from '../../src/sim/travel';
 import type { ChunkSource } from '../../src/sim/chunksource';
 import { MemStorage, type WorldRecord } from '../../src/sim/storage';
 import { type BlockEnt, EditMaps } from '../../src/sim/voxels';
@@ -417,6 +418,24 @@ test('credits fill only while the step gives them time, each to its own cap', ()
   p.dig = { x: 0, y: 0, z: 0, id: B.stone, bt: 2, t0: 0 };
   r.run(100);
   assert.ok(Math.abs(p.digCredit - (DIG_SURPLUS + digNeed(2))) < 1e-9);
+});
+
+test('a player comes into play with the credits of one who stood idle: the first swing and the first meal pass', () => {
+  const r = rig(), { sim } = r, realm = sim.realms[0];
+  const take = (pl: SimPlayer): void => { pl.clientReady = true; arrive(sim, pl); assert.equal(pl.loading, false, 'in play'); };
+  const p = sim.join('c', 'c', null, false);
+  hold(p, SWORD); hold(p, 'apple', 5, 3); p.inv.sel = 0; p.stats.hunger = 2;
+  take(p);
+  const m = realm.mobs.spawn('gloomshade', p.body.x + 2, p.body.y, p.body.z)!;
+  m.hp = m.maxHp = 1e9;
+  assert.equal(onAtk(sim, p, { t: 'atk', id: m.id, d: [1, 0, 0] }), true, 'a swing on arrival');
+  assert.equal(onItem(sim, p, { t: 'item', seq: p.ackSeq + 1, slot: 3 }), 2, 'a meal on arrival');
+  // taken over by a new connection whose client starts with no cooldown: the same again
+  p.actCredit = p.useCredit = 0;
+  sim.resume(p);
+  take(p);
+  assert.equal(onAtk(sim, p, { t: 'atk', id: m.id, d: [1, 0, 0] }), true, 'a swing after a takeover');
+  assert.equal(onItem(sim, p, { t: 'item', seq: p.ackSeq + 1, slot: 3 }), 2, 'a meal after a takeover');
 });
 
 // ---- the state that follows ------------------------------------------------------------------------------

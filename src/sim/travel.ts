@@ -2,7 +2,7 @@
 import { DIM_NAMES, SEA } from '../core/constants';
 import { B, BLOCKS, T_LIQUID, T_OPAQUE, T_SOLID } from '../data/blocks';
 import { DIMS } from '../data/dims';
-import { endWindow } from './actions';
+import { endWindow, fillCredits } from './actions';
 import { buildGate } from './gates';
 import { checkPosition } from './movement';
 import type { SimPlayer } from './player';
@@ -100,6 +100,7 @@ export function arrive(sim: Sim, p: SimPlayer): void {
   checkPosition(sim, p);
   // the stall rule counts from here
   p.loading = false; p.portalArmed = false; p.lastMoveTick = sim.tick;
+  fillCredits(p);
   sendTp(sim, p, false);
   if (p.arriveMsg) { sim.sink.emit({ p: p.slot }, ['t', p.arriveMsg, '#ff9a8a']); p.arriveMsg = ''; }
   if (p.deadOnJoin) { p.deadOnJoin = false; sim.sink.send(p.slot, { t: 'dead', cause: '', lost: 0, at: p.deathAt ?? [p.dim, Math.floor(b.x), Math.floor(b.y), Math.floor(b.z)] }); }
