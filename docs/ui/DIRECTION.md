@@ -2954,11 +2954,11 @@ Size 260 by 206, with tabs standing 21 above and 21 to the left. Material: stone
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | K0 | slab | 0 | 0 | 260 | 206 | stone slab |
 | T1 | tab | 0 | -21 | 24 | 24 | top tabs, one to a job, item icon on each: Melee, Ranged, Crystal-work, Totem, and the cutter's trade |
-| U1 | tab | -21 | 14 | 24 | 24 | side tabs, one to each of the crew online, a head in their colour, the player's name as the tooltip ("Rook (you)" for one's own): one's own first and chosen; another's tree is read, not changed |
-| K1 | text | 8 | 6 | 100 | 10 | the job's name |
-| K2 | text | 110 | 6 | 142 | 10 | whose tree it is, right-aligned to x 252: "Yours, 3 to spend" in growth.dk for one's own, "Ishaan's, to read" in ink.faded for another's. Each side tab names its player as its tooltip; a column of heads that differ only by colour says nothing until one is opened |
-| K3 | well | 8 | 18 | 244 | 160 | the field: a sunk well whose floor is the ground tile in stone.dk and stone.pit, panned by dragging; nodes 26 square on a lattice of 40; links between them |
-| K4 | text | 8 | 184 | 196 | 10 | the chosen node: its name, then its rank as "1 of 3" |
+| U1 | tab | -21 | 14 | 24 | 24 | side tabs, one to each of the eight of the crew, away or not, at the pitch of 23, a head in their colour; the tooltip is the name and level ("Rook (you), level 14", "Jun, level 3, away"): one's own first and chosen; another's tree is read, not changed |
+| K1 | text | 8 | 6 | 148 | 10 | whose tree and which job: "Rook, Melee" |
+| K2 | text | 160 | 6 | 92 | 10 | right-aligned to x 252: "3 to spend" in growth.dk on one's own tree, "To read" in ink.faded on another's |
+| K3 | well | 8 | 18 | 244 | 142 | the field: a sunk well whose floor is the ground tile in stone.dk and stone.pit, panned by dragging; nodes 26 square on a lattice of 40; links between them |
+| K4 | text | 8 | 164 | 244 | 32 | the chosen node on three lines 11 apart: its name in ink with its rank "3 of 3" right-aligned to x 252 in faded ink; what a rank does, in ink, cut at 196; what it needs ("Needs: Deep breath", or "Needs nothing: a first step") in faded ink, in blood.dk while it is locked. A name and a rank alone left the player nothing to choose by |
 | K5 | button | 208 | 182 | 44 | 16 | "Take"; disabled when the node cannot be taken |
 
 - **Shows.** One field to a job. Square frames are steps anyone may take, cut frames are the job's own skills, spiked frames are the three marks a job ends in. Locked is dull, open is stone, earned is clay and salt. The party shows in the side tabs, so that a crew can see who took what.
