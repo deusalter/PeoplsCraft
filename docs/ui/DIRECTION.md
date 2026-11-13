@@ -474,7 +474,7 @@ muda     back     cairn    bed
 
 ### 4.2 The small face
 
-For digits that have no room: a stack count of three digits, the time under a status frame, a page number, the ranks under a node. Its letters are kept for the few strings already wired in it, but every HUD readout with a word in it (coordinates, the night, "Saved", a distance with its unit) is the text face in sentence case: at 3 by 5, capitals are hard to tell apart (Z from 2, U from V) and set in capitals they break the rule of case. It is never used for a label or a sentence, and it is never shown as an alphabet beside the text face: the type sheet shows it only at its job, a row of counts after a label in the text face, since a second full alphabet read as a second font. The modded tradition draws its large counts smaller in the same way. The 4 has its diagonal so that it is not read as H. The 0 is a full box with square corners and the 8 has a pinched waist, so that neither has the cut corners of D and B and "0:08" is never read as "D:DB". Under a status frame, on the world, the time has its shadow like any text there, and its glyphs stand 2 apart so that the shadow does not fill the gap between them.
+For digits that have no room: a stack count of three digits, the time under a status frame, a page number, the ranks under a node. Its letters are kept for the few strings already wired in it, but every HUD readout with a word in it (coordinates, the night, "Saved", a distance with its unit) is the text face in sentence case: at 3 by 5, capitals are hard to tell apart (Z from 2, U from V) and set in capitals they break the rule of case. It is never used for a label or a sentence, and it is never shown as an alphabet beside the text face: the type sheet shows it only at its job, a row of counts after a label in the text face, since a second full alphabet read as a second font. The modded tradition draws its large counts smaller in the same way. The 4 has its diagonal so that it is not read as H. The 0 is a full box with square corners and nothing inside; the 8 is the same box with its middle row filled, two holes one above the other, so that neither has the cut corners of D and B. A pinched waist on the 8 was tried and dropped: with its shadow it read as a 3 or a B. The 3 is open on the left. Under a status frame, on the world, the time has its shadow like any text there and its glyphs stand 1 apart like any small text, so "0:08" is 13 wide (14 with its shadow) and the times under frames set 20 apart stand 6 clear of each other; set 2 apart they ran into one long line.
 
 | Measure | Units |
 | --- | --- |
@@ -488,7 +488,7 @@ For digits that have no room: a stack count of three digits, the time under a st
 0    1    2    3    4    5    6    7    8    9    A    B    C    D    E    F    G    H    I    J    K    L    M      N     O    P    
 ###  .#.  ##.  ##.  ..#  ###  ##.  ###  ###  ##.  .#.  ##.  .##  ##.  ###  ###  .##  #.#  ###  ..#  #.#  #..  #...#  #..#  .#.  ##.
 #.#  ##.  ..#  ..#  .##  #..  #..  ..#  #.#  #.#  #.#  #.#  #..  #.#  #..  #..  #..  #.#  .#.  ..#  #.#  #..  ##.##  ##.#  #.#  #.#
-#.#  .#.  .#.  .#.  #.#  ##.  ###  .#.  .#.  ###  ###  ##.  #..  #.#  ##.  ##.  #.#  ###  .#.  ..#  ##.  #..  #.#.#  #.##  #.#  ##.
+#.#  .#.  .#.  .#.  #.#  ##.  ###  .#.  ###  ###  ###  ##.  #..  #.#  ##.  ##.  #.#  ###  .#.  ..#  ##.  #..  #.#.#  #.##  #.#  ##.
 #.#  .#.  #..  ..#  ###  ..#  #.#  .#.  #.#  ..#  #.#  #.#  #..  #.#  #..  #..  #.#  #.#  .#.  #.#  #.#  #..  #...#  #..#  #.#  #..
 ###  ###  ###  ##.  ..#  ##.  .##  .#.  ###  .##  #.#  ##.  .##  ##.  ###  #..  .##  #.#  ###  .#.  #.#  ###  #...#  #..#  .#.  #..
 ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  ...  .....  ....  ...  ...
@@ -1373,7 +1373,7 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
 
 ### 5.15 Pips and strips of the HUD
 
-**Pips.** 9 by 9, ten to a row at a pitch of 8, so a row is 81 wide. Each is drawn 7 wide in columns 1 to 7 of its cell, so one clear column stands between neighbours and no two pips share an outline. Life is a drop in blood. Hunger is one bowl outline for every state: a rim of `timber.lt` 7 wide, a body of `timber.face` narrowing 7 to 5 with a `timber.sh` right edge, a stem and a foot 5 wide. Full, a heap of food 3 wide stands above the rim in ember with two units of `ember.lt` at its top left and `ember.dk` at its bottom right. Empty is the same outline with no heap, the bowl `root.2` with a `root.3` edge along its top and left. Half is the full pip's left five columns, heap and all, beside the empty one's rest. (The bowl is 7 wide, not 9, so that a clear column still stands between neighbours.) The arm is a hand in arm blue: three fingers and a thumb inside the 7 columns, the fingertips in `arm.lt`, the last column in `arm.dk`. A pip is full, half (its left five columns lit) or empty (`root.2`). Each row below shows full, half, empty.
+**Pips.** 9 by 9, ten to a row at a pitch of 8, so a row is 81 wide. Each is drawn 7 wide in columns 1 to 7 of its cell, so one clear column stands between neighbours and no two pips share an outline. Life is a drop in blood. Hunger is one bowl outline for every state, a bowl and never a cup: no stem, wider than it is deep. A rim 7 wide in `ember.lt`, a belly below it 7 wide in `ember` with `ember.dk` on its right two columns, then a foot ring 3 wide in `ember.dk` and a base of `root.0` 3 wide, so the underside rounds. Full, a heap of food 3 wide in `ember.hi` stands over the rim, its last unit `ember.lt`, its outline flat with the rim's so the full bowl has shoulders and never rounds into a ball. Empty is the same bowl with no heap, in `root.2` with a `root.3` rim and a `root.1` foot. Half is the full pip's left five columns, heap and all, beside the empty one's rest. (A goblet with a stem and a flared foot, tried first, read as a trophy full and an anvil empty; a deeper bowl read as a bucket. The bowl is 7 wide, not 9, so that a clear column still stands between neighbours.) The arm is a hand in arm blue: three fingers and a thumb inside the 7 columns, the fingertips in `arm.lt`, the last column in `arm.dk`. A pip is full, half (its left five columns lit) or empty (`root.2`). Each row below shows full, half, empty.
 
 ```
      0         1         2        
@@ -1388,15 +1388,15 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
   7  ..KRqqK.....KRqjK.....KjjjK..
   8  ...KKK.......KKK.......KKK...
   9  .............................
- 10  ...KKK.......KK..............
- 11  ..KooOK.....Koo..............
- 12  .KKOOuKK...KKOOKKK...KKKKKKK.
- 13  .KfffffK...KfffhhK...KhhhhhK.
- 14  .KTTTTtK...KTTTjjK...KhjjjjK.
- 15  ..KTTtK.....KTTjK.....KhjjK..
- 16  ...KtK.......KtK.......KjK...
- 17  ..KTTtK.....KTTjK.....KhjjK..
- 18  ..KKKKK.....KKKKK.....KKKKK..
+ 10  .............................
+ 11  .............................
+ 12  ...KKK.......KK..............
+ 13  .KKyyoKK...KKyyKKK...KKKKKKK.
+ 14  .KoooooK...KooohhK...KhhhhhK.
+ 15  .KOOOuuK...KOOOjjK...KjjjjjK.
+ 16  ..KuuuK.....KuukK.....KkkkK..
+ 17  ...KKK.......KKK.......KKK...
+ 18  .............................
  19  .............................
  20  ..K.K.K.....K.K.K.....K.K.K..
  21  .KbKbKbK...KbKbKjK...KjKjKjK.
@@ -1408,7 +1408,7 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
  27  ..KBBdK.....KBBjK.....KjjjK..
  28  ...KKK.......KKK.......KKK...
 ```
-`. nothing  b arm.lt  B arm  d arm.dk  f timber.lt  h root.3  j root.2  K root.0  o ember.lt  O ember  q blood.dk  r blood.lt  R blood  t timber.sh  T timber.face  u ember.dk`
+`. nothing  b arm.lt  B arm  d arm.dk  h root.3  j root.2  k root.1  K root.0  o ember.lt  O ember  q blood.dk  r blood.lt  R blood  u ember.dk  y ember.hi`
 
 A pip is a tenth of the measure's maximum. With `v = 10 * now / max`, pip `i` (counted from 0 at the end the row fills from) is full when `v >= i + 0.75`, half when `v >= i + 0.25`, else empty; while `now` is above nothing the first pip is at least half. The life row fills from the left. The hunger and arm rows are right-aligned and fill from the right, drawn mirrored.
 

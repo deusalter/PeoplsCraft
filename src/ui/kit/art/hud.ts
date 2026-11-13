@@ -24,28 +24,28 @@ export const PIPS = {
     '..KjjjK..',
     '...KKK...',
   ], 'pip.life.empty') },
-  // One bowl for every state: the full one heaped with food above its rim, the empty one the same outline with no
-  // heap and its hollow dark, so a row reads as bowls filling and not as two shapes.
+  // A bowl with no stem, wider than it is deep: a rim, a belly narrowing 7 to 5, a foot ring and a base 3 wide, so its
+  // underside rounds and never pinches. Full, a heap of food stands over the rim; empty is the same bowl dark.
   hunger: { full: coded([
+    '.........',
+    '.........',
+    '.........',
     '...KKK...',
-    '..KooOK..',
-    '.KKOOuKK.',
-    '.KfffffK.',
-    '.KTTTTtK.',
-    '..KTTtK..',
-    '...KtK...',
-    '..KTTtK..',
-    '..KKKKK..',
+    '.KKyyoKK.',
+    '.KoooooK.',
+    '.KOOOuuK.',
+    '..KuuuK..',
+    '...KKK...',
   ], 'pip.hunger'), empty: coded([
+    '.........',
+    '.........',
     '.........',
     '.........',
     '.KKKKKKK.',
     '.KhhhhhK.',
-    '.KhjjjjK.',
-    '..KhjjK..',
-    '...KjK...',
-    '..KhjjK..',
-    '..KKKKK..',
+    '.KjjjjjK.',
+    '..KkkkK..',
+    '...KKK...',
   ], 'pip.hunger.empty') },
   arm: { full: coded([
     '..K.K.K..',
