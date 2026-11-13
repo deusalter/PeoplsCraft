@@ -524,5 +524,13 @@ same commit as this section: a player who has just come in is not a change.
   the old records runs in the simulation's worker: all 66.
 - `npm run smoke -- det`: three times in a row, and once more with `?loopback`.
 - `npm run smoke -- closetab`: three times in a row. `twotab`, `solofar`, `tpfar`: pass.
+- A world saved by the build before this stage opens in it. On `f82bab3` (exported to a scratch folder, this
+  harness copied in) a world was made in the title menu, a column built, a block dug out, a chest placed and a
+  stack of flint shift-clicked into it by real clicks, the view turned, and the game saved; its database (all five
+  stores, version 2) was dumped and written into a fresh profile of this build, and the world opened from the
+  menu in the worker with the four probed cells, the chest, five item counts, the position (within 0.01 blocks)
+  and the look as they were, and the tick going on from the saved one. Saved by this build and opened again, the
+  same.
 - `npm test`, `npm run check` and `npm run build` pass. The build has the worker as its own file
-  (`dist/assets/sim-worker-*.js`).
+  (`dist/assets/sim-worker-*.js`, which starts its generating worker from `worker-*.js`); `vite preview` of it
+  opens a world from the title menu on the worker transport.
