@@ -29,8 +29,8 @@ export interface Surface {
   text(str: string, x: number, y: number, c: Colour, shadow?: boolean, face?: Face): number;
   icon(key: string, x: number, y: number, look?: Look, flat?: Colour): void;
   /**
-   * The shape of an icon not yet known: its 16 by 16 mask with holes of one unit closed, filled flat, and the units
-   * of it that face right or down drawn in `edge`, so the shape stands lit from the top left at any scale.
+   * The shape of an icon not yet known: its 16 by 16 mask with enclosed holes of one unit closed, filled flat, and the
+   * units of it that face right or down drawn in `edge` (the same colour as `fill` for a flat shape).
    */
   silhouette(key: string, x: number, y: number, fill: Colour, edge: Colour): void;
   clip(x: number, y: number, w: number, h: number): void;
@@ -182,19 +182,33 @@ export abstract class BaseSurface implements Surface {
   }
 }
 
-/** An icon's 16 by 16 mask, 1 where it is drawn, with every empty unit between two drawn ones in a row or column filled. */
+/**
+ * An icon's 16 by 16 mask. For a drawn picture it is the picture's body: every unit but its root.0 outline, and only
+ * those outline units that stand clear of the body on all eight sides (an antenna, a whisker, a string). The outline
+ * between two legs, under an ear or across a neck is what parts them, so leaving it out keeps the gap. A unit drawn
+ * round on all four sides (an eye) is then filled.
+ */
 function iconMask(ic: Icon | null): Uint8Array | null {
   if (!ic) return null;
   const raw = new Uint8Array(256);
   if (isImage(ic)) { for (let k = 0; k < 256; k++) raw[k] = ic.rgba[k * 4 + 3] >= 128 ? 1 : 0; }
   else {
     const idx = resolve(ic, {});
-    for (let j = 0; j < Math.min(16, ic.h); j++) for (let i = 0; i < Math.min(16, ic.w); i++) raw[j * 16 + i] = idx[j * ic.w + i] !== NONE ? 1 : 0;
+    const W = Math.min(16, ic.w), H = Math.min(16, ic.h), K = ci('root.0');
+    const at = (i: number, j: number) => (i >= 0 && j >= 0 && i < W && j < H ? idx[j * ic.w + i] : NONE);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+      const c = at(i, j);
+      if (c === NONE) continue;
+      if (c !== K) { raw[j * 16 + i] = 1; continue; }
+      let clear = true;
+      for (let b = -1; b <= 1 && clear; b++) for (let a = -1; a <= 1; a++) { const n = at(i + a, j + b); if (n !== NONE && n !== K) { clear = false; break; } }
+      if (clear) raw[j * 16 + i] = 1;
+    }
   }
   const on = (i: number, j: number) => i >= 0 && j >= 0 && i < 16 && j < 16 && raw[j * 16 + i] === 1;
   const m = raw.slice();
   for (let j = 0; j < 16; j++) for (let i = 0; i < 16; i++) {
-    if (!raw[j * 16 + i] && ((on(i - 1, j) && on(i + 1, j)) || (on(i, j - 1) && on(i, j + 1)))) m[j * 16 + i] = 1;
+    if (!raw[j * 16 + i] && on(i - 1, j) && on(i + 1, j) && on(i, j - 1) && on(i, j + 1)) m[j * 16 + i] = 1;
   }
   return m;
 }

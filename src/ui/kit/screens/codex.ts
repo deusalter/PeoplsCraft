@@ -35,16 +35,16 @@ const PW = 126, COLS = 7, CELLS = 49;
 /** The picture well: a 16 by 16 picture standing on four rows of the ground tile, one unit of floor round it. */
 const WELL = 24;
 
-/** An entry slot sunk in the page (X3): the clay slot with a floor of `clay.sh`; a kind not yet seen shows its silhouette. */
+/** An entry slot sunk in the page (X3): the clay slot with a floor of `clay.sh`; a kind not yet seen shows its flat mask in `clay.face`. */
 function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolean): void {
   s.nine(SLOT, 0, 0, 18, 18, 'clay');
   const hot = !!e && live.hover;
-  s.fill(1, 1, 16, 16, hot ? 'clay.face' : 'clay.sh');
+  s.fill(1, 1, 16, 16, hot && e.seen ? 'clay.face' : 'clay.sh');
   if (!e) return;
   if (chosen) ring(s, 1, 1, 16, 16, 'salt');
   else if (live.focus) ring(s, 1, 1, 16, 16, 'salt');
   if (e.seen) s.icon(e.icon, 1, 1);
-  else s.silhouette(e.icon, 1, 1, 'clay.dk', 'clay.pit');
+  else s.silhouette(e.icon, 1, 1, hot ? 'clay.lt' : 'clay.face', hot ? 'clay.lt' : 'clay.face');
 }
 
 /** The four steps (X9): a paragraph for each one known, one rule of `clay.sh` for each one not, cut at the page's foot. */
@@ -88,7 +88,7 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
     paint: (s) => {
       sunk(s, 0, 0, WELL, WELL, 'clay');
       s.tile(GROUND, 1, WELL - 5, WELL - 2, 4);
-      if (known) s.icon(e.icon, 4, WELL - 5 - 16); else s.silhouette(e.icon, 4, WELL - 5 - 16, 'root.3', 'root.0');
+      if (known) s.icon(e.icon, 4, WELL - 5 - 16); else s.silhouette(e.icon, 4, WELL - 5 - 16, 'root.3', 'root.3');
     },
   });
   let fy = 0;

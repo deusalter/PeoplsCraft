@@ -56,7 +56,7 @@ export const booksSheet: Sheet = {
       paint: (s) => {
         s.nine(SLOT, 0, 0, 18, 18, 'clay');
         s.fill(1, 1, 16, 16, 'clay.sh');
-        if (i === 1) s.silhouette(k, 1, 1, 'clay.dk', 'clay.pit'); else s.icon(k, 1, 1);
+        if (i === 1) s.silhouette(k, 1, 1, 'clay.face', 'clay.face'); else s.icon(k, 1, 1);
         if (i === 2) { s.fill(1, 1, 16, 1, 'salt'); s.fill(1, 16, 16, 1, 'salt'); s.fill(1, 2, 1, 14, 'salt'); s.fill(16, 2, 1, 14, 'salt'); }
       },
     }));
