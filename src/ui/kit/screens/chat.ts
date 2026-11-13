@@ -104,7 +104,7 @@ function build(ui: Ui): Node {
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
     kids: [
-      ...hud(ui, { crew: false, chat: false, prompt: false, look: { icon: 'cobble', name: 'Rubble' } }),
+      ...hud(ui, { crew: false, chat: false, prompt: false, entry: true, look: { icon: 'cobble', name: 'Rubble' } }),
       {
         x: stage.x + 4, y: 0, w: wrapAt + 3, h: bottom,
         takes: true,

@@ -167,7 +167,7 @@ export function ping(o: { cx: number; y: number; seat: number; metres?: number }
 // ---- chat (5.23)
 
 export interface ChatLine {
-  /** A player's line: their seat and name; a line from the server has none and is all `stone.lt`. */
+  /** A player's line: their seat and name; a line from the server or the world has none and is drawn in grey after the cairn. */
   seat?: number;
   from?: string;
   text: string;
@@ -192,20 +192,23 @@ export const CHAT_WRAP = 141;
 /** A wrapped line starts this far in, so that it is not read as a new speaker. */
 export const CHAT_INDENT = 4;
 
-interface Run { text: string; c: Colour }
+/** `pad`: units added before the run, beyond the face's gap. */
+interface Run { text: string; c: Colour; pad?: number }
 interface Row { indent: number; runs: Run[] }
 
 /** A chat line's rows, wrapped: the name in its colour, a colon in `root.4`, 3 units, the text in salt. */
 function chatRows(l: ChatLine, at: number): Row[] {
   const more = (text: string, c: Colour): Row[] => wrap(text, at - CHAT_INDENT).map((w) => ({ indent: CHAT_INDENT, runs: [{ text: w.text, c }] }));
   if (!l.from) {
-    const first = wrap(l.text, at);
+    // The world's own lines carry the cairn and no colon, in grey, so that none is read as a player's line gone wrong.
+    const head = measure('{cairn}') + 2;
+    const first = wrap(l.text, at - head);
     const rest = first.slice(1).map((w) => w.text).join(' ');
-    return [{ indent: 0, runs: [{ text: first[0]?.text ?? '', c: 'stone.lt' }] }, ...(rest ? more(rest, 'stone.lt') : [])];
+    return [{ indent: 0, runs: [{ text: '{cairn}', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'root.4', pad: 2 - TEXT.gap }] }, ...(rest ? more(rest, 'root.4') : [])];
   }
   const head = measure(l.from) + 1 + measure(':') + 3;
   const first = wrap(l.text, at - head);
-  const rows: Row[] = [{ indent: 0, runs: [{ text: l.from, c: SEATS[(l.seat ?? 8) - 1] }, { text: ':', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'salt' }] }];
+  const rows: Row[] = [{ indent: 0, runs: [{ text: l.from, c: SEATS[(l.seat ?? 8) - 1] }, { text: ':', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'salt', pad: 3 - TEXT.gap }] }];
   const rest = first.slice(1).map((w) => w.text).join(' ');
   if (rest) rows.push(...more(rest, 'salt'));
   return rows;
@@ -214,7 +217,7 @@ function chatRows(l: ChatLine, at: number): Row[] {
 function paintRuns(s: Surface, runs: Run[], x: number, y: number): number {
   let cx = x;
   runs.forEach((r, i) => {
-    if (i === 2) cx += 3 - TEXT.gap;
+    cx += r.pad ?? 0;
     cx += s.text(r.text, cx, y, r.c, true) + (i < runs.length - 1 ? TEXT.gap : 0);
   });
   return cx - x;

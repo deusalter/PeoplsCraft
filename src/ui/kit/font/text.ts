@@ -115,30 +115,28 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 .....  .......  .......  .....  .....  .....  .....  .....  ...   .......  .......  .......  .......
 5      7        7        5      5      5      5      5      3     7        7        7        7
 
-muda     back
-.......  .......
-.#####.  ..#....
-##...##  .##....
-#..#..#  #######
-#.###.#  .##...#
-#..#..#  ..#...#
-##...##  ......#
-.#####.  ..#####
-.......  .......
-.......  .......
-7        7
+muda     back     cairn
+.......  .......  .......
+.#####.  ..#....  ...##..
+##...##  .##....  ..###..
+#..#..#  #######  .......
+#.###.#  .##...#  .#####.
+#..#..#  ..#...#  .......
+##...##  ......#  #######
+.#####.  ..#####  #######
+.......  .......  .......
+.......  .......  .......
+7        7        7
 `;
 
-// The capitals with a macron keep the full height of a capital, rows 1 to 7, and carry the macron one row higher than
-// any other glyph, on the row above the cell, with row 0 left clear between it and the letter. A macron on row 0 would
-// fuse with the flat head of A or I; a letter cut down to six rows to make room reads as a short letter. These are
-// drawn one row up: in these eleven rows, the first is the row above the cell.
-const RAISED = `
+// The capitals with a macron are cut to six rows, 2 to 7, with the macron on row 0 of their own cell and row 1 clear
+// between. Raised a row above the cell, the macron fell among the descenders of the line above and read as a stray
+// underscore that belonged to it; inside the cell it never leaves the 10 rows a line owns.
+const MACRON_CAPS = `
 Ā      Ī    Ū
 .###.  ###  .###.
 .....  ...  .....
 .###.  ###  #...#
-#...#  .#.  #...#
 #...#  .#.  #...#
 #...#  .#.  #...#
 #####  .#.  #...#
@@ -151,6 +149,6 @@ const RAISED = `
 
 /** The marks written in braces, as `{lees} 240`. */
 export const SYMBOL_SHEETS = [SYMBOLS];
-export const TEXT_SHEETS = [CAPITALS, LOWER, MARKED, PUNCT];
-/** Glyphs drawn one row above their cell: eleven rows each. */
-export const RAISED_SHEETS = [RAISED];
+export const TEXT_SHEETS = [CAPITALS, LOWER, MARKED, MACRON_CAPS, PUNCT];
+/** Glyphs drawn one row above their cell: eleven rows each. None is drawn so now. */
+export const RAISED_SHEETS: string[] = [];

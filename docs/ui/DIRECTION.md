@@ -105,7 +105,7 @@ Three rules follow and are used everywhere below.
 | --- | --- | --- |
 | Plain text | `salt` | `ink` |
 | The less important line | `root.4` | `ink.faded` |
-| A line from the server in chat | `stone.lt` | not used |
+| A line from the server or the world in chat, after the `{cairn}` mark | `root.4` | not used |
 | A grade | the table above | the table above |
 | Better than what is worn or held; can be afforded | `growth.lt` | `growth.dk` |
 | Worse; cannot be afforded; a refusal; a warning | `blood.lt` | `blood.dk` |
@@ -213,7 +213,7 @@ Two faces, both drawn here, both stored as pixel maps. No other letter appears a
 | Measure | Units |
 | --- | --- |
 | Cell height, and the advance from one line to the next | 10 |
-| Row 0 | the macron of ā, ī, ū sits on row 1 over the x-height; row 0 is empty in every glyph. The macron of Ā, Ī, Ū stands on the row above the cell (below) |
+| Row 0 | empty in every glyph but Ā, Ī, Ū, whose macron stands there (below); the macron of ā, ī, ū sits on row 1 over the x-height |
 | Rows 1 to 7 | capital height, 7. Ascenders are as tall as capitals. Digits are capital height |
 | Rows 3 to 7 | x-height, 5 |
 | Baseline | under row 7 |
@@ -308,14 +308,13 @@ Marked letters and digits:
 
 ```
 
-Capitals with a macron, drawn one row above their cell: the first of these eleven rows is the row above the cell, so the letter keeps rows 1 to 7 like every capital and row 0 stays clear between the macron and the letter. A macron on row 0 would fuse with the flat head of A or I, and a capital cut to six rows to make room reads as a short letter at the head of a name ("Ānanya", "Ūrmilā"). The raised row is the descender row of the line above; a macron landing on a descender there is accepted, as names with a macron rarely stand under one.
+Capitals with a macron are cut to six rows, 2 to 7, with the macron on row 0 of their own cell and row 1 clear between them, so that the mark never leaves the 10 rows its line owns. Drawn on the row above the cell, as they first were, the macron fell among the descenders and strips of the line above and read as a stray underscore belonging to it.
 
 ```
 Ā      Ī    Ū
 .###.  ###  .###.
 .....  ...  .....
 .###.  ###  #...#
-#...#  .#.  #...#
 #...#  .#.  #...#
 #...#  .#.  #...#
 #####  .#.  #...#
@@ -370,9 +369,9 @@ In each sheet the first line names the glyph, `#` is ink, and the last line is i
 | 6 | q, whose descender ends in a spur to the right on row 9 so that it is never read as g |
 | 7 | M W m w — @ |
 
-**Marks.** The macron is 3 units wide on the accent row for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
+**Marks.** The macron is 3 units wide on row 0 for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
 
-**Symbols.** 15 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
+**Symbols.** 16 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
 
 ```
 tofu   lees     check    cross  right  left   up     down   step  shield   lmb      rmb      mmb      
@@ -388,18 +387,18 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 .....  .......  .......  .....  .....  .....  .....  .....  ...   .......  .......  .......  .......
 5      7        7        5      5      5      5      5      3     7        7        7        7
 
-muda     back
-.......  .......
-.#####.  ..#....
-##...##  .##....
-#..#..#  #######
-#.###.#  .##...#
-#..#..#  ..#...#
-##...##  ......#
-.#####.  ..#####
-.......  .......
-.......  .......
-7        7
+muda     back     cairn
+.......  .......  .......
+.#####.  ..#....  ...##..
+##...##  .##....  ..###..
+#..#..#  #######  .......
+#.###.#  .##...#  .#####.
+#..#..#  ..#...#  .......
+##...##  ......#  #######
+.#####.  ..#####  #######
+.......  .......  .......
+.......  .......  .......
+7        7        7
 
 ```
 
@@ -420,8 +419,9 @@ muda     back
 | `{mmb}` | 7 |
 | `{muda}` | 7 |
 | `{back}` | 7 |
+| `{cairn}` | 7 |
 
-`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence.
+`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence.
 
 **Shadow.** Text on a dark plate, on the ground tile, on a button or on the world has a shadow: the same glyphs one unit right and one unit down in `root.0`, drawn first. Text on a light face (a slab, a page, a key cap) has none. The shadow is always `root.0` and never a darker copy of the text's colour, so that the palette stays closed.
 
@@ -1828,7 +1828,7 @@ A held stack is its icon centred on the pointer's place (at -8, -8) with its cou
 
 ### 5.23 Chat
 
-Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its wash ends left of the hotbar's column (x `cx - 91`, 1 unit clear), the newest line's bottom is 48 above the stage's bottom, level with the top of the hotbar's measures; on a narrower stage it is 58 above, over the row of defence and lees. Under the lines lies one strip of the chat wash as wide as the column (the wrap plus 3, so 144 on a wide stage), the same for every line whatever its length, so that chat reads as one plate and not as highlighted text (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server is all `stone.lt`. Text wraps at 141, so that chat with its wash is 144 wide (x 4 to 148 on a stage 480 wide, left of the hotbar's column and far from the crosshair), or at half the stage less 64 when that is less. A line that wraps continues 4 units in, so that a wrapped row is not read as a new speaker. Only whole lines show: when the oldest line will not fit, all of it is left out. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, as wide as the stage less 8, over the hotbar, as the tradition puts it: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
+Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its wash ends left of the hotbar's column (x `cx - 91`, 1 unit clear), the newest line's bottom is 48 above the stage's bottom, level with the top of the hotbar's measures; on a narrower stage it is 58 above, over the row of defence and lees. Under the lines lies one strip of the chat wash as wide as the column (the wrap plus 3, so 144 on a wide stage), the same for every line whatever its length, so that chat reads as one plate and not as highlighted text (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, 3 units, the text in `salt`. A line from the server or the world (a bell rung, a thing that comes up, the answer to a command) has no name and no colon: the `{cairn}` mark, 2 units, then the text, all in `root.4`, so that it is never read as a player's line gone wrong. Text wraps at 141, so that chat with its wash is 144 wide (x 4 to 148 on a stage 480 wide, left of the hotbar's column and far from the crosshair), or at half the stage less 64 when that is less. A line that wraps continues 4 units in, so that a wrapped row is not read as a new speaker. Only whole lines show: when the oldest line will not fit, all of it is left out. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, as wide as the stage less 8, over the hotbar, as the tradition puts it (a cap at 320 was weighed and left: on a stage of 480 it still covers the hotbar, and a narrower entry cuts what is typed); while it is open the pickups, "Saved" and the floor of the toasts stand 14 higher, clear of it: 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
 
 ```
      0         1         2         3         4         5         6         7         8         9         0
