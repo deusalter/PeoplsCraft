@@ -1635,24 +1635,23 @@ For the journal and the codex. 292 by 180. The cover is a margin of leather 6 de
 
 **Text on a page** is ink. A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
 
-**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, ending 8 left of the gutter's first column. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one:
+**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, ending 8 left of the gutter's first column. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one, from the cover's bottom outline (row 0), which the ribbon covers:
 
 ```
-     0         1
-     0123456789012
-  0  KKKKKKKKKKKKK
-  1  KccdK..KccdK.
-  2  KccdK..KccdK.
-  ..
- 11  KccdK..KccdK.
- 12  KcKdK..KccdK.
- 13  KK.KK..KccdK.
- 14  .......KccdK.
- 15  .......KccdK.
- 16  .......KcKdK.
- 17  .......KK.KK.
+     0         1    
+     01234567890123
+  0  KcccdK..KcccdK
+  1  KcccdK..KcccdK
+ ..  (rows 2 to 9 as row 1)
+ 10  KcccdK..KcccdK
+ 11  KcKKdK..KcccdK
+ 12  KK..KK..KcccdK
+ 13  ........KcccdK
+ 14  ........KcccdK
+ 15  ........KcKKdK
+ 16  ........KK..KK
 ```
-`. nothing  c the section's colour  d its dark tone  K root.0   (row 0 is the cover's bottom outline)`
+`. nothing  c the section's colour  d its dark tone  K root.0`
 
 **Page arrows**, 16 by 7, in ink at the bottom outer corners of the pages (12 from the outer edge, 161 down from the book's top); `blood.dk` when hovered; not drawn when there is no page that way. Page numbers are in the small face, `ink.faded`, centred under each page, the cell at y 162. A page's text stops at y 158. The bottom right corner with its arrow:
 
