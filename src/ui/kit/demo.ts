@@ -17,6 +17,7 @@ import { ITEMS } from './mock/icons';
 import { TAB_MARKS } from './art/icons';
 import { SHEETS } from './sheets';
 import { SAMPLE_ICONS, SCREEN_FILES } from './screens';
+import { well } from './parts/well';
 
 interface DemoScreen {
   title: string;
@@ -286,33 +287,42 @@ const partsScreen: DemoScreen = {
 
 // ---- the index
 
+/** The mark of each family of screens on the index, by the name's first word. */
+const FAMILY_ICON: Record<string, string> = {
+  type: 'bounty', parts: 'patterns', sample: 'patterns', chat: 'crew', chest: 'chest', codex: 'codex', controls: 'interface',
+  fall: 'alert', furnace: 'coal', hud: 'guide', join: 'play', joining: 'tinker_bench', journal: 'guide', loading: 'fresh',
+  map: 'map', new: 'fresh', pack: 'pack', pause: 'play', pot: 'tonic', rework: 'ingot', roster: 'crew', settings: 'interface',
+  shop: 'key', skills: 'skills', title: 'picture', tooltips: 'alert', workbench: 'workbench', anvil: 'anvil',
+  lineframe: 'runeloom', worlds: 'turf',
+};
+
 const indexScreen: DemoScreen = {
   title: 'Index',
   world: false,
   build(ui) {
-    // Each screen by the name `?screen=` takes, in as many columns as the list needs; its title is its tooltip.
+    // A full-screen menu of the kit: the ground tile, the heading on it in salt, and the screens as rows in dark wells
+    // side by side, each row its family's mark and the name `?screen=` takes; a well that cannot hold its share scrolls.
     const names = Object.keys(SCREENS).filter((n) => n !== 'index');
-    const perCol = Math.max(1, Math.floor((ui.h - 6 - 18 - 8) / 12));
-    const cols = Math.ceil(names.length / perCol);
-    const colW = Math.min(118, Math.floor((ui.w - 6 - 16) / cols));
-    const w = 12 + cols * colW, h = 18 + Math.min(perCol, names.length) * 12 + 8;
-    const at = centred(ui.w, ui.h, w, h);
-    return {
-      x: 0, y: 0, w: ui.w, h: ui.h,
-      paint: (s) => s.tile(GROUND, 0, 0, ui.w, ui.h),
-      kids: [slab(Math.max(0, at.x), Math.max(0, at.y), w, h, 'clay', [
-        label(8, 6, 'Screens of the kit', 'ink'),
-        ...names.map((n, i): Node => ({
-          id: `screen.${n}`, x: 6 + Math.floor(i / perCol) * colW, y: 18 + (i % perCol) * 12, w: colW, h: 12, focus: true,
-          paint: (s, live) => {
-            if (live.hover || live.focus) s.fill(0, 0, colW, 12, 'clay.lt');
-            s.text(cut(n, colW - 4), 2, 1, 'arm.dk');
-          },
+    const WW = 150, GAP = 4;
+    const cols = Math.max(1, Math.min(4, Math.floor((ui.w - 8 + GAP) / (WW + GAP))));
+    const per = Math.ceil(names.length / cols);
+    const visible = Math.max(1, Math.floor((ui.h - 22 - 6) / 18));
+    const wh = Math.min(per, visible) * 18 + 2;
+    const total = cols * WW + (cols - 1) * GAP;
+    const x0 = Math.floor((ui.w - total) / 2), y0 = Math.floor((ui.h - 16 - wh) / 2) + 16;
+    const kids: Node[] = [label(x0, y0 - 14, 'Screens of the kit', 'salt', true)];
+    for (let c = 0; c < cols; c++) {
+      const part = names.slice(c * per, (c + 1) * per);
+      kids.push(well({
+        id: `index.${c}`, x: x0 + c * (WW + GAP), y: y0, w: WW, h: wh, host: 'ground', ui,
+        rows: part.map((n) => ({
+          id: `screen.${n}`, icon: FAMILY_ICON[n.split('-')[0]] ?? 'patterns', name: n,
           tip: () => ({ lines: [{ text: SCREENS[n].title, c: 'salt' }], delay: 0.4 }),
-          on: { click: () => { location.search = `?screen=${n}`; } },
         })),
-      ])],
-    };
+        onChoose: (i) => { location.search = `?screen=${part[i]}`; },
+      }));
+    }
+    return { x: 0, y: 0, w: ui.w, h: ui.h, paint: (s) => s.tile(GROUND, 0, 0, ui.w, ui.h), kids };
   },
 };
 
