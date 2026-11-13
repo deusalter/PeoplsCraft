@@ -23,7 +23,9 @@ export function paintPip(s: Surface, kind: PipKind, look: PipLook, x: number, y:
   const p = PIPS[kind];
   if (look !== 'half') { s.map(look === 'full' ? p.full : p.empty, x, y); return; }
   s.map(p.empty, x, y);
-  s.clip(mirror ? x + 4 : x, y, 5, PIP);
+  // A half bowl holds no heap: its fill starts under the rim.
+  const top = 'halfFrom' in p ? p.halfFrom : 0;
+  s.clip(mirror ? x + 4 : x, y + top, 5, PIP - top);
   s.map(p.full, x, y);
   s.unclip();
 }

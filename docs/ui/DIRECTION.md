@@ -1319,7 +1319,7 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
 
 ### 5.15 Pips and strips of the HUD
 
-**Pips.** 9 by 9, ten to a row at a pitch of 8, so a row is 81 wide. Life is a drop in blood, hunger is a heaped bowl in ember, the arm is a hand in arm blue. A pip is full, half (its left five columns lit) or empty (`root.2`). Each row below shows full, half, empty.
+**Pips.** 9 by 9, ten to a row at a pitch of 8, so a row is 81 wide. Each is drawn 7 wide in columns 1 to 7 of its cell, so one clear column stands between neighbours and no two pips share an outline. Life is a drop in blood. Hunger is a bowl on a foot in ember, lit at the left of its rim and shaded at the right, heaped with food in `ember.hi` and `ember.lt` only while full; an empty bowl has its rim closed by a line and no heap, and a half bowl is filled under the rim with no heap. The arm is a hand in arm blue: three fingers and a thumb inside the 7 columns, the fingertips in `arm.lt`, the last column in `arm.dk`. A pip is full, half (its left five columns lit) or empty (`root.2`). Each row below shows full, half, empty.
 
 ```
      0         1         2        
@@ -1334,27 +1334,27 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
   7  ..KRqqK.....KRqjK.....KjjjK..
   8  ...KKK.......KKK.......KKK...
   9  .............................
- 10  ...KKK.......KKK.......KKK...
- 11  ..KooOK.....KoojK.....KjjjK..
- 12  .KooOOOK...KooOjjK...KjjjjjK.
- 13  KKKKKKKKK.KKKKKKKKK.KKKKKKKKK
- 14  KOOOOOOuK.KOOOOjjjK.KjjjjjjjK
- 15  .KOOOOuK...KOOOjjK...KjjjjjK.
- 16  .KOOOuuK...KOOOjjK...KjjjjjK.
- 17  ..KKKKK.....KKKKK.....KKKKK..
- 18  .............................
+ 10  .............................
+ 11  ...KKK.......................
+ 12  ..KyyoK......................
+ 13  .KKyooKK...KKKKKKK...KKKKKKK.
+ 14  .KoOOOuK...KoOOjjK...KjjjjjK.
+ 15  .KOOOuuK...KOOOjjK...KjjjjjK.
+ 16  ..KOuuK.....KOujK.....KjjjK..
+ 17  ...KuK.......KuK.......KjK...
+ 18  ...KKK.......KKK.......KKK...
  19  .............................
  20  ..K.K.K.....K.K.K.....K.K.K..
  21  .KbKbKbK...KbKbKjK...KjKjKjK.
- 22  .KbKbKBK...KbKbKjK...KjKjKjK.
- 23  KKbBBBBK..KKbBBjjK..KKjjjjjK.
- 24  KbKBBBBK..KbKBBjjK..KjKjjjjK.
- 25  KbBBBBBK..KbBBBjjK..KjjjjjjK.
+ 22  .KBKBKdK...KBKBKjK...KjKjKjK.
+ 23  .KBBBBdK...KBBBjjK...KjjjjjK.
+ 24  .KKBBBdK...KKBBjjK...KKjjjjK.
+ 25  .KbKBBdK...KbKBjjK...KjKjjjK.
  26  .KBBBBdK...KBBBjjK...KjjjjjK.
  27  ..KBBdK.....KBBjK.....KjjjK..
  28  ...KKK.......KKK.......KKK...
 ```
-`. nothing  b arm.lt  B arm  d arm.dk  j root.2  K root.0  o ember.lt  O ember  q blood.dk  r blood.lt  R blood  u ember.dk`
+`. nothing  b arm.lt  B arm  d arm.dk  j root.2  K root.0  o ember.lt  O ember  q blood.dk  r blood.lt  R blood  u ember.dk  y ember.hi`
 
 A pip is a tenth of the measure's maximum. With `v = 10 * now / max`, pip `i` (counted from 0 at the end the row fills from) is full when `v >= i + 0.75`, half when `v >= i + 0.25`, else empty; while `now` is above nothing the first pip is at least half. The life row fills from the left. The hunger and arm rows are right-aligned and fill from the right, drawn mirrored.
 
