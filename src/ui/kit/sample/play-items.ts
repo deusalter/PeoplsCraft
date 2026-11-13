@@ -147,6 +147,12 @@ tool('iron_bow', 'Iron Bow', 1, 'weapon', 'bow', 8, ['Shoots arrows']);
 tool('iron_staff', 'Iron Staff', 1, 'weapon', 'iron_staff', 9, ['Draws 7 from the arm a bolt']);
 tool('iron_totem', 'Iron Totem', 1, 'weapon', 'iron_totem', 5, ['A Kantak forms on what you carry']);
 
+// old things found (docs/world 8.8): each is one of a kind, named, and of grade Old
+add('find:stone_staff', 'Stone Staff', 6, 'staff', 'stone_staff', {
+  stack: 1, does: ['31 harm', 'Draws nothing from the arm'], tell: 'A first comers\' rod of dressed stone with cut lines and a gem seat. A line cut in stone does not leak.',
+});
+add('find:cutter_saw', 'Steel Saw', 6, 'tool', 'axe', { stack: 1, does: ['Fells timber fast'], tell: 'Steel is a metal nobody makes on this ground.' });
+
 // armour
 const wear = (key: string, name: string, grade: number, icon: string, slot: Wear, def: number, set?: string): void =>
   add(key, name, grade, 'armour', icon, { stack: 1, wear: slot, def, does: [`+${def} defence`], set });
