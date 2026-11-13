@@ -322,7 +322,7 @@ export class DiskStorage implements Storage {
 
   commit(batch: Batch): Promise<void> {
     try { this.ready(); } catch (e) { return Promise.reject(e); }
-    return this.run(() => this.apply(batch));
+    return this.run(() => this.apply(batch).catch((e) => { this.failing = true; throw ioError(e, 'save'); }));
   }
   private async apply(batch: Batch): Promise<void> {
     if (this.journalLeft) {
