@@ -2393,8 +2393,8 @@ The pack is the main slab, 176 by 182, with one row of tabs standing 21 above it
 | R1 | text | 183 | 6 | 60 | 10 | "By hand" |
 | R2 | field | 183 | 16 | 98 | 14 | search, as wide as the well; placeholder "Search"; longer text scrolls inside the field |
 | R3 | check | 183 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
-| R5 | well | 183 | 52 | 98 | 96 | dark well: five pattern cells of 18 to the row, then a scroll track 6 wide |
-| R6 | text | 183 | 152 | 100 | 10 | "{lmb} lay out {rmb} make", in faded ink |
+| R5 | well | 183 | 52 | 98 | 96 | dark well: five pattern cells of 18 to the row, then a scroll track 6 wide; while the list fits, the rest of the well's rows are empty cells, sunk like the others with a lower edge of `root.2`, so the well reads as a page with places still to fill and not as six icons on a black field |
+| R6 | text | 183 | 152 | 100 | 10 | a mouse 9 by 11, then "lay out", a second mouse, then "make", in faded ink: each mouse is drawn in the slab's ramp with the button it speaks of filled in `ember.lt`, `ember`, `ember.dk`, standing from y 151, since the face's 7 wide `{lmb}` and `{rmb}` in faded ink did not show which button was which |
 
 - **Shows.** What is carried and worn, what the body can do, and what two hands can make. The figure well shows the player with their own face and each worn piece drawn on the body. The body panel holds the level, the four attributes and the seven totals. The recipe panel, opened with Making, lists every pattern that can be laid on the two by two grid; the patterns of a station are read at that station.
 - **Clickable.** Every slot (see Behaviour). "Sort". The "+" beside an attribute spends a point. A pattern cell: left click lays the pattern on the grid, right click makes one straight into the pack, shift and left click makes as many as the pack affords. The search field. "Can make". Tabs.

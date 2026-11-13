@@ -2,6 +2,8 @@
 // and its result, and the recipe panel fastened to the right with its tabs, search, "Can make", kind and cells.
 import type { Node, PointerEv, TipLine, Ui } from '../../node';
 import type { Ramp } from '../../palette';
+import { coded } from '../../pixmap';
+import { measure } from '../../font/measure';
 import { checkbox, field } from '../../parts/controls';
 import { paintCount } from '../../parts/slot';
 import { slab } from '../../parts/slab';
@@ -149,11 +151,12 @@ function patternTip(h: Hand, p: Pattern, here: boolean, station: Station): Retur
  * A cell of the pattern list, sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its
  * bottom and right, a floor of the well's own `root.1`, or `root.2` under the pointer.
  */
-function paintCell(s: Surface, hover: boolean): void {
+function paintCell(s: Surface, hover: boolean, empty = false): void {
   s.fill(0, 0, 17, 1, 'root.0');
   s.fill(0, 1, 1, 16, 'root.0');
-  s.fill(1, 17, 17, 1, 'root.3');
-  s.fill(17, 1, 1, 16, 'root.3');
+  // An empty cell keeps a dimmer lower edge, so the filled cells stand forward of the page's empty places.
+  s.fill(1, 17, 17, 1, empty ? 'root.2' : 'root.3');
+  s.fill(17, 1, 1, 16, empty ? 'root.2' : 'root.3');
   s.fill(17, 0, 1, 1, 'root.1');
   s.fill(0, 17, 1, 1, 'root.1');
   s.fill(1, 1, 16, 16, hover ? 'root.2' : 'root.1');
@@ -204,6 +207,13 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
     };
   });
   const fit = rows <= visible;
+  // A list shorter than the well leaves the rest of its page as empty cells, so the well reads as a page of a book
+  // with places still to fill and not as a few icons on a black field.
+  if (fit) {
+    for (let i = list.length; i < visible * cols; i++) {
+      kids.push({ x: (i % cols) * 18, y: Math.floor(i / cols) * 18, w: 18, h: 18, paint: (s) => paintCell(s, false, true) });
+    }
+  }
   if (!fit) {
     const trackH = fh;
     const thumbH = Math.max(12, Math.floor((trackH * visible) / rows));
@@ -227,6 +237,38 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
   };
 }
 
+/**
+ * The mouse of the panel's foot, 9 by 11 in the host slab's ramp, the button it speaks of filled in ember. The text
+ * face's 7 wide {lmb} and {rmb} in faded ink did not show which button was which.
+ */
+const MOUSE = (left: boolean) => coded([
+  '.KKKKKKK.',
+  left ? 'KoOOK122K' : 'K122KoOOK',
+  left ? 'KOOOK224K' : 'K224KOOOK',
+  left ? 'KOOuK244K' : 'K244KOOuK',
+  'KKKKKKKKK',
+  'K1222224K',
+  'K2222224K',
+  'K2222224K',
+  'K2222244K',
+  '.K44444K.',
+  '..KKKKK..',
+], `mouse.${left ? 'left' : 'right'}`);
+const MOUSE_L = MOUSE(true), MOUSE_R = MOUSE(false);
+
+/** "lay out" beside the left button and "make" beside the right, in faded ink. */
+function mouseHint(x: number, y: number, ramp: Ramp): Node {
+  const a = 'lay out', b = 'make';
+  const bx = 9 + 3 + measure(a) + 6;
+  return {
+    x, y: y - 1, w: bx + 9 + 3 + measure(b), h: 11,
+    paint: (s) => {
+      s.map(MOUSE_L, 0, 0, ramp); s.text(a, 12, 1, 'ink.faded');
+      s.map(MOUSE_R, bx, 0, ramp); s.text(b, bx + 12, 1, 'ink.faded');
+    },
+  };
+}
+
 /** The panel's controls from its top left: search, "Can make", the cells, and the line of what the mouse does. */
 export function recipeControls(o: PanelOpts): Node[] {
   const { b, st } = o;
@@ -245,7 +287,7 @@ export function recipeControls(o: PanelOpts): Node[] {
     checkbox({ id: `${o.id}.can`, x: o.compact ? 112 : 8, y: o.compact ? 17 : 35, on: st.canMake, label: 'Can make', host: o.ramp, onToggle: (v) => { st.canMake = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); } }),
     cellWell(o, list, station, here, ui),
   ];
-  if (o.hintY + 10 <= o.h) out.push(ink(8, o.hintY, '{lmb} lay out {rmb} make', 'ink.faded'));
+  if (o.hintY + 10 <= o.h) out.push(mouseHint(8, o.hintY, o.ramp));
   return out;
 }
 
