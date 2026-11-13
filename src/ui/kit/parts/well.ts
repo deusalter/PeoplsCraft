@@ -21,13 +21,16 @@ export interface RowSpec {
   disabled?: boolean;
   force?: Force;
   tip?: (live: Live) => Tip | null;
+  /** Paints what the row holds in place of the icon, name and number, over the floor and frame the well draws. */
+  body?: (s: Surface, w: number, h: number, live: Live) => void;
 }
 
 /** Paints one row of a list on the well's floor (5.8). */
-export function paintRow(s: Surface, r: RowSpec, w: number, live: Live, chosen: boolean): void {
-  if (chosen) { s.fill(0, 0, w, ROW_H, 'root.3'); ring(s, 0, 0, w, ROW_H, 'salt'); }
-  else if (live.hover && !r.disabled) s.fill(0, 0, w, ROW_H, 'root.2');
-  if (live.focus && !chosen) ring(s, 0, 0, w, ROW_H, 'salt');
+export function paintRow(s: Surface, r: RowSpec, w: number, live: Live, chosen: boolean, h = ROW_H): void {
+  if (chosen) { s.fill(0, 0, w, h, 'root.3'); ring(s, 0, 0, w, h, 'salt'); }
+  else if (live.hover && !r.disabled) s.fill(0, 0, w, h, 'root.2');
+  if (live.focus && !chosen) ring(s, 0, 0, w, h, 'salt');
+  if (r.body) { r.body(s, w, h, live); return; }
   const off = r.disabled;
   if (r.icon) s.icon(r.icon, 1, 1, off ? 'flat' : 'full', 'root.4');
   let right = w - 3;
@@ -49,6 +52,12 @@ export interface WellOpts {
   onChoose?: (i: number) => void;
   /** Pins the thumb's hover, for the sheet. */
   thumbForce?: Force;
+  /** Rows taller than 18, for rows of two lines (the worlds' 36). */
+  rowH?: number;
+  /** A second press on a row, or Enter on the chosen one. */
+  onUse?: (i: number) => void;
+  /** Said in the well, grey, when it holds no rows. */
+  empty?: string;
   ui: Ui;
 }
 
@@ -58,19 +67,38 @@ export interface WellOpts {
  */
 export function well(o: WellOpts): Node {
   const fw = o.w - 2, fh = o.h - 2;
-  const fits = o.rows.length * ROW_H <= fh;
+  const RH = o.rowH ?? ROW_H;
+  const fits = o.rows.length * RH <= fh;
   const rowW = fits ? fw : fw - TRACK_W;
-  const visible = Math.floor(fh / ROW_H);
+  const visible = Math.floor(fh / RH);
   const maxTop = Math.max(0, o.rows.length - visible);
   const top = Math.min(maxTop, Math.max(0, o.ui.scroll(o.id)));
   const setTop = (v: number) => { o.ui.setScroll(o.id, Math.min(maxTop, Math.max(0, v))); o.ui.invalidate(); };
   const kids: Node[] = o.rows.map((r, i): Node => ({
-    id: r.id, x: 1, y: 1 + (i - top) * ROW_H, w: rowW, h: ROW_H,
+    id: r.id, x: 1, y: 1 + (i - top) * RH, w: rowW, h: RH,
     takes: true, focus: !r.disabled,
-    paint: (s, live) => paintRow(s, r, rowW, lv(live, r.force), i === o.chosen),
+    paint: (s, live) => paintRow(s, r, rowW, lv(live, r.force), i === o.chosen, RH),
     tip: r.tip,
-    on: r.disabled ? undefined : { down: () => o.onChoose?.(i), wheel: (e) => { setTop(top + e.notches); return true; } },
+    on: r.disabled ? undefined : {
+      down: (e) => { if (e.double || (i === o.chosen && o.onUse)) o.onUse?.(i); else o.onChoose?.(i); },
+      wheel: (e) => { setTop(top + e.notches); return true; },
+      key: (e) => {
+        if (e.key === 'Enter' && o.onUse) { o.onUse(i); return true; }
+        // Up and Down choose within the list and keep the chosen row inside the well.
+        const d = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
+        if (!d || !o.onChoose) return;
+        const j = Math.min(o.rows.length - 1, Math.max(0, i + d));
+        if (j < top) setTop(j); else if (j >= top + visible) setTop(j - visible + 1);
+        o.onChoose(j);
+        o.ui.focusOn(o.rows[j].id, true);
+        return true;
+      },
+    },
   }));
+  if (!o.rows.length && o.empty) {
+    const t = o.empty;
+    kids.push({ x: 1, y: 1, w: fw, h: Math.min(fh, RH), paint: (s) => s.text(cut(t, fw - 8), 4, Math.floor((Math.min(fh, RH) - 9) / 2), 'root.4', true) });
+  }
   if (!fits) {
     const trackH = fh;
     const thumbH = Math.max(THUMB_MIN, Math.floor((trackH * visible) / o.rows.length));
