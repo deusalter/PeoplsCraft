@@ -89,7 +89,7 @@ export async function make({ page, origin, log }) {
 
   await step('dead world: die and save on the death screen', async () => {
     await boot(); await grab();
-    await ev(() => { D.caps(0, 0); D.clearMobs(); });
+    await ev(async () => { await D.caps(0, 0); await D.clearMobs(); });
     const me = await ev(() => R.me());
     await cmd(`tp ${me.x} 250 ${me.z}`);
     await until(() => R.dead() && R.deathScreen(), null, 30000, 'dying');
@@ -107,7 +107,7 @@ export async function make({ page, origin, log }) {
     await boot(); await grab();
     if ((await cmd('god')) !== 'god true') throw new Error('god mode did not turn on');
     await cmd('time day');
-    await ev(() => { D.caps(0, 0); D.clearMobs(); });
+    await ev(async () => { await D.caps(0, 0); await D.clearMobs(); });
     const me = await ev(() => R.me());
     sx = Math.floor(me.x); sz = Math.floor(me.z); gy = Math.floor(me.y) - 1;
     await fill([sx - 7, gy - 3, sz - 7, sx + 7, gy - 1, sz + 7], 'stone');
@@ -150,7 +150,7 @@ export async function make({ page, origin, log }) {
     await cmd('give guest_bed 1');
     await tp(x0 + 2.5, gy + 1, z0 + 1.5);
     await placeOn('guest_bed', x0 + 2, gy, z0 + 2);
-    await until(() => R.homes().some((h) => h.npc === 'wayfinder'), null, 30000, 'the Wayfinder to move in');
+    await until(async () => (await R.homes()).some((h) => h.npc === 'wayfinder'), null, 30000, 'the Wayfinder to move in');
     expect.home = { at: [x0 + 2, gy + 1, z0 + 2], npc: 'wayfinder' };
     await tp(sx + 0.5, gy + 1, sz + 0.5);
   });
@@ -179,13 +179,13 @@ export async function make({ page, origin, log }) {
     const h = await ev(() => R.me());
     expect.gate.hollows = await ev(([x, y, z]) => { for (let dx = -3; dx <= 3; dx++) for (let dz = -3; dz <= 3; dz++) for (let dy = -1; dy <= 3; dy++) if (R.key(x + dx, y + dy, z + dz) === 'hollow_portal') return [x + dx, y + dy, z + dz]; return null; }, [Math.floor(h.x), Math.floor(h.y), Math.floor(h.z)]);
     if (!expect.gate.hollows) throw new Error('no return gate in the Hollows');
-    await ev(() => { D.caps(0, 0); D.clearMobs(); });
+    await ev(async () => { await D.caps(0, 0); await D.clearMobs(); });
     await mark(1, Math.floor(h.x) + 3, Math.floor(h.y), Math.floor(h.z) + 2, 'stone_bricks');
     await mark(1, Math.floor(h.x) + 3, Math.floor(h.y) - 1, Math.floor(h.z) + 3, 'air');
     await d.enterGate(0);
     await cmd('dim 2');
     await until(() => R.dim() === 2 && R.ready() && R.me().onGround, null, 40000, 'landing in the Skyrift');
-    await ev(() => { D.caps(0, 0); D.clearMobs(); });
+    await ev(async () => { await D.caps(0, 0); await D.clearMobs(); });
     const k = await ev(() => R.me());
     await mark(2, Math.floor(k.x) + 2, Math.floor(k.y), Math.floor(k.z) + 2, 'gold_block');
     await mark(2, Math.floor(k.x) - 2, Math.floor(k.y) - 1, Math.floor(k.z) + 2, 'air');
@@ -203,7 +203,7 @@ export async function make({ page, origin, log }) {
     await d.clickSlot(d.invView(11, await ev(() => R.slotOf('iron_ore'))), { modifiers: ['Shift'] });
     await d.clickSlot(d.invView(11, await ev(() => R.slotOf('coal'))), { modifiers: ['Shift'] });
     await d.closeWin();
-    await until((c) => { const f = R.forge(...c); return f && f.s[2] && f.s[2].n >= 2 && f.s[0] && f.burn > 0; }, expect.forge.at, 40000, 'two bars smelted');
+    await until(async (c) => { const f = await R.forge(...c); return f && f.s[2] && f.s[2].n >= 2 && f.s[0] && f.burn > 0; }, expect.forge.at, 40000, 'two bars smelted');
     await ev(() => D.save());
     const f = await ev((c) => R.forge(...c), expect.forge.at);
     expect.forge.saved = f;
@@ -305,7 +305,7 @@ export async function check({ page, origin, log, extra = '' }) {
   });
 
   await step('the townsperson shows up', async () => {
-    await until(() => R.mobs().some((m) => m.key === 'n_wayfinder'), null, 30000, 'the Wayfinder').then(() => { p['home.bodyAppears'] = true; }, () => { p['home.bodyAppears'] = false; });
+    await until(async () => (await R.mobs()).some((m) => m.key === 'n_wayfinder'), null, 30000, 'the Wayfinder').then(() => { p['home.bodyAppears'] = true; }, () => { p['home.bodyAppears'] = false; });
   });
 
   await step('the unopened generator chest', async () => {

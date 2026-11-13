@@ -6,7 +6,8 @@
 // and clicks on the window DOM, cheats through T.cmd). Everything it reads or pokes in the game
 // goes through installHelpers() below, so a refactor that moves those fields re-points them there.
 // What the client mirrors (blocks, inventory, flags, the player) is read from the client; block
-// entities, creatures and homes are the simulation's alone and are read from T.sim.
+// entities, creatures and homes are the simulation's alone and are read where it runs, through T.ask
+// (this page, or the simulation's worker with &worker), so those reads and the few pokes return promises.
 
 /** Runs inside the page. R reads state; D does the few things a player has no input for. */
 export async function installHelpers() {
@@ -16,8 +17,8 @@ export async function installHelpers() {
   const { raycast, newRayHit } = await import('/src/sim/physics.ts');
   const hit = newRayHit();
   const P = () => g().player;
-  const realm = () => T.sim.realms[g().dim];
-  const mobs = () => realm().mobs;
+  /** `fn(realm, arg)` on the player's realm, where the simulation runs. */
+  const inRealm = (fn, arg) => T.ask(new Function('return (sim, [d, a]) => (' + fn.toString() + ')(sim.realms[d], a)')(), [g().dim, arg]);
   window.R = {
     id: (key) => T.B[key],
     key: (x, y, z) => KEYS[g().world.getBlock(x, y, z)] ?? String(g().world.getBlock(x, y, z)),
@@ -35,12 +36,12 @@ export async function installHelpers() {
     ready: () => g().ready && g().world.counts().waiting === 0,
     quest: () => g().quests.index,
     /** A block entity's slots as plain {k, n} (null where empty), or null when there is no entity. */
-    container: (x, y, z) => { const e = realm().getEnt(x, y, z); return e && e.data.s ? e.data.s.map((s) => (s ? { k: s.k, n: s.n } : null)) : null; },
-    ent: (x, y, z) => { const e = realm().getEnt(x, y, z); return e ? { kind: e.kind, loot: e.data.loot ?? null, opened: !!e.data.s } : null; },
-    forge: (x, y, z) => { const e = realm().getEnt(x, y, z); if (!e || e.kind !== 'forge') return null; const d = e.data; return { s: d.s.map((s) => (s ? { k: s.k, n: s.n } : null)), burn: d.burn, prog: d.prog }; },
-    mobs: () => mobs().list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss })),
+    container: (x, y, z) => inRealm((r, [x, y, z]) => { const e = r.getEnt(x, y, z); return e && e.data.s ? e.data.s.map((s) => (s ? { k: s.k, n: s.n } : null)) : null; }, [x, y, z]),
+    ent: (x, y, z) => inRealm((r, [x, y, z]) => { const e = r.getEnt(x, y, z); return e ? { kind: e.kind, loot: e.data.loot ?? null, opened: !!e.data.s } : null; }, [x, y, z]),
+    forge: (x, y, z) => inRealm((r, [x, y, z]) => { const e = r.getEnt(x, y, z); if (!e || e.kind !== 'forge') return null; const d = e.data; return { s: d.s.map((s) => (s ? { k: s.k, n: s.n } : null)), burn: d.burn, prog: d.prog }; }, [x, y, z]),
+    mobs: () => inRealm((r) => r.mobs.list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss }))),
     spawnPoint: () => g().spawn,
-    homes: () => T.sim.npcs.homes.map((h) => ({ x: h.x, y: h.y, z: h.z, npc: h.npc })),
+    homes: () => T.ask((sim) => sim.npcs.homes.map((h) => ({ x: h.x, y: h.y, z: h.z, npc: h.npc }))),
     winOpen: () => !document.querySelector('#win')?.classList.contains('hidden'),
     deathScreen: () => g().menu.dead,
     /** Highest block in a column and its key. */
@@ -69,11 +70,12 @@ export async function installHelpers() {
       }
       return false;
     },
-    caps: (h, p) => { for (const r of T.sim.realms) { r.mobs.hostileCap = h; r.mobs.passiveCap = p; } },
-    clearMobs: () => mobs().clear(),
+    caps: (h, p) => T.ask((sim, [h, p]) => { for (const r of sim.realms) { r.mobs.hostileCap = h; r.mobs.passiveCap = p; } }, [h, p]),
+    clearMobs: () => inRealm((r) => r.mobs.clear()),
     save: () => g().save(),
     /** Set every cell of a box to one block, as the `fill` command of section 10.1 will. */
-    fill: (x0, y0, z0, x1, y1, z1, key) => { const w = realm(), id = T.B[key]; for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) w.setBlock(x, y, z, id); },
+    fill: (x0, y0, z0, x1, y1, z1, key) => inRealm((w, [x0, y0, z0, x1, y1, z1, id]) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) w.setBlock(x, y, z, id); },
+      [x0, y0, z0, x1, y1, z1, T.B[key]]),
   };
 }
 
@@ -182,8 +184,8 @@ export function driver(page, log) {
   };
   /** Chase a creature and hit it with the held weapon until it is gone. */
   const kill = async (id, timeout = 30000) => {
-    await until(([id]) => {
-      const m = R.mobs().find((q) => q.id === id);
+    await until(async ([id]) => {
+      const m = (await R.mobs()).find((q) => q.id === id);
       if (!m) { T.click(0, false); T.key('KeyW', false); return true; }
       const p = R.me(), d = Math.hypot(m.x - p.x, m.z - p.z);
       D.aimAt(m.x, m.y + m.h * 0.5, m.z);
@@ -211,7 +213,7 @@ export async function run({ page, url, log }) {
     await boot(); await grab();
     if ((await cmd('god')) !== 'god true') throw new Error('god mode did not turn on');
     await cmd('time day');
-    await ev(() => { D.caps(0, 0); D.clearMobs(); });
+    await ev(async () => { await D.caps(0, 0); await D.clearMobs(); });
   });
 
   await step('level the site', async () => {
@@ -219,7 +221,7 @@ export async function run({ page, url, log }) {
     sx = Math.floor(me.x); sz = Math.floor(me.z); gy = Math.floor(me.y) - 1;
     probes['site'] = [sx, gy, sz];
     const r = R5 + 1;
-    await ev(([x, y, z, r]) => { D.fill(x - r, y - 3, z - r, x + r, y - 1, z + r, 'stone'); D.fill(x - r, y, z - r, x + r, y, z + r, 'dirt'); D.fill(x - r, y + 1, z - r, x + r, y + 14, z + r, 'air'); }, [sx, gy, sz, r]);
+    await ev(async ([x, y, z, r]) => { await D.fill(x - r, y - 3, z - r, x + r, y - 1, z + r, 'stone'); await D.fill(x - r, y, z - r, x + r, y, z + r, 'dirt'); await D.fill(x - r, y + 1, z - r, x + r, y + 14, z + r, 'air'); }, [sx, gy, sz, r]);
     await tp(sx + 0.5, gy + 1, sz + 0.5);
   });
 
@@ -315,7 +317,7 @@ export async function run({ page, url, log }) {
     await clickSlot(invView(base, await ev(() => R.slotOf('iron_ore'))), { modifiers: ['Shift'] });
     await clickSlot(invView(base, await ev(() => R.slotOf('coal'))), { modifiers: ['Shift'] });
     await closeWin();
-    await until((c) => R.forge(...c)?.s[2]?.n === 3, forgeC, 40000, 'three iron bars');
+    await until(async (c) => (await R.forge(...c))?.s[2]?.n === 3, forgeC, 40000, 'three iron bars');
     probes['forge.out'] = (await ev((c) => R.forge(...c), forgeC)).s[2];
     await useAt(...forgeC);
     await winOpen();
@@ -371,9 +373,9 @@ export async function run({ page, url, log }) {
     await tp(sx + 0.5, gy + 1, sz + 0.5);
     await enterGate(1);
     probes['gate.arrivedDim'] = await ev(() => R.dim());
-    await ev(() => { D.caps(0, 0); D.clearMobs(); });
+    await ev(async () => { await D.caps(0, 0); await D.clearMobs(); });
     await enterGate(0);
-    await ev(() => { D.caps(0, 0); D.clearMobs(); D.look(Math.PI, 0); T.key('KeyW', true); });
+    await ev(async () => { await D.caps(0, 0); await D.clearMobs(); D.look(Math.PI, 0); T.key('KeyW', true); });
     try { await until((z) => R.me().z > z, gateC[2] + 2.3, 8000, 'stepping out of the gate'); }
     finally { await ev(() => T.key('KeyW', false)); }
     probes['gate.returnedDim'] = await ev(() => R.dim());

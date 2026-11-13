@@ -5,8 +5,11 @@ import type { Game } from './game';
 import { STEP } from './sim/clock';
 import type { Sim } from './sim/sim';
 
-/** `sim`: the simulation when it runs in this page, for white-box checks; a script acts through the game and `cmd`. */
-export function installDevTools(game: Game, sim?: Sim): void {
+/** `sim`: the simulation when it runs in this page. `ask(src, arg)`: run the function whose source is `src` as
+ *  `(sim, arg, host) => value` where the simulation is, this page or its worker, and settle with what it returned. A script
+ *  acts through the game and `cmd`; these two are for white-box checks. */
+export function installDevTools(game: Game, where: { sim?: Sim; ask: (src: string, arg: unknown) => Promise<unknown> }): void {
+  const sim = where.sim;
   const ch = new MessageChannel();
   const tick = (): Promise<void> => new Promise((r) => { ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
   const T = {
@@ -27,12 +30,15 @@ export function installDevTools(game: Game, sim?: Sim): void {
         await tick();
       }
     },
-    /** Run until `pred()` is true or `timeout` ms pass. */
-    async until(pred: () => boolean, timeout = 20000): Promise<boolean> {
+    /** Run until `pred()` is true (or settles true) or `timeout` ms pass. */
+    async until(pred: () => boolean | Promise<boolean>, timeout = 20000): Promise<boolean> {
       const end = performance.now() + timeout;
-      while (performance.now() < end) { if (pred()) return true; await T.run(100); }
+      while (performance.now() < end) { if (await pred()) return true; await T.run(100); }
       return pred();
     },
+    /** `fn(sim, arg, host)` run where the simulation is. `fn` must not reach anything outside itself: in the worker only its
+     *  source arrives. What it returns comes back as a copy there. */
+    ask<A, R>(fn: (sim: Sim, arg: A, host: unknown) => R, arg?: A): Promise<Awaited<R>> { return where.ask(fn.toString(), arg) as Promise<Awaited<R>>; },
     /** True on the first frame in which the player is in play and the view is meshed. */
     async loaded(): Promise<boolean> {
       const end = performance.now() + 40000, ok = (): boolean => game.ready && game.world.counts().waiting === 0;
@@ -52,6 +58,8 @@ export function installDevTools(game: Game, sim?: Sim): void {
     async cmd(c: string): Promise<string> {
       let reply: string | null = null;
       void game.cmd(c).then((r) => { reply = r; });
+      // a host on its own clock answers in its time, not in this page's frames
+      if (!game.cfg.step) await T.until(() => reply !== null, 10000);
       for (let i = 0; i < 600 && reply === null; i++) await T.frame();
       if (reply === null) throw new Error(`no reply to "${c}": is the game paused?`);
       return reply;

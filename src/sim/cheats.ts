@@ -5,7 +5,8 @@ import { BOSSES, MOBS } from '../data/mobs';
 import { Climate } from '../world/gen/climate';
 import { locate } from '../world/gen/structures';
 import { BODY_Y_MAX, BODY_Y_MIN, XZ_MAX } from '../net/protocol';
-import type { SimPlayer } from './player';
+import { hashBlocks } from './genjob';
+import { type SimPlayer, toRecord } from './player';
 import type { Sim } from './sim';
 import { sendTp, travel } from './travel';
 
@@ -17,6 +18,23 @@ function num(s: string | undefined, lo: number, hi: number, int = false): number
   if (s === undefined || s.trim() === '') return null;
   const n = Number(s);
   return Number.isFinite(n) && n >= lo && n <= hi && (!int || Number.isInteger(n)) ? n : null;
+}
+/** FNV-1a 32 over the UTF-16 code units of a string. */
+function fnv(t: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+  return h >>> 0;
+}
+/** What `simhash` covers (10.1): every player in memory as its record holds it, every creature, shot and drop of every realm,
+ *  and the shared state with the random stream. Nothing a client's wall clock sets (round trips, `seen`) is in it. */
+function simState(sim: Sim): string {
+  const players = [...sim.players.values()].map((p) => toRecord(p, 0));
+  const realms = sim.realms.map((r) => ({
+    mobs: r.mobs.list.filter((m) => m.active).map((m) => [m.id, m.def.key, m.x, m.y, m.z, m.vx, m.vy, m.vz, m.yaw, m.hp, m.state, m.timer]),
+    proj: r.proj.list.filter((q) => q.active).map((q) => [q.id, q.x, q.y, q.z, q.vx, q.vy, q.vz, q.life]),
+    drops: r.drops.list.filter((d) => d.active).map((d) => [d.id, d.it.k, d.it.n, d.x, d.y, d.z, d.age]),
+  }));
+  return JSON.stringify({ players, realms, shared: sim.exportShared() });
 }
 const xz = (s: string | undefined): number | null => num(s, -XZ_MAX, XZ_MAX), y = (s: string | undefined): number | null => num(s, BODY_Y_MIN, BODY_Y_MAX);
 
@@ -64,6 +82,17 @@ export function cheat(sim: Sim, p: SimPlayer, cmd: string): string {
       const n = c as number[];
       for (let x = n[0]; x <= n[3]; x++) for (let y = n[1]; y <= n[4]; y++) for (let z = n[2]; z <= n[5]; z++) realm.setBlock(x, y, z, id);
       return 'filled';
+    }
+    case 'simhash': return `simhash ${fnv(simState(sim)).toString(16)} tick ${sim.tick}`;
+    case 'hash': {
+      const c = a.slice(1, 5).map((v) => num(v, -XZ_MAX >> 4, XZ_MAX >> 4, true));
+      if (c.length < 4 || c.some((v) => v === null)) return 'hash cx0 cz0 cx1 cz1';
+      const n = c as number[], out: string[] = [];
+      for (let cx = n[0]; cx <= n[2]; cx++) for (let cz = n[1]; cz <= n[3]; cz++) {
+        const ch = realm.chunks.chunk(cx, cz);
+        out.push(`${cx},${cz}:${ch && ch.state === 2 && ch.blocks ? hashBlocks(ch.blocks).toString(16) : '-'}`);
+      }
+      return out.join(' ');
     }
     case 'spawnat': {
       if (!MOBS.has(a[1])) return 'unknown creature ' + a[1];

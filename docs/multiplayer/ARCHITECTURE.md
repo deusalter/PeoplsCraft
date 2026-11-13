@@ -3578,6 +3578,31 @@ used before quitting is still cooling. Keeping the old reset for solo alone woul
 the record it wrote, and a player's record would load differently in a solo world and on a server, so the code
 is left as the sections give it. A legacy world still comes in with default modes and `recallT` 0 (8.4 step 2).
 
+D37. Stage 3 (3.5, 3.7, 8.2, 10.1, 11). Solo in the worker, where the build is not what the sections say.
+(a) The page and the worker say a few things to each other that are not protocol: open the world (`init`, answered
+`started` with the world's seed, or `failed`), a harness question (`ask`, `answer`) and the host's close of the
+connection (`closed`). They travel as objects with `ctl` in place of `t`, so neither end can take one for a message of 4.3;
+`step`, `stepped`, `pause` and `save` stay the protocol's.
+(b) `T.ask(fn, arg)` (10.1). With `&worker` there is no `T.sim`, and the golden reads block entities, creatures and homes
+from the simulation and sets caps and fills through it. `ask` runs `fn(sim, arg, host)` where the simulation is: in the
+page, or in the worker from its source (a development build only, and only when the page said so at `init`). The golden
+and legacy scenarios read through it in both modes; their probes are unchanged. `T.until` takes a predicate that returns
+a promise. `T.cmd` on a host with its own clock waits up to 10 s of wall time for the reply instead of counting frames.
+(c) The save 3 s after a change (8.2) is the host's, in solo only: a timer started by the first step that sees a change,
+not started again by the next ones, so a player who keeps building is still saved every 3 s. A change is an inventory's
+`rev`, an edit map marked dirty (blocks, chests, forges, nests), the number of flags and the quest index. After a failed
+commit the timer waits for a commit that succeeds; the 10 s retry stands.
+(d) `simhash` and `hash` are commands of `sim/cheats.ts` (10.1). `simhash` is FNV-1a over the JSON of every player's
+record, every live creature, shot and drop, and the shared state with the random stream; nothing a page's wall clock
+sets (round trips, `seen`) is in it. `tickstats` is answered by the host, which holds the step times: p50, p95, p99 and
+max over the last 3,600 steps, and the last commit's time.
+(e) A world on the worker's own clock stands still while the game is paused and while the tab is hidden: the page sends
+`pause` for either, so a hidden tab keeps the world as still as before, when no frame meant no step. The clock the entity
+store reads stands still with it.
+(f) `&det` without `&worker` generates in the page, two chunks a step (`InlineSource`), so the promise of 10.1 now holds on
+the loopback too, where D35 (c) had left it to this stage.
+(g) The worker's generator takes its seed from the world as storage holds it, known only once the host has opened it.
+
 ---
 
 ## 14. Review log

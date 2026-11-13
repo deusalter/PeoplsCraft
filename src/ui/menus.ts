@@ -102,6 +102,16 @@ function keysPanel(parent: HTMLElement): void {
   for (const [a, b] of KEYS) { el('b', '', k, a); el('span', '', k, b); }
 }
 
+/** Why this page cannot save, as the title menu, the banner in the game and the pause screen each say it. `code` is the
+ *  StorageError's: 'version' when the database was written by a newer build, anything else when the browser refuses it. */
+export function noSaveText(code: string | undefined): { menu: string; banner: string; pause: string } {
+  return code === 'version'
+    ? { menu: 'These worlds were saved by a newer version of the game. Nothing will be saved here.',
+      banner: 'These worlds were saved by a newer version of the game. Progress is lost when the tab closes.', pause: 'Saving is unavailable: a newer version saved these worlds' }
+    : { menu: 'This browser is blocking storage. Worlds will not be saved.',
+      banner: 'This browser is blocking storage. Progress is lost when the tab closes.', pause: 'Saving is unavailable in this browser' };
+}
+
 /** The world the title menu was asked to open: one of the list, or a new one that exists once it is first saved. */
 export interface WorldChoice { id: string; name: string; seed: number; seedText: string }
 
@@ -111,7 +121,7 @@ export class TitleMenu {
   private back: (() => void) | null = null;
   private onEsc = (e: KeyboardEvent): void => { if (e.code === 'Escape' && this.back) { e.preventDefault(); this.back(); } };
   constructor(ui: HTMLElement, private settings: Settings, private onPlay: (w: WorldChoice) => void, private canSave = true,
-    private noSaveWhy = 'This browser is blocking storage. Worlds will not be saved.') {
+    private noSaveWhy = noSaveText(undefined).menu) {
     this.root = el('div', '#menu', ui); this.root.classList.add('solid');
     window.addEventListener('keydown', this.onEsc);
     void this.home();
@@ -182,7 +192,7 @@ export class GameMenu {
     g.paused = true; this.show(); this.sub = false;
     this.root.innerHTML = '';
     el('h2', '', this.root, 'PAUSED'); el('div', 'sub', this.root, g.worldName);
-    const saved = el('div', 'saved', this.root, g.cfg.canSave === false ? 'Saving is unavailable in this browser' : 'Saving...');
+    const saved = el('div', 'saved', this.root, g.cfg.canSave === false ? noSaveText(g.cfg.noSave).pause : 'Saving...');
     if (g.cfg.canSave === false) saved.classList.add('warn');
     const col = el('div', 'col', this.root);
     el('button', 'btn gold', col, 'Resume').onclick = () => this.close();

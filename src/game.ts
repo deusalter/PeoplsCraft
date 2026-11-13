@@ -35,7 +35,7 @@ import * as rules from './sim/rules';
 import type { PlayerStats } from './sim/stats';
 import { DebugOverlay } from './ui/debug';
 import { Hud, el } from './ui/hud';
-import { GameMenu, Settings } from './ui/menus';
+import { GameMenu, Settings, noSaveText } from './ui/menus';
 import { QuestView } from './ui/questView';
 import { Windows } from './ui/windows';
 import { Climate } from './world/gen/climate';
@@ -52,6 +52,8 @@ export interface GameConfig {
   step?: () => Promise<void> | null;
   /** false when the browser blocks IndexedDB */
   canSave?: boolean;
+  /** Why not, when it cannot: the code of the StorageError ('version': a newer build wrote the database). */
+  noSave?: string;
   /** An automated run: no question before the tab closes. */
   quick?: boolean;
   /** Say `ready` only when the whole view is meshed, so a scripted run starts from the same loaded world every time. */
@@ -85,6 +87,8 @@ export class Game {
   /** The clock the host's tick is estimated against and round trips are timed with: wall time less the time this client
    *  stood still (paused, or with no frame for longer than a frame may count), since a host it steps stood still with it. */
   private heldMs = 0; private pausedAt = 0;
+  /** A host on its own clock in this browser (the solo worker) was told to stand still. */
+  private hostPaused = false;
   private env: Env = { time: 0, dim: 0, fogTint: [1, 1, 1], haze: 0, cave: 0, underwater: false, moonTint: null, moonPhase: 0, darkness: 0 };
   private loading: HTMLElement | null = null; private loadMsg = 'Raising the land';
   private swing = 0; private equip = 0; private handKey = '?'; private hand: THREE.Mesh; private handLight = new THREE.Vector4(1, 0, 0, 0);
@@ -203,9 +207,9 @@ export class Game {
       // something done since the last save would be lost; never in an automated run
       if (!cfg.quick && ((this.ready && this.input.locked && !this.stats.dead) || s.unsaved)) { e.preventDefault(); e.returnValue = ''; }
     });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); this.syncPause(); });
 
-    if (cfg.step) s.clock = this.ents.clock = () => (this.pausedAt || performance.now()) - this.heldMs;
+    if (s.local) s.clock = this.ents.clock = () => (this.pausedAt || performance.now()) - this.heldMs;
     s.mover = () => this.moveState();
     s.on('welcome', (m) => this.onWelcome(m));
     s.on('tp', (m) => this.onTp(m));
@@ -267,7 +271,7 @@ export class Game {
     if (m.load) { this.ready = false; p.frozen = true; this.readySent = -1; this.showLoading(m.msg ?? this.loadMsg); return; }
     if (this.ready) return;
     p.frozen = false; this.ready = true; this.everReady = true; this.moveT = MOVE_EVERY;
-    if (cfg.canSave === false && !this.noSaveWarned) { this.noSaveWarned = true; this.hud.showBanner('Saving is unavailable', 'This browser is blocking storage. Progress is lost when the tab closes.', '#ff9a8a'); }
+    if (cfg.canSave === false && !this.noSaveWarned) { this.noSaveWarned = true; this.hud.showBanner('Saving is unavailable', noSaveText(cfg.noSave).banner, '#ff9a8a'); }
     const l = this.loading; this.loading = null;
     if (l) { const rm = (): void => l.remove(); l.classList.add('out'); l.addEventListener('transitionend', rm, { once: true }); setTimeout(rm, 700); }
   }
@@ -322,6 +326,17 @@ export class Game {
   // ---- small services the windows, the menus and the HUD call ----------------------------------------------
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
   respawn(): void { this.session.send({ t: 'respawn' }); }
+  /** A solo host on its own clock stands still while the game is paused or the tab is hidden, as a world stepped by this
+   *  page's frames does; the clock the entity store reads stands still with it. */
+  private syncPause(): void {
+    if (this.cfg.step || !this.session.local) return;
+    const on = this.paused || document.hidden;
+    if (on === this.hostPaused) return;
+    const now = performance.now();
+    this.hostPaused = on;
+    if (on) this.pausedAt = now; else { this.heldMs += now - this.pausedAt; this.pausedAt = 0; }
+    this.session.send({ t: 'pause', on });
+  }
   /** A command line for the host (the T console, and the test harness). Settles with the host's reply. */
   cmd(text: string): Promise<string> {
     const id = ++this.cmdId;
@@ -451,8 +466,8 @@ export class Game {
   private frame = (now: number): void => {
     this.raf = requestAnimationFrame(this.frame);
     const gap = now - this.last, dt = Math.min(0.1, gap / 1000);
-    // a hidden tab draws no frames: what a frame does not count did not pass for the host either
-    if (gap > 100) this.heldMs += gap - 100;
+    // a hidden tab draws no frames: what a frame does not count did not pass for a host this page steps either
+    if (gap > 100 && this.cfg.step) this.heldMs += gap - 100;
     this.last = now;
     void this.runFrame(dt);
   };
@@ -480,7 +495,8 @@ export class Game {
     if (!this.ready) this.checkReady();
     const t1 = performance.now();
     this.nTicks = 0; this.tickMs = 0;
-    if (this.paused) { if (!this.pausedAt) this.pausedAt = t1; }
+    if (!this.cfg.step) this.syncPause();
+    else if (this.paused) { if (!this.pausedAt) this.pausedAt = t1; }
     else if (this.pausedAt) { this.heldMs += t1 - this.pausedAt; this.pausedAt = 0; }
     if (!this.paused) {
       this.acc += dt;

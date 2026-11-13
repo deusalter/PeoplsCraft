@@ -56,6 +56,8 @@ const STEP_MS = STEP * 1000;
 /** Most steps one wake of the real clock runs before it gives the backlog up. */
 const CATCH_UP = 5;
 const SAVE_GAP_MS = 1000, SAVE_RETRY_MS = 10000;
+/** A solo world saves this long after an item, a container, a block, a block entity, a flag or the quest index changed (8.2). */
+const CHANGE_SAVE_MS = 3000;
 const SEQ_KIND: Record<string, 1> = { op: 1, edit: 1, use: 1, item: 1, fire: 1 };
 
 /** Equal, in time that depends only on the longer length. */
@@ -81,6 +83,8 @@ export class SimHost {
   private paused = false; private timer: unknown = null; private due = 0; private stopped = false;
   private saving: Promise<void> | null = null; private saveWanted = false; private saveTimer: unknown = null;
   private saveStart = -1e9; private saveEnd = 0; private savedTick = -1;
+  /** The solo save after a change: its timer, and what the inventories, flags and guide were when it was last looked at. */
+  private changeTimer: unknown = null; private seenRev = -1; private seenFlags = -1; private seenQuest = -1; private saveFailed = false;
 
   constructor(private env: HostEnv, private storage: Storage, private source: ChunkSource, readonly opt: HostOptions) {}
 
@@ -97,6 +101,7 @@ export class SimHost {
     this.snap = new SnapService(this.sim);
     this.chunks = new ChunkService(this.sim, this.edits, o.viewMax);
     this.saveEnd = env.now(); this.savedTick = this.sim.tick;
+    this.changed();
     if (o.clock === 'real') { this.due = env.now() + STEP_MS; this.wake(); }
   }
   private newWorld(): WorldRecord {
@@ -311,6 +316,7 @@ export class SimHost {
     }
     switch (m.t) {
       case 'chunks': this.chunks.onChunks(c, p, m); break;
+      case 'cmd': if (m.text.trim() === 'tickstats' && (c.local || this.opt.cheats)) sim.sink.send(p.slot, { t: 'cmdr', id: m.id, text: this.tickStats() }); else sim.handle(p, m); break;
       case 'bye': this.bound.delete(p); sim.leave(p, 'bye'); this.requestSave(); this.drop(l, 'bye'); break;
       // a remote client has no say over the host's clock or its saves
       case 'step': case 'pause': case 'save': break;
@@ -370,8 +376,30 @@ export class SimHost {
     this.stats.tickMs[this.steps % 3600] = env.now() - t0;
     this.stats.players = sim.online();
     const o = this.opt;
+    if (o.solo && this.changeTimer === null && !this.saveFailed && this.changed()) {
+      this.changeTimer = env.setTimer(() => { this.changeTimer = null; this.requestSave(); }, CHANGE_SAVE_MS);
+    }
     if (o.saveEvery > 0 && sim.tick !== this.savedTick && env.now() - this.saveEnd >= o.saveEvery * 1000) this.saveWanted = true;
     if (this.saveWanted) this.saveSoon();
+  }
+  /** Something a save must not lose has changed since the last look: an inventory (a container is a block entity), an edit
+   *  map, a flag, the guide. Position, clock and vitals alone are not; the 30 s save carries them. */
+  private changed(): boolean {
+    const sim = this.sim;
+    let rev = 0;
+    for (const p of sim.players.values()) rev += p.inv.rev;
+    const moved = rev !== this.seenRev || sim.flags.size !== this.seenFlags || sim.shared.quest !== this.seenQuest;
+    this.seenRev = rev; this.seenFlags = sim.flags.size; this.seenQuest = sim.shared.quest;
+    if (moved) return true;
+    for (const e of this.edits.values()) if (e.dirty) return true;
+    return false;
+  }
+  /** Step times over the last 3,600 steps (6.6 item 3), in ms. */
+  tickStats(): string {
+    const t = this.stats.tickMs, n = Math.min(this.steps, 3600), a = Array.from(this.steps >= 3600 ? t : t.subarray(1, n + 1)).sort((x, y) => x - y);
+    if (!n) return 'no steps yet';
+    const q = (f: number): string => a[Math.min(n - 1, Math.floor(f * n))].toFixed(2);
+    return `steps ${n}  p50 ${q(0.5)}  p95 ${q(0.95)}  p99 ${q(0.99)}  max ${a[n - 1].toFixed(2)} ms  save ${this.stats.saveMs.toFixed(1)} ms`;
   }
   /** Manual clock: `n` steps, each after every storage read issued so far has come back, so that what a step finds
    *  loaded does not depend on how fast the storage answered. */
@@ -414,6 +442,7 @@ export class SimHost {
       const ok = err === '';
       sim.committed(batch, ok);
       this.stats.saveMs = env.now() - t0; this.saveEnd = env.now(); this.saving = null;
+      this.saveFailed = !ok;
       if (ok) this.savedTick = tick;
       else { env.log('error', 'save failed: ' + err); env.setTimer(() => this.requestSave(), SAVE_RETRY_MS); }
       for (const [l, seq] of acks) if (!l.closed) l.c.send(ok ? { t: 'saved', ok, seq } : { t: 'saved', ok, seq, err });
@@ -427,6 +456,7 @@ export class SimHost {
     this.stopped = true;
     if (this.timer !== null) this.env.clearTimer(this.timer);
     if (this.saveTimer !== null) { this.env.clearTimer(this.saveTimer); this.saveTimer = null; }
+    if (this.changeTimer !== null) { this.env.clearTimer(this.changeTimer); this.changeTimer = null; }
     for (const l of [...this.links]) this.kick(l, 'shutdown', 'The host is stopping.');
     await this.save();
     await this.storage.close();
