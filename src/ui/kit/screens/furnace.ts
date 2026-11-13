@@ -1,4 +1,4 @@
-// The five furnaces (section 6): one stone layout. A bed of eight raised stones holds the remains built in, beside
+// The five furnaces (section 6): one stone layout. A firebox holds the remains built in, beside
 // the ore, the flame of the fuel left and the fuel, the arrow and what comes out; a side panel lists what the bed works.
 // A furnace goes on working with the window shut, so the mock's furnaces keep their own clock.
 import { clock } from '../font/measure';
@@ -114,40 +114,79 @@ function tick(st: State, ui: Ui): void {
   ui.invalidate();
 }
 
-// A lamp of the bed, 9 by 9: s the bright spot, l the lit ring by it, b the body, d the shade, K root.0.
-const LAMP = [
-  '..KKKKK..',
-  '.KslbbbK.',
-  'KslbbbbdK',
-  'KlbbbbbdK',
-  'KbbbbbbdK',
-  'KbbbbbbdK',
-  'KbbbbbddK',
-  '.KdddddK.',
-  '..KKKKK..',
-];
-const LIT: Record<string, Colour> = { s: 'ember.hi', l: 'ember.lt', b: 'ember', d: 'ember.dk', K: 'root.0' };
-
-/** Where the eight lamps stand round the bed's slot, clockwise from the top left, in a box 42 square. */
-const LAMPS = [[0, 0], [17, 0], [33, 0], [33, 17], [33, 33], [17, 33], [0, 33], [0, 17]];
+/** The firebox of a bed: 34 square, its slot of remains 18 square at 8, 8. */
+export const BED = 34;
+export const BED_SLOT = 8;
 
 /**
- * The bed (F2): its slot of remains in the middle, ringed by eight lamps that show its heat. A lamp is dull, in the
- * stones of this furnace, until the bed reaches its eighth of the heat, then lit in ember; they light clockwise from
- * the top left. The ring's tooltip says how far it is lit. "Bed" is written over it in ink.
+ * The firebox's stonework, one character to the unit: K the outline, l f s the arch's lit edge, face and shaded edge
+ * in the furnace's stones, z the joints between its stones, 0 the soot in the shadow of the arch, 1 the hearth's
+ * floor, and a space where the slot and the coal bricks are drawn over it. A round arch two stones deep springs from
+ * the jambs at half height over a sill; its keystone stands between the joints at 80 and 100 degrees.
+ */
+const FIREBOX: string[] = (() => {
+  const N = BED, C = BED / 2;
+  const inside = (x: number, y: number, inset: number) => {
+    if (x < inset || y < inset || x > N - 1 - inset || y > N - 1 - inset) return false;
+    if (y >= C) return true;
+    const dx = x + 0.5 - C, dy = y + 0.5 - C, r = C - inset;
+    return dx * dx + dy * dy <= r * r;
+  };
+  const joints = new Set<string>();
+  for (const deg of [20, 50, 80, 100, 130, 160]) {
+    const t = (deg * Math.PI) / 180;
+    for (let r = 13.5; r <= 16.5; r += 0.1) joints.add(`${Math.floor(C + r * Math.cos(t))},${Math.floor(C - r * Math.sin(t))}`);
+  }
+  const rows: string[] = [];
+  for (let y = 0; y < N; y++) {
+    let row = '';
+    for (let x = 0; x < N; x++) {
+      if (!inside(x, y, 0)) { row += '.'; continue; }
+      if (!inside(x - 1, y, 0) || !inside(x + 1, y, 0) || !inside(x, y - 1, 0) || !inside(x, y + 1, 0)) { row += 'K'; continue; }
+      if (inside(x, y, 3)) { row += !inside(x - 1, y, 3) || !inside(x, y - 1, 3) ? '0' : '1'; continue; }
+      const joint = joints.has(`${x},${y}`) || ((x <= 2 || x >= N - 3) && y === 24) || (y >= N - 3 && (x === 11 || x === 22));
+      if (joint) { row += 'z'; continue; }
+      const out = (dx: number, dy: number) => !inside(x + dx, y + dy, 1);
+      row += out(0, -1) || out(-1, 0) ? 'l' : out(0, 1) || out(1, 0) ? 's' : 'f';
+    }
+    rows.push(row);
+  }
+  return rows;
+})();
+
+/** Where the eight coal bricks lie round the slot, in the order they catch: the floor first, then up the jambs, the top last. */
+const BRICKS = [[15, 26], [4, 26], [26, 26], [4, 20], [26, 20], [4, 14], [26, 14], [15, 4]];
+
+/** A coal brick 4 square lit from the top left: a highlight along its top and left, a shade along its bottom and right. */
+const BRICK = ['hhhb', 'hbbs', 'hbbs', 'bsss'];
+const BRICK_TONES: Record<string, Colour>[] = [
+  { h: 'stone.face', b: 'stone.sh', s: 'stone.dk' },
+  { h: 'ember.hi', b: 'ember.lt', s: 'ember' },
+  { h: 'salt', b: 'ember.hi', s: 'ember.lt' },
+];
+
+/**
+ * The bed (F2): a firebox of the furnace's stones, a round arch over a hearth, its slot of remains in the middle and
+ * eight coal bricks round the slot that show its heat. Each brick goes from cold stone to ember.lt to ember.hi as the
+ * heat passes its sixteenth, the floor's first and the top's last. "Bed" is written over it in ink.
  */
 export function bed(x: number, y: number, stones: Stones, heat: number): Node {
-  const dull: Record<string, Colour> = { s: stones[0], l: stones[0], b: stones[1], d: stones[2], K: 'root.0' };
-  const n = Math.max(0, Math.min(8, Math.round(heat)));
+  const key: Record<string, Colour> = { K: 'root.0', l: stones[0], f: stones[1], s: stones[2], z: 'root.0', '0': 'root.0', '1': 'root.1' };
+  const half = Math.max(0, Math.min(16, Math.floor(heat * 2)));
+  const stage = (i: number) => Math.max(0, Math.min(2, half - 2 * i));
+  const lit = BRICKS.filter((_, i) => stage(i) > 0).length;
   return {
-    x, y, w: 42, h: 42,
+    x, y, w: BED, h: BED,
     paint: (s) => {
-      LAMPS.forEach(([lx, ly], i) => {
-        const key = i < n ? LIT : dull;
-        LAMP.forEach((row, r) => { for (let c = 0; c < 9; c++) if (row[c] !== '.') s.fill(lx + c, ly + r, 1, 1, key[row[c]]); });
+      FIREBOX.forEach((row, j) => {
+        for (let i = 0; i < BED; i++) if (row[i] !== '.') s.fill(i, j, 1, 1, key[row[i]]);
+      });
+      BRICKS.forEach(([bx, by], k) => {
+        const t = BRICK_TONES[stage(k)];
+        BRICK.forEach((row, j) => { for (let i = 0; i < 4; i++) s.fill(bx + i, by + j, 1, 1, t[row[i]]); });
       });
     },
-    tip: () => ({ lines: [{ text: n ? `Bed lit, ${n} of 8` : 'Bed cold', c: 'salt' }, { text: 'It heats while the fire burns', c: 'root.4' }] }),
+    tip: () => ({ lines: [{ text: lit ? `Bed lit, ${lit} of 8` : 'Bed cold', c: 'salt' }, { text: 'It heats while the fire burns', c: 'root.4' }] }),
   };
 }
 
@@ -164,7 +203,7 @@ function build(ui: Ui, id: string): Node {
   const main: Node[] = [
     { x: 10, y: 17, w: 30, h: 10, paint: (s) => { s.text('Bed', 0, 0, 'ink'); } },
     bed(10, 28, f.stones, heat),
-    stackSlot(b, { store: 'bed', i: 0 }, { x: 22, y: 40, ramp: 'stone', locked: f.remains ? { key: f.remains, n: 1 } : null, missing: 'scorched_core', tip: () => (f.remains ? stackTip({ key: f.remains, n: 1 }, 'Built into the bed') : { lines: [{ text: 'An empty hollow', c: 'salt' }, { text: 'Remains bedded here loosen what plain fire cannot', c: 'root.4' }] }) }),
+    stackSlot(b, { store: 'bed', i: 0 }, { x: 10 + BED_SLOT, y: 28 + BED_SLOT, ramp: 'stone', locked: f.remains ? { key: f.remains, n: 1 } : null, missing: 'scorched_core', tip: () => (f.remains ? stackTip({ key: f.remains, n: 1 }, 'Built into the bed') : { lines: [{ text: 'An empty hollow', c: 'salt' }, { text: 'Remains bedded here loosen what plain fire cannot', c: 'root.4' }] }) }),
     stackSlot(b, { store: 'ore', i: 0 }, { x: 70, y: 17, ramp: 'stone', silhouette: 'work', showAccepts: true }),
     { ...burnGauge({ x: 71, y: 36, f: f.burn[1] ? f.burn[0] / f.burn[1] : 0, ramp: 'stone' }), tip: () => ({ lines: f.burn[0] > 0 ? [{ text: `Fuel for ${clock(f.burn[0])}`, c: 'salt' }] : [{ text: 'No fire', c: 'salt' }, { text: 'Fuel goes in the slot below', c: 'root.4' }] }) },
     stackSlot(b, { store: 'fuel', i: 0 }, { x: 70, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),

@@ -2578,7 +2578,7 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 #  "F1"                                                   #  "L1"                                #
 #                                                         #                                      #
 #  +------------+      .----.                             #  +-------------------------------+   #
-#  | F2 ring    |      |F3  |                             #  | L2 well                       |   #
+#  | F2 bed     |      |F3  |                             #  | L2 well                       |   #
 #  |            |      '----'              .-------.      #  |                               |   #
 #  |            |       +--+               |       |      #  |                               |   #
 #  |            |       |  |    ==F6=>     | F7    |      #  |                               |   #
@@ -2609,7 +2609,7 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | F0 | slab | 0 | 0 | 176 | 166 | stone slab |
 | F1 | text | 8 | 6 | 120 | 10 | "Stone Furnace", "Maruhar Furnace", "Guhamāt Furnace", "Ratan Furnace" or "Kuranga Furnace" |
-| F2 | ring | 10 | 28 | 42 | 42 | the bed, captioned "Bed" in ink with its cell at 10, 17: a locked slot 18 square at 22, 40 holding the remains built in, or, empty, their silhouette (5.4); round it eight lamps 9 by 9 at the corners and the middles of the ring's sides, which show the bed's heat: dull in the furnace's stones until the bed reaches each eighth, then lit in ember, clockwise from the top left. The ring's tooltip: "Bed lit, 5 of 8" and "It heats while the fire burns" in `root.4`, or "Bed cold" |
+| F2 | bed | 10 | 28 | 34 | 34 | the bed, captioned "Bed" in ink with its cell at 10, 17: a firebox in the furnace's stones. A round arch two units deep (outline root.0; outer row the stones' light tone where it faces up or left and their shaded tone where it faces down or right; inner row their face) springs from two jambs at half height and stands on a sill two units deep; joints of root.0 cut it into voussoirs at 20, 50, 80, 100, 130 and 160 degrees, the keystone between 80 and 100, and the jambs and sill into blocks. Inside, a hearth of root.1 with root.0 in the arch's shadow along its top and left. A locked slot 18 square at 18, 36 holds the remains built in, or, empty, their silhouette (5.4). Round it eight coal bricks 4 square, three on the floor under the slot, two up each jamb and one under the keystone, each lit from the top left (highlight along its top and left, shade along its bottom and right). They show the bed's heat: each passes from cold (stone.sh, highlight stone.face) to ember.lt (highlight ember.hi) to ember.hi (highlight salt) as the heat passes its sixteenths, the floor's middle first and the top last, as fire climbs. The bed's tooltip: "Bed lit, 5 of 8" and "It heats while the fire burns" in `root.4`, or "Bed cold". Eight lamps in a square ring read as a loading ring, not as a fire |
 | F3 | slots | 70 | 17 | 18 | 18 | what is to be worked, lump silhouette |
 | F4 | flame | 71 | 36 | 13 | 15 | burn gauge: the fuel left, emptying downward |
 | F5 | slots | 70 | 53 | 18 | 18 | fuel, flame silhouette |
