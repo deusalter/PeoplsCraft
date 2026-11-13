@@ -125,7 +125,9 @@ export class ChunkService {
       const dim = f.dim;
       this.edits.load(dim, w.cx, w.cz).then(() => {
         f.inflight--;
-        if (f.dim === dim && f.subs.get(w.key) === w.n) f.ready.set(w.key, w);
+        if (f.dim === dim && f.subs.get(w.key) === w.n && this.conns.get(c) === f) f.ready.set(w.key, w);
+        // the release of a dropped subscription found no map while it loaded; the holds keep any later holder's
+        else this.edits.release(dim, w.cx, w.cz);
       }, () => { f.inflight--; });
     }
     f.queue.splice(0, i);

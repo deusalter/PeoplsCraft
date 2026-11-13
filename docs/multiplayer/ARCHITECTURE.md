@@ -3486,6 +3486,11 @@ refused that player, and the first `st` of the new connection carried the old bo
 (c) A known id that says hello under another name while it is in memory takes that name in `world.names` at
 once (4.2). The list was written only by `Sim.join` and by a save, so until the next save the new name could be
 given to a second player and the old one to nobody.
+(d) An edit map whose subscription ends while its load is in flight is released when the load lands (3.2, 4.7).
+`unsub`, `dropAll` and `detach` released a map that was not yet in memory, which did nothing, and the load then
+stored it with no holder left: every connection that left or travelled during its first loads kept up to
+`LOADS_MAX` maps for good. The service now releases on landing whenever the subscription it loaded for is gone
+or renewed; the holds of 3.2 still keep the map for a newer subscription or a sim chunk.
 (e) A player comes into play with full credits (7.3). `arrive` sets `actCredit`, `useCredit` and `digCredit` to
 at least their caps, `ACT_SURPLUS + cost`, `ACT_SURPLUS + 0.35` and `DIG_SURPLUS`. They started at 0 on every
 join and filled only while active, while the client's `atkCd` and `useCd` start at 0: a swing within one

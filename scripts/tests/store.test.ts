@@ -508,6 +508,29 @@ test('chunks: a chunk unsubscribed while its edit map loads gets no ce and no b'
   assert.deepEqual(c.take('b'), [{ t: 'b', dim: 0, l: [65, 70, 65, B.stone, 1] }], 'only the followed chunk has this connection as a listener');
 });
 
+test('chunks: an edit map whose subscription ended while it loaded is let go when it lands', async () => {
+  const st = new MemStorage(), gate: (() => void)[] = [];
+  const slow = Object.assign(Object.create(st), { loadChunk: () => new Promise<null>((res) => gate.push(() => res(null))) });
+  const r = rig(slow), p = player(r, 'a', 8, 8), q = player(r, 'b', 8, 8), svc = new ChunkService(r.sim, r.edits, 12);
+  const a = new FakeConn(), b = new FakeConn(), c = new FakeConn();
+  svc.onChunks(a, p, chunksMsg(0, [3, 3, 1, 4, 4, 1, 5, 5, 1]));
+  svc.onChunks(b, q, chunksMsg(0, [6, 6, 1]));
+  svc.onChunks(c, q, chunksMsg(0, [7, 7, 1, 8, 8, 1]));
+  svc.tick(a, p); svc.tick(b, q); svc.tick(c, q);
+  assert.equal(gate.length, 6, 'every load in flight');
+  svc.onChunks(a, p, chunksMsg(0, [], [3, 3]));    // unsubscribed
+  svc.onChunks(a, p, chunksMsg(0, [4, 4, 2]));     // subscribed again under a new nonce: still held
+  svc.detach(b);                                   // the connection is gone
+  svc.onRealmChange(c);                            // every subscription dropped
+  while (gate.length) gate.shift()!();
+  await settle(); await settle();
+  assert.equal(r.edits.peek(0, 3, 3), null, 'unsubscribed while loading');
+  assert.equal(r.edits.peek(0, 6, 6), null, 'detached while loading');
+  assert.equal(r.edits.peek(0, 7, 7), null, 'dropped while loading');
+  assert.ok(r.edits.peek(0, 4, 4) && r.edits.peek(0, 5, 5), 'the subscriptions that remain keep their maps');
+  assert.equal(r.edits.size, 2);
+});
+
 test('chunks: gh for a chunk first generated after its ce went out; full answered only for ready sim chunks, 8 a second', async () => {
   const r = rig(), p = player(r, 'a', 8, 8), svc = new ChunkService(r.sim, r.edits, 12), c = new FakeConn(), sub: number[] = [];
   for (let i = 0; i < 12; i++) sub.push(i - 6, 0, 1);
