@@ -2,8 +2,10 @@
 // `node server/main.js` started there on a free port with a password, and spoken to over plain http and
 // real WebSockets, and by headless Chrome through the join screen. The keepalive case waits out the 10 s of
 // silence the protocol allows. The `npm start` case runs the start script of package.json in a folder of its own.
+// Every test has a time limit: a socket the server should have closed and did not fails the test, never hangs it.
 import assert from 'node:assert/strict';
 import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
+import { request } from 'node:http';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { type AddressInfo, createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -14,8 +16,11 @@ import { WebSocket } from 'ws';
 import { Session } from '../../src/client/session';
 import { MAX_JSON, PASSWORD_TRIES, PROTO, type S2C, WS_SILENCE, dataHash } from '../../src/net/protocol';
 import { WsTransport, serverUrl } from '../../src/net/ws-client';
+import { stepFaults } from '../../server/main';
 
 const root = resolve('.'), out = resolve('out/servertest'), PASSWORD = 'lantern';
+/** Beside the client folder, so that a path that climbs out of it by one step would find it. */
+const OUTSIDE = 'outside.txt';
 let server: ChildProcess, base = '', data = '';
 const logs: string[] = [];
 const START = (port: string): string[] => [join(out, 'server', 'main.js'), '--data', join(data, 'world'), '--port', port, '--host', '127.0.0.1', '--password', PASSWORD, '--max-players', '8'];
@@ -30,6 +35,7 @@ function build(): void {
 
 before(async () => {
   build();
+  writeFileSync(join(out, OUTSIDE), 'not to be served');
   data = mkdtempSync(join(tmpdir(), 'pc-server-'));
   // every player of this file holds a slot until its linger ends: 8 is room for all of them
   base = await serve('0');
@@ -63,8 +69,8 @@ after(async () => {
 
 /** One socket, everything it is sent, and how it ended. */
 interface Sock { ws: WebSocket; got: S2C[]; closed: Promise<{ code: number; reason: string; at: number }>; opened: Promise<void>; next(t: S2C['t'], ms?: number): Promise<S2C> }
-function sock(opt: { autoPong?: boolean } = {}): Sock {
-  const ws = new WebSocket(base.replace('http:', 'ws:') + '/ws', { autoPong: opt.autoPong ?? true });
+function sock(opt: { autoPong?: boolean; origin?: string } = {}): Sock {
+  const ws = new WebSocket((opt.origin ?? base).replace('http:', 'ws:') + '/ws', { autoPong: opt.autoPong ?? true });
   const got: S2C[] = [], waits: { t: string; ok: (m: S2C) => void }[] = [];
   ws.on('message', (d, bin) => {
     if (bin) return;
@@ -88,8 +94,22 @@ const hello = (name: string, token: string, password = PASSWORD): string =>
   JSON.stringify({ t: 'hello', proto: PROTO, build: 'test', data: dataHash(), name, token, password: password || undefined, view: 8 });
 const token = (c: string): string => c.repeat(32);
 const errorOf = (s: Sock): string | undefined => (s.got.find((m) => m.t === 'error') as { code?: string } | undefined)?.code;
+/** `p`, or a failure that says `what` once `ms` have passed. */
+function within<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  let t: NodeJS.Timeout;
+  return Promise.race([p, new Promise<never>((_, no) => { t = setTimeout(() => no(new Error(what)), ms); })]).finally(() => clearTimeout(t));
+}
+/** The status of a GET for `path` sent exactly as written: `fetch` would resolve every `..` before it sends. */
+function rawGet(path: string): Promise<number> {
+  const u = new URL(base);
+  return new Promise((ok, no) => {
+    const r = request({ host: u.hostname, port: u.port, path, method: 'GET' }, (res) => { res.resume(); ok(res.statusCode ?? 0); });
+    r.on('error', no); r.end();
+  });
+}
+const S = 1000;
 
-test('the client files are served from the same port, with the caching the protocol asks for', async () => {
+test('the client files are served from the same port, with the caching the protocol asks for', { timeout: 30 * S }, async () => {
   const page = await fetch(base + '/');
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-type')!, /text\/html/);
@@ -105,11 +125,14 @@ test('the client files are served from the same port, with the caching the proto
   const info = await (await fetch(base + '/info')).json();
   assert.deepEqual(info, { server: true, name: 'Peopls Craft', players: 0, max: 8, password: true });
   assert.equal((await fetch(base + '/no-such-file.js')).status, 404);
-  assert.equal((await fetch(base + '/%2e%2e/%2e%2e/package.json')).status, 404, 'nothing outside the client folder');
+  // nothing outside the client folder, however the climb is spelled
+  for (const p of ['/../' + OUTSIDE, '/%2e%2e/' + OUTSIDE, '/..%2f' + OUTSIDE, '/%2e%2e%2f' + OUTSIDE, '/assets/../../' + OUTSIDE, '/assets/%2e%2e/%2e%2e/' + OUTSIDE])
+    assert.equal(await rawGet(p), 404, p);
+  assert.equal(await rawGet('/index.html'), 200, 'the raw request itself reaches the server');
   assert.equal((await fetch(base + '/', { method: 'POST' })).status, 405);
 });
 
-test('a hello with a good token and the password is welcomed, and the player is put in the world', async () => {
+test('a hello with a good token and the password is welcomed, and the player is put in the world', { timeout: 30 * S }, async () => {
   const a = sock();
   await a.opened;
   a.ws.send(hello('Ada', token('a')));
@@ -121,7 +144,7 @@ test('a hello with a good token and the password is welcomed, and the player is 
   a.ws.close(); await a.closed;
 });
 
-test('an oversized frame closes the socket with `proto`, text or binary', async () => {
+test('an oversized frame closes the socket with `proto`, text or binary', { timeout: 30 * S }, async () => {
   const a = sock();
   await a.opened;
   a.ws.send('{"t":"chat","text":"' + 'x'.repeat(MAX_JSON) + '"}');
@@ -141,7 +164,7 @@ test('an oversized frame closes the socket with `proto`, text or binary', async 
   assert.equal((await d.closed).code, 1009);
 });
 
-test('a second socket with the same token replaces the first', async () => {
+test('a second socket with the same token replaces the first', { timeout: 30 * S }, async () => {
   const a = sock();
   await a.opened;
   a.ws.send(hello('Cy', token('c')));
@@ -157,7 +180,7 @@ test('a second socket with the same token replaces the first', async () => {
   b.ws.close(); await b.closed;
 });
 
-test('a silent socket is closed by the keepalive', async () => {
+test('a silent socket is closed by the keepalive', { timeout: 60 * S }, async () => {
   const a = sock({ autoPong: false });
   await a.opened;
   const t0 = Date.now();
@@ -198,7 +221,7 @@ const inPlay = (page: Page, ms = 60000): Promise<unknown> =>
 const said = (page: Page, text: string, ms = 20000): Promise<unknown> =>
   page.waitForFunction((t) => document.body.innerText.includes(t), text, { timeout: ms });
 
-test('a page the server served offers to join it, refuses a wrong password on the join screen, and plays with the right one through a restart', async () => {
+test('a page the server served offers to join it, refuses a wrong password on the join screen, and plays with the right one through a restart', { timeout: 240 * S }, async () => {
   const b = await chrome();
   try {
     const { page } = b, lan = `http://${LAN}:${new URL(base).port}`;
@@ -237,7 +260,7 @@ test('a page the server served offers to join it, refuses a wrong password on th
   } finally { await b.close(); }
 });
 
-test('`?server=` opens the join screen with an address field, and `&name=` joins at once', async () => {
+test('`?server=` opens the join screen with an address field, and `&name=` joins at once', { timeout: 180 * S }, async () => {
   const b = await chrome();
   try {
     const { page } = b;
@@ -270,7 +293,7 @@ test('`?server=` opens the join screen with an address field, and `&name=` joins
   } finally { await b.close(); }
 });
 
-test('a session on the WebSocket transport says hello again by itself when the server comes back from a restart', async () => {
+test('a session on the WebSocket transport says hello again by itself when the server comes back from a restart', { timeout: 90 * S }, async () => {
   const t = new WsTransport(serverUrl(base)!), s = new Session(t), got: S2C[] = [], closes: string[] = [];
   t.onClose = (c) => { closes.push(c); };
   s.join({ name: 'Gus', token: token('9'), password: PASSWORD, view: 8, build: 'test' });
@@ -294,25 +317,95 @@ test('a session on the WebSocket transport says hello again by itself when the s
   } finally { t.close(); }
 });
 
+test('a socket that sends more than 2,000 frames in a second is closed with `rate` at once, and 1,500 in a second are let be', { timeout: 30 * S }, async () => {
+  const rtt = JSON.stringify({ t: 'rtt', c: 1, last: 0 });
+  const a = sock();
+  await a.opened;
+  a.ws.send(hello('Kit', token('1')));
+  await a.next('welcome');
+  for (let i = 0; i < 1500; i++) a.ws.send(rtt);
+  await new Promise((ok) => setTimeout(ok, 1500));
+  assert.equal(a.ws.readyState, WebSocket.OPEN, 'under the backstop, and the host\'s own caps only drop rtt');
+  a.ws.close(); await a.closed;
+
+  const b = sock();
+  await b.opened;
+  b.ws.send(hello('Lou', token('2')));
+  await b.next('welcome');
+  const t0 = Date.now();
+  for (let i = 0; i < 2500; i++) b.ws.send(rtt);
+  const c = await within(b.closed, 5 * S, 'a flood of 2,500 frames was not closed');
+  assert.equal(errorOf(b), 'rate'); assert.equal(c.reason, 'rate');
+  // the host's own buckets would close only after 3 s of excess
+  assert.ok(c.at - t0 < 2 * S, `closed after ${c.at - t0} ms`);
+});
+
+/** A preload for the built server: SIGUSR2 makes it throw, or reject a promise, outside every handler of its own. */
+const FAULT = 'data:text/javascript,' + encodeURIComponent(
+  "process.on('SIGUSR2', () => { if (process.env.PC_FAULT === 'reject') Promise.reject(new Error('planted rejection')); else setTimeout(() => { throw new Error('planted exception'); }); });");
+for (const [mode, why] of [['throw', 'an uncaught exception'], ['reject', 'an unhandled rejection']] as const) {
+  test(`${why} takes the shutdown path: the players are told \`shutdown\`, and the process exits with code 2`, { timeout: 60 * S }, async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'pc-fault-'));
+    const p = spawn(process.execPath, ['--import', FAULT, join(out, 'server', 'main.js'), '--data', join(dir, 'world'), '--port', '0', '--host', '127.0.0.1'],
+      { cwd: out, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, PC_FAULT: mode } });
+    let said = '';
+    const exited = new Promise<number | null>((ok) => p.on('exit', (c) => ok(c)));
+    try {
+      const origin = await within(new Promise<string>((ok) => {
+        const read = (d: Buffer): void => { said += d.toString(); const m = /listening on (http:\/\/[^/\s]+)\//.exec(said); if (m) ok(m[1]); };
+        p.stdout!.on('data', read); p.stderr!.on('data', read);
+      }), 20 * S, 'the server did not listen:\n' + said);
+      const a = sock({ origin });
+      await a.opened;
+      a.ws.send(hello('Mo', token('3')));
+      await a.next('welcome');
+      p.kill('SIGUSR2');
+      const rc = await within(exited, 15 * S, 'the server did not exit:\n' + said);
+      assert.equal(rc, 2, said);
+      assert.equal(errorOf(a), 'shutdown', 'told before the socket closed; got ' + a.got.map((m) => m.t).join(' '));
+      assert.match(said, new RegExp('stopping: ' + why));
+      assert.match(said, mode === 'reject' ? /planted rejection/ : /planted exception/);
+    } finally {
+      if (p.exitCode === null) p.kill('SIGKILL');
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+}
+
+test('20 failed steps inside a minute call for the shutdown, 19 do not, and old failures age out', () => {
+  let f = stepFaults();
+  assert.equal(f(0, 0), false);
+  assert.equal(f(19, 1000), false);
+  assert.equal(f(19, 50000), false);
+  assert.equal(f(20, 59000), true, 'the 20th inside the minute of the first');
+  f = stepFaults();
+  f(10, 0);
+  assert.equal(f(19, 30000), false);
+  assert.equal(f(20, 61000), false, 'the first ten are more than a minute old');
+  assert.equal(f(29, 62000), false);
+  assert.equal(f(30, 62000), true, 'nine at 30 s, one at 61 s and ten at 62 s');
+});
+
 // last: it shuts this address out for a minute
-test('a wrong password is refused with `password`, and after five wrong ones in a minute so is the right one', async () => {
+test('a wrong password is refused with `password`, and after five wrong ones in a minute so is the right one', { timeout: 30 * S }, async () => {
   for (let i = 0; i < PASSWORD_TRIES; i++) {
     const a = sock();
     await a.opened;
     a.ws.send(hello('Fay', token('f'), i === 0 ? '' : 'wrong' + i));
-    const c = await a.closed;
+    const c = await within(a.closed, 5 * S, `wrong password ${i + 1} was not closed; got ${a.got.map((m) => m.t).join(' ')}`);
     assert.equal(errorOf(a), 'password'); assert.equal(c.reason, 'password');
     assert.equal(a.got.some((m) => m.t === 'welcome'), false);
   }
   const b = sock();
   await b.opened;
   b.ws.send(hello('Fay', token('f')));
-  await b.closed;
+  await within(b.closed, 5 * S, `the right password after ${PASSWORD_TRIES} wrong ones was not closed; got ${b.got.map((m) => m.t).join(' ')}`);
+  assert.equal(b.got.some((m) => m.t === 'welcome'), false);
   assert.equal(errorOf(b), 'password');
   assert.match((b.got.find((m) => m.t === 'error') as { msg: string }).msg, /Too many/);
 });
 
-test('`npm start` builds when the build is missing or older than a source, and otherwise runs the server it has', async () => {
+test('`npm start` builds when the build is missing or older than a source, and otherwise runs the server it has', { timeout: 240 * S }, async () => {
   // The start script as package.json has it, in a folder of its own whose `build` copies this file's build and counts.
   const dir = mkdtempSync(join(tmpdir(), 'pc-start-')), pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   pkg.scripts = { start: pkg.scripts.start, build: `echo x >> builds && mkdir -p dist && cp -R ${JSON.stringify(join(out, 'client'))} ${JSON.stringify(join(out, 'server'))} dist/` };
@@ -433,6 +526,39 @@ test('the WebSocket transport retries with a growing backoff, counts only its ne
   assert.equal(socks.length, n + 1, 'no retry after a final error');
   t.send({ t: 'chat', text: 'x' });
   assert.equal(f.sent.length, 0);
+});
+
+test('a hidden page closed for idling dials again when it is shown, not before; any other close of a hidden page retries as usual', () => {
+  const { env, socks, pass } = fakeWire();
+  let hidden = true;
+  const shown: (() => void)[] = [];
+  const t = new WsTransport('ws://h:1/ws', { ...env, hidden: () => hidden, onShown: (fn) => { shown.push(fn); } }), closes: string[] = [];
+  t.onClose = (c) => { closes.push(c); };
+  const idle = (w: FakeSocket): void => { w.open(); w.say({ t: 'welcome' }); w.say({ t: 'error', code: 'idle', msg: '' }); w.end(); };
+  idle(socks[0]);
+  assert.deepEqual(closes, ['retrying']); assert.equal(t.state, 'retrying');
+  assert.equal(shown.length, 1, 'waits for the page to be shown');
+  pass(120000);
+  assert.equal(socks.length, 1, 'no socket while nobody looks');
+  hidden = false;
+  shown[0]();
+  pass(499);
+  assert.equal(socks.length, 1);
+  pass(1);
+  assert.equal(socks.length, 2, 'shown: dialled after the first backoff');
+  // shown, an idle close retries at once
+  idle(socks[1]);
+  assert.equal(shown.length, 1);
+  pass(500);
+  assert.equal(socks.length, 3);
+  // hidden again, a close for another reason does not wait for the page
+  hidden = true;
+  const w = socks[2];
+  w.open(); w.say({ t: 'welcome' }); w.say({ t: 'error', code: 'shutdown', msg: '' }); w.end();
+  assert.equal(shown.length, 1);
+  pass(500);
+  assert.equal(socks.length, 4);
+  t.close();
 });
 
 test('a server address is taken as the player types it', () => {

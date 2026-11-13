@@ -4,6 +4,7 @@
 // or makes it), then listen. Shutdown (SIGINT, SIGTERM, or a fault): every client is told `shutdown`, the
 // world is saved, the storage is closed, then the process exits.
 import { mkdirSync } from 'node:fs';
+import { basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { strSeed } from '../src/core/noise';
 import { SimHost } from '../src/net/host';
@@ -81,6 +82,17 @@ function backends(_f: ServerFlags, env: HostEnv, seed: () => number): { storage:
   return { storage, source };
 }
 
+/** 4.1: true once `limit` steps have failed inside `windowMs`. `total` is the host's running count of failed steps. */
+export function stepFaults(limit = 20, windowMs = 60000): (total: number, now: number) => boolean {
+  const at: number[] = [];
+  let seen = 0;
+  return (total, now) => {
+    for (; seen < total; seen++) at.push(now);
+    while (at.length && now - at[0] >= windowMs) at.shift();
+    return at.length >= limit;
+  };
+}
+
 const stamp = (): string => new Date().toISOString().replace('T', ' ').slice(0, 19);
 const env: HostEnv = {
   now: () => performance.now(),
@@ -129,14 +141,9 @@ async function main(): Promise<number> {
     })();
     return ending;
   };
-  // 20 failed steps inside a minute take the normal shutdown path (4.1)
-  const fails: number[] = [];
-  let seen = 0;
+  const faults = stepFaults();
   const watch = setInterval(() => {
-    const n = h.stats.stepErrors, now = Date.now();
-    for (; seen < n; seen++) fails.push(now);
-    while (fails.length && now - fails[0] > 60000) fails.shift();
-    if (fails.length >= 20) void shutdown('20 steps failed inside a minute', 2).then(exit);
+    if (faults(h.stats.stepErrors, Date.now())) void shutdown('20 steps failed inside a minute', 2).then(exit);
   }, 1000);
   watch.unref();
   const exit = (rc: number): void => { clearInterval(watch); process.exit(rc); };
@@ -147,4 +154,5 @@ async function main(): Promise<number> {
   return -1;
 }
 
-void main().then((rc) => { if (rc >= 0) process.exit(rc); }, (e) => { console.error(e instanceof Error ? e.stack ?? e.message : e); process.exit(1); });
+// Bundled into a test, this file only lends its parts; it runs as dist/server/main.js.
+if (basename(fileURLToPath(import.meta.url)).replace(/\.m?js$/, '') === 'main') void main().then((rc) => { if (rc >= 0) process.exit(rc); }, (e) => { console.error(e instanceof Error ? e.stack ?? e.message : e); process.exit(1); });
