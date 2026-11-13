@@ -9,8 +9,9 @@
 // <out>/<name>.png. Inside page.evaluate the game's own hooks are available as window.T.
 import { createServer } from 'vite';
 import { chromium } from 'playwright-core';
-import { mkdirSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, l) => (v.startsWith('--') ? [...a, [v.slice(2), l[i + 1] && !l[i + 1].startsWith('--') ? l[i + 1] : '1']] : a), []));
@@ -25,22 +26,25 @@ export async function launch({ query = '', base, width = w, height = h, headed =
     await server.listen();
     origin = `http://127.0.0.1:${server.httpServer.address().port}`;
   }
-  const browser = await chromium.launch({
-    channel: 'chrome', headless: !headed,
+  // A fresh profile for every launch, with Chrome's energy saver off: on a laptop that runs on battery below 20% it
+  // holds every page to 30 frames a second, and a measurement taken then says nothing about the game.
+  const profile = mkdtempSync(join(tmpdir(), 'pc-headless-'));
+  writeFileSync(join(profile, 'Local State'), JSON.stringify({ performance_tuning: { battery_saver_mode: { state: 0 } } }));
+  const ctx = await chromium.launchPersistentContext(profile, {
+    channel: 'chrome', headless: !headed, viewport: { width, height }, deviceScaleFactor: 1,
     args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required', '--mute-audio'],
   });
-  const ctx = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1 });
-  const page = await ctx.newPage();
+  const page = ctx.pages()[0] ?? await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   const url = `${origin}/${query ? '?' + query : ''}`;
   await page.goto(url, { waitUntil: 'load' });
   return {
-    page, ctx, browser, url, origin, errors,
+    page, ctx, url, origin, errors,
     shot: async (name, opts = {}) => { const p = resolve(out, name.endsWith('.png') ? name : name + '.png'); await page.screenshot({ path: p, ...opts }); return p; },
     newPage: async (q = query) => { const p = await ctx.newPage(); await p.goto(`${origin}/${q ? '?' + q : ''}`, { waitUntil: 'load' }); return p; },
-    close: async () => { await browser.close(); if (server) await server.close(); },
+    close: async () => { await ctx.close(); rmSync(profile, { recursive: true, force: true }); if (server) await server.close(); },
   };
 }
 
