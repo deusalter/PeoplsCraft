@@ -68,3 +68,15 @@ export function pageRow(o: { id: string; x: number; y: number; w: number; h: num
 
 /** A player's colour on a light face: a flag 2 by 7 beside their name in ink. */
 export function flag(s: Surface, seat: number, x: number, y: number): void { s.fill(x, y, 2, 7, SEATS[seat - 1]); }
+
+/**
+ * Where a window stands (section 3): centred on the screen, its tabs not counted, then moved as little as it takes for
+ * its tabs above (`top`) and to the left (`left`) and its own edges to stand at least 3 units inside the screen.
+ */
+export function placeWindow(ui: Ui, w: number, h: number, top = 0, left = 0): { x: number; y: number } {
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  return {
+    x: clamp(Math.floor((ui.w - w) / 2), 3 + left, ui.w - 3 - w),
+    y: clamp(Math.floor((ui.h - h) / 2), 3 + top, ui.h - 3 - h),
+  };
+}

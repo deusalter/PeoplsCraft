@@ -11,10 +11,9 @@ import { type Colour, SEATS } from '../palette';
 import { button } from '../parts/button';
 import { frameWell, type RowSpec, well } from '../parts/well';
 import { tabbedSlab } from '../parts/tabs';
-import { centred } from '../scale';
 import { CHUNK, type Place, countryAt, FELL, ME, PINGS, PLACES, STORE, WALK_RADIUS, WALKED } from '../sample/map';
 import type { Surface } from '../surface';
-import { firstFocus, go } from './books-common';
+import { firstFocus, go, placeWindow } from './books-common';
 import type { NamedScreen } from './index';
 
 export type ChartTab = 'ground' | 'store';
@@ -188,7 +187,7 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
       },
     },
   ];
-  const at = centred(ui.w, ui.h, W, H);
+  const at = placeWindow(ui, W, H, 21);
   const slab = tabbedSlab({
     id: 'map.slab', x: at.x, y: at.y, w: W, h: H, ramp: 'stone', edge: 'top',
     title: ground ? `The Living Ground, ${countryAt(ME.x, ME.z).name}` : STORE.name,

@@ -6,9 +6,8 @@ import { button } from '../parts/button';
 import { checkbox, slider } from '../parts/controls';
 import { tabbedSlab } from '../parts/tabs';
 import { slabTrack } from '../parts/well';
-import { centred } from '../scale';
 import { SETTINGS, type Setting, type SettingsTab } from '../sample/settings';
-import { firstFocus, go } from './books-common';
+import { firstFocus, go, placeWindow } from './books-common';
 import type { NamedScreen } from './index';
 
 export interface SettingsView {
@@ -85,7 +84,7 @@ export const settingsScreen: Screen<SettingsView> = (v, ui) => {
   const slabKids: Node[] = [area];
   if (maxTop > 0) slabKids.push(slabTrack({ id: `${scrollId}.track`, x: 234, y: ROWS_Y, h: VISIBLE * ROW, ramp: 'clay', top, visible: VISIBLE, total: rows.length, onScroll: setTop }));
   slabKids.push(button({ id: 'set.done', x: 74, y: 184, w: 100, h: 16, label: 'Done', onPress: v.onDone }));
-  const at = centred(ui.w, ui.h, W, H);
+  const at = placeWindow(ui, W, H, 21);
   const slab = tabbedSlab({
     id: 'set.slab', x: at.x, y: at.y, w: W, h: H, ramp: 'clay', title: tab.name, edge: 'top',
     tabs: v.tabs.map((t) => ({ id: `set.tab.${t.key}`, icon: t.icon, name: t.name })), chosen: v.tab, onTab: v.onTab,

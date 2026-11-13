@@ -7,10 +7,9 @@ import type { NodeState } from '../art/tree';
 import { button } from '../parts/button';
 import { tabbedSlab } from '../parts/tabs';
 import { LATTICE, NODE, tree } from '../parts/tree';
-import { centred } from '../scale';
 import { CREW, type CrewMember } from '../sample/crew';
 import { JOBS, type Job, type SkillNode, TAKEN, TO_SPEND } from '../sample/skills';
-import { firstFocus, go } from './books-common';
+import { firstFocus, go, placeWindow } from './books-common';
 import type { NamedScreen } from './index';
 
 export interface SkillsView {
@@ -91,7 +90,7 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
     { x: 8, y: 184, w: 196, h: 10, paint: (s) => { s.text(cut(`${node.name}, ${rank} of ${node.ranks}`, 196), 0, 0, nodeState === 'locked' ? 'ink.faded' : 'ink'); } },
     button({ id: 'sk.take', x: 208, y: 182, w: 44, h: 16, label: 'Take', disabled: !canTake, onPress: () => v.onTake(node.id) }),
   ];
-  const at = centred(ui.w, ui.h, W, H);
+  const at = placeWindow(ui, W, H, 21, 21);
   const top = tabbedSlab({
     id: 'sk.slab', x: at.x, y: at.y, w: W, h: H, ramp: 'stone', title: job.name, titleRoom: 150, edge: 'top',
     tabs: v.jobs.map((j) => ({ id: `sk.job.${j.key}`, icon: j.icon, name: j.name })), chosen: v.job,
