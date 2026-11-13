@@ -446,3 +446,36 @@ test('a solo world saves 3 s after a change, once for a run of changes, and not 
   await run(r, 2, c); await pass(3100);
   assert.equal(storage.commits, settled + 1);
 });
+
+test('"save now" during a commit already under way is answered by a commit that holds what was said before it', async () => {
+  /** Commits wait here until let go, so that one can be under way when the client asks. */
+  class Held extends MemStorage {
+    gates: (() => void)[] = [];
+    override async commit(batch: Parameters<MemStorage['commit']>[0]): Promise<void> {
+      await new Promise<void>((res) => this.gates.push(res));
+      return super.commit(batch);
+    }
+  }
+  const storage = new Held(), r = await rig(true, storage), sim = r.host.sim, c = client(r.host);
+  c.hello();
+  const entering = enter(r, c);
+  for (let i = 0; i < 400 && !c.of('tp').some((m) => !m.load); i++) { await new Promise((res) => setTimeout(res, 0)); while (storage.gates.length) storage.gates.shift()!(); }
+  await entering;
+  const p = sim.players.get('local')!;
+  p.stats.hp = 0; p.stats.dead = true;
+  const under = r.host.save();
+  await new Promise((res) => setTimeout(res, 1));
+  assert.equal(storage.gates.length, 1, 'a commit under way');
+  // the death screen's "Save and quit": respawn, then save
+  c.s.send({ t: 'respawn' }); c.s.send({ t: 'save' });
+  assert.ok(!p.stats.dead, 'the save applied the respawn');
+  const heard = (): number => c.of('saved').length, before = heard();
+  storage.gates.shift()!(); await under;
+  await new Promise((res) => setTimeout(res, 1));
+  c.s.pump();
+  assert.equal(heard(), before, 'the commit taken before the save was asked for does not answer it');
+  for (let i = 0; i < 20 && heard() === before; i++) { while (storage.gates.length) storage.gates.shift()!(); await new Promise((res) => setTimeout(res, 1)); c.s.pump(); }
+  assert.equal(heard(), before + 1);
+  const hp = (storage.players.get('local')!.stats as { hp: number }).hp;
+  assert.ok(hp > 0, `the stored player is risen (hp ${hp})`);
+});

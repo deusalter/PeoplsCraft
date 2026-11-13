@@ -3640,6 +3640,12 @@ screen, `T.frame`, `T.step` and `T.cmd` waited for ever. `closed` now settles ev
 step that heard the client, so the wall-clock figure says nothing of how far behind the client is: on a manual clock
 `p.rtt` stays 0 and the probe is still echoed. A host on its own clock (the server, solo from the title menu) is as
 before (`scripts/tests/actions.test.ts`).
+(c) A `save` that came while a commit was under way was answered by that commit's `saved`, taken before it was asked
+for. "Save and quit to title" on the death screen sends `respawn` then `save`; the page reloaded on the older commit's
+answer and the worker was torn down before the next one, so the world opened on the death screen D35 (k) has the
+button for. `respawn` has no `seq`, so `session.unsaved` did not hold the page either. The host now keeps the
+connections that asked during a commit and sends them nothing for it; the commit chained after it, which holds what
+they had said, answers them (`scripts/tests/host.test.ts`).
 
 ---
 

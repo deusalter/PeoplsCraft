@@ -82,6 +82,8 @@ export class SimHost {
   private steps = 0;
   private paused = false; private timer: unknown = null; private due = 0; private stopped = false;
   private saving: Promise<void> | null = null; private saveWanted = false; private saveTimer: unknown = null;
+  /** Local connections that asked to save while a commit was under way: that commit's `saved` is not theirs. */
+  private notYet = new Set<Link>();
   private saveStart = -1e9; private saveEnd = 0; private savedTick = -1;
   /** The solo save after a change: its timer, and what the inventories, flags and guide were when it was last looked at. */
   private changeTimer: unknown = null; private seenRev = new WeakMap<SimPlayer, number>(); private seenFlags = -1; private seenQuest = -1;
@@ -141,6 +143,8 @@ export class SimHost {
     else if (m.t === 'save') {
       // "save now" means with everything this client has said so far, whether or not a step has come to take it
       this.take(l);
+      // the commit under way was taken before this was said: its `saved` would tell the page it is kept
+      if (this.saving) this.notYet.add(l);
       void this.save();
     }
   }
@@ -451,7 +455,9 @@ export class SimHost {
       this.saveFailed = !ok;
       if (ok) this.savedTick = tick;
       else { env.log('error', 'save failed: ' + err); env.setTimer(() => this.requestSave(), SAVE_RETRY_MS); }
-      for (const [l, seq] of acks) if (!l.closed) l.c.send(ok ? { t: 'saved', ok, seq } : { t: 'saved', ok, seq, err });
+      const notYet = this.notYet;
+      this.notYet = new Set();
+      for (const [l, seq] of acks) if (!l.closed && !notYet.has(l)) l.c.send(ok ? { t: 'saved', ok, seq } : { t: 'saved', ok, seq, err });
       if (this.saveWanted) this.saveSoon();
     });
     this.saving = run;
