@@ -26,6 +26,11 @@ export interface Surface {
   /** One line of text with its cell's top left at x, y; returns its width. */
   text(str: string, x: number, y: number, c: Colour, shadow?: boolean, face?: Face): number;
   icon(key: string, x: number, y: number, look?: Look, flat?: Colour): void;
+  /**
+   * The shape of an icon not yet known: its 16 by 16 mask with holes of one unit closed, filled flat, and the units
+   * of it that face right or down drawn in `edge`, so the shape stands lit from the top left at any scale.
+   */
+  silhouette(key: string, x: number, y: number, fill: Colour, edge: Colour): void;
   clip(x: number, y: number, w: number, h: number): void;
   unclip(): void;
   /** Moves the origin of later calls by whole units; the root uses it to give each part its own coordinates. */
@@ -162,6 +167,34 @@ export abstract class BaseSurface implements Surface {
     const r = this.cut(dx, dy, 16, 16);
     if (r) this.blitImage(ic, look, flat, r.x - dx, r.y - dy, r.w, r.h, r.x, r.y);
   }
+
+  silhouette(key: string, x: number, y: number, fill: Colour, edge: Colour): void {
+    whole(x, y);
+    const m = iconMask(this.icons(key));
+    if (!m) return;
+    const at = (i: number, j: number) => i >= 0 && j >= 0 && i < 16 && j < 16 && m[j * 16 + i] === 1;
+    for (let j = 0; j < 16; j++) for (let i = 0; i < 16; i++) {
+      if (!at(i, j)) continue;
+      this.fill(x + i, y + j, 1, 1, at(i + 1, j) && at(i, j + 1) ? fill : edge);
+    }
+  }
+}
+
+/** An icon's 16 by 16 mask, 1 where it is drawn, with every empty unit between two drawn ones in a row or column filled. */
+function iconMask(ic: Icon | null): Uint8Array | null {
+  if (!ic) return null;
+  const raw = new Uint8Array(256);
+  if (isImage(ic)) { for (let k = 0; k < 256; k++) raw[k] = ic.rgba[k * 4 + 3] >= 128 ? 1 : 0; }
+  else {
+    const idx = resolve(ic, {});
+    for (let j = 0; j < Math.min(16, ic.h); j++) for (let i = 0; i < Math.min(16, ic.w); i++) raw[j * 16 + i] = idx[j * ic.w + i] !== NONE ? 1 : 0;
+  }
+  const on = (i: number, j: number) => i >= 0 && j >= 0 && i < 16 && j < 16 && raw[j * 16 + i] === 1;
+  const m = raw.slice();
+  for (let j = 0; j < 16; j++) for (let i = 0; i < 16; i++) {
+    if (!raw[j * 16 + i] && ((on(i - 1, j) && on(i + 1, j)) || (on(i, j - 1) && on(i, j + 1)))) m[j * 16 + i] = 1;
+  }
+  return m;
 }
 
 /** Marks in the grid for what is not a palette colour: the world, a wash over a colour, a picture from the game. */

@@ -2854,7 +2854,7 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19). Anchor: cen
 | X0 | book | 0 | 0 | 292 | 180 | the book |
 | X1 | tabs | 0 | -21 | 116 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Creatures (a beast's head), Matter (a bar), Places (the map), Peoples (a bust), Old things (a gilt relic). The open section's ribbon lies in the gutter in its colour: blood, ember, growth, arm, violet.lt |
 | X2 | text | 12 | 10 | 126 | 10 | heading of the section |
-| X3 | slots | 12 | 24 | 126 | 126 | seven by seven entry slots sunk in the page (ramp clay, floor clay.sh). A kind not yet seen shows its silhouette in clay.face; a kind seen shows its icon |
+| X3 | slots | 12 | 24 | 126 | 126 | seven by seven entry slots sunk in the page (ramp clay, floor clay.sh). A kind not yet seen shows its silhouette: its 16 by 16 mask with holes of one unit closed, filled in clay.dk, the units of it that face right or down in clay.pit; a kind seen shows its icon |
 | X4 | turn | 12 | 161 | 16 | 7 | page back |
 | X5 | text | 154 | 10 | 126 | 10 | the name, in ink |
 | X6 | text | 154 | 20 | 126 | 20 | how it is said and whose word it is, in faded ink, wrapped onto a second line when it needs one; what follows moves down by that line |

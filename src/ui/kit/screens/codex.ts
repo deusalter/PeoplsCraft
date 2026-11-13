@@ -42,7 +42,7 @@ function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolea
   if (chosen) ring(s, 1, 1, 16, 16, 'salt');
   else if (live.focus) ring(s, 1, 1, 16, 16, 'salt');
   if (e.seen) s.icon(e.icon, 1, 1);
-  else s.icon(e.icon, 1, 1, 'flat', hot ? 'clay.sh' : 'clay.face');
+  else s.silhouette(e.icon, 1, 1, 'clay.dk', 'clay.pit');
 }
 
 /** The four steps (X9): a paragraph for each one known, one rule of `clay.sh` for each one not, cut at the page's foot. */
