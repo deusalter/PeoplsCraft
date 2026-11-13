@@ -16,6 +16,7 @@ import { centred } from './scale';
 import { ITEMS } from './mock/icons';
 import { TAB_MARKS } from './art/icons';
 import { SHEETS } from './sheets';
+import { SAMPLE_ICONS, SCREEN_FILES } from './screens';
 
 interface DemoScreen {
   title: string;
@@ -312,7 +313,7 @@ const indexScreen: DemoScreen = {
   },
 };
 
-const SCREENS: Record<string, DemoScreen> = { index: indexScreen, type: typeScreen, ...SHEETS, sample: partsScreen };
+const SCREENS: Record<string, DemoScreen> = { index: indexScreen, type: typeScreen, ...SHEETS, sample: partsScreen, ...SCREEN_FILES };
 
 // ---- the page
 
@@ -327,7 +328,7 @@ document.body.style.background = strict ? HEX[COLOURS.indexOf('stone.pit')] : '#
 const ui = new Root({
   strict,
   scale: scaleParam ? Math.max(1, Math.floor(Number(scaleParam)) || 1) : 'auto',
-  icons: (k) => ITEMS[k] ?? TAB_MARKS[k] ?? ICONS[k] ?? null,
+  icons: (k) => ITEMS[k] ?? TAB_MARKS[k] ?? SAMPLE_ICONS[k] ?? ICONS[k] ?? null,
 });
 const errors: string[] = [];
 window.addEventListener('error', (e) => errors.push(String(e.message)));
