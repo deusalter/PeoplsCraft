@@ -30,7 +30,7 @@
   "Take food with you when you go Under.",
   "Two pots this close bring them at dusk. I told the others so before I sat down here.",
   "The hearths that hunt ordinary animals sell me their meat and hide. What they want back is lees.",
-  "Bring me hide from Tusāravan. A holder's bed is hide over boards, and it wears through.",
+  "Bring me hide from Tusāravan. The beds on this road wear through.",
   "Coal sells in the cold country, if you have any to spare."
  ],
  "folk.housed:smith": [
@@ -87,32 +87,32 @@
   "Kāru will come to a Joining Bench, and Vejja is already on the road for the remains."
  ],
  "folk.stage:wayfinder.2": [
-  "Bed Maruhar's remains in a ring of Deep Rock and light a fire under them. That fire melts Jalit.",
+  "Maruhar is dead, peopl. The fire that works Jalit needs its remains.",
   "Kankāl comes next. Its offering is a bell, rung on its stone."
  ],
  "folk.stage:wayfinder.3": [
   "They are saying on the road that Kankāl lay on a seal, and you have broken it.",
-  "Its remains make the Hollow Gate. Under is open to you now."
+  "Under is open to you now. None of us will go down with you."
  ],
  "folk.stage:wayfinder.4": [
-  "Guhamāt's remains in a ring of Hollow Rock will work Tala.",
+  "Guhamāt is dead, peopl. Its remains will work Tala.",
   "Jīmūt's kite is flown over its floor."
  ],
  "folk.stage:wayfinder.5": [
-  "Jīmūt's remains make the second gate.",
-  "The telling does not say where that gate goes. I will not go through it to find out."
+  "Jīmūt is dead, peopl. Its remains go to the anvil for the second gate.",
+  "Bring back what you find past that gate, peopl."
  ],
  "folk.stage:wayfinder.6": [
-  "Work Patik in the Ratan Furnace, and make Kuranga's mask from it.",
-  "Kuranga comes up only after dark. The mask is worn at its stone at night."
+  "Ratan is dead, peopl. Its furnace works Patik, and Kuranga's mask is made of that.",
+  "The mask is worn at its stone after dark. By day nothing comes to it."
  ],
  "folk.stage:wayfinder.7": [
-  "Kuranga is dead. In a ring of Black Glass its remains will work Gahan.",
-  "Make the Cairn Key of Gahan. It opens the Cairn."
+  "Kuranga is dead, peopl. Its remains will work Gahan.",
+  "The Cairn is the last stone in the telling. Its key is made of Gahan."
  ],
  "folk.stage:wayfinder.8": [
-  "You opened the Cairn, peopl. The stones can be lit again.",
-  "A householder would have to sit at one of them through the night, and none of us has done that."
+  "You opened the Cairn, peopl, and what was under it is dead.",
+  "Every telling ends at the Cairn. None says who sits at a great stone after."
  ],
 
  "folk.stage:provisioner.1": [
@@ -131,10 +131,10 @@
   "When you come back through the second gate, bring the fruit you find there. I can sell it."
  ],
  "folk.stage:provisioner.6": [
-  "Kuranga comes up only at night, they say. Take meat and arrows enough for a night away from a hearth."
+  "Kuranga is a night's work, they say. Take meat and arrows enough for a night away from a hearth."
  ],
  "folk.stage:provisioner.7": [
-  "Kuranga is dead, and the Cairn is all the telling has left. I have arrows and meat for the walk."
+  "Kuranga is dead, they say. I have arrows and meat for the walk to the Cairn."
  ],
  "folk.stage:provisioner.8": [
   "Whatever came out of the Cairn, peopl, I will buy by weight like anything else."
@@ -198,7 +198,7 @@
   "Posak says one more small one stays by a hand that wears the Guhamāt Cap. I have never had a piece like it."
  ],
  "folk.stage:tinker.5": [
-  "Pieces of the same stuff as the Jīmūt Feather lie in old stores. It weighs almost nothing and bears weight."
+  "Cloud Bottles in the old stores hold the same pale stuff as the Jīmūt Feather."
  ],
  "folk.stage:tinker.6": [
   "Worn on the driving arm, the Ratan Crystal makes it tire slower. I can tell that by holding it."
@@ -229,7 +229,7 @@
   "A line cut to the Ratan Crystal loses less than one cut to any crystal I have. Bring me a piece, peopl."
  ],
  "folk.stage:runescribe.7": [
-  "Only the Cairn is left, peopl. The telling says it was the first stone, the one that covered most ground."
+  "The telling says the Cairn was the first stone, peopl, the one that covered most ground."
  ],
  "folk.stage:runescribe.8": [
   "If anyone sits at a great stone now the Cairn is open, tell me how its lines carry under the hand."
@@ -305,8 +305,8 @@
  ],
 
  "folk.dark:wayfinder": [
-  "It is Amāvassa, peopl. The moon is hollow tonight, and what was in it is on the ground.",
-  "Shut the door and stay off the open ground until the sun is up."
+  "What came down from the moon is on the ground tonight, peopl.",
+  "Shut the door and stay inside until the sun is up."
  ],
  "folk.dark:provisioner": [
   "No pack will come for the stores tonight. The things from the moon are out instead."

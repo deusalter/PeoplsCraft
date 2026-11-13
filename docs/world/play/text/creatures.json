@@ -35,14 +35,14 @@
  "beast.once:thornling": "One went down at our walls in a Night raid. Since Vanahar was killed, its packs come for the stores at dusk.",
 
  "beast.sight:gelcap": "Kinva sit in the grass by day, knee-high lumps of jelly under a red skin, and hop at anyone who comes near. Their jelly goes into the offering for Vanahar.",
- "beast.kill:gelcap": "Nothing under the skin but jelly: the rot out of fallen growth, which it formed in. It has no shape of its own inside.",
+ "beast.kill:gelcap": "Nothing under the skin but jelly. It has no shape of its own inside.",
  "beast.habit:gelcap": "Until something disturbs it, it sits on one patch. When it moves, the tall grass where it sat is gone.",
  "beast.once:gelcap": "Our first Vanahar Likeness took two lumps of its jelly. Laid on the stone, the likeness brings Vanahar up for what is in it.",
 
  "beast.sight:bog_lurker": "Kaddam lie sunk to the head in the mud of Panka, by day as by night, and stand up when someone comes close. They are chest-high, reed and peat, with roots trailing.",
  "beast.kill:bog_lurker": "Reed fibre and peat, and the bones of whatever had died in the mud where it lay.",
  "beast.habit:bog_lurker": "On mud with nothing near it, it lies sunk with only the head showing. It comes up in mud and never in open water.",
- "beast.once:bog_lurker": "In Panka one dropped a Lees Lump: lees that had set hard in the mud. It swallows the mud it lies in and whatever has set there.",
+ "beast.once:bog_lurker": "In Panka one dropped a Lees Lump. It had come up out of the mud with the lump inside it.",
 
  "beast.sight:frost_stalker": "Vaka are pale runners on four legs that hunt the snow, the pine woods and the peaks at night, one to three together. They see a person a long way off.",
  "beast.kill:frost_stalker": "Hide, and now and then a long tooth. The hide that came off it is the hide of what it had run down.",
@@ -55,7 +55,7 @@
  "beast.once:cinder_wisp": "Deep under the living ground, one hung beside molten rock in the middle of the day. The coal that comes up on the sand at night is down there whatever the hour.",
 
  "beast.sight:stonegnawer": "Under the ground, at every depth from the turf nearly to the floor, low six-legged crawlers go about plated in scale the colour of stone.",
- "beast.kill:stonegnawer": "Plates of Stone Scale and lumps of coal. It eats rock, and coal where it finds it, and the plates are the stone it has eaten.",
+ "beast.kill:stonegnawer": "Plates of Stone Scale and lumps of coal. It eats rock, and coal where it finds it.",
  "beast.habit:stonegnawer": "Nothing is commoner under the ground. It is met at every depth from the floor up to the turf.",
  "beast.once:stonegnawer": "We killed one beside the nest in a Sealed Store, where pieces of the dressed walls are missing in clean gaps. This kind breeds in the stores and has been at the stone.",
 
@@ -69,7 +69,7 @@
  "beast.habit:crag_bat": "It hangs in the caves by day and by night, and flies over the high rock of Pabbat and Sānu after dark.",
  "beast.once:crag_bat": "Over Pabbat one came down out of the night sky and died in the open. It was the same animal we meet in the caves.",
 
- "beast.sight:rustbound": "It stands in the rooms of the sealed stores, rust-red plates on a grey frame, as tall as a big man, and throws bolts of rust.",
+ "beast.sight:rustbound": "It stands in the rooms of the Sealed Stores, rust-red plates on a grey frame, as tall as a big man, and throws bolts of rust.",
  "beast.kill:rustbound": "Rust lumps, iron bars and barbed arrows. Opened over the pot, it had no bone anywhere in it.",
  "beast.habit:rustbound": "One that came from a nest goes no more than ten strides from it. It throws its rust from twelve strides.",
  "beast.once:rustbound": "A Barbed Arrow came out of one in a Sealed Store. It had eaten the harness and arrows stored there. The born say it was posted there.",
@@ -100,7 +100,7 @@
  "beast.once:rift_ray": "On the islands one came at us from under the rim, far below where we stood. It rides under the rim and rises over it.",
 
  "beast.sight:shardling": "Splintered pale crystal, a person's height and twice as broad, stands among the spires of the islands and looks like one of them.",
- "beast.kill:shardling": "Shards, and now and then Patik Ore. The shards still cut, and they loosen whatever holds them.",
+ "beast.kill:shardling": "Shards, and now and then Patik Ore. Its whole body was crystal like the spires it stands among.",
  "beast.habit:shardling": "Slow and very hard, it does not move until it has someone to go for.",
  "beast.once:shardling": "On the islands one dropped a piece of Patik Ore. The crystal kinds feed on the seams of that ore and carry bits of it in their bodies.",
 
@@ -110,7 +110,7 @@
  "beast.once:aether_wisp": "A Vihanga Scale fell from one on the islands. It had been feeding on a dead Vihanga.",
 
  "beast.sight:moonspawn": "The moon is hollow on the dark night, and these come down out of it: dark walkers taller than a Tama, with a pale violet light of their own.",
- "beast.kill:moonspawn": "Shade Flesh from what it had eaten, and Moon Slivers, which are bits of its own body: lees set hard and pale. The born say the slivers are pieces of the moon.",
+ "beast.kill:moonspawn": "Shade Flesh from what it had eaten, and Moon Slivers broken off its own body.",
  "beast.habit:moonspawn": "It never goes down before dawn. The sun undoes every one still standing.",
  "beast.once:moonspawn": "At sunrise one stood in the open and came apart. Its kind has never had to go down before a dawn, it seems.",
 
@@ -190,7 +190,7 @@
  "beast.once:m_cairn": "Beside a Cairn its bearer was beaten to the end of their strength, and the yellow point was gone in the same breath.",
 
  "eight.sight:b_colossus": "Roots came up through the joints of the paving, and then the body: root, bark and moss, far larger than anything else in the wood. Its roots ran up the six oaks of the floor.",
- "eight.kill:b_colossus": "Root and wood all through, and worked iron bars, which nothing in a wood makes. The Vanahar Remains still move. They loosen made things, so a bench built round them joins two pieces into one.",
+ "eight.kill:b_colossus": "Root and wood all through, and worked iron bars, which nothing in a wood makes. The Vanahar Remains still moved in the hand after the kill.",
  "eight.loss:b_colossus": "Every hostile thing we met was harder to kill from the day it died. Some dusks later Tama and Kantak came up round our houses in twos and threes and went for the stores until dawn.",
  "eight.habit:b_colossus": "Each likeness laid since has brought up another the size of the first, from some wood nearby, it seems. It slams the ground round itself and charges, and once it is hurt it throws up roots.",
  "eight.once:b_colossus": "One of us stood behind an oak of the floor. It charged straight at the trunk, and the oak stood. Its roots run up those trees.",
@@ -199,7 +199,7 @@
  "eight.phase:b_colossus.1": "It tears its roots up out of the paving.",
 
  "eight.sight:b_maw": "The sand in the bowl moved, and a long body of segments came up under one of us. It is made of grit and throws grit in fans. The only footing was the rim and the gilded platform.",
- "eight.kill:b_maw": "Grit through the length of it, and at the middle a mass of rock from beside the molten rock. Gold from the lures was in it. Woken by fire in a ring of Deep Rock, its remains loosen Jalit Ore.",
+ "eight.kill:b_maw": "Grit through the length of it, and at the middle a mass of rock from beside the molten rock. Gold from the lures was in it, uneaten.",
  "eight.loss:b_maw": "At dawn sand people grey with ash marched on our houses for the stores, and turned for home at dusk. Since the kill, other kinds come up on the sand of Marudesha at night.",
  "eight.habit:b_maw": "The lure is gone when it comes up, whether we kill it or not. It travels under whoever stands on the sand, comes up beneath them and throws grit in fans.",
  "eight.once:b_maw": "Kīta were on the floor of the bowl before Maruhar came up. They ran to the place where it would surface and were there first.",
@@ -208,17 +208,17 @@
  "eight.phase:b_maw.1": "Up out of the sand, it thrashes, and grit pours off it.",
 
  "eight.sight:b_warden": "A pale upright body came up over the stone when the bell was set down, and it hung in the air. It threw slow pale lumps in fans and was somewhere else between throws.",
- "eight.kill:b_warden": "Pale set matter with Hīrak through it, and lumps of Hīrak. Set round with Black Glass, the Kankāl Remains make the gate to the hollow, where its kind took its body.",
+ "eight.kill:b_warden": "Pale set matter with Hīrak through it, and lumps of Hīrak. Its kind took its body in the dark of the hollow.",
  "eight.loss:b_warden": "On the first dark night after the kill, Chandasāvak and Ulūk came up over the whole country and the sky went violet. No pack came for the stores that night. At dawn the sun took apart every one still standing.",
  "eight.habit:b_warden": "A Night raid at our houses breaks off while one of these is up. It hangs, throws slow pale lumps in fans, rings and spirals, and changes place. Near the end Tama come in for it.",
  "eight.once:b_warden": "We killed it while the Tama that came in for it were still on the floor. They had come to eat it as it failed, and we were in the way.",
  "eight.said:b_warden": "Kankāl was set in the deep rock by the forebears to hold the dark night shut. The peopls broke that seal, and now the moon's young come down.",
- "eight.intro:b_warden": "The bell is rung, and something pale comes up over the stone.",
+ "eight.intro:b_warden": "Something pale comes up over the bell on the stone.",
  "eight.phase:b_warden.1": "Turning in place, it throws pale lumps out in spirals.",
  "eight.phase:b_warden.2": "Its body is coming apart, and Tama close in on it.",
 
  "eight.sight:b_sporemother": "The smoke reached the roof, and the roof moved: a mass of cap and thread hanging from the dome by its own growth. Pieces of cap fell from it, and Kavak formed where they landed.",
- "eight.kill:b_sporemother": "Cap and thread, Antar bars from the smokers it had eaten, and the Guhamāt Remains. Bedded in Hollow Rock over a fire, they loosen Tala and Ākās Ore, and the ore never gets hot.",
+ "eight.kill:b_sporemother": "Cap and thread, Antar bars from the smokers it had eaten, and the Guhamāt Remains.",
  "eight.loss:b_sporemother": "Eight nights on, nothing new had come up near our houses, though everything was harder to kill from the kill on. Its host stayed round it for the cap it dropped. Now its packs may come up near our gate to the hollow.",
  "eight.habit:b_sporemother": "It drops cap on marked ground, and Kavak form where the pieces land. Near the end most of its growth tears from the roof and it swings. If the floor empties, it goes back the way it came.",
  "eight.once:b_sporemother": "A Kavak formed on the floor where a piece of its falling cap had landed. The pieces are raw remains, and the lowest feeders form on them.",
@@ -228,7 +228,7 @@
  "eight.phase:b_sporemother.2": "Most of its growth tears from the roof, and it swings on the rest.",
 
  "eight.sight:b_regent": "Something pale and very large came down out of the high air over the kite and circled the floor without landing. It stooped on one of us at a time and threw bolts from its body.",
- "eight.kill:b_regent": "Pale stuff that weighs almost nothing, and Tala bars. A Jīmūt Remains stands up from the hand however it is held. Set in a frame of Tala bars, it makes the gate to the islands.",
+ "eight.kill:b_regent": "Pale stuff that weighs almost nothing, and Tala bars. Its kind took its body under the islands.",
  "eight.loss:b_regent": "By the eighth night Jatu were flying over every country we walked, where before they kept to the caves and the high rock. A held hearth still turns them, since they roost.",
  "eight.habit:b_regent": "Few lesser feeders come near the floor while it is up. It circles out of reach and stoops on one of us at a time, throws bolts in fans and rings, and drops pieces of itself on marked ground.",
  "eight.once:b_regent": "One of us held a Jīmūt Remains from an earlier kill when the kite went up. It stood straight up from the hand, and the animal came down out of the air above it. We take that to point at the islands overhead.",
@@ -238,7 +238,7 @@
  "eight.phase:b_regent.2": "Now it screams and stoops lower over the floor.",
 
  "eight.sight:b_luminarch": "Crystal gathered over the stone and turned. In the middle hung a body of dense crystal with a ring of pieces turning round it, and its beam swung slowly after one of us.",
- "eight.kill:b_luminarch": "Dense crystal all through, with Ākās bars in it. Bedded in Island Rock over a fire, the Ratan Remains loosen Patik Ore. A Ratan Crystal came with it, the densest crystal we have handled.",
+ "eight.kill:b_luminarch": "Dense crystal all through, with Ākās bars in it, and the Ratan Remains and a Ratan Crystal among the pieces.",
  "eight.loss:b_luminarch": "Its kinds stayed on the islands round it, where its crystal was. With it dead they have nothing to stay for, and our gate to the islands would be their way to us. So far we have seen only the harder killing.",
  "eight.habit:b_luminarch": "Every lens laid so far has brought up one the size of the first. It throws rays and a slow beam, as a staff throws with no hand to tire, and changes place. Near the end Sakal form on its loose pieces.",
  "eight.once:b_luminarch": "At its last change a Sakal formed on the floor where a piece of its body had fallen. The kind forms on its own loose remains.",
@@ -248,7 +248,7 @@
  "eight.phase:b_luminarch.2": "It stops holding its shape, and pieces come away.",
 
  "eight.sight:b_hart": "Hoofbeats out of the dark, then a body on four legs with tines, giving a pale violet light. It ran straight at one of us and slammed the ground. Chandasāvak came up behind it.",
- "eight.kill:b_hart": "Lees set hard and pale, and Patik bars. Bedded in Black Glass over a fire, the Kuranga Remains loosen Gahan Ore, the ore that lies on the floor. They give its kind's violet light.",
+ "eight.kill:b_hart": "Lees set hard and pale, and Patik bars from the masks it had eaten.",
  "eight.loss:b_hart": "The next dark night the deep kind came up as before, with no strongest at its head now. Packs with nothing over them do not hold ground, so a Night raid may fall on a dark night from now on, it seems.",
  "eight.habit:b_hart": "Only after dark does it come to a mask laid on its stone. It charges, slams a wide ring of ground and throws blades of its own body, and from halfway on it is in one place and then another.",
  "eight.once:b_hart": "Our fight with it ran until dawn. When the sun came up it went back down. The sun undoes its kind.",
@@ -257,13 +257,13 @@
  "eight.phase:b_hart.1": "Violet light runs along its tines.",
  "eight.phase:b_hart.2": "Between charges it is in one place and then another.",
 
- "eight.sight:b_sovereign": "Stone moved inside the cairn, and a stack of dressed stone rose out of the base and hung there, standing stones on top. It threw glowing stones and swept a beam across the floor.",
+ "eight.sight:b_sovereign": "Stone moved inside the Cairn, and a stack of dressed stone rose out of the base and hung there, standing stones on top. It threw glowing stones and swept a beam across the floor.",
  "eight.kill:b_sovereign": "Dressed stone, the gems and lamps of the housing it had eaten, Gahan bars, and arms better than any other store holds. The Nihān Remains are the strongest raw remains anyone carries.",
  "eight.loss:b_sovereign": "Silahādak came up on the surface at night and came in with the dusk packs. The base under every Cairn we passed stood broken, with dark gaps in it.",
  "eight.habit:b_sovereign": "Through the base it comes up to every key laid on the Cairn. It throws glowing stones in fans and rings, swings a beam, and changes place. Near the end Chandasāvak fall in behind it.",
  "eight.once:b_sovereign": "After the kill, one of us stood on the base. Under the paving it is hollow, with clean gaps where the animal ate its way through.",
- "eight.said:b_sovereign": "When the great lees ran out, the forebears closed their first stone under the cairn, to save it for the day it could be lit. Nihān is the store they left.",
- "eight.intro:b_sovereign": "Stone grinds and shifts inside the cairn.",
+ "eight.said:b_sovereign": "When the great lees ran out, the forebears closed their first stone under the Cairn. Nihān is the store they left with it.",
+ "eight.intro:b_sovereign": "Stone grinds and shifts inside the Cairn.",
  "eight.phase:b_sovereign.1": "The stack of stone parts, and its glowing middle shows.",
  "eight.phase:b_sovereign.2": "Everything it has eaten shows as it comes apart.",
 
