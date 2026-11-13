@@ -3863,6 +3863,23 @@ in `bind`, closed the socket with `proto` "sequence out of order", and `proto` i
 loading screen until it was reloaded. `Session.send` now drops a sequenced message while the connection has not been
 welcomed; the welcome resets the inventory channel and its pending ops, as 4.8 says, so nothing dropped there was
 going to count.
+(j) The pause menu stopped the movement stream on a server (2.3, 7.9). `Game.paused` stopped the client's ticks, and
+with them every `move`, whatever the transport; `pause` is not sent on `ws`, so after 30 s the host parked the player for
+`idle` (minions gone, `pl del`, a world event ended), the client reconnected and loaded the world again, and the same
+happened 30 s after each arrival while the menu stayed open. Any alt-tab opens it, since losing the pointer lock does.
+On a server the pause menu now stops nothing: the ticks, and so the moves, go on under it as 2.3 says ("on a server Esc
+opens the menu without pausing"). The menu sets `uiMode`, so no key or click reaches the body meanwhile.
+(k) The client waited on saves a server never makes for it (4.3). A server ignores `save` from a socket and sends `saved`
+only on local transports, so `Game.save()` always ran out its 5 s: the pause screen said "Saving..." and then "Could not
+save just now", "Save and quit to title" hung for 5 s, and `session.unsaved`, true from the first sequenced message and
+never cleared, made every reload or tab close ask "Leave site?". On `ws` `Game.save()` now settles at once and sends
+nothing, the pause screen says "The server keeps this world", and `beforeunload` asks only for what is not saved on a
+local transport; the prompt while the pointer is locked in play stays on every transport.
+(l) Quitting to the title never sent `bye` (4.3). The page reloaded and the socket closed, so the host gave the player
+the 30 s grace of a drop: a seat held, the roster unchanged, a boss fight waiting for it, and no save asked for. Both
+"Save and quit to title" buttons now call `Game.quit()`, which on `ws` sends `bye` and waits, up to 2 s, for the host to
+close the socket before the page reloads: a close from the client's side first would reach the host before the step
+that reads the `bye`, and `forget` discards what a closed connection still had queued. Solo saves and reloads as before.
 
 ---
 

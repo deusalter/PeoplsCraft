@@ -281,14 +281,15 @@ export class GameMenu {
     g.paused = true; this.show(); this.sub = false;
     this.root.innerHTML = '';
     el('h2', '', this.root, 'PAUSED'); el('div', 'sub', this.root, g.worldName);
-    const saved = el('div', 'saved', this.root, g.cfg.canSave === false ? noSaveText(g.cfg.noSave).pause : 'Saving...');
+    const remote = !g.session.local;
+    const saved = el('div', 'saved', this.root, remote ? 'The server keeps this world' : g.cfg.canSave === false ? noSaveText(g.cfg.noSave).pause : 'Saving...');
     if (g.cfg.canSave === false) saved.classList.add('warn');
     const col = el('div', 'col', this.root);
     el('button', 'btn gold', col, 'Resume').onclick = () => this.close();
     el('button', 'btn', col, 'Settings').onclick = () => this.options();
     el('button', 'btn', col, 'Controls').onclick = () => { this.sub = true; this.root.innerHTML = ''; el('h2', '', this.root, 'CONTROLS'); keysPanel(this.root); el('button', 'btn', this.root, 'Back').onclick = () => this.pause(); };
-    el('button', 'btn', col, 'Save and quit to title').onclick = async () => { await g.save(); location.reload(); };
-    void g.save().then(() => { if (g.cfg.canSave !== false) saved.textContent = g.lastSave > Date.now() - 5000 ? 'Progress saved' : 'Could not save just now'; });
+    el('button', 'btn', col, 'Save and quit to title').onclick = () => void g.quit();
+    if (!remote) void g.save().then(() => { if (g.cfg.canSave !== false) saved.textContent = g.lastSave > Date.now() - 5000 ? 'Progress saved' : 'Could not save just now'; });
   }
   /** Escape: back out of a sub-screen, or resume from the pause screen. */
   escape(): void { if (this.sub) this.pause(); else this.close(); }
@@ -308,7 +309,7 @@ export class GameMenu {
     const col = el('div', 'col', this.root);
     const rise = el('button', 'btn gold', col, 'Rise again'), quit = el('button', 'btn', col, 'Save and quit to title');
     rise.onclick = () => { this.dead = false; g.respawn(); this.close(); };
-    quit.onclick = async () => { g.respawn(); await g.save(); location.reload(); };
+    quit.onclick = () => { g.respawn(); void g.quit(); };
     // held back while the screen fades in, so a still-attacking click cannot respawn unseen
     rise.disabled = quit.disabled = true; setTimeout(() => { rise.disabled = quit.disabled = false; }, 800);
   }

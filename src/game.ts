@@ -208,8 +208,9 @@ export class Game {
     window.addEventListener('beforeunload', (e) => {
       void this.save();
       // Ctrl is a sprint key and Ctrl+W closes the tab: ask before closing mid-play (not with a menu open), and whenever
-      // something done since the last save would be lost; never in an automated run
-      if (!cfg.quick && ((this.ready && this.input.locked && !this.stats.dead) || s.unsaved)) { e.preventDefault(); e.returnValue = ''; }
+      // something done since the last save would be lost (a server's saves are its own: nothing here says so); never in an
+      // automated run
+      if (!cfg.quick && ((this.ready && this.input.locked && !this.stats.dead) || (s.local && s.unsaved))) { e.preventDefault(); e.returnValue = ''; }
     });
     // hiding stands the world still at once, even in the middle of a script; the script's next frame starts it again
     document.addEventListener('visibilitychange', () => { if (document.hidden) { this.drivenAt = -Infinity; void this.save(); } this.syncPause(); });
@@ -348,10 +349,26 @@ export class Game {
     const id = ++this.cmdId;
     return new Promise((res) => { this.cmds.set(id, res); this.session.send({ t: 'cmd', id, text }); });
   }
-  /** Ask the host to save now. Settles when it says how that went, or after 5 s without a word from it. */
+  /** Ask the host to save now. Settles when it says how that went, or after 5 s without a word from it. A server saves
+   *  on its own and takes no `save` from a socket (4.3): settled at once. */
   save(): Promise<void> {
-    if (!this.everReady) return Promise.resolve();
+    if (!this.everReady || !this.session.local) return Promise.resolve();
     return new Promise((res) => { this.saveWaiters.push(res); setTimeout(res, 5000); this.session.send({ t: 'save' }); });
+  }
+  /** Back to the title. Solo saves first; on a server `bye` parks the player at once and has the server save (4.3), and
+   *  the transport, which the host closes, does not dial again. Then the page is loaded afresh. */
+  async quit(): Promise<void> {
+    const s = this.session;
+    if (s.local) await this.save();
+    else {
+      const t = s.transport, end = performance.now() + 2000;
+      s.send({ t: 'bye' });
+      // the host closes the socket once it has parked the player: a close from this side first would reach it before its
+      // next step had read the `bye`, and what a closed connection had queued is discarded
+      await new Promise<void>((ok) => { const look = (): void => { if (t.state !== 'open' || performance.now() > end) ok(); else setTimeout(look, 20); }; look(); });
+      t.close();
+    }
+    location.reload();
   }
   /** One tick of mining: the swing, the dig sound, three chips off the face. */
   private digTick(x: number, y: number, z: number, id: number, nx: number, ny: number, nz: number): void {
@@ -478,6 +495,8 @@ export class Game {
     // &det: time passes only in the frames a script runs (T.frame, T.step, T.run); the display's frames only draw
     void this.runFrame(this.cfg.det ? 0 : dt);
   };
+  /** The pause menu stops this client's ticks only where the host stands still with it: a server never does. */
+  private get still(): boolean { return this.paused && this.session.local; }
   /** Drive the game without requestAnimationFrame (automated tests, background tabs). */
   async pump(seconds: number): Promise<void> {
     const ch = new MessageChannel();
@@ -518,8 +537,9 @@ export class Game {
     if (!this.cfg.step) this.syncPause();
     else if (this.paused) { if (!this.pausedAt) this.pausedAt = t1; }
     else if (this.pausedAt) { this.heldMs += t1 - this.pausedAt; this.pausedAt = 0; }
-    // a host told to stand still hears nothing of ticks run meanwhile, and would take their moves all in one step
-    if (!this.paused && !this.hostPaused) {
+    // a host told to stand still hears nothing of ticks run meanwhile, and would take their moves all in one step. A server's
+    // world goes on under the pause menu, and so do the moves that tell it this player is still there (4.2, 7.9)
+    if (!this.still && !this.hostPaused) {
       this.acc += dt;
       const wait = this.runTicks();
       if (wait) return (this.busy = wait.then(() => { this.busy = null; this.endFrame(dt, t0, t1); }, (e) => { this.busy = null; console.error('a step failed', e); }));
@@ -551,8 +571,8 @@ export class Game {
   private endFrame(dt: number, t0: number, t1: number): void {
     const p = this.player, inp = this.input;
     const t2 = performance.now();
-    if (!this.paused) this.world.pumpEdits();
-    const a = this.paused ? 1 : this.acc / STEP;
+    if (!this.still) this.world.pumpEdits();
+    const a = this.still ? 1 : this.acc / STEP;
     p.applyCamera(this.gfx.camera, a, dt, this.cfg.settings.gfx.fov, this.time, this.cfg.settings.bob, this.cfg.settings.shake);
     this.interact.aim(this.blocks.reach(), inp.locked && !this.stats.dead);
     this.audio.lx = p.x; this.audio.ly = p.y + p.eye; this.audio.lz = p.z;
@@ -560,7 +580,7 @@ export class Game {
     if (this.world.uploadsThisFrame > 0) this.gfx.shadowDirty = true;
     this.gfx.update(this.time, this.env, this.gfx.camera.position);
     this.world.setCull(this.gfx.camera.position.x, this.gfx.camera.position.z);
-    if (!this.paused) this.particles.update(dt, this.world);
+    if (!this.still) this.particles.update(dt, this.world);
     this.boxes.begin(); this.ents.render(this.boxes, a, this.time); this.boxes.end();
     this.ents.renderDrops(a);
     this.updateHand(dt);
@@ -570,7 +590,7 @@ export class Game {
     this.hud.update(dt);
     this.audio.update();
     const t3 = performance.now(), pr = this.prof;
-    if (this.ready && !this.paused && !document.hidden && this.world.uploadsThisFrame === 0) this.gfx.tune(dt * 1000, t3 - t0);
+    if (this.ready && !this.still && !document.hidden && this.world.uploadsThisFrame === 0) this.gfx.tune(dt * 1000, t3 - t0);
     // a step that had to wait is not time this thread worked: `tick` counts the ticks themselves
     pr.world = Math.max(pr.world, t1 - t0); pr.tick = Math.max(pr.tick, this.tickMs); pr.render = Math.max(pr.render, t3 - t2);
     if (this.debug.frame(dt)) { this.debug.set(this.debugLines()); pr.world = pr.tick = pr.render = 0; }

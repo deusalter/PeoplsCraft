@@ -315,6 +315,55 @@ test('`?server=` opens the join screen with an address field, and `&name=` joins
   } finally { await b.close(); }
 });
 
+test('on a server the pause menu keeps the player in the world, asks no save of it, and quitting to the title says `bye`', { timeout: 180 * S }, async () => {
+  // another player, still on its loading screen, hears every roster change: `pl del` comes only when a player is parked
+  const o = sock();
+  await o.opened;
+  o.ws.send(hello('Oto', token('7')));
+  await o.next('welcome');
+  const b = await chrome(), problems: string[] = [], dialogs: string[] = [];
+  try {
+    const { page } = b;
+    page.on('dialog', (d) => { dialogs.push(d.type()); void d.accept(); });
+    await page.goto(base + '/', { waitUntil: 'load' });
+    await page.getByRole('button', { name: 'Join Peopls Craft' }).click();
+    await page.locator('#menu input[placeholder="Your name"]').fill('Pia');
+    await page.locator('#menu input[type=password]').fill(PASSWORD);
+    await page.locator('#menu input[type=password]').press('Enter');
+    await inPlay(page);
+    await page.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 60000 });
+    const slot = (o.got.filter((m) => m.t === 'pl').flatMap((m) => (m as S2C & { t: 'pl' }).add ?? []).find((q) => q.name === 'Pia'))?.slot;
+    assert.ok(slot, 'the other player was told of Pia');
+    const parks = (): number => o.got.filter((m) => m.t === 'pl' && !!(m as S2C & { t: 'pl' }).del?.includes(slot)).length;
+    // a hotbar choice: one sequenced message, which a server never reports saved
+    await page.keyboard.press('Digit2');
+    await new Promise((ok) => setTimeout(ok, 1000));
+    await page.keyboard.press('Escape');
+    const paused = Date.now();
+    await said(page, 'PAUSED');
+    await new Promise((ok) => setTimeout(ok, 6500));
+    const line = await page.locator('#menu .saved').innerText();
+    if (/Saving|Could not save/.test(line)) problems.push(`the pause screen waits on a save the server never answers: "${line}"`);
+    await new Promise((ok) => setTimeout(ok, Math.max(0, paused + 34 * S - Date.now())));
+    if (parks()) problems.push('the paused player was parked for idling');
+    const joins = (logs.join('').match(/Pia joined/g) ?? []).length;
+    if (joins !== 1) problems.push(`Pia joined ${joins} times`);
+    // the game's own handler runs first: what it asked of the browser is in the event when this one sees it
+    await page.evaluate(() => addEventListener('beforeunload', (e) => sessionStorage.setItem('asked', String(e.defaultPrevented))));
+    const quit = Date.now(), before = parks();
+    await page.getByRole('button', { name: 'Save and quit to title' }).click();
+    await page.getByRole('button', { name: 'Join Peopls Craft' }).waitFor({ timeout: 20000 });
+    const took = Date.now() - quit;
+    if (took > 3000) problems.push(`quitting to the title took ${took} ms`);
+    if (dialogs.length || await page.evaluate(() => sessionStorage.getItem('asked')) !== 'false') problems.push('leaving asked to stay for changes that may not be saved');
+    const end = Date.now() + 3000;
+    while (parks() === before && Date.now() < end) await new Promise((ok) => setTimeout(ok, 50));
+    if (parks() === before) problems.push('quitting to the title left the player lingering instead of parking it');
+    assert.deepEqual(problems, []);
+    assert.deepEqual(b.errors, []);
+  } finally { await b.close(); o.ws.close(); }
+});
+
 test('a session on the WebSocket transport says hello again by itself when the server comes back from a restart', { timeout: 90 * S }, async () => {
   const t = new WsTransport(serverUrl(base)!), s = new Session(t), got: S2C[] = [], closes: string[] = [];
   t.onClose = (c) => { closes.push(c); };
