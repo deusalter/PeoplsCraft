@@ -469,7 +469,8 @@ export class Game {
     // a hidden tab draws no frames: what a frame does not count did not pass for a host this page steps either
     if (gap > 100 && this.cfg.step) this.heldMs += gap - 100;
     this.last = now;
-    void this.runFrame(dt);
+    // &det: time passes only in the frames a script runs (T.frame, T.step, T.run); the display's frames only draw
+    void this.runFrame(this.cfg.det ? 0 : dt);
   };
   /** Drive the game without requestAnimationFrame (automated tests, background tabs). */
   async pump(seconds: number): Promise<void> {

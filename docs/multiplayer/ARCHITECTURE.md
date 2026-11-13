@@ -3602,6 +3602,11 @@ store reads stands still with it.
 (f) `&det` without `&worker` generates in the page, two chunks a step (`InlineSource`), so the promise of 10.1 now holds on
 the loopback too, where D35 (c) had left it to this stage.
 (g) The worker's generator takes its seed from the world as storage holds it, known only once the host has opened it.
+(h) Under `&det` the display's own frames draw and pump but count no time; only the frames a script runs (`T.frame`,
+`T.step`, `T.run`) step the world, and `T.loaded()` runs `T.frame()`, one step each. Frames from `requestAnimationFrame`
+otherwise added ticks at moments of the wall clock, and two runs of one script were a few ticks apart from the first call.
+The `det` scenario gives the same tick and `simhash` after each of its 20 calls in the worker and in the page, and the two
+transports give the same values as each other.
 
 ---
 

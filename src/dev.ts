@@ -42,6 +42,8 @@ export function installDevTools(game: Game, where: { sim?: Sim; ask: (src: strin
     /** True on the first frame in which the player is in play and the view is meshed. */
     async loaded(): Promise<boolean> {
       const end = performance.now() + 40000, ok = (): boolean => game.ready && game.world.counts().waiting === 0;
+      // &det: one step a frame, so the run comes back in the tick it came into play whatever the wall clock did meanwhile
+      if (game.cfg.det) { while (performance.now() < end) { await T.frame(); if (ok()) return true; } return ok(); }
       let last = performance.now() - 1000 / 60;
       while (performance.now() < end) {
         const now = performance.now();

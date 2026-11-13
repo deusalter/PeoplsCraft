@@ -5,6 +5,8 @@
 //   npm run smoke -- legacy              open the saves in scripts/fixtures/legacy-v1.json in this build
 //   npm run smoke -- legacy-make         rebuild that fixture (only on a build from before the save format changed)
 //   npm run smoke -- perf                the scripted 20 s flight at view 12 (docs/multiplayer/MEASUREMENTS.md)
+//   npm run smoke -- det                 two runs of one script on a &det world agree after each of 20 calls (?loopback: in the page)
+//   npm run smoke -- solofar             a solo world culls nothing by distance, in the page and in the worker
 //   npm run smoke -- closetab            a solo world closed 4 s and 1 s after a change, then opened again (--r12: the risk's table)
 //   --repeat N                           run N times, stop at the first failure
 //   ?clone                               (or any ?a&b=c) added to the page's query: `npm run smoke -- golden ?clone` runs the
@@ -31,6 +33,8 @@ const SCENARIOS = {
   'legacy-make': async () => { const m = await import('./fixtures/legacy.mjs'); return { query: m.makeQuery, run: m.make }; },
   perf: () => import('./perf.mjs'),
   closetab: () => import('./closetab.mjs'),
+  det: () => import('./det.mjs'),
+  solofar: () => import('./solofar.mjs'),
 };
 
 /** Flatten nested probes to dotted paths so a diff names the exact field. */
