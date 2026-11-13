@@ -94,10 +94,10 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
     left.push(pageRow({
       id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen: i === v.bounty, onChoose: () => v.onChoose(i),
       paint: (g, live) => {
-        const room = PW - 21 - b.took.length * 11 - 2;
-        g.text(inkCut(b.asker, room), 21, 1, b.barred ? 'ink.faded' : 'ink');
-        g.text(inkCut(b.task, PW - 22), 21, 10, 'ink.faded');
-        heads(g, b.took, PW - 1, 1);
+        // The asker has the first line to itself; the takers' heads stand at the right end of the task's line.
+        g.text(inkCut(b.asker, PW - 22), 21, 1, b.barred ? 'ink.faded' : 'ink');
+        g.text(inkCut(b.task, b.took.length ? PW - 12 - (b.took.length - 1) * 11 - 21 : PW - 22), 21, 10, 'ink.faded');
+        heads(g, b.took, PW - 1, 10);
         g.translate(0, 1);
         paintSlot(g, { ramp: 'clay', stack: { icon: b.icon, n: b.n } }, live);
         g.translate(0, -1);
@@ -106,24 +106,30 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
   });
   const b = v.bounties[v.bounty];
   const mine = b.took.includes(v.seat);
+  // The telling runs as far down the page as the lines under it allow; the button keeps its place at the page's foot.
+  const TAKE_Y = 140;
+  const shown = b.took.length > 2 ? b.took.slice(0, 1) : b.took;
+  const under = b.barred ? 20 : b.took.length ? 10 + shown.length * 10 + (b.took.length > 2 ? 10 : 0) : 0;
+  const telling = para(0, 28, PW, b.telling, 'ink', Math.floor((TAKE_Y - 4 - under - (under ? 2 : 0) - 12 - 28) / 10));
+  let y = 28 + telling.h + 2;
   const right: Node[] = [
     pageHeading({ x: 0, y: 0, w: PW, text: inkCut(b.task, PW) }),
     inkLine(0, 14, PW, `Asked by ${b.asker}`, 'ink.faded'),
-    para(0, 28, PW, b.telling, 'ink', 5),
-    inkLine(0, 82, PW, b.pay ? `Pays {lees} ${count(b.pay)}` : 'Pays nothing in lees', 'ink'),
+    telling,
+    inkLine(0, y, PW, b.pay ? `Pays {lees} ${count(b.pay)}` : 'Pays nothing in lees', 'ink'),
   ];
-  if (b.barred) right.push(para(0, 94, PW, b.barred, 'blood.dk', 2));
+  y += 12;
+  if (b.barred) right.push(para(0, y, PW, b.barred, 'blood.dk', 2));
   else if (b.took.length) {
-    right.push(inkLine(0, 94, PW, 'Taken by', 'ink.faded'));
+    right.push(inkLine(0, y, PW, 'Taken by', 'ink.faded'));
     // Two lines are left above the button: a third taker and more are counted.
-    const shown = b.took.length > 2 ? b.took.slice(0, 1) : b.took;
     shown.forEach((seat, k) => {
       const m = v.crew.find((c) => c.seat === seat)!;
-      right.push({ x: 0, y: 104 + k * 10, w: PW, h: 10, paint: (g) => { flag(g, m.seat, 0, 1); g.text(inkCut(m.name, PW - 5), 5, 0, 'ink'); } });
+      right.push({ x: 0, y: y + 10 + k * 10, w: PW, h: 10, paint: (g) => { flag(g, m.seat, 0, 1); g.text(inkCut(m.name, PW - 5), 5, 0, 'ink'); } });
     });
-    if (b.took.length > 2) right.push(inkLine(0, 114, PW, `and ${b.took.length - 1} more of the crew`, 'ink.faded'));
+    if (b.took.length > 2) right.push(inkLine(0, y + 20, PW, `and ${b.took.length - 1} more of the crew`, 'ink.faded'));
   }
-  right.push(button({ id: 'jr.take', x: 0, y: 128, w: 60, h: 14, label: mine ? 'Leave' : 'Take', disabled: !!b.barred, onPress: () => v.onTake(b) }));
+  right.push(button({ id: 'jr.take', x: 0, y: TAKE_Y, w: 60, h: 14, label: mine ? 'Leave' : 'Take', disabled: !!b.barred, onPress: () => v.onTake(b) }));
   return { left, right };
 }
 
