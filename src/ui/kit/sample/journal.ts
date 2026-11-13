@@ -102,7 +102,7 @@ export const BOUNTIES: Bounty[] = [
     telling: 'The provisioner salts meat against the nights the village is shut in. Boar and Sheep both serve.' },
   { id: 'b.idol', asker: 'Rehakār', task: 'A Vanahar Likeness', icon: 'bait', n: 1, pay: 120, took: [2],
     telling: 'Carved at the workbench from a log, fiber, jelly and a red flower. Rehakār wants one to cut lines on; it is not to be taken to the altar.' },
-  { id: 'b.fuel', asker: 'A fire of the sand country', task: 'Carry fuel to a fire', icon: 'coal', n: 32, pay: 0, took: [8],
+  { id: 'b.fuel', asker: 'A Marujan fire', task: 'Fuel for a fire', icon: 'coal', n: 32, pay: 0, took: [8],
     telling: 'Thirty-two coal to the fire in the Kāsa. They pay nothing in lees; their standing with the crew rises by one step.' },
   { id: 'b.bars', asker: 'Kāru', task: 'Four iron bars', icon: 'ingot', n: 4, pay: 18, took: [3, 5, 6],
     telling: 'For hinges and the frame of a Joining Bench. Kāru moves in once Vanahar has fallen and asks again each dawn.' },
@@ -127,7 +127,7 @@ export const PEOPLES: People[] = [
   { name: 'Householders', holds: 'They hold a stone up to first light.', notch: 2, toward: 0.6,
     rises: 'Lees weighed in, first kills, nights held', falls: 'A bed broken, a hearth overrun',
     opens: 'Tasks for the crew' },
-  { name: 'Sand-country people', holds: 'They hold up ground no feeder would come for.', notch: 1, toward: 0.25,
+  { name: 'Marujan', holds: 'They hold up ground no feeder would come for.', notch: 1, toward: 0.25,
     rises: 'Kills burned, nests broken, fuel carried', falls: 'Every bait at the Maruhar Altar',
     opens: 'Trade at a fire' },
 ];

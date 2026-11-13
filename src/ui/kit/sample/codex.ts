@@ -94,7 +94,7 @@ const PLACES: Entry[] = [
 const PEOPLES: Entry[] = [
   { key: 'people_house', name: 'Householders', icon: 'codex:people_house', seen: true, word: plain, facts: ['Villages', 'Yavas, Vana'],
     steps: ['They hold a stone up to first light.', 'They stay in a village while its beds stand.'] },
-  { key: 'people_sand', name: 'Sand-country people', icon: 'codex:people_sand', seen: true, word: plain, facts: ['Marudesha', 'At fires'],
+  { key: 'people_sand', name: 'Marujan', icon: 'codex:people_sand', seen: true, word: hearth('people of the waste'), facts: ['Marudesha', 'At fires'],
     steps: ['They hold up ground no feeder would come for.'] },
   { key: 'people_arrival', name: 'Arrivals', icon: 'codex:people_arrival', seen: true, word: plain, facts: ['At the mouth'],
     steps: ['Those who come up at the mouth: the crew.'] },
