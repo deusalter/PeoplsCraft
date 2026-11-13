@@ -1,5 +1,7 @@
 import { SILHOUETTES, type SilhouetteName } from '../art/silhouettes';
+import { STATE_MARKS } from '../art/icons';
 import { DARK_SLOT, LARGE_SLOT_SIZE, SLOT, SLOT_SIZE } from '../art/slot';
+import { coded } from '../pixmap';
 import { SMALL } from '../font/face';
 import { rightX } from '../font/measure';
 import type { Handlers, Live, Node, Tip } from '../node';
@@ -49,6 +51,28 @@ export function paintCount(s: Surface, n: number, right: number, bottom: number,
 
 const FRAME: Record<Exclude<SlotMark, 'locked'>, Colour> = { accepts: 'growth', refused: 'blood', chosen: 'salt' };
 
+// The marks that say a slot's state in shape as well as colour (5.4): a cross for refused and a check for accepts, on
+// a dark badge 7 by 7 over the floor's top right corner so that they read over any icon; the lock, 7 by 7, at the top
+// left over the icon.
+const CROSS = coded([
+  '.KKKKK.',
+  'KrkkkrK',
+  'KkrkrkK',
+  'KkkrkkK',
+  'KkrkrkK',
+  'KrkkkrK',
+  '.KKKKK.',
+], 'slot.refused');
+const CHECK = coded([
+  '.KKKKK.',
+  'KkkkknK',
+  'KkkknkK',
+  'KnknkkK',
+  'KknkkkK',
+  'KkkkkkK',
+  '.KKKKK.',
+], 'slot.accepts');
+
 /** Paints a slot at 0, 0 of the surface's origin. */
 export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live): void {
   const size = o.large ? LARGE_SLOT_SIZE : SLOT_SIZE;
@@ -68,6 +92,9 @@ export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live):
     paintCount(s, o.stack.n, size - 3, size - 3);
   } else if (o.missing) s.icon(o.missing, at, at, 'flat', sil);
   else if (o.silhouette) s.draw(SILHOUETTES[o.silhouette], at, at, { flat: sil });
+  if (o.mark === 'refused') s.map(CROSS, size - 8, 1);
+  else if (o.mark === 'accepts') s.map(CHECK, size - 8, 1);
+  else if (o.mark === 'locked') s.map(STATE_MARKS.lock, 1, 1);
 }
 
 /** A slot (5.4): 18 by 18 holding a 16 by 16 icon at 1, 1, sunk in its slab or on a dark plate. */
