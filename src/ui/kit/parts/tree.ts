@@ -65,6 +65,8 @@ export function tree(o: TreeOpts): Node {
   const px = Math.round(pan % 100000), py = Math.round(Math.floor(pan / 100000));
   const ox = 8 - px, oy = 8 - py;
   const fw = o.w - 2, fh = o.h - 2;
+  const maxX = Math.max(0, Math.max(0, ...o.nodes.map((n) => n.col * LATTICE + NODE + 16)) - fw);
+  const maxY = Math.max(0, Math.max(0, ...o.nodes.map((n) => n.row * LATTICE + NODE + (n.ranks ? 8 : 0) + 16)) - fh);
   let from = { x: px, y: py };
   const nodeKids: Node[] = o.nodes.map((n): Node => ({
     id: n.id, x: ox + n.col * LATTICE, y: oy + n.row * LATTICE, w: NODE, h: NODE + (n.ranks ? 8 : 0),
@@ -92,7 +94,8 @@ export function tree(o: TreeOpts): Node {
       down: () => { from = { x: px, y: py }; },
       drag: (e) => {
         if (e.phase === 'end') return;
-        const nx = Math.max(0, from.x - e.dx), ny = Math.max(0, from.y - e.dy);
+        // The field pans no further than its farthest node and a margin of 8 beyond it.
+        const nx = Math.min(maxX, Math.max(0, from.x - e.dx)), ny = Math.min(maxY, Math.max(0, from.y - e.dy));
         o.ui.setScroll(panId, nx + ny * 100000);
         o.ui.invalidate();
       },
