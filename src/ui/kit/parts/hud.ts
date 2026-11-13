@@ -2,7 +2,7 @@ import { CROSSHAIR, type PipKind, PIPS } from '../art/hud';
 import type { Node } from '../node';
 import type { Colour } from '../palette';
 import type { Surface } from '../surface';
-import { paintSlot, type Stack } from './slot';
+import { paintCount, type Stack } from './slot';
 
 export const PIP = 9;
 export const PIP_PITCH = 8;
@@ -113,8 +113,10 @@ export interface HotbarOpts {
 }
 
 /**
- * The hotbar (5.16): a plain dark plate 182 by 22 holding nine dark slots at x 2 + 20i, y 2, and the selector of 24 by
- * 24 at x -1 + 20i, y -1, which overhangs the plate by one unit above and below.
+ * The hotbar (5.16), one sprite 182 by 22: an outline of `root.0`, then nine raised cells of 20 at x 1 + 20i, each a
+ * rim of stone lit from the top left (`stone.face` along its top and left, `stone.dk` along its bottom and right), a
+ * frame of `root.0` inside the rim, and a well of `stone.pit` 16 square at 3 + 20i, 3 holding the icon. The selector
+ * of 24 at x -1 + 20i, y -1 lies over the chosen cell.
  */
 export function hotbar(o: HotbarOpts): Node {
   return {
@@ -124,15 +126,19 @@ export function hotbar(o: HotbarOpts): Node {
       s.fill(1, 21, 180, 1, 'root.0');
       s.fill(0, 1, 1, 20, 'root.0');
       s.fill(181, 1, 1, 20, 'root.0');
-      s.fill(1, 1, 180, 20, 'root.1');
-      s.fill(1, 1, 180, 1, 'root.3');
-      s.fill(1, 2, 1, 19, 'root.3');
       for (let i = 0; i < 9; i++) {
-        s.translate(2 + 20 * i, 2);
-        paintSlot(s, { ramp: 'dark', stack: o.cells[i] ?? null }, { hover: false, down: false, focus: false, t: 0 });
+        const x = 1 + 20 * i;
+        s.fill(x, 1, 20, 20, 'stone.sh');
+        s.fill(x, 1, 19, 1, 'stone.face');
+        s.fill(x, 2, 1, 18, 'stone.face');
+        s.fill(x + 1, 20, 19, 1, 'stone.dk');
+        s.fill(x + 19, 1, 1, 20, 'stone.dk');
+        s.fill(x + 1, 2, 18, 18, 'root.0');
+        s.fill(x + 2, 3, 16, 16, 'stone.pit');
+        const st = o.cells[i];
+        if (st) { s.icon(st.icon, x + 2, 3); paintCount(s, st.n, x + 16, 17); }
         const c = o.cooling?.[i];
-        if (c && c > 0) s.wash(1, 1, 16, Math.max(1, Math.ceil(c * 16)), 'root.0', 2);
-        s.translate(-(2 + 20 * i), -2);
+        if (c && c > 0) s.wash(x + 2, 3, 16, Math.max(1, Math.ceil(c * 16)), 'root.0', 2);
       }
       paintSelector(s, -1 + 20 * o.chosen, -1, 24);
     },
@@ -140,27 +146,18 @@ export function hotbar(o: HotbarOpts): Node {
 }
 
 /**
- * The selector (5.16): an outline whose corners are cut at two units, two rings of salt (the inner one `clay.lt` along
- * its bottom and right), then a ring of `root.0` round the icon.
+ * The selector (5.16): a frame 2 deep, an outer ring of `root.0` with its four corner units left out and an inner
+ * ring of `salt`, open in the middle so the chosen cell shows through it.
  */
 export function paintSelector(s: Surface, x: number, y: number, n: number): void {
   s.fill(x + 1, y, n - 2, 1, 'root.0');
   s.fill(x + 1, y + n - 1, n - 2, 1, 'root.0');
   s.fill(x, y + 1, 1, n - 2, 'root.0');
   s.fill(x + n - 1, y + 1, 1, n - 2, 'root.0');
-  for (const [cx, cy] of [[1, 1], [n - 2, 1], [1, n - 2], [n - 2, n - 2]]) s.fill(x + cx, y + cy, 1, 1, 'root.0');
-  s.fill(x + 2, y + 1, n - 4, 1, 'salt');
-  s.fill(x + 2, y + n - 2, n - 4, 1, 'salt');
+  s.fill(x + 1, y + 1, n - 2, 1, 'salt');
+  s.fill(x + 1, y + n - 2, n - 2, 1, 'salt');
   s.fill(x + 1, y + 2, 1, n - 4, 'salt');
   s.fill(x + n - 2, y + 2, 1, n - 4, 'salt');
-  s.fill(x + 2, y + 2, n - 5, 1, 'salt');
-  s.fill(x + 2, y + 3, 1, n - 6, 'salt');
-  s.fill(x + 2, y + n - 3, n - 4, 1, 'clay.lt');
-  s.fill(x + n - 3, y + 2, 1, n - 5, 'clay.lt');
-  s.fill(x + 3, y + 3, n - 6, 1, 'root.0');
-  s.fill(x + 3, y + n - 4, n - 6, 1, 'root.0');
-  s.fill(x + 3, y + 4, 1, n - 8, 'root.0');
-  s.fill(x + n - 4, y + 4, 1, n - 8, 'root.0');
 }
 
 export type HitLook = 'none' | 'hit' | 'crit';

@@ -1424,37 +1424,37 @@ Life at a quarter or less: each pip moves one unit up or down, changing every fo
 
 ### 5.16 Hotbar and selector
 
-A plain dark plate 182 by 22 holding nine dark slots at x 2 + 20i, y 2, icons at x 3 + 20i, y 3. The selector is 24 by 24 at x -1 + 20i, y -1: an outline with corners left out, two rings of `salt` (the inner ring `clay.lt` along its bottom and right), then an inner ring of `root.0` round the icon. It overhangs the plate by one unit above and below. The first three cells, the first chosen, the second holding 64:
+One sprite 182 by 22, not a dark plate with slots dropped in it. An outline of `root.0`, then nine raised cells of 20 at x 1 + 20i, y 1, each lit from the top left: a rim one unit deep of `stone.face` along its top and left and `stone.dk` along its bottom and right (the unit where they meet at the bottom left `stone.sh`), a frame of `root.0` one unit deep inside it, and a well of `stone.pit` 16 square at x 3 + 20i, y 3 that holds the icon, its count at the well's bottom right as in a slot. The selector is 24 by 24 at x -1 + 20i, y -1, over the chosen cell: a frame two deep, an outer ring of `root.0` with its four corner units left out and an inner ring of `salt`, open in the middle so the cell shows through; it overhangs the strip by one unit all round. The first three cells, the first chosen (the diagram's column `.` is x -1):
 
 ```
-     0         1         2         3         4         5         6     
-     012345678901234567890123456789012345678901234567890123456789012345
-  0  .KKKKKKKKKKKKKKKKKKKKKK...........................................
-  1  KKWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
-  2  KWWWWWWWWWWWWWWWWWWWWLWKhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
-  3  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKkkkKKKKKKKKKKKKKKKKKkkkKKK
-  4  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
-  5  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
-  6  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
-  7  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
-  8  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
-  9  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 10  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 11  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 12  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKWWWWKKKKWKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 13  KWWKKKKKKKKKKKKKKKKKKLWKKKKKWKKKKKKKWWKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 14  KWWKKKKKKKKKKKKKKKKKKLWKKKKKWKKKKKKWKWKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 15  KWWKKKKKKKKKKKKKKKKKKLWKKKKKWWWWKKWKKWKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 16  KWWKKKKKKKKKKKKKKKKKKLWKKKKKWKKKWKWWWWWKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 17  KWWKKKKKKKKKKKKKKKKKKLWKKKKKWKKKWKKKKWKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 18  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKWWWWKKKKWKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 19  KWWKKKKKKKKKKKKKKKKKKLWKKKKKKKKKKKKKKKKKhkkKKKKKKKKKKKKKKKKKhkkKKK
- 20  KWWKKKKKKKKKKKKKKKKKKLWKhhhhhhhhhhhhhhhhhkkkhhhhhhhhhhhhhhhhhkkkhh
- 21  KWLLLLLLLLLLLLLLLLLLLLWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
- 22  KKWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 23  .KKKKKKKKKKKKKKKKKKKKKK...........................................
+      0         1         2         3         4         5         6     
+     .012345678901234567890123456789012345678901234567890123456789012345
+ -1  .KKKKKKKKKKKKKKKKKKKKKK............................................
+  0  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+  1  KWHHHHHHHHHHHHHHHHHHHMWKHHHHHHHHHHHHHHHHHMHHHHHHHHHHHHHHHHHHHMHHHHH
+  2  KWHKKKKKKKKKKKKKKKKKKMWKKKKKKKKKKKKKKKKKKMHKKKKKKKKKKKKKKKKKKMHKKKK
+  3  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+  4  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+  5  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+  6  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+  7  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+  8  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+  9  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 10  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 11  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 12  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 13  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 14  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 15  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 16  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 17  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 18  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+ 19  KWHKKKKKKKKKKKKKKKKKKMWKKKKKKKKKKKKKKKKKKMHKKKKKKKKKKKKKKKKKKMHKKKK
+ 20  KWJMMMMMMMMMMMMMMMMMMMWKMMMMMMMMMMMMMMMMMMJMMMMMMMMMMMMMMMMMMMJMMMM
+ 21  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 22  .KKKKKKKKKKKKKKKKKKKKKK............................................
 ```
-`. nothing  h root.3  k root.1  K root.0  L clay.lt  W salt`
+`. nothing  H stone.face  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
 
 A thing that is cooling (a salve, the Recall Stone) has the cooling wash over its icon from the top down, a sixteenth of the time to the row.
 
