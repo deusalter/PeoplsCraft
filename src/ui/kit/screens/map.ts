@@ -7,11 +7,12 @@ import { COMPASS_MARKS, PING } from '../art/marks';
 import { SILHOUETTES } from '../art/silhouettes';
 import { clock, count, measure } from '../font/measure';
 import { box, cut } from '../font/wrap';
-import type { KeyEv, Node, Screen, Ui } from '../node';
+import type { KeyEv, Node, Screen, Tip, Ui } from '../node';
 import { type Colour, SEATS } from '../palette';
 import { button } from '../parts/button';
 import { frameWell, type RowSpec, well } from '../parts/well';
 import { tabbedSlab } from '../parts/tabs';
+import { seat } from '../sample/crew';
 import { CHUNK, type Place, countryAt, FELL, groundAt, ME, PINGS, PLACES, STORE, WALK_RADIUS, WALKED } from '../sample/map';
 import type { Surface } from '../surface';
 import { firstFocus, go, placeWindow } from './books-common';
@@ -39,8 +40,10 @@ export interface MapView {
   onClose(): void;
 }
 
-// The chart is 178 by 168 so that the list beside it is 110 wide and its places' names are not cut.
-const W = 312, H = 212, CW = 178, CH = 168, ZOOMS = [8, 4, 2], LIST_X = 194, LIST_W = 110;
+// The chart is 168 square so that the list beside it is 120 wide and a handle of sixteen is not cut.
+const W = 312, H = 212, CW = 168, CH = 168, ZOOMS = [8, 4, 2], LIST_X = 184, LIST_W = 120;
+/** The zoom buttons, 16 square, the last ending at the chart well's right edge. */
+const ZB = 16, ZOOM_Y = 191, ZOOM_IN_X = 8 + CW + 2 - ZB, ZOOM_OUT_X = ZOOM_IN_X - ZB - 2;
 const TABS: { key: ChartTab; icon: string; name: string }[] = [
   { key: 'ground', icon: 'turf', name: 'The Living Ground' },
   { key: 'store', icon: 'codex:place_dungeon', name: STORE.name },
@@ -200,12 +203,33 @@ function paintStore(s: Surface, v: MapView): void {
   s.map(HEADS[STORE.at.seat - 1], u - 5, w - 5);
 }
 
+/** A zoom button's tooltip, which says why it stands grey when the chart can go no closer or no farther. */
+const zoomTip = (text: string) => (live: { hover: boolean }): Tip | null => (live.hover ? { lines: [{ text, c: 'salt' }], delay: 0.4 } : null);
+
+/** What a unit of the store's chart shows: Pellwright, a locked door, a room by its name, or ground not entered. */
+function storeAt(v: MapView, ex: number, ey: number): string {
+  const z = v.zoom;
+  const [ox, oy] = unitOf(v, 0, 0);
+  const [hu, hw] = unitOf(v, STORE.at.x, STORE.at.z);
+  if (ex >= hu - 5 && ex < hu + 5 && ey >= hw - 5 && ey < hw + 5) return seat(STORE.at.seat).name;
+  for (const d of STORE.doors) {
+    if (!d.locked) continue;
+    const x = ox + Math.round(d.x / z), y = oy + Math.round(d.z / z);
+    if (Math.abs(ex - x) <= 4 && Math.abs(ey - y) <= 4) return 'A locked door: it wants a key';
+  }
+  for (const r of STORE.rooms) {
+    const x = ox + Math.round(r.x / z), y = oy + Math.round(r.z / z);
+    if (ex >= x && ex < x + Math.round(r.w / z) && ey >= y && ey < y + Math.round(r.h / z)) return r.name;
+  }
+  return 'Not entered yet';
+}
+
 export const mapScreen: Screen<MapView> = (v, ui) => {
   firstFocus(ui, 'map', null);
   const ground = v.tab === 'ground';
   const place = v.places[v.chosen];
   let from = { ...v.centre };
-  const hover = { x: 0, z: 0, on: false, friend: null as Place | null };
+  const hover = { x: 0, z: 0, on: false, friend: null as Place | null, what: '' };
   // The friend whose head is under the pointer, so that heads told apart only by their frame can be named.
   const friendAt = (ex: number, ey: number): Place | null => {
     if (!ground) return null;
@@ -230,8 +254,9 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
         hover.on = true; hover.x = Math.round(v.centre.x + (e.x - CW / 2) * v.zoom); hover.z = Math.round(v.centre.z + (e.y - CH / 2) * v.zoom);
         const f = friendAt(e.x, e.y);
         if (f !== hover.friend) { hover.friend = f; ui.wake(); }
+        if (!ground) { const w = storeAt(v, e.x, e.y); if (w !== hover.what) { hover.what = w; ui.wake(); } }
       },
-      leave: () => { hover.on = false; hover.friend = null; ui.wake(); },
+      leave: () => { hover.on = false; hover.friend = null; hover.what = ''; ui.wake(); },
     },
   };
   const rows: RowSpec[] = v.places.map((p) => {
@@ -242,15 +267,17 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
   const kids: Node[] = [
     frameWell({ x: 8, y: 18, w: CW + 2, h: CH + 2, host: 'stone', kids: [chart] }),
     {
-      x: 8, y: 194, w: CW - 32, h: 10,
+      // What is under the pointer: on the living ground the place and its country, in a store the room, the door or
+      // the friend; never the screen's title again.
+      x: 8, y: 194, w: ZOOM_OUT_X - 12, h: 10,
       paint: (s) => {
-        const t = !hover.on ? (ground ? 'Point at the chart' : STORE.name)
-          : ground ? `X ${hover.x}  Z ${hover.z}, ${walked(hover.x, hover.z) ? countryAt(hover.x, hover.z).name : 'not walked'}` : `X ${hover.x}  Z ${hover.z}`;
-        s.text(cut(t, CW - 32), 0, 0, hover.on ? 'ink' : 'ink.faded');
+        const t = !hover.on ? 'Point at the chart'
+          : ground ? `X ${hover.x}  Z ${hover.z}, ${walked(hover.x, hover.z) ? countryAt(hover.x, hover.z).name : 'not walked'}` : hover.what;
+        s.text(cut(t, ZOOM_OUT_X - 12), 0, 0, hover.on ? 'ink' : 'ink.faded');
       },
     },
-    button({ id: 'map.out', x: CW - 20, y: 192, w: 14, h: 14, ramp: 'stone', label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1) }),
-    button({ id: 'map.in', x: CW - 4, y: 192, w: 14, h: 14, ramp: 'stone', label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1) }),
+    button({ id: 'map.out', x: ZOOM_OUT_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1), tip: zoomTip(v.zoom === ZOOMS[0] ? 'Farthest' : 'Farther') }),
+    button({ id: 'map.in', x: ZOOM_IN_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1), tip: zoomTip(v.zoom === ZOOMS[ZOOMS.length - 1] ? 'Closest' : 'Closer') }),
     well({
       id: 'map.places', x: LIST_X, y: 18, w: LIST_W, h: 130, rowH: 16, host: 'stone', ui, rows, chosen: v.chosen,
       onChoose: (i) => { v.onChoose(i); v.onPan(v.places[i].x, v.places[i].z); },

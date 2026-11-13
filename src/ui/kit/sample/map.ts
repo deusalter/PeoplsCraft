@@ -123,15 +123,16 @@ export const PINGS = [{ seat: 3, x: -60, z: -250 }];
 /** Where one last fell. */
 export const FELL = { x: 262, z: -150 };
 
-export interface Room { x: number; z: number; w: number; h: number }
+export interface Room { x: number; z: number; w: number; h: number; /** Said under the chart while pointed at. */ name: string }
 export interface Door { x: number; z: number; across: boolean; locked?: boolean }
 
 /** The sealed store under Pabbat that Pellwright is inside: the rooms entered so far and their doors. */
 export const STORE = {
   name: 'Sealed Store under Pabbat',
   rooms: [
-    { x: 0, z: 0, w: 48, h: 40 }, { x: 56, z: 8, w: 64, h: 24 }, { x: 128, z: -16, w: 40, h: 72 },
-    { x: 8, z: 48, w: 32, h: 56 }, { x: 128, z: 64, w: 56, h: 40 },
+    { x: 0, z: 0, w: 48, h: 40, name: 'Stair foot' }, { x: 56, z: 8, w: 64, h: 24, name: 'Long hall' },
+    { x: 128, z: -16, w: 40, h: 72, name: 'Key room' }, { x: 8, z: 48, w: 32, h: 56, name: 'Nest' },
+    { x: 128, z: 64, w: 56, h: 40, name: 'Nest, cleared' },
   ] as Room[],
   doors: [
     { x: 48, z: 16, across: false }, { x: 120, z: 16, across: false }, { x: 16, z: 40, across: true },
