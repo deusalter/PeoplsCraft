@@ -83,7 +83,7 @@ function sample(kind: 'mid' | 'empty' | 'full'): PackState {
   if (kind === 'mid') { hand.stores.grid[0] = { key: 'oak_log', n: 1 }; }
   return {
     hand, grid, bench: null,
-    panel: { search: '', canMake: false, kind: 0, tab: 0 },
+    panel: { search: '', canMake: false, tab: 0 },
     name: kind === 'empty' ? 'tovah' : 'Ānanya_Kīrtimālā_Sūryavansh',
     level: kind === 'empty' ? 1 : 14,
     practice: kind === 'empty' ? [0, 40] : [320, 900],
@@ -140,7 +140,7 @@ function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
     const y = 28 + i * 12;
     out.push(ink(8, y + 1, a));
     out.push(inkRight(plusX - 4, y + 1, String(st.attrs[i])));
-    if (st.points > 0) out.push(plusButton({ id: `body.plus.${i}`, x: plusX, y, onPress: () => { st.attrs[i]++; st.points--; ui.cue('press'); ui.invalidate(); } }));
+    if (st.points > 0) out.push(plusButton({ id: `body.plus.${i}`, x: plusX, y, size: 11, ramp: 'clay', onPress: () => { st.attrs[i]++; st.points--; ui.cue('press'); ui.invalidate(); } }));
   });
   if (st.points > 0) out.push(ink(8, 77, `${st.points} to spend`));
   const rows = totals(st);
@@ -212,7 +212,7 @@ function figureWell(st: PackState, x: number, y: number): Node {
 function mainParts(st: PackState, b: Bench, upper: boolean): Node[] {
   const g = st.grid;
   const matched = gridMatch(st.hand, g);
-  const out: Node[] = [small('pack.sort', 138, 3, 30, 'Sort', () => { st.hand.sort('pack'); b.after(); })];
+  const out: Node[] = [small('pack.sort', 138, 3, 30, 'Sort', () => { st.hand.sort('pack'); b.after(); }, 'clay')];
   if (upper) {
     out.push(
       stackGrid(b, { store: 'wear', x: 8, y: 16, cols: 1, rows: 3, ramp: 'clay', each: (i) => ({ silhouette: WEAR_SLOTS[i], showAccepts: true }) }),

@@ -76,7 +76,7 @@ function build(ui: Ui, title: string): Node {
   const b = bench, h = hand;
   const win = place(ui, 176 + PANEL_W - 1, 172);
   const kids: Node[] = [
-    small('chest.sort', 138, 3, 30, 'Sort', () => { h.sort('chest'); b.after(); }),
+    small('chest.sort', 138, 3, 30, 'Sort', () => { h.sort('chest'); b.after(); }, 'timber'),
     stackGrid(b, { store: 'chest', x: 8, y: 18, cols: 9, rows: 3, ramp: 'timber' }),
     ...packBlock(b, 'timber', 76, 88),
   ];

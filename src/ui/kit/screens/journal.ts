@@ -133,7 +133,7 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
     });
     if (b.took.length > 2) right.push(inkLine(0, y + 20, PW, `and ${b.took.length - 1} more of the crew`, 'ink.faded'));
   }
-  right.push(button({ id: 'jr.take', x: 0, y: TAKE_Y, w: 60, h: 14, label: mine ? 'Leave' : 'Take', disabled: !!b.barred, onPress: () => v.onTake(b) }));
+  right.push(button({ id: 'jr.take', x: 0, y: TAKE_Y, w: 60, h: 14, label: mine ? 'Leave' : 'Take', ramp: 'clay', disabled: !!b.barred, onPress: () => v.onTake(b) }));
   return { left, right };
 }
 

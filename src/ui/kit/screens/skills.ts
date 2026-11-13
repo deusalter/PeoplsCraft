@@ -88,7 +88,7 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
     field,
     { x: 110, y: 6, w: 143, h: 10, paint: (s) => { const t = cut(spend, 142); s.text(t, rightX(t, 252 - 110), 0, me ? 'growth.dk' : 'ink.faded'); } },
     { x: 8, y: 184, w: 196, h: 10, paint: (s) => { s.text(cut(`${node.name}, ${rank} of ${node.ranks}`, 196), 0, 0, nodeState === 'locked' ? 'ink.faded' : 'ink'); } },
-    button({ id: 'sk.take', x: 208, y: 182, w: 44, h: 16, label: 'Take', disabled: !canTake, onPress: () => v.onTake(node.id) }),
+    button({ id: 'sk.take', x: 208, y: 182, w: 44, h: 16, ramp: 'stone', label: 'Take', disabled: !canTake, onPress: () => v.onTake(node.id) }),
   ];
   const at = placeWindow(ui, W, H, 21, 21);
   const top = tabbedSlab({

@@ -110,7 +110,7 @@ function build(ui: Ui): Node {
         };
       },
     }),
-    button({ id: 'rework.work', x: 96, y: 57, w: 60, h: 14, label: 'Work it', disabled: !can || st.working >= 0, onPress: () => work(st, ui) }),
+    button({ id: 'rework.work', x: 96, y: 57, w: 60, h: 14, ramp: 'stone', label: 'Work it', disabled: !can || st.working >= 0, onPress: () => work(st, ui) }),
     ...packBlock(b, 'stone', 73, 84, { sort: false }),
   ];
   const win = place(ui, 176, 166);

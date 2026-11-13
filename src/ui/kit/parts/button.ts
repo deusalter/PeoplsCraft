@@ -1,7 +1,7 @@
 import { centreX, measure } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Live, Node, Tip } from '../node';
-import type { Colour } from '../palette';
+import { type Colour, type Ramp, tone } from '../palette';
 import type { Surface } from '../surface';
 import type { PixelMap } from '../pixmap';
 import { type Force, lv, outline } from './common';
@@ -12,6 +12,8 @@ export interface ButtonOpts {
   /** The classic button is 200 by 20; half is 98; inside windows 12, 14 or 16 tall and its label plus 10 wide. */
   w: number; h?: number;
   label: string;
+  /** The ramp of the slab a small button stands on; left out, the button is dressed stone, as on menus. */
+  ramp?: Ramp;
   disabled?: boolean;
   force?: Force;
   onPress?: () => void;
@@ -97,8 +99,33 @@ function bevel(s: Surface, w: number, h: number, light: Colour, light2: Colour |
   }
 }
 
-/** Paints a button at the origin (5.6): dressed stone on menus and the ground tile. */
-export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, key = label): void {
+/**
+ * A small button inside a window, in the ramp of the slab it stands on (5.6): a raised piece of that slab, `hi` on its
+ * first row and column, `sh` and `dk` on its last, the label in ink. Hovered, its face lightens to `lt`; pressed, the
+ * bevel turns over; disabled, it is a flat `sh` with the label faded.
+ */
+function paintSlabButton(s: Surface, w: number, h: number, label: string, live: Live, disabled: boolean, ramp: Ramp): void {
+  const pressed = !disabled && live.down && live.hover;
+  outline(s, 0, 0, w, h, !disabled && live.focus && !live.hover ? 'salt' : 'root.0');
+  let drop = 0;
+  if (disabled) {
+    s.fill(1, 1, w - 2, h - 2, tone(ramp, 'sh'));
+  } else if (pressed) {
+    bevel(s, w, h, tone(ramp, 'dk'), tone(ramp, 'sh'), tone(ramp, 'sh'), tone(ramp, 'face'), null);
+    drop = 1;
+  } else {
+    bevel(s, w, h, tone(ramp, 'hi'), null, tone(ramp, live.hover ? 'lt' : 'face'), tone(ramp, 'sh'), tone(ramp, 'dk'));
+  }
+  const t = cut(label, w - 4);
+  if (t) s.text(t, centreX(t, 0, w), Math.floor((h - 9) / 2) + drop, disabled ? 'ink.faded' : 'ink');
+}
+
+/**
+ * Paints a button at the origin (5.6): dressed stone on menus and the ground tile, or, given the ramp of the slab it
+ * stands on, a small button of that slab.
+ */
+export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, key = label, ramp?: Ramp): void {
+  if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp); return; }
   const hot = !disabled && (live.hover || live.focus);
   const pressed = !disabled && live.down && live.hover;
   outline(s, 0, 0, w, h, hot ? 'salt' : 'root.0');
@@ -128,7 +155,7 @@ export function button(o: ButtonOpts): Node {
     id: o.id, x: o.x, y: o.y, w: o.w, h,
     focus: !o.disabled,
     takes: true,
-    paint: (s, live) => paintButton(s, o.w, h, o.label, lv(live, o.force), o.disabled, o.id ?? o.label),
+    paint: (s, live) => paintButton(s, o.w, h, o.label, lv(live, o.force), o.disabled, o.id ?? o.label, o.ramp),
     tip: o.tip,
     on: o.disabled ? undefined : { click: () => o.onPress?.() },
   };
@@ -139,9 +166,10 @@ export function smallButton(o: Omit<ButtonOpts, 'w'> & { w?: number }, measureLa
   return button({ ...o, w: o.w ?? measureLabel(o.label) + 10, h: o.h ?? 14 });
 }
 
-/** The 12 by 12 button that adds: a plus of salt with its shadow. */
-export function plusButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'>): Node {
-  return button({ ...o, w: 12, h: 12, label: '+' });
+/** The square button that adds, 12 by 12 or, on a stat's row of 12, 11 by 11 so that a column of them keeps a unit apart. */
+export function plusButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'> & { size?: 11 | 12 }): Node {
+  const n = o.size ?? 12;
+  return button({ ...o, w: n, h: n, label: '+' });
 }
 
 /**
@@ -156,7 +184,7 @@ export function iconButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'> & { size?: n
     takes: true,
     paint: (s, live) => {
       const l = lv(live, o.force);
-      paintButton(s, n, n, '', l, o.disabled);
+      paintButton(s, n, n, '', l, o.disabled, '', o.ramp);
       const drop = !o.disabled && l.down && l.hover ? 1 : 0;
       const x = Math.floor((n - o.mark.w) / 2), y = Math.floor((n - 2 - o.mark.h) / 2) + drop;
       s.map(o.mark, x, y);

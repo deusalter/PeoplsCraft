@@ -64,7 +64,7 @@ export const controlsScreen: Screen<ControlsView> = (v, ui) => {
   const kids: Node[] = [];
   v.left.forEach((b, i) => kids.push(...rowNodes(b, 8, ROWS_Y + i * ROW)));
   v.right.forEach((b, i) => kids.push(...rowNodes(b, 8 + COL_W + 8, ROWS_Y + i * ROW)));
-  kids.push(button({ id: 'ctl.done', x: 74, y: 184, w: 100, h: 16, label: 'Done', onPress: v.onDone }));
+  kids.push(button({ id: 'ctl.done', x: 74, y: 184, w: 100, h: 16, ramp: 'clay', label: 'Done', onPress: v.onDone }));
   const at = placeWindow(ui, W, H, 21);
   return {
     id: 'controls', x: 0, y: 0, w: ui.w, h: ui.h,

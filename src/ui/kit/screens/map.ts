@@ -185,13 +185,13 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
         s.text(cut(t, 170), 0, 0, hover.on ? 'ink' : 'ink.faded');
       },
     },
-    button({ id: 'map.out', x: 190, y: 192, w: 14, h: 14, label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1) }),
-    button({ id: 'map.in', x: 206, y: 192, w: 14, h: 14, label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1) }),
+    button({ id: 'map.out', x: 190, y: 192, w: 14, h: 14, ramp: 'stone', label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1) }),
+    button({ id: 'map.in', x: 206, y: 192, w: 14, h: 14, ramp: 'stone', label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1) }),
     well({
       id: 'map.places', x: 226, y: 18, w: 78, h: 128, host: 'stone', ui, rows, chosen: v.chosen,
       onChoose: (i) => { v.onChoose(i); v.onPan(v.places[i].x, v.places[i].z); },
     }),
-    button({ id: 'map.travel', x: 226, y: 152, w: 78, h: 16, label: 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
+    button({ id: 'map.travel', x: 226, y: 152, w: 78, h: 16, ramp: 'stone', label: 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
     {
       x: 226, y: 172, w: 78, h: 30, anim: cooling,
       paint: (s) => {
