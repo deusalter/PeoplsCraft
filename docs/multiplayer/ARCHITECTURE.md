@@ -2200,6 +2200,9 @@ is cleared, sim chunks are released. This is what `Game.travel` does to the real
   the Inventory and the Guide; the sim learns of those two from bit 9 of the move flags).
 - Cheats run in the sim (`cmd`). Allowed when the connection is local, or the host was started with
   `--cheats`. They act on the calling player; `time`, `flag`, `event`, `kill` act on the world.
+- A number typed into a command must be finite and in its range (a position inside `XZ_MAX` and the body's
+  `BODY_Y_MIN..BODY_Y_MAX`, a `give` count a whole number from 1, a realm, boss or tier that exists); otherwise the
+  command changes nothing and answers with its usage, or takes the default it had (D36 (k)).
 - Flight. `fly` grants flight or takes it back: `modes.fly = body.flying = !body.flying`. `creative`
   toggles `modes.creative`, sets `modes.fly = false` and `body.flying = modes.creative`. The host's
   `body.flying` is overwritten by the next accepted move, so what lasts is `modes`; the client's body
@@ -3534,6 +3537,15 @@ client with `rate`. The bucket fills at the same 12 a second by the host's clock
 closes the socket, after at most the 72 messages a client could have bunched in the time it waits before it
 gives up. This is a departure from the table as it stood: a client may now send up to 72 `chunks` messages at
 once. Their cost is bounded as before by the subscription range of 4.7, which every message is still held to.
+(k) A command puts no NaN, infinity or fraction into the world (4.3 `cmd`, 7.10). Its numbers were read with a bare
+`+`: `/tp x` set the body to NaN and sent a `tp` of NaN, after which every move failed and was answered with a
+`tp` back to NaN, `follow` dropped every subscription away from chunk 0, 0, and the save wrote the position as
+null; `/give stick 1.5` made a stack of one and a half, `/dim 7` and `/boss 99` threw and closed the connection.
+Each number is now checked against its range. What a solo player can notice: a command whose numbers are not
+numbers answers with its usage (`tp <x> <y> <z>`, `give <item> [count]`, `spawnat <creature> <x> <y> <z> [yaw]`)
+and does nothing, where it used to leave the player stuck or answer as if it had worked; `level`, `boss`,
+`gear`, `dim` and `caps` take the default they took for a word that is not a number, for a number out of range as
+well.
 
 ---
 

@@ -361,3 +361,28 @@ test('chunk requests bunched by a stall of the link pass; a flood beyond 12 a se
   assert.deepEqual(b.closed, ['rate']);
   assert.equal(b.of('error')[0].code, 'rate');
 });
+
+test('a command with numbers that are not numbers, or out of their range, changes nothing and says how it is used', async () => {
+  const r = await rig(false), sim = r.host.sim, a = client(r.host, { local: false });
+  a.hello('Ada', 'a'.repeat(32)); await enter(r, a);
+  const p = [...sim.players.values()][0], at = [p.body.x, p.body.y, p.body.z], tp = p.tp;
+  const say = async (text: string): Promise<string> => { await sim.handle(p, { t: 'cmd', id: 1, text }); await run(r, 1, a); return a.of('cmdr').at(-1)!.text; };
+  for (const t of ['/tp x', '/tp', '/tp 1 2', '/tp 1 Infinity 2', '/tp 1 2 1e9']) {
+    assert.match(await say(t), /^tp /, t);
+    assert.deepEqual([p.body.x, p.body.y, p.body.z], at, t); assert.equal(p.tp, tp, t);
+  }
+  assert.equal(await say('/tp 3.5 70 4.5'), 'teleported');
+  assert.deepEqual([p.body.x, p.body.y, p.body.z], [3.5, 70, 4.5]);
+  assert.ok(a.of('tp').every((m) => Number.isFinite(m.x) && Number.isFinite(m.y) && Number.isFinite(m.z)));
+  const sticks = (): number => p.inv.slots.reduce((n, s) => n + (s?.k === 'stick' ? s.n : 0), 0);
+  for (const t of ['/give stick abc', '/give stick 1.5', '/give stick -3', '/give stick 0']) { assert.match(await say(t), /^give /, t); assert.equal(sticks(), 0, t); }
+  assert.equal(await say('/give stick'), 'gave 1 stick'); assert.equal(sticks(), 1);
+  assert.equal(await say('/give stick 4'), 'gave 4 stick'); assert.equal(sticks(), 5);
+  // a realm, a boss or a tier that does not exist is not looked up
+  for (const t of ['/dim 7', '/dim x', '/boss 99', '/gear 99', '/level x', '/level 1e9', '/time Infinity', '/spawnat zombie x 1 2', '/caps x']) {
+    await say(t);
+    assert.deepEqual(a.closed, [], t);
+  }
+  assert.equal(p.dim, 0); assert.ok(Number.isFinite(sim.shared.clock)); assert.ok(p.stats.level < 1e9);
+  assert.ok(sim.realms[0].mobs.list.every((m) => !m.active || Number.isFinite(m.x)));
+});
