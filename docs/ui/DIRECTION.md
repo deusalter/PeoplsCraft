@@ -3616,11 +3616,10 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | I1 | logo | 103 | 60 | 221 | 32 | the title mark |
-| I4 | picture | 197 | 106 | 32 | 32 | a drawn picture of what is being raised, lit from the top left and outlined in root.0: the ground laid (turf over soil over stone), a village's house, a hearth lit |
-| I2 | gauge | 122 | 141 | 183 | 11 | a dark well sunk in the tile (5.8) with, 3 in, a strip 177 by 5: a frame of root.0 round sixteen segments of 10 with cuts of one between them, each segment root.2 when empty and, as it fills unit by unit, ember with a top row of ember.lt; it never runs back |
-| I3 | text | 113 | 154 | 200 | 10 | one line, centred, salt with its shadow: what is being done ("Laying the ground", "Coming up") |
+| I2 | gauge | 119 | 109 | 188 | 11 | a dark well sunk in the tile (5.8) with, 3 in, the HUD's thin strip (5.15), 182 by 5, 20 under the mark: eighteen segments, each root.2 when empty and, as it fills unit by unit, ember with a top row of ember.lt and a bottom row of ember.dk; it never runs back |
+| I3 | text | 113 | 123 | 200 | 10 | one line, centred, 6 under the strip, salt with its shadow: what is being done ("Laying the ground", "Coming up") |
 
-- **Shows.** The mark, a picture of what is being raised, a strip and one line. On a server the line also says how many are there.
+- **Shows.** The mark, a strip and one line. On a server the line also says how many are there. A picture of what was being raised once stood alone between the mark and the strip, tied to neither, and was dropped.
 - **Clickable.** Nothing.
 - **Keys.** Esc gives up a join and goes back to the title.
 - **First.** Nothing has focus.
