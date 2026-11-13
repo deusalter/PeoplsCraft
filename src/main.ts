@@ -133,7 +133,17 @@ async function boot(): Promise<void> {
       } else if (m.t === 'error' && !RETRY_CODES.includes(m.code)) { stop(); menu.join(m.msg); }
     };
     t.onClose = (code) => {
-      if (over || code !== 'retrying') return;
+      if (over) return;
+      if (code !== 'retrying') {
+        lost?.remove(); lost = null;
+        // the game's loading screen says why; a game cannot be taken down in place, so the way back is a fresh page
+        if (game) {
+          const back = el('button', 'btn', ui, 'Back to the title');
+          back.style.cssText = 'position:absolute;bottom:18%;left:50%;transform:translateX(-50%);z-index:60;pointer-events:auto';
+          back.onclick = () => location.reload();
+        }
+        return;
+      }
       if (!game) menu.status('Cannot reach the server. Trying again...', () => { stop(); menu.join(); });
       else if (!lost) { lost = el('div', '', ui, 'Connection lost. Reconnecting...'); lost.style.cssText = 'position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:60;padding:6px 14px;background:rgba(10,12,18,0.85);color:#ff9a8a;font-size:13px;letter-spacing:0.06em'; }
     };

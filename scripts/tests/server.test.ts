@@ -23,7 +23,7 @@ const root = resolve('.'), out = resolve('out/servertest'), PASSWORD = 'lantern'
 const OUTSIDE = 'outside.txt';
 let server: ChildProcess, base = '', data = '';
 const logs: string[] = [];
-const START = (port: string): string[] => [join(out, 'server', 'main.js'), '--data', join(data, 'world'), '--port', port, '--host', '127.0.0.1', '--password', PASSWORD, '--max-players', '8'];
+const START = (port: string, password = PASSWORD): string[] => [join(out, 'server', 'main.js'), '--data', join(data, 'world'), '--port', port, '--host', '127.0.0.1', '--password', password, '--max-players', '8'];
 
 function build(): void {
   const vite = join(root, 'node_modules', 'vite', 'bin', 'vite.js');
@@ -41,9 +41,9 @@ before(async () => {
   base = await serve('0');
 });
 /** Start the built server; resolves with its origin once it listens. */
-function serve(port: string): Promise<string> {
+function serve(port: string, password?: string): Promise<string> {
   logs.length = 0;
-  server = spawn(process.execPath, START(port), { cwd: out, stdio: ['ignore', 'pipe', 'pipe'] });
+  server = spawn(process.execPath, START(port, password), { cwd: out, stdio: ['ignore', 'pipe', 'pipe'] });
   return new Promise<string>((ok, no) => {
     const t = setTimeout(() => no(new Error('the server did not say where it listens:\n' + logs.join(''))), 20000);
     const read = (b: Buffer): void => {
@@ -313,6 +313,27 @@ test('`?server=` opens the join screen with an address field, and `&name=` joins
     assert.match(logs.join(''), /Ivy joined/);
     assert.deepEqual(b.errors, []);
   } finally { await b.close(); }
+});
+
+test('a game whose reconnect is refused for good takes down the reconnecting banner and offers the way back', { timeout: 180 * S }, async () => {
+  const b = await chrome(), port = new URL(base).port;
+  try {
+    const { page } = b;
+    await page.goto(`${base}/?server=${new URL(base).host}&name=Rue&password=${PASSWORD}`, { waitUntil: 'load' });
+    await inPlay(page);
+    await page.waitForFunction(() => !document.getElementById('loading'), null, { timeout: 60000 });
+    await halt();
+    await said(page, 'Connection lost. Reconnecting...');
+    // the server comes back asking another password: the retry is answered `password`, which is final
+    await serve(port, 'another-one');
+    await page.waitForFunction(() => document.querySelector('#loading .msg')?.textContent === 'Wrong password.', null, { timeout: 30000 });
+    await page.waitForTimeout(1000);
+    assert.equal(await page.evaluate(() => document.body.innerText.includes('Reconnecting')), false, 'no banner says it is still reconnecting');
+    await page.getByRole('button', { name: 'Back to the title' }).click();
+    await said(page, 'Wrong password.');
+    await page.locator('#menu input[placeholder="Your name"]').waitFor({ timeout: 20000 });
+    assert.deepEqual(b.errors, []);
+  } finally { await b.close(); await halt(); await serve(port); }
 });
 
 test('on a server the pause menu keeps the player in the world, asks no save of it, and quitting to the title says `bye`', { timeout: 180 * S }, async () => {

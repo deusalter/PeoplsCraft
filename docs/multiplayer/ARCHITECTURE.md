@@ -3880,6 +3880,11 @@ the 30 s grace of a drop: a seat held, the roster unchanged, a boss fight waitin
 "Save and quit to title" buttons now call `Game.quit()`, which on `ws` sends `bye` and waits, up to 2 s, for the host to
 close the socket before the page reloads: a close from the client's side first would reach the host before the step
 that reads the `bye`, and `forget` discards what a closed connection still had queued. Solo saves and reloads as before.
+(m) A refused reconnect left the page saying it was reconnecting (4.2). The banner "Connection lost. Reconnecting..."
+went only when a welcome came, and a close with a final code (`data` after the server was updated, `full`, `password`,
+`name_taken`) was ignored once a game was running: the loading screen said why, the banner above it went on saying
+"Reconnecting...", and nothing led away but a reload by hand. A final close now takes the banner down and puts a "Back to
+the title" button under the loading screen, which loads the page again; the game is not taken down in place.
 
 ---
 
