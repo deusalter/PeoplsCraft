@@ -314,6 +314,7 @@ function add(surface, key, o = {}) {
   if (slots.length) e.slots = slots;
   if (o.note) e.note = o.note;
   if (o.planned) e.planned = true;
+  if (o.empty) e.empty = true;
   entries.set(id, e);
   for (const n of e.needs) covered.add(n);
 }
@@ -432,7 +433,7 @@ for (const n of npcs) {
 add('folk.extra', 'wayfinder.moon_tonight', { needs: ['npc:wayfinder', 'event:moon'], file: 'src/ui/windows.ts', ...find('src/ui/windows.ts', 'Amāvassa is tonight. The Chandasāvak carry the slivers.') });
 add('folk.extra', 'wayfinder.moon_in', { needs: ['npc:wayfinder', 'event:moon'], file: 'src/ui/windows.ts', ...find('src/ui/windows.ts', 'Amāvassa is in ${moon} night', 'Amāvassa is in {n} night(s).'), note: 'two forms are needed: one night, and {n} nights' });
 add('folk.extra', 'wayfinder.moon_in_one', { needs: ['npc:wayfinder', 'event:moon'], planned: true, note: 'the form for one night' });
-add('folk.extra', 'wayfinder.next', { needs: ['npc:wayfinder'], file: 'src/ui/windows.ts', ...find('src/ui/windows.ts', "'Next: '", 'Next: {said}'), limit: 20, note: 'what comes before the telling of the next task; may be empty' });
+add('folk.extra', 'wayfinder.next', { needs: ['npc:wayfinder'], file: 'src/ui/windows.ts', ...find('src/ui/windows.ts', "'Next: '", 'Next: {said}'), limit: 20, note: 'what comes before the telling of the next task; {said} is the task.said line, and the text may be {said} alone' });
 add('folk.extra', 'deserter.burrower', { needs: ['npc:deserter', 'boss:2'], planned: true, note: 'said once: what was in the body of the burrower when the crew boiled it down (4.4)' });
 add('walker.say', 'dusk', { planned: true, lines: [4, 6] });
 add('walker.say', 'dark', { planned: true, lines: [1, 2], needs: ['event:moon'] });
@@ -491,7 +492,7 @@ function find(file, needle, now) {
 }
 /** One literal sentence: surface, key, file, the text to look for, and what to record as the present text when it differs. */
 function L(surface, key, file, needle, o = {}) {
-  add(surface, key, { file, ...find(file, needle, o.now), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note });
+  add(surface, key, { file, ...find(file, needle, o.now), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note, empty: o.empty });
 }
 const G = 'src/game.ts', ACT = 'src/sim/actions.ts', EV = 'src/sim/events.ts', TRV = 'src/sim/travel.ts', NPC = 'src/sim/npcs.ts', PLY = 'src/sim/player.ts',
   GATE = 'src/sim/gates.ts', OPS = 'src/sim/invops.ts', CMB = 'src/client/combat.ts', WIN = 'src/ui/windows.ts', MENU = 'src/ui/menus.ts', HUD = 'src/ui/hud.ts',
@@ -737,7 +738,7 @@ const ASSIGN = ['items-a', 'items-b', 'creatures', 'people', 'system', 'sites'];
 const counts = {};
 for (const e of entries.values()) { const c = (counts[e.surface] ??= { entries: 0, lines: 0 }); c.entries++; c.lines += e.lines ? e.lines[0] : 1; }
 const out = {
-  about: 'Written by surfaces.mjs from the game\'s source. Do not edit by hand. Each entry is one string a writer supplies, or one list of strings where `lines` gives the fewest and the most. `now` is the text the game shows today, with {braces} where the code puts a value in; `slots` lists those, and the new text carries each of them once. `planned` marks an entry for something plan.md adds and the game does not have yet. `needs` lists the internal keys the text is about.',
+  about: 'Written by surfaces.mjs from the game\'s source. Do not edit by hand. Each entry is one string a writer supplies, or one list of strings where `lines` gives the fewest and the most. `now` is the text the game shows today, with {braces} where the code puts a value in; `slots` lists those, and the new text carries each of them once. `empty` marks the few entries that may be left as an empty string. `planned` marks an entry for something plan.md adds and the game does not have yet. `needs` lists the internal keys the text is about.',
   letters: 'Āāīū',
   voices: ['label', 'sight', 'note', 'born', 'sand'],
   assignments: ASSIGN,
