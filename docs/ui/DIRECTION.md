@@ -2691,6 +2691,7 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 | P6 | gauge | 75 | 37 | 7 | 34 | the water in the pot, under the salt: a drop 7 by 7 in arm blue over an upright channel 6 by 26 filled in `arm`, which boils down through the night |
 | P11 | arrow | 97 | 36 | 22 | 15 | the progress arrow (5.13): the night gone, filling from the left; nothing comes out before first light |
 | P7 | bigslot | 128 | 31 | 26 | 26 | lees, as coin |
+| P13 | text | 154 | 61 | | 10 | while nothing boils, why, right-aligned to the slot's right edge in ink.faded: "No remains" or "No fire". The water channel and the salt slot say what they are in their tooltips |
 | P8 | text | 8 | 73 | 40 | 10 | "Pack" |
 | P9 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | P10 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |

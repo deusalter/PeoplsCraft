@@ -1,6 +1,8 @@
 // The pot (section 6, to come): remains, salt and fuel in, a night passing, lees out. Nothing in the game's tables
 // boils remains down yet, so its sample is what the telling says a hearth does with them; there is no salt to lay in.
+import { measure } from '../font/measure';
 import type { Node, Ui } from '../node';
+import type { Surface } from '../surface';
 import { coded } from '../pixmap';
 import { burnGauge, channel, progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
@@ -84,6 +86,11 @@ function build(ui: Ui): Node {
       tip: () => ({ lines: [{ text: 'The night', c: 'salt' }, { text: 'Nothing comes out before first light', c: 'root.4' }], delay: 0.4 }),
     },
     stackSlot(b, { store: 'out', i: 0 }, { x: 128, y: 31, ramp: 'clay', large: true }),
+    // An empty arrow alone does not say why nothing boils; the line under the lees says what is missing.
+    ...(boiling ? [] : [(() => {
+      const why = !h.stores.remains.some((s) => s) ? 'No remains' : 'No fire';
+      return { x: 154 - measure(why) + 1, y: 61, w: measure(why), h: 10, paint: (s: Surface) => { s.text(why, 0, 0, 'ink.faded'); } };
+    })()]),
     ...packBlock(b, 'clay', 73, 84, { sort: false }),
   ];
   const win = place(ui, 176, 166);
