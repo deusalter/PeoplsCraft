@@ -129,14 +129,15 @@ const POINTS = ['tmp', 'journal', 'rename', 'renamed', 'done'];
 async function writer(dir: string, killAt: number, point: string, nth: number): Promise<void> {
   let seen = 0, k = -1;
   const st = new DiskStorage(dir, {
-    log: () => {}, backupInterval: 0.004, backupKeep: 3,
+    log: () => {}, backupInterval: 0.1, backupKeep: 3,
     hook: (p) => { if (p === point && k === killAt && ++seen === nth) process.kill(process.pid, 'SIGKILL'); },
   });
   const w = await st.open();
   let s: State;
   if (!w) { s = stateAt(0); k = 0; await st.commit(fullBatch(s)); } else s = stateAt((w.state as unknown as { tick: number }).tick);
   process.stdout.write('ready\n');
-  while (s.k < COMMITS) { k = s.k + 1; await st.commit(nextBatch(s)); }
+  // a writer told where to die stops after that commit even when the step did not come (a commit of fewer files)
+  while (s.k < COMMITS && (killAt < 0 || s.k < killAt)) { k = s.k + 1; await st.commit(nextBatch(s)); }
   await st.close();
 }
 
@@ -262,26 +263,32 @@ function tests(): void {
     const dir = await fresh('kill');
     const seed = Date.now() >>> 0, r = mulberry(seed);
     console.log(`# kill test seed ${seed}`);
-    let last = -1, rounds = 0;
+    let last = -1, rounds = 0, midway = 0;
     const hit = new Map<string, number>();
     while (last < COMMITS && rounds < 300) {
       rounds++;
       let child: ChildProcess, point = '', at = -1;
-      if (rounds % 2 === 1) {
+      // the first rounds kill at each step of a commit twice, so that every step is hit before the commits run out
+      const inside = rounds <= 2 * POINTS.length || rounds % 2 === 1;
+      if (inside) {
         // inside: SIGKILL at a chosen step of the next commit or the one after
-        point = POINTS[((rounds - 1) / 2) % POINTS.length];
+        point = POINTS[(rounds - 1) % POINTS.length];
         at = Math.min(COMMITS, last + 1 + Math.floor(r() * 2));
-        const nth = point === 'tmp' || point === 'rename' ? 1 + Math.floor(r() * 3) : 1;
+        // a commit writes at least two files (the world and one region or player)
+        const nth = point === 'tmp' || point === 'rename' ? 1 + Math.floor(r() * 2) : 1;
         child = spawnWriter(dir, at, point, nth);
       } else {
         child = spawnWriter(dir);
         await ready(child);
-        await new Promise((res) => setTimeout(res, r() * 20));
+        // the first commit after a start is behind a backup; the window reaches past it
+        await new Promise((res) => setTimeout(res, r() * 400));
         child.kill('SIGKILL');
       }
       const end = await exited(child);
+      if (!point && (await readdir(dir, { recursive: true })).some((n) => String(n).includes('.tmp') || n === 'commit.json')) midway++;
       const k = await verify(dir);
       assert.ok(k >= last, `a reload never goes back (${last} then ${k})`);
+      if (process.env.DISK_DEBUG) console.log(`# round ${rounds} ${point || 'outside'} ${last} -> ${k} ${end.sig ?? end.code}`);
       if (point && end.sig === 'SIGKILL') {
         // the journal is the line: killed before it the commit is not there, from it on it is finished at start
         assert.equal(k, point === 'tmp' ? at - 1 : at, `killed at ${point} of commit ${at}`);
@@ -296,7 +303,7 @@ function tests(): void {
     for (const b of backups) assert.ok((await verifyBackup(join(dir, 'backups', b))) >= 0, `backup ${b} holds one whole commit`);
     const left = (await readdir(join(dir, 'backups'))).filter((n) => n.startsWith('.tmp-'));
     assert.deepEqual(left, [], 'half-made backups are cleared at start');
-    console.log(`# ${rounds} rounds, kills inside a commit: ${[...hit].map(([p, n]) => `${p} ${n}`).join(', ')}`);
+    console.log(`# ${rounds} rounds, kills inside a commit: ${[...hit].map(([p, n]) => `${p} ${n}`).join(', ')}; kills from outside that left a commit or a backup half done: ${midway}`);
   });
 
   test('world.json unreadable or of a newer format: refuse, name the newest backup that reads and the command, choose nothing', async () => {
