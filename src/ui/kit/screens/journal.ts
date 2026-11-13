@@ -72,8 +72,15 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
     right.push(inkLine(0, 67, PW, `${count(have)} of ${count(st.need)}`, 'ink', true));
     right.push(channel({ x: 0, y: 78, len: PW, f: have / st.need, ramp: 'clay' }));
   }
-  if (st.where && s !== 'done') right.push(inkLine(0, 94, PW, st.where, 'arm.dk'));
-  if (st.gives) right.push(para(0, 108, PW, st.gives, 'ink.faded', 3));
+  // Where to go is the line the crew acts on: it wraps onto a second line rather than being cut, and what the step
+  // gives moves down under it, keeping clear of the page's foot.
+  let below = 108;
+  if (st.where && s !== 'done') {
+    const where = para(0, 94, PW, st.where, 'arm.dk', 2);
+    right.push(where);
+    below = 94 + where.h + 4;
+  }
+  if (st.gives) right.push(para(0, below, PW, st.gives, 'ink.faded', below > 108 ? 2 : 3));
   return { left, right };
 }
 

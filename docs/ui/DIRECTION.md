@@ -2756,8 +2756,8 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19): a leather c
 | G7 | text | 154 | 10 | 126 | 10 | right page heading: the chosen step |
 | G8 | text | 154 | 24 | 126 | 60 | its telling, wrapped to 126, six lines at most |
 | G9 | gauge | 154 | 88 | 126 | 7 | a sunk channel filling in ember, with "3 of 5" right-aligned above it; only for steps that count |
-| G10 | text | 154 | 104 | 126 | 10 | where to: "Nearest altar 212 east", in arm.dk |
-| G11 | text | 154 | 118 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink |
+| G10 | text | 154 | 104 | 126 | 20 | where to: "Nearest altar 212 east", in arm.dk. It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
+| G11 | text | 154 | 118 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink; three lines at most, or two starting 4 under a where-to of two lines |
 | G12 | turn | 264 | 161 | 16 | 7 | page on |
 | G13 | text | 210 | 162 | 16 | 6 | page number |
 
