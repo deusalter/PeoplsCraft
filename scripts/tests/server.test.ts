@@ -620,7 +620,7 @@ test('the WebSocket transport retries with a growing backoff, counts only its ne
   assert.equal(f.sent.length, 0);
 });
 
-test('a hidden page closed for idling dials again when it is shown, not before; any other close of a hidden page retries as usual', () => {
+test('a hidden page dials again only once it is shown, whatever closed it', () => {
   const { env, socks, pass } = fakeWire();
   let hidden = true;
   const shown: (() => void)[] = [];
@@ -643,13 +643,26 @@ test('a hidden page closed for idling dials again when it is shown, not before; 
   assert.equal(shown.length, 1);
   pass(500);
   assert.equal(socks.length, 3);
-  // hidden again, a close for another reason does not wait for the page
+  // hidden again: a socket taken in while nobody looks would hold a seat, loading, that no frame ever readies
   hidden = true;
   const w = socks[2];
   w.open(); w.say({ t: 'welcome' }); w.say({ t: 'error', code: 'shutdown', msg: '' }); w.end();
-  assert.equal(shown.length, 1);
+  assert.equal(shown.length, 2, 'a shutdown waits for the page too');
+  pass(120000);
+  assert.equal(socks.length, 3, 'no socket while nobody looks');
+  hidden = false;
+  shown[1]();
   pass(500);
   assert.equal(socks.length, 4);
+  // a drop seen while shown, with the page hidden before its backoff is out: the dial waits for the page
+  socks[3].open(); socks[3].say({ t: 'welcome' }); socks[3].end();
+  hidden = true;
+  pass(60000);
+  assert.equal(socks.length, 4, 'hidden when the backoff ran out: no dial');
+  assert.equal(shown.length, 3);
+  hidden = false;
+  shown[2]();
+  assert.equal(socks.length, 5, 'shown: dialled at once, its backoff already waited');
   t.close();
 });
 

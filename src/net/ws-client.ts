@@ -1,6 +1,7 @@
 // The client's end of a WebSocket to a server (3.7, 4.2). Works in the browser and in Node 22, which
 // both have a global WebSocket. A socket that drops, or goes 6 s without delivering anything, is replaced
-// after a backoff of 0.5, 1, 2, 4, 8 s and then every 8 s, until the host says something final.
+// after a backoff of 0.5, 1, 2, 4, 8 s and then every 8 s, until the host says something final. A hidden page
+// waits to be shown before it dials again.
 //
 // Every socket gets a generation number, and only the newest one's events count: a socket given up on
 // may still deliver its last messages or an `error replaced` meant for the tab that took over from it,
@@ -16,7 +17,7 @@ export interface WsEnv {
   now(): number;
   setTimer(fn: () => void, ms: number): unknown;
   clearTimer(h: unknown): void;
-  /** Hidden page: an `idle` close waits for it to be shown again before it retries (4.2). Absent: never hidden. */
+  /** Hidden page: a retry waits for it to be shown again (4.2, 7.9). Absent: never hidden. */
   hidden?(): boolean;
   onShown?(fn: () => void): void;
 }
@@ -124,9 +125,12 @@ export class WsTransport implements Transport {
     this.state = 'retrying';
     if (this.onClose) this.onClose('retrying');
     const env = this.env, wait = BACKOFF_MS[Math.min(this.tries++, BACKOFF_MS.length - 1)];
-    const again = (): void => { this.retryTimer = env.setTimer(() => { this.retryTimer = null; if (this.state === 'retrying') { this.state = 'connecting'; this.dial(); } }, wait); };
-    // a hidden page that was closed for idling comes back when it is shown, not while nobody looks at it
-    if (said === 'idle' && env.hidden?.() && env.onShown) env.onShown(again); else again();
+    const go = (): void => { if (this.state === 'retrying') { this.state = 'connecting'; this.dial(); } };
+    // A hidden page draws no frames, so a socket the host took in then would never say `ready`: its player would hold a
+    // seat, loading, that the 30 s idle rule skips. Whatever closed it, a hidden page dials once it is shown.
+    const hidden = (): boolean => !!env.hidden?.() && !!env.onShown;
+    const again = (): void => { this.retryTimer = env.setTimer(() => { this.retryTimer = null; if (hidden()) env.onShown!(go); else go(); }, wait); };
+    if (hidden()) env.onShown!(again); else again();
   }
   /** Forget the current socket: none of its events count from here on. */
   private drop(): void {

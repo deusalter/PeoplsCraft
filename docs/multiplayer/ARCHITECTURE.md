@@ -3885,6 +3885,15 @@ went only when a welcome came, and a close with a final code (`data` after the s
 `name_taken`) was ignored once a game was running: the loading screen said why, the banner above it went on saying
 "Reconnecting...", and nothing led away but a reload by hand. A final close now takes the banner down and puts a "Back to
 the title" button under the loading screen, which loads the page again; the game is not taken down in place.
+(n) A hidden tab could take a seat it would not use for two minutes (4.2, 7.9). Only an `idle` close waited for the page
+to be shown; a drop, `shutdown` or `slow` seen while the tab was hidden dialled again at once. The host took the hello,
+bound the player as loading and sent the welcome, but a hidden page draws no frames, so the session was never pumped
+and `ready` never went back; the 30 s idle rule skips a loading player, and the browser answers pings by itself, so the
+seat stayed taken until `LOAD_CLOSE` (D43 (b)) closed it, and with `maxPlayers` reached a friend was refused `full`
+meanwhile. `ws-client` now waits for a hidden page to be shown before any retry, whatever closed the socket, and a
+backoff that runs out while the page is hidden dials when it is shown. This departs from 4.2's list in that a hidden
+tab told `shutdown` or `slow` retries when it is shown rather than at once; 7.9's "reconnects by itself when the tab is
+shown again" now holds for every close. The first dial of a join is made whether the page is hidden or not.
 
 ---
 
