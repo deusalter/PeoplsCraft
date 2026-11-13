@@ -22,7 +22,7 @@ Three rules follow and are used everywhere below.
 
 ## 2. Palette
 
-46 colours. No opaque part of the interface uses any other. Each ramp runs light to dark and its hue moves as it darkens: clay from yellow toward red-brown, timber from yellow-orange toward wine, stone from green-grey toward blue-grey, root stays cold. The **Code** is the character that stands for the colour in every diagram of this document.
+47 colours. No opaque part of the interface uses any other. Each ramp runs light to dark and its hue moves as it darkens: clay from yellow toward red-brown, timber from yellow-orange toward wine, stone from green-grey toward blue-grey, root stays cold. The **Code** is the character that stands for the colour in every diagram of this document.
 
 | Name | Hex | Code | Use |
 | --- | --- | --- | --- |
@@ -53,7 +53,7 @@ Three rules follow and are used everywhere below.
 | `ink.faded` | `#5c4c56` | `i` | secondary and disabled text on a light face |
 | `blood.lt` | `#f2785c` | `r` | worse-than lines and refusals on dark; lit top of the life fill |
 | `blood` | `#c9372f` | `R` | life; boss strip; harm; refusal frame |
-| `blood.dk` | `#7c1c2b` | `q` | shade of the life fill; refusal text on a light face; the wash of a fall |
+| `blood.dk` | `#7c1c2b` | `q` | shade of the life fill; refusal text on a light face |
 | `ember.hi` | `#ffe08a` | `y` | label of a hovered button; grade Old on dark; tip of a flame |
 | `ember.lt` | `#f7b54a` | `o` | hunger pip light; flame; trail on a draining strip |
 | `ember` | `#dd7a26` | `O` | hunger; heat; a working that is running |
@@ -72,6 +72,7 @@ Three rules follow and are used everywhere below.
 | `rose.lt` | `#ff6f9c` | `p` | grade Floor on dark |
 | `rose.dk` | `#96164a` | `P` | grade Floor on a light face |
 | `gilt.dk` | `#6b4d08` | `Y` | grade Old on a light face |
+| `blood.pit` | `#4a1606` | `Q` | the wash of a fall, and nothing else: a red-brown dark enough that over a blue sky it stays red and never turns violet |
 
 **Ramp roles.** The three slab ramps have the same six roles, lightest first: `hi`, `lt`, `face`, `sh`, `dk`, `pit`. In clay the `hi` role is `salt`. A part drawn on a slab takes its tones from that slab's ramp, so a slot in a timber slab is timber. In the diagrams such tones are the digits `1` to `6` in that order, and the diagram is drawn once for all three ramps.
 
@@ -142,7 +143,7 @@ Three rules follow and are used everywhere below.
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A pattern the pack cannot afford, over its cell in a pattern list (5.4) | `root.0` at a half | not drawn; the icon flat in `root.4` |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
-| The fall | `blood.dk` at a quarter, a half, then a half held | `blood.dk`, opaque |
+| The fall | `blood.pit` at a quarter, a half, then three quarters held. Over the noon sky `blood.dk` at a half read as a lilac wash, which is the violet glow this interface refuses | `blood.pit`, opaque |
 | Crossing a gate | `violet.dk` at a quarter, a half, three quarters as the crossing fills | `violet.dk`, opaque |
 
 **Later.** The texture pass starts from these ramps. It may add ramps the world needs (leaf, water, sky, the metals). It may not change a value here, and it may not add a tone inside one of these ramps.
@@ -3551,7 +3552,7 @@ Size 248 by 206. Material: clay. Anchor: as Settings.
 
 ### The screen at a fall
 
-Size 427 by 240. Material: the world under a flat wash of blood.dk at half strength, and no window: the fall is not a container and the wash is its ground, as in the tradition. Anchor: the column 200 wide, y from the top of the block 240 tall centred on the screen.
+Size 427 by 240. Material: the world under a flat wash of blood.pit at three quarters, and no window: the fall is not a container and the wash is its ground, as in the tradition. Anchor: the column 200 wide, y from the top of the block 240 tall centred on the screen.
 
 ```
 +==============================================================================================================================================+
@@ -3599,14 +3600,14 @@ Size 427 by 240. Material: the world under a flat wash of blood.dk at half stren
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| D1 | raised | 175 | 56 | 78 | 22 | "You fell" in raised letters (5.28), centred on the column |
+| D1 | raised | 175 | 56 | 78 | 22 | "You fell" in raised letters (5.28), centred on the column, with a flat `root.0` copy of the whole drawing 2 right and 2 down under it, as a shadow at the letters' own block of 2 |
 | D2 | text | 113 | 86 | 200 | 10 | what did it, centred, salt with shadow: "to a Tama", "from a height", "to hunger" |
 | D3 | text | 113 | 98 | 200 | 10 | what was shed, centred, salt with shadow: the jar mark and "14 shed in the wood"; left out when nothing was |
 | D3b | text | 113 | 110 | 200 | 10 | where the shed lees lie, centred, in arm.lt with shadow as a place to go: "Lees lie at x -104  z 2210"; left out with D3 |
 | D4 | button | 113 | 126 | 200 | 20 | "Rise again", 6 under the last line drawn: at y 126 with D3 and D3b, at 102 when nothing was shed |
 | D5 | button | 113 | 150 | 200 | 20 | "Save and leave"; on a server "Leave"; 4 under D4 |
 
-- **Shows.** The wash comes up in three steps over 0.3 s; the buttons are disabled for 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and the chat stay drawn over the wash.
+- **Shows.** The wash comes up in three steps over 0.3 s (a quarter, a half, three quarters); the buttons are disabled for 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and the chat stay drawn over the wash.
 - **Clickable.** The two buttons.
 - **Keys.** Enter rises once the buttons wake. Esc does nothing here.
 - **First.** Focus on "Rise again", drawn disabled until it wakes.

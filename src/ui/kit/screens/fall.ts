@@ -1,4 +1,4 @@
-// The screen at a fall (section 6): the world under a flat wash of blood.dk that comes up in three steps; on it, with
+// The screen at a fall (section 6): the world under a flat wash of blood.pit that comes up in three steps; on it, with
 // no window, "You fell" in raised letters at the top third, what did it and what was shed under it, and two buttons
 // that wake after 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and chat stay
 // drawn over the wash.
@@ -26,14 +26,14 @@ function build(ui: Ui, id: string): Node {
   const f = FALLS[id];
   const t = since(ui.t, fellAt, 5);
   const awake = t >= 0.8;
-  const quarters = t < 0.1 ? 1 : 2;
+  const quarters = t < 0.1 ? 1 : t < 0.2 ? 2 : 3;
   const col = Math.floor((ui.w - 200) / 2), top = Math.floor((ui.h - 240) / 2);
   const title = raised('You fell');
   const line = (y: number, text: string, c: Colour = 'salt'): Node => ({
     x: col, y: top + y, w: 201, h: 11, paint: (s) => { s.text(text, centreX(text, 0, 200), 0, c, true); },
   });
   const kids: Node[] = [
-    { x: col + Math.floor((200 - title.w) / 2), y: top + 56, w: title.w, h: title.h, paint: (s) => s.map(title, 0, 0) },
+    { x: col + Math.floor((200 - title.w) / 2), y: top + 56, w: title.w + 2, h: title.h + 2, paint: (s) => { s.draw(title, 2, 2, { flat: 'root.0' }); s.map(title, 0, 0); } },
     line(86, f.by),
   ];
   let y = 86;
@@ -65,7 +65,7 @@ function build(ui: Ui, id: string): Node {
   if (t < 0.3) setTimeout(() => ui.invalidate(), 110);
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
-    paint: (s) => s.wash(0, 0, ui.w, ui.h, 'blood.dk', quarters),
+    paint: (s) => s.wash(0, 0, ui.w, ui.h, 'blood.pit', quarters),
     on: { key: (e) => { if (e.key === 'Enter' && awake) { fellAt = ui.t; ui.invalidate(); return true; } return e.key === 'Escape'; } },
     takes: true,
     kids: [...over, ...kids],
