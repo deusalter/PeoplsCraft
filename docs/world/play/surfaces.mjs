@@ -22,6 +22,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // --root <dir> reads another copy of the game (a test plants a fault in a copy and expects this script to stop).
@@ -316,6 +317,8 @@ function add(surface, key, o = {}) {
   if (o.planned) e.planned = true;
   if (o.empty) e.empty = true;
   if (o.must) e.must = o.must;
+  if (o.at) e.at = o.at;
+  if (o.branch) e.branch = o.branch;
   entries.set(id, e);
   for (const n of e.needs) covered.add(n);
 }
@@ -486,17 +489,56 @@ for (const [key, steps] of CODEX) {
 // ====================================================================================================
 // 2. Sentences that are literals in the code
 // ====================================================================================================
-/** Find a literal in a file. Returns { line, now }. `now` defaults to the text looked for. */
-function find(file, needle, now) {
-  const t = src(file);
-  let i = -1;
-  for (const form of [`'${needle.replace(/'/g, "\\'")}'`, `"${needle}"`, '`' + needle + '`', needle]) { i = t.indexOf(form); if (i >= 0) break; }
-  if (i < 0) { fail(`${file}: the text "${needle}" is no longer there`); return { line: null, now: now ?? needle }; }
-  return { line: lineAt(t, i), now: now ?? needle };
+/** Every index of `form` in `t`. */
+function allAt(t, form) { const out = []; for (let i = t.indexOf(form); i >= 0; i = t.indexOf(form, i + form.length)) out.push(i); return out; }
+/** The first form of a needle (quoted three ways, then bare) that occurs in `t`, or null. */
+function formIn(t, needle) { return [`'${needle.replace(/'/g, "\\'")}'`, `"${needle}"`, '`' + needle + '`', needle].find((f) => t.includes(f)) ?? null; }
+/**
+ * Find a literal in a file. Returns { line, now, at }. `now` defaults to the text looked for. `line` is the first line it is on;
+ * `at` lists every place it is written, as "file:line", in this file and in each of `alsoIn`, when there is more than one. The loader
+ * replaces the literal at every place `at` lists (plan.md J step 4).
+ */
+function find(file, needle, now, alsoIn = []) {
+  const t = src(file), form = formIn(t, needle);
+  if (!form) { fail(`${file}: the text "${needle}" is no longer there`); return { line: null, now: now ?? needle }; }
+  const at = allAt(t, form).map((i) => `${file}:${lineAt(t, i)}`);
+  for (const f of alsoIn) {
+    // a copy the multiplayer job has put on main and this tree lacks is listed with "(main)" after it
+    let u = src(f), g = formIn(u, needle), tag = '';
+    if (!g) { const m = mainSrc(f); g = m === null ? null : formIn(m, needle); if (g) { u = m; tag = ' (main)'; } }
+    if (!g) { fail(`${f}: the text "${needle}" is no longer there`); continue; }
+    for (const i of allAt(u, g)) at.push(`${f}:${lineAt(u, i)}${tag}`);
+  }
+  return { line: lineAt(t, t.indexOf(form)), now: now ?? needle, ...(at.length > 1 ? { at } : {}) };
 }
 /** One literal sentence: surface, key, file, the text to look for, and what to record as the present text when it differs. */
 function L(surface, key, file, needle, o = {}) {
-  add(surface, key, { file, ...find(file, needle, o.now), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note, empty: o.empty, slots: o.slots });
+  add(surface, key, { file, ...find(file, needle, o.now, o.alsoIn), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note, empty: o.empty, slots: o.slots });
+}
+/**
+ * A literal the multiplayer job has put on `main` and this tree does not have yet. When the text is in this tree's file it is an
+ * ordinary literal. Otherwise it is looked for in `main` (git show main:<file>), and the entry records where it is there, with
+ * `branch: "main"`. After the merge every such entry is an ordinary one, and surfaces.mjs is run again (plan.md J step 2).
+ */
+let mainGit = null;
+function mainSrc(file) {
+  mainGit ??= new Map();
+  if (!mainGit.has(file)) {
+    let t = null;
+    try { t = execFileSync('git', ['-C', HERE, 'show', `main:${file}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }); } catch { t = null; }
+    mainGit.set(file, t);
+  }
+  return mainGit.get(file);
+}
+function LM(surface, key, file, needle, o = {}) {
+  if (formIn(src(file), needle)) { L(surface, key, file, needle, o); return; }
+  const t = mainSrc(file);
+  if (t === null) { fail(`${file}: the text "${needle}" is not in this tree, and main could not be read with git`); return; }
+  const form = formIn(t, needle);
+  if (!form) { fail(`${file}: the text "${needle}" is in neither this tree nor main`); return; }
+  const at = allAt(t, form).map((i) => `${file}:${lineAt(t, i)}`);
+  add(surface, key, { file, line: lineAt(t, t.indexOf(form)), ...(at.length > 1 ? { at } : {}), now: o.now ?? needle, needs: o.needs, voice: o.voice, limit: o.limit, slots: o.slots,
+    branch: 'main', note: o.note });
 }
 const G = 'src/game.ts', ACT = 'src/sim/actions.ts', EV = 'src/sim/events.ts', TRV = 'src/sim/travel.ts', NPC = 'src/sim/npcs.ts', PLY = 'src/sim/player.ts',
   GATE = 'src/sim/gates.ts', OPS = 'src/sim/invops.ts', CMB = 'src/client/combat.ts', WIN = 'src/ui/windows.ts', MENU = 'src/ui/menus.ts', HUD = 'src/ui/hud.ts',
@@ -623,6 +665,20 @@ L('hud', 'dodged', PLY, "'Dodged'", { now: 'Dodged', note: 'a word that floats u
 // ---- windows ----
 for (const [k, text] of [['equipment', 'Equipment'], ['book', 'Recipe book'], ['guide', 'Guide'], ['can_make', 'Can make'], ['none_match', 'Nothing here matches'], ['chest', 'Chest'], ['smelting', 'Smelting'],
   ['inventory', 'Inventory'], ['buy_back', 'Buy back'], ['for_sale', 'For sale'], ['buy', 'Buy'], ['take_all', 'Take all'], ['back_crafting', 'Back to crafting']]) L('win', k, WIN, `'${text}'`, { now: text, limit: 24 });
+{
+  // the recipe book's category chips: BOOK_CATS in the inventory window, in order
+  const t = src(WIN), a = /const BOOK_CATS = \[(.*?)\];/.exec(t), keys = ['all', 'tools', 'weapons', 'armour', 'trinkets', 'blocks', 'other'];
+  if (!a) fail(`${WIN}: BOOK_CATS was not found`);
+  else {
+    const cats = lits(a[1]);
+    if (cats.length !== keys.length) fail(`${WIN}: BOOK_CATS has ${cats.length} categories; this script names ${keys.length}`);
+    cats.forEach((c, i) => add('win', 'cat.' + (keys[i] ?? i), { file: WIN, line: lineAt(t, a.index), now: c, limit: 12, note: 'a category chip of the recipe book' }));
+  }
+}
+// the labels under the armour slots; the same three words fill {slot} of tip:slot_empty
+for (const [k, now] of [['head', 'Head'], ['body', 'Body'], ['legs', 'Legs']]) L('win', 'slot.' + k, WIN, "['Head', 'Body', 'Legs']", { now, limit: 10, note: 'the label under an armour slot, and the word put into {slot} of tip:slot_empty' });
+L('win', 'slot.trinket', WIN, "'acc', 'Trinket'", { now: 'Trinket', limit: 10, note: 'the label under each of the five trinket slots' });
+L('win', 'crafting', WIN, "'Crafting'", { now: 'Crafting', limit: 24, note: 'the title of the middle column when no station is open; with a station open the title is the station\'s name' });
 L('win', 'search', WIN, "placeholder = 'Search'", { now: 'Search', limit: 14 });
 L('win', 'book.here', WIN, 'What you can make here', { limit: 60 });
 L('win', 'book.browse', WIN, "'Browse what the '", { now: 'Browse what the {station} makes', limit: 60 });
@@ -659,7 +715,7 @@ for (const [k, needle, now] of [
   ['light', 'Gives off light', null], ['sells_for', 'Sells for ${sellPrice(s.k)} coins', 'Sells for {n} coins'], ['craft_anywhere', 'Craft anywhere', null], ['made_at', "'Made at: '", 'Made at: {station}'],
   ['makes', 'Makes up to ${most * r.n}', 'Makes up to {n}'],
 ]) L('tip', k, WIN, needle, { now: now ?? needle, needs: k === 'craft_anywhere' ? ['station:hand'] : undefined,
-  note: k === 'damage' ? '{style} is the way of fighting in lower case; for a totem the code adds " per hit"' : k === 'slot_empty' ? '{slot} is Head, Body or Legs' : undefined });
+  note: k === 'damage' ? '{style} is the way of fighting in lower case; for a totem the code adds " per hit"' : k === 'slot_empty' ? '{slot} is the text of win:slot.head, win:slot.body or win:slot.legs' : undefined });
 for (const [k, needle, now] of [['kind', '${RARITY[r].name} · ${kind}', '{grade} · {kind}']]) L('tip', k, WIN, needle, { now });
 // the kind of a thing, put into {kind} above
 for (const [k, needle, now] of [['kind.weapon', "' weapon'", '{style} weapon'], ['kind.tool', "'Tool'", 'Tool'], ['kind.armour', "d.armor ? 'Armour'", 'Armour'], ['kind.trinket', "d.acc ? 'Trinket'", 'Trinket'],
@@ -703,6 +759,21 @@ for (const [k, text] of [['paused', 'PAUSED'], ['controls', 'CONTROLS'], ['setti
   ['auto_jump', 'Auto-jump up single blocks'], ['auto_tool', 'Switch tools automatically'], ['fly_toggle', 'Double-tap Space to fly (creative)'], ['raw_mouse', 'Raw mouse input (no acceleration)']]) L('menu', k, MENU, `'${text}'`, { now: text, limit: 40 });
 L('menu', 'world.line', MENU, 'seed ${w.seedText} · ${new Date(w.played).toLocaleDateString()} · level ${w.level}', { now: 'seed {seed} · {date} · level {n}', limit: 60 });
 L('menu', 'quick_world', MAIN, 'Quick world', { limit: 28 });
+L('menu', 'player_default', MAIN, "'Player'", { now: 'Player', limit: 16, alsoIn: ['src/net/host.ts', 'src/sim/migrate.ts'],
+  note: 'the name of the player of a world played alone, and of a world from before names; other players see it over the head and in the list. 1 to 16 letters, digits, spaces, _ or -' });
+// ---- joining a server: put on main by the multiplayer job ----
+for (const [k, needle, now, note] of [
+  ['join.here', 'Join ${here.name}', 'Join {name}', 'the title-screen button on a server\'s own page; {name} is the server\'s name'],
+  ['join.server', 'Join a server', null, 'the title-screen button on any other page'],
+  ['join.head', 'join a world', null, 'the heading of the join screen, in lower case as the other headings'],
+  ['join.players', '${here.name} · ${here.players} of ${here.max} playing', '{name} · {n} of {max} playing', 'the line on the join screen of a server\'s own page'],
+  ['join.address', 'Address (host:port)', null, 'the empty address field'], ['join.name', 'Your name', null, 'the empty name field'],
+  ['join.password', "here ? 'Password'", 'Password', 'the empty password field on a server that has one'],
+  ['join.password_maybe', 'Password (if the server has one)', null, 'the empty password field when the server is not known yet'],
+  ['join.go', "col, 'Join')", 'Join', 'the button that joins'], ['join.connecting', 'Connecting...', null, 'shown while a join is under way'],
+  ['join.cancel', 'Cancel', null, 'gives up a join under way'], ['server_keeps', 'The server keeps this world', null, 'the pause screen on a server, in place of the saving line'],
+]) LM('menu', k, MENU, needle, { now: now ?? needle, limit: 48, note });
+LM('menu', 'back_title', MAIN, 'Back to the title', { limit: 28, note: 'the button over the game when a server has closed the connection for good' });
 {
   // the list of controls: the second word of each pair in KEYS
   const t = src(MENU), a = /const KEYS: \[string, string\]\[\] = \[([\s\S]*?)\]\];/.exec(t);
@@ -723,7 +794,15 @@ for (const [k, file, text] of [
   ['sim_stopped', WORKER, 'the simulation stopped'], ['proto.no_hello', HOST, 'no hello'], ['proto.malformed', HOST, 'malformed message'], ['proto.bad_token', HOST, 'bad token'],
   ['proto.hello_first', HOST, 'hello first'], ['proto.not_move', HOST, 'not a movement message'], ['proto.second_hello', HOST, 'a second hello'], ['proto.sequence', HOST, 'sequence out of order'],
   ['step.aborted', IDB, 'transaction aborted'], ['step.open', IDB, 'open world'], ['step.list', IDB, 'list chunks'], ['step.backup', IDB, 'back up the old world'], ['step.migrate', IDB, 'migrate the world'],
-]) L('error', k, file, text, { note: k.startsWith('proto.') ? 'the host closes the connection with it; the page shows it on the loading screen' : k.startsWith('step.') ? 'shown after error:world_open, before the browser\'s own words for the failure' : k === 'sim_stopped' ? 'shown after error:world_open when the simulation gives no reason' : undefined });
+]) L('error', k, file, text, { note: k.startsWith('proto.') ? 'the host closes the connection with it; the page shows it on the loading screen' : k.startsWith('step.') ? 'shown after error:world_open, before the browser\'s own words for the failure' : k === 'sim_stopped' ? 'shown after error:world_open when the simulation gives no reason' : k === 'name_form' ? 'the host answers with it, and on main the join screen writes the same sentence before it sends anything' : undefined,
+  alsoIn: k === 'name_form' ? [MENU] : undefined });
+for (const [k, file, text, note] of [
+  ['no_address', MENU, 'Which server? Type its address, for example 192.168.1.20:8080.', 'the join screen, when the address field is empty'],
+  ['address', MAIN, 'That is not an address. Type it as host:port, for example 192.168.1.20:8080.', 'the join screen, when the address cannot be read'],
+  ['unreachable', MAIN, 'Cannot reach the server. Trying again...', 'the join screen, while the first connection is tried again'],
+  ['reconnecting', MAIN, 'Connection lost. Reconnecting...', 'a strip at the top of the screen while a dropped connection is tried again'],
+  ['load_timeout', HOST, 'The world did not finish loading in 2 minutes.', 'the host closes the connection with it; the page shows it on the join screen'],
+]) LM('error', k, file, text, { note });
 L('error', 'format_newer', IDB, 'is newer than this build', { now: 'world format {n} is newer than this build', note: 'shown after error:world_open' });
 // ---- the command line ----
 for (const [k, needle, now] of [['help', 'commands: give time tp fly creative god heal level kill spawn boss flag event dim gear locate', null], ['unknown_item', "'unknown item '", 'unknown item {key}'],

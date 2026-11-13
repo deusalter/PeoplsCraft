@@ -388,7 +388,7 @@
    "voice": "label",
    "limit": 150,
    "assign": "system",
-   "entries": 46
+   "entries": 58
   },
   "tip": {
    "about": "Lines the tooltip writes from numbers",
@@ -423,7 +423,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 54
+   "entries": 68
   },
   "key": {
    "about": "What a control does, in the list of controls",
@@ -437,7 +437,7 @@
    "voice": "label",
    "limit": 100,
    "assign": "system",
-   "entries": 40
+   "entries": 45
   },
   "cmd": {
    "about": "Answers of the command line",
@@ -4621,7 +4621,11 @@
    "now": "cleared",
    "voice": "label",
    "limit": 110,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/sim/cheats.ts:62",
+    "src/sim/cheats.ts:77"
+   ]
   },
   "cmd:event": {
    "surface": "cmd",
@@ -4643,7 +4647,11 @@
    "now": "failed",
    "voice": "label",
    "limit": 110,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/sim/cheats.ts:63",
+    "src/sim/cheats.ts:103"
+   ]
   },
   "cmd:filled": {
    "surface": "cmd",
@@ -4758,7 +4766,11 @@
    "now": "spawned",
    "voice": "label",
    "limit": 110,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/sim/cheats.ts:63",
+    "src/sim/cheats.ts:103"
+   ]
   },
   "cmd:teleported": {
    "surface": "cmd",
@@ -4805,6 +4817,10 @@
    "assign": "system",
    "slots": [
     "{key}"
+   ],
+   "at": [
+    "src/sim/cheats.ts:63",
+    "src/sim/cheats.ts:98"
    ]
   },
   "cmd:unknown_item": {
@@ -8780,6 +8796,19 @@
    "limit": 220,
    "assign": "creatures"
   },
+  "error:address": {
+   "surface": "error",
+   "key": "address",
+   "needs": [],
+   "file": "src/main.ts",
+   "line": 117,
+   "now": "That is not an address. Type it as host:port, for example 192.168.1.20:8080.",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the join screen, when the address cannot be read",
+   "branch": "main"
+  },
   "error:blocked.banner": {
    "surface": "error",
    "key": "blocked.banner",
@@ -8870,7 +8899,11 @@
    "now": "The world is full.",
    "voice": "label",
    "limit": 100,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/net/host.ts:218",
+    "src/net/host.ts:227"
+   ]
   },
   "error:host_message": {
    "surface": "error",
@@ -8894,6 +8927,19 @@
    "limit": 100,
    "assign": "system"
   },
+  "error:load_timeout": {
+   "surface": "error",
+   "key": "load_timeout",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 385,
+   "now": "The world did not finish loading in 2 minutes.",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the join screen",
+   "branch": "main"
+  },
   "error:name_form": {
    "surface": "error",
    "key": "name_form",
@@ -8903,7 +8949,12 @@
    "now": "A name is 1 to 16 letters, digits, spaces, _ or -.",
    "voice": "label",
    "limit": 100,
-   "assign": "system"
+   "assign": "system",
+   "note": "the host answers with it, and on main the join screen writes the same sentence before it sends anything",
+   "at": [
+    "src/net/host.ts:204",
+    "src/ui/menus.ts:244 (main)"
+   ]
   },
   "error:name_taken": {
    "surface": "error",
@@ -8949,6 +9000,19 @@
    "limit": 100,
    "assign": "system"
   },
+  "error:no_address": {
+   "surface": "error",
+   "key": "no_address",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 245,
+   "now": "Which server? Type its address, for example 192.168.1.20:8080.",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the join screen, when the address field is empty",
+   "branch": "main"
+  },
   "error:no_save": {
    "surface": "error",
    "key": "no_save",
@@ -8969,7 +9033,11 @@
    "now": "This page is older than the game it reached. Reload to update.",
    "voice": "label",
    "limit": 100,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/net/host.ts:189",
+    "src/net/host.ts:190"
+   ]
   },
   "error:password": {
    "surface": "error",
@@ -9015,7 +9083,11 @@
    "voice": "label",
    "limit": 100,
    "assign": "system",
-   "note": "the host closes the connection with it; the page shows it on the loading screen"
+   "note": "the host closes the connection with it; the page shows it on the loading screen",
+   "at": [
+    "src/net/host.ts:295",
+    "src/net/host.ts:306"
+   ]
   },
   "error:proto.malformed": {
    "surface": "error",
@@ -9027,7 +9099,11 @@
    "voice": "label",
    "limit": 100,
    "assign": "system",
-   "note": "the host closes the connection with it; the page shows it on the loading screen"
+   "note": "the host closes the connection with it; the page shows it on the loading screen",
+   "at": [
+    "src/net/host.ts:140",
+    "src/net/host.ts:302"
+   ]
   },
   "error:proto.no_hello": {
    "surface": "error",
@@ -9088,6 +9164,19 @@
    "limit": 100,
    "assign": "system"
   },
+  "error:reconnecting": {
+   "surface": "error",
+   "key": "reconnecting",
+   "needs": [],
+   "file": "src/main.ts",
+   "line": 148,
+   "now": "Connection lost. Reconnecting...",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "a strip at the top of the screen while a dropped connection is tried again",
+   "branch": "main"
+  },
   "error:replaced": {
    "surface": "error",
    "key": "replaced",
@@ -9097,7 +9186,11 @@
    "now": "Joined from somewhere else.",
    "voice": "label",
    "limit": 100,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/net/host.ts:213",
+    "src/net/host.ts:221"
+   ]
   },
   "error:save_failed": {
    "surface": "error",
@@ -9214,6 +9307,19 @@
    "voice": "label",
    "limit": 100,
    "assign": "system"
+  },
+  "error:unreachable": {
+   "surface": "error",
+   "key": "unreachable",
+   "needs": [],
+   "file": "src/main.ts",
+   "line": 147,
+   "now": "Cannot reach the server. Trying again...",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the join screen, while the first connection is tried again",
+   "branch": "main"
   },
   "error:world_open": {
    "surface": "error",
@@ -16412,7 +16518,27 @@
    "now": "Back",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:157",
+    "src/ui/menus.ts:172",
+    "src/ui/menus.ts:179",
+    "src/ui/menus.ts:208",
+    "src/ui/menus.ts:219"
+   ]
+  },
+  "menu:back_title": {
+   "surface": "menu",
+   "key": "back_title",
+   "needs": [],
+   "file": "src/main.ts",
+   "line": 141,
+   "now": "Back to the title",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the button over the game when a server has closed the connection for good",
+   "branch": "main"
   },
   "menu:begin": {
    "surface": "menu",
@@ -16478,7 +16604,11 @@
    "now": "Controls",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:157",
+    "src/ui/menus.ts:208"
+   ]
   },
   "menu:controls_sound": {
    "surface": "menu",
@@ -16590,6 +16720,161 @@
    "limit": 40,
    "assign": "system"
   },
+  "menu:join.address": {
+   "surface": "menu",
+   "key": "join.address",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 232,
+   "now": "Address (host:port)",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the empty address field",
+   "branch": "main"
+  },
+  "menu:join.cancel": {
+   "surface": "menu",
+   "key": "join.cancel",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 261,
+   "now": "Cancel",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "gives up a join under way",
+   "branch": "main"
+  },
+  "menu:join.connecting": {
+   "surface": "menu",
+   "key": "join.connecting",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 249,
+   "now": "Connecting...",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "shown while a join is under way",
+   "branch": "main"
+  },
+  "menu:join.go": {
+   "surface": "menu",
+   "key": "join.go",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 240,
+   "now": "Join",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the button that joins",
+   "branch": "main"
+  },
+  "menu:join.head": {
+   "surface": "menu",
+   "key": "join.head",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 228,
+   "now": "join a world",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the heading of the join screen, in lower case as the other headings",
+   "at": [
+    "src/ui/menus.ts:228",
+    "src/ui/menus.ts:257"
+   ],
+   "branch": "main"
+  },
+  "menu:join.here": {
+   "surface": "menu",
+   "key": "join.here",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 176,
+   "now": "Join {name}",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ],
+   "note": "the title-screen button on a server's own page; {name} is the server's name",
+   "branch": "main"
+  },
+  "menu:join.name": {
+   "surface": "menu",
+   "key": "join.name",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 233,
+   "now": "Your name",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the empty name field",
+   "branch": "main"
+  },
+  "menu:join.password": {
+   "surface": "menu",
+   "key": "join.password",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 236,
+   "now": "Password",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the empty password field on a server that has one",
+   "branch": "main"
+  },
+  "menu:join.password_maybe": {
+   "surface": "menu",
+   "key": "join.password_maybe",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 236,
+   "now": "Password (if the server has one)",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the empty password field when the server is not known yet",
+   "branch": "main"
+  },
+  "menu:join.players": {
+   "surface": "menu",
+   "key": "join.players",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 231,
+   "now": "{name} · {n} of {max} playing",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "slots": [
+    "{name}",
+    "{n}",
+    "{max}"
+   ],
+   "note": "the line on the join screen of a server's own page",
+   "branch": "main"
+  },
+  "menu:join.server": {
+   "surface": "menu",
+   "key": "join.server",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 176,
+   "now": "Join a server",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the title-screen button on any other page",
+   "branch": "main"
+  },
   "menu:msaa": {
    "surface": "menu",
    "key": "msaa",
@@ -16621,7 +16906,11 @@
    "now": "New World",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:162",
+    "src/ui/menus.ts:169"
+   ]
   },
   "menu:name_field": {
    "surface": "menu",
@@ -16654,7 +16943,13 @@
    "now": "Off",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:59",
+    "src/ui/menus.ts:72",
+    "src/ui/menus.ts:88",
+    "src/ui/menus.ts:92"
+   ]
   },
   "menu:on": {
    "surface": "menu",
@@ -16665,7 +16960,12 @@
    "now": "On",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:59",
+    "src/ui/menus.ts:88",
+    "src/ui/menus.ts:92"
+   ]
   },
   "menu:other_tab": {
    "surface": "menu",
@@ -16688,6 +16988,24 @@
    "voice": "label",
    "limit": 40,
    "assign": "system"
+  },
+  "menu:player_default": {
+   "surface": "menu",
+   "key": "player_default",
+   "needs": [],
+   "file": "src/main.ts",
+   "line": 96,
+   "now": "Player",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "note": "the name of the player of a world played alone, and of a world from before names; other players see it over the head and in the list. 1 to 16 letters, digits, spaces, _ or -",
+   "at": [
+    "src/main.ts:96",
+    "src/net/host.ts:200",
+    "src/sim/migrate.ts:45",
+    "src/sim/migrate.ts:55"
+   ]
   },
   "menu:preset": {
    "surface": "menu",
@@ -16720,7 +17038,11 @@
    "now": "Save and quit to title",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:209",
+    "src/ui/menus.ts:228"
+   ]
   },
   "menu:raw_mouse": {
    "surface": "menu",
@@ -16821,6 +17143,19 @@
    "limit": 40,
    "assign": "system"
   },
+  "menu:server_keeps": {
+   "surface": "menu",
+   "key": "server_keeps",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 285,
+   "now": "The server keeps this world",
+   "voice": "label",
+   "limit": 48,
+   "assign": "system",
+   "note": "the pause screen on a server, in place of the saving line",
+   "branch": "main"
+  },
   "menu:settings": {
    "surface": "menu",
    "key": "settings",
@@ -16841,7 +17176,11 @@
    "now": "Settings",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:156",
+    "src/ui/menus.ts:207"
+   ]
   },
   "menu:sfx": {
    "surface": "menu",
@@ -16885,7 +17224,11 @@
    "now": "Sure?",
    "voice": "label",
    "limit": 40,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/menus.ts:147",
+    "src/ui/menus.ts:147"
+   ]
   },
   "menu:sway": {
    "surface": "menu",
@@ -17493,7 +17836,11 @@
    "now": "Raising the land",
    "voice": "sight",
    "limit": 60,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/game.ts:97",
+    "src/game.ts:261"
+   ]
   },
   "realm:returning": {
    "surface": "realm",
@@ -17504,7 +17851,11 @@
    "now": "Returning",
    "voice": "sight",
    "limit": 60,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/sim/travel.ts:34",
+    "src/sim/travel.ts:37"
+   ]
   },
   "site.sight:arena1": {
    "surface": "site.sight",
@@ -20066,7 +20417,11 @@
    "voice": "label",
    "limit": 24,
    "assign": "system",
-   "note": "the kind of a thing, put into {kind} of tip:kind"
+   "note": "the kind of a thing, put into {kind} of tip:kind",
+   "at": [
+    "src/ui/windows.ts:588",
+    "src/ui/windows.ts:611"
+   ]
   },
   "tip:kind.tool": {
    "surface": "tip",
@@ -20386,7 +20741,7 @@
    "slots": [
     "{slot}"
    ],
-   "note": "{slot} is Head, Body or Legs"
+   "note": "{slot} is the text of win:slot.head, win:slot.body or win:slot.legs"
   },
   "tip:src.any": {
    "surface": "tip",
@@ -20636,7 +20991,11 @@
    "now": "Your bedroll is gone. Returned to the world spawn.",
    "voice": "label",
    "limit": 90,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/sim/travel.ts:30",
+    "src/sim/travel.ts:97"
+   ]
   },
   "toast:bed_place": {
    "surface": "toast",
@@ -21117,7 +21476,11 @@
    "now": "Back to crafting",
    "voice": "label",
    "limit": 24,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/windows.ts:268",
+    "src/ui/windows.ts:268"
+   ]
   },
   "win:back_to": {
    "surface": "win",
@@ -21212,6 +21575,90 @@
    "voice": "label",
    "limit": 24,
    "assign": "system"
+  },
+  "win:cat.all": {
+   "surface": "win",
+   "key": "cat.all",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 39,
+   "now": "All",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a category chip of the recipe book"
+  },
+  "win:cat.armour": {
+   "surface": "win",
+   "key": "cat.armour",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 39,
+   "now": "Armour",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a category chip of the recipe book"
+  },
+  "win:cat.blocks": {
+   "surface": "win",
+   "key": "cat.blocks",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 39,
+   "now": "Blocks",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a category chip of the recipe book"
+  },
+  "win:cat.other": {
+   "surface": "win",
+   "key": "cat.other",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 39,
+   "now": "Other",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a category chip of the recipe book"
+  },
+  "win:cat.tools": {
+   "surface": "win",
+   "key": "cat.tools",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 39,
+   "now": "Tools",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a category chip of the recipe book"
+  },
+  "win:cat.trinkets": {
+   "surface": "win",
+   "key": "cat.trinkets",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 39,
+   "now": "Trinkets",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a category chip of the recipe book"
+  },
+  "win:cat.weapons": {
+   "surface": "win",
+   "key": "cat.weapons",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 39,
+   "now": "Weapons",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a category chip of the recipe book"
   },
   "win:chest": {
    "surface": "win",
@@ -21413,6 +21860,18 @@
    "note": "plan D: heading of a bestiary step: first sight",
    "planned": true
   },
+  "win:crafting": {
+   "surface": "win",
+   "key": "crafting",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 185,
+   "now": "Crafting",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the title of the middle column when no station is open; with a station open the title is the station's name"
+  },
   "win:equipment": {
    "surface": "win",
    "key": "equipment",
@@ -21469,7 +21928,11 @@
    "now": "Guide",
    "voice": "label",
    "limit": 24,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/ui/windows.ts:198",
+    "src/ui/windows.ts:262"
+   ]
   },
   "win:inventory": {
    "surface": "win",
@@ -21563,6 +22026,66 @@
    "voice": "label",
    "limit": 150,
    "assign": "system"
+  },
+  "win:slot.body": {
+   "surface": "win",
+   "key": "slot.body",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 177,
+   "now": "Body",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the label under an armour slot, and the word put into {slot} of tip:slot_empty",
+   "at": [
+    "src/ui/windows.ts:177",
+    "src/ui/windows.ts:542"
+   ]
+  },
+  "win:slot.head": {
+   "surface": "win",
+   "key": "slot.head",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 177,
+   "now": "Head",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the label under an armour slot, and the word put into {slot} of tip:slot_empty",
+   "at": [
+    "src/ui/windows.ts:177",
+    "src/ui/windows.ts:542"
+   ]
+  },
+  "win:slot.legs": {
+   "surface": "win",
+   "key": "slot.legs",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 177,
+   "now": "Legs",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the label under an armour slot, and the word put into {slot} of tip:slot_empty",
+   "at": [
+    "src/ui/windows.ts:177",
+    "src/ui/windows.ts:542"
+   ]
+  },
+  "win:slot.trinket": {
+   "surface": "win",
+   "key": "slot.trinket",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 179,
+   "now": "Trinket",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the label under each of the five trinket slots"
   },
   "win:smelting": {
    "surface": "win",

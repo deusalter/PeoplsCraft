@@ -26,6 +26,8 @@ Each entry of `_surfaces.json` gives:
 | `surface`, `key` | The two halves of the id |
 | `needs` | The internal keys the text is about, as `item:bone`, `mob:gelcap`, `boss:3` |
 | `file`, `line`, `now` | Where the present text is in the source, and what it says today. Empty when the game shows nothing there yet |
+| `at` | Present when the same literal is written in more than one place: every place, as `file:line`. A place marked `(main)` is on the branch `main` and not yet in this tree |
+| `branch` | `main` when the text is on the branch `main` and not yet in this tree; `file` and `line` are then those of `main` |
 | `voice` | One of `label`, `sight`, `note`, `born`, `sand` (plan H) |
 | `limit` | The most characters one line may have |
 | `lines` | Present when the value is a list: the fewest and the most lines |
@@ -96,7 +98,7 @@ The eight are animals (rule 19). The sand-country fighters are people: their ent
 
 Chapter 5 gives each townsperson's trade, belief and manner, with lines as a guide. Seven are `born`. Every entry of the Deserter is `sand`, whatever its surface. All eight say peopl to the face.
 
-### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (511 entries)
+### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (542 entries)
 
 | Surface | Key | What it is |
 | --- | --- | --- |
@@ -108,8 +110,8 @@ Chapter 5 gives each townsperson's trade, belief and manner, with lines as a gui
 | `fall` | fixed keys | The lines at a fall |
 | `realm` | fixed keys | Crossing, loading and the compass |
 | `country.enter` | country key | One line the first time the crew stands in a kind of country |
-| `prompt`, `hud`, `win`, `tip`, `stat`, `attr.desc`, `state.desc` | fixed keys | Prompts, HUD words, window titles and hints, tooltip lines made from numbers, the kind of a thing and where it comes from (`tip:src.*`), names of bonuses |
-| `menu`, `key` | fixed keys | Title screen, pause, settings, controls |
+| `prompt`, `hud`, `win`, `tip`, `stat`, `attr.desc`, `state.desc` | fixed keys | Prompts, HUD words, window titles, slot labels, the recipe book's categories and hints, tooltip lines made from numbers, the kind of a thing and where it comes from (`tip:src.*`), names of bonuses |
+| `menu`, `key` | fixed keys | Title screen, pause, settings, controls, the join screen, and the name a player has before typing one |
 | `error`, `cmd` | fixed keys | Failures a player is told of, the reasons the host gives for closing a connection, and the command line's answers |
 
 The blue bar is the arm (1.6). The word for it in every label is arm: "Uses {n} arm", "+{n} arm". What forms on a totem is a small feeder. Plan H gives the other fixed words of the labels.
