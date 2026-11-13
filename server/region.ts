@@ -83,7 +83,8 @@ export function decodeRegion(b: Uint8Array, dim: number, rx: number, rz: number)
     const lx = b[o], lz = b[o + 1], enc = b[o + 2], pal = v.getUint16(o + 3, true), rev = v.getUint32(o + 5, true), dl = v.getUint32(o + 9, true);
     o += 13;
     if (lx > 31 || lz > 31 || (enc !== 0 && enc !== 1) || o + dl + 4 > end) throw new FormatError('corrupt', 'bad entry');
-    const data = b.slice(o, o + dl); o += dl;
+    // a copy, and a plain Uint8Array even when `b` is a Buffer (whose slice is a view)
+    const data = new Uint8Array(b.subarray(o, o + dl)); o += dl;
     const el = v.getUint32(o, true); o += 4;
     if (o + el > end) throw new FormatError('corrupt', 'entities run past the end');
     let ents: BlockEnt[];

@@ -65,6 +65,7 @@ export class DiskStorage implements Storage {
   /** A commit failed after its journal was written: the next one finishes it first. */
   private journalLeft = false;
   private lastStamp = 0;
+  private timerBackup = false;
   private timers: ReturnType<typeof setInterval>[] = [];
 
   constructor(readonly dir: string, private opt: DiskOptions = {}) {
@@ -90,7 +91,12 @@ export class DiskStorage implements Storage {
       const world = await this.boot();
       this.state = 'open';
       const every = (this.opt.backupInterval ?? BACKUP_INTERVAL) * 1000;
-      this.timers.push(setInterval(() => { if (this.committedSince && !this.failing) void this.run(() => this.backupNow('timer')); }, every));
+      this.timers.push(setInterval(() => {
+        if (this.timerBackup || !this.committedSince || this.failing) return;
+        // looked at again in the queue: a commit or a backup may be under way when the timer fires
+        this.timerBackup = true;
+        void this.run(async () => { this.timerBackup = false; return this.committedSince && !this.failing ? this.backupNow('timer') : null; });
+      }, every));
       this.timers.push(setInterval(() => void this.run(async () => this.sweep()), Math.min(SWEEP_MS, this.opt.regionLinger ?? REGION_LINGER_MS)));
       for (const t of this.timers) t.unref();
       return world;

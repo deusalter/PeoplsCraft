@@ -163,7 +163,12 @@ export async function takeBackup(dir: string, stamp: string, io: DiskIO = nodeIO
 /** Delete all but the newest `keep` backups; returns the names deleted. */
 export async function rotateBackups(dir: string, keep: number): Promise<string[]> {
   const old = (await listBackups(dir)).slice(Math.max(0, keep));
-  for (const s of old) await rm(join(dir, 'backups', s), { recursive: true, force: true });
+  for (const s of old) {
+    // renamed out of the list first: a crash in the middle of the delete must not leave half a backup under its name
+    const gone = join(dir, 'backups', '.tmp-old-' + s);
+    await rename(join(dir, 'backups', s), gone);
+    await rm(gone, { recursive: true, force: true });
+  }
   return old;
 }
 /** Copies a crash left half made. */
