@@ -5,7 +5,8 @@ import { SMALL, TEXT } from '../../font/face';
 import { measure, rightX } from '../../font/measure';
 import { cut } from '../../font/wrap';
 import type { DragEv, Live, Node, PointerEv, Tip, TipLine, Ui } from '../../node';
-import { type Colour, type Ramp } from '../../palette';
+import { type Colour, type Ramp, tone } from '../../palette';
+import type { PixelMap } from '../../pixmap';
 import { button } from '../../parts/button';
 import { type SlotMark, paintSlot } from '../../parts/slot';
 import { heldStack } from '../../root';
@@ -120,6 +121,8 @@ export interface StackSlotOpts {
   x: number; y: number;
   ramp: Ramp | 'dark';
   silhouette?: SilhouetteName;
+  /** A silhouette that is not one of the nine. */
+  silMap?: PixelMap;
   /** A thing that is missing: its icon's silhouette. */
   missing?: string;
   large?: boolean;
@@ -150,11 +153,14 @@ export function stackSlot(b: Bench, p: Place, o: StackSlotOpts): Node {
     id, x: o.x, y: o.y, w: size, h: size,
     focus: true, takes: true,
     anim: b.refused(id),
-    paint: (s, live) => paintSlot(s, {
-      ramp: o.ramp, large: o.large, mark,
-      stack: stack ? { icon: thing(stack.key).icon, n: stack.n } : null,
-      silhouette: o.silhouette, missing: stack ? undefined : o.missing,
-    }, live),
+    paint: (s, live) => {
+      paintSlot(s, {
+        ramp: o.ramp, large: o.large, mark,
+        stack: stack ? { icon: thing(stack.key).icon, n: stack.n } : null,
+        silhouette: o.silhouette, missing: stack ? undefined : o.missing,
+      }, live);
+      if (!stack && o.silMap && o.ramp !== 'dark') s.draw(o.silMap, o.large ? 5 : 1, o.large ? 5 : 1, { flat: tone(o.ramp, live.hover ? 'face' : 'sh') });
+    },
     tip: o.tip ?? (() => (stack ? stackTip(stack, o.hint ?? (o.locked !== undefined ? 'none' : 'slot'), o.extra) : null)),
     on: {
       down: (e) => {

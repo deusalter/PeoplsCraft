@@ -214,7 +214,7 @@ export const ICONS: Record<string, PixelMap> = {
   gel: swapped(ORB, 'anWnOnuN', 'gel'),
   shade_essence: swapped(ORB, 'avWvOVuV', 'shade_essence'),
   spore_sac: swapped(ORB, 'acWcOcuC', 'spore_sac'),
-  bog_pearl: swapped(ORB, 'aSWLODuZ', 'bog_pearl'),
+  bog_pearl: swapped(ORB, 'aSWLOiuI', 'bog_pearl'),
   scorched_core: swapped(ORB, 'ayOOuu', 'scorched_core'),
   queen_spore: swapped(ORB, 'acOCuV', 'queen_spore'),
   prism_heart: swapped(ORB, 'aWOLuS', 'prism_heart'),
