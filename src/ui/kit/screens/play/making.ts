@@ -225,8 +225,8 @@ function kindButton(o: PanelOpts, ui: Ui): Node {
   };
 }
 
-/** The recipe panel (section 6): fastened to the right of its main slab, with a tab for each station whose patterns may be read. */
-export function recipePanel(o: PanelOpts): Node {
+/** The panel's controls from its top left: search, kind, "Can make", the cells, and the line of what the mouse does. */
+export function recipeControls(o: PanelOpts): Node[] {
   const { b, st } = o;
   const ui = b.ui;
   const station = o.stations[Math.min(st.tab, o.stations.length - 1)];
@@ -236,7 +236,7 @@ export function recipePanel(o: PanelOpts): Node {
     && (st.kind === 0 || kindOf(p) === KINDS[st.kind])
     && (!q || thing(p.out).name.toLowerCase().includes(q))
     && (!st.canMake || canMake(b.hand, p)));
-  const kids: Node[] = [
+  const out: Node[] = [
     field({
       id: `${o.id}.search`, x: 8, y: 16, w: 50, value: st.search, placeholder: 'Search', limit: 24, host: o.ramp, ui,
       onText: (v) => { st.search = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); },
@@ -244,14 +244,21 @@ export function recipePanel(o: PanelOpts): Node {
     kindButton(o, ui),
     checkbox({ id: `${o.id}.can`, x: 8, y: 35, on: st.canMake, label: 'Can make', host: o.ramp, onToggle: (v) => { st.canMake = v; ui.setScroll(`${o.id}.cells`, 0); ui.invalidate(); } }),
     cellWell(o, list, station, here, ui),
-    ink(8, o.hintY, '{lmb} lay out {rmb} make', 'ink.faded'),
   ];
+  if (o.hintY + 10 <= o.h) out.push(ink(8, o.hintY, '{lmb} lay out {rmb} make', 'ink.faded'));
+  return out;
+}
+
+/** The recipe panel (section 6): fastened to the right of its main slab, with a tab for each station whose patterns may be read. */
+export function recipePanel(o: PanelOpts): Node {
+  const { b, st } = o;
+  const ui = b.ui;
+  const station = o.stations[Math.min(st.tab, o.stations.length - 1)];
   return tabbedSlab({
     id: o.id, x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title: STATION_NAME[station], edge: 'top',
     tabs: o.stations.map((s) => ({ id: `${o.id}.tab.${s}`, icon: STATION_ICON[s], name: STATION_NAME[s] })),
     chosen: st.tab,
     onTab: (i) => { st.tab = i; ui.setScroll(`${o.id}.cells`, 0); ui.cue('tab'); ui.invalidate(); },
-    kids,
+    kids: recipeControls(o),
   });
 }
-
