@@ -176,13 +176,13 @@ const hidden = new Set();
 const itemKeys = new Set(items.map((i) => i.key));
 
 // ---- creatures ----
-const mobs = [];     // { key, name, ai, hostile, line }
+const mobs = [];     // { key, name, act, hostile, line }   act: the source's way of acting for the creature
 const bosses = [];   // { key, name, n, intro, introLine, says: [{ text, line }] }
 {
   const t = src(F_MOBS); let m;
   const row = /^\s*\{ key: '(\w+)', name: '([^']+)', hp:.*?\bai: '(\w+)', hostile: (true|false)/gm;
-  while ((m = row.exec(t))) mobs.push({ key: m[1], name: m[2], ai: m[3], hostile: m[4] === 'true', line: lineAt(t, m.index) });
-  for (const [re, ai] of [[/\bminion\('(\w+)', '([^']+)'/g, 'minion'], [/\bnpc\('(\w+)', '([^']+)'/g, 'npc']]) while ((m = re.exec(t))) mobs.push({ key: m[1], name: m[2], ai, hostile: false, line: lineAt(t, m.index) });
+  while ((m = row.exec(t))) mobs.push({ key: m[1], name: m[2], act: m[3], hostile: m[4] === 'true', line: lineAt(t, m.index) });
+  for (const [re, act] of [[/\bminion\('(\w+)', '([^']+)'/g, 'minion'], [/\bnpc\('(\w+)', '([^']+)'/g, 'npc']]) while ((m = re.exec(t))) mobs.push({ key: m[1], name: m[2], act, hostile: false, line: lineAt(t, m.index) });
   const br = /\bboss\('(\w+)', '([^']+)'/g, starts = [];
   while ((m = br.exec(t))) starts.push([m.index, m[1], m[2]]);
   starts.forEach((s, i) => {
@@ -192,7 +192,7 @@ const bosses = [];   // { key, name, n, intro, introLine, says: [{ text, line }]
     while ((q = sr.exec(body))) says.push({ text: lit(q[1]), line: lineAt(t, s[0] + q.index) });
     if (!n || !intro) { fail(`${F_MOBS}: the script of ${s[1]} was not understood`); return; }
     bosses.push({ key: s[1], name: s[2], n: +n[1], intro: lit(intro[1]), introLine: lineAt(t, s[0] + intro.index), says });
-    mobs.push({ key: s[1], name: s[2], ai: 'boss', hostile: true, line: lineAt(t, s[0]) });
+    mobs.push({ key: s[1], name: s[2], act: 'boss', hostile: true, line: lineAt(t, s[0]) });
   });
   if (bosses.length !== 8) fail(`${F_MOBS}: expected eight great feeders, found ${bosses.length}`);
 }
@@ -406,9 +406,9 @@ for (const r of rarities) add('rarity.desc', r.key, { needs: ['rarity:' + r.key]
 // ---- creatures ----
 const npcMobs = new Set(npcs.map((n) => n.mob));
 for (const m of mobs) {
-  if (m.ai === 'boss') continue;
-  if (m.ai === 'npc') { if (!npcMobs.has(m.key)) fail(`${F_MOBS}:${m.line}: the townsperson body '${m.key}' belongs to nobody in ${F_NPCS}`); continue; }
-  if (!['passive', 'fish', 'melee', 'ranged', 'hopper', 'flyer', 'minion'].includes(m.ai)) { fail(`${F_MOBS}:${m.line}: creature '${m.key}' has a way of acting ('${m.ai}') this script does not know`); continue; }
+  if (m.act === 'boss') continue;
+  if (m.act === 'npc') { if (!npcMobs.has(m.key)) fail(`${F_MOBS}:${m.line}: the townsperson body '${m.key}' belongs to nobody in ${F_NPCS}`); continue; }
+  if (!['passive', 'fish', 'melee', 'ranged', 'hopper', 'flyer', 'minion'].includes(m.act)) { fail(`${F_MOBS}:${m.line}: creature '${m.key}' has a way of acting ('${m.act}') this script does not know`); continue; }
   const needs = ['mob:' + m.key];
   add('beast.sight', m.key, { needs, file: F_MOBS, line: m.line, voice: SIGHT_BY_CREW.has(m.key) ? 'note' : 'born' });
   for (const step of ['kill', 'habit', 'once']) add('beast.' + step, m.key, { needs, file: F_MOBS, line: m.line });
