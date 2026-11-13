@@ -1725,29 +1725,23 @@ A node with ranks shows them under it in the small face, as `1/3`. The chosen no
 
 ### 5.21 Ground tile
 
-16 by 16, dressed stone in courses: `stone.dk` blocks with joints of `stone.pit`. It fills the screen behind the title, the world list and loading, and it is the floor of the tree and of a store's map. Under a list on a full-screen menu it shows above and below the well.
+96 by 48: dressed stone, darkened as the ground behind a menu is, laid in courses of blocks 16 by 8 with joints of one unit, each course set 8 along from the one under it. A block is lit from the top left: its top row and left column in `stone.dk`, its face `stone.pit`, its bottom row and right column `root.1`, the joint `root.0`. One block in six, chosen by a fixed hash of its column and course, has a face one step lighter (`stone.dk`), and one in six a face one step darker (`root.1`, its lit edge `stone.pit`), so the courses read as single stones and the screen does not read as a mesh. It fills the screen behind the title, the world list, new world, join and loading, and it is the floor of the tree and of a store's map. Under a list on a full-screen menu it shows above and below the well. Text on it is text on dark: `salt` with its shadow. A block with the joint before it, and the course above and below (x and y here count from one unit before the block):
 
 ```
-     0         1     
-     0123456789012345
-  0  MMMMMMMzMMMMMMMz
-  1  MMMMMMMzMMMMMMMz
-  2  MMMMMMMzMMMMMMMz
-  3  zzzzzzzzzzzzzzzz
-  4  MMMzMMMMMMMzMMMM
-  5  MMMzMMMMMMMzMMMM
-  6  MMMzMMMMMMMzMMMM
-  7  zzzzzzzzzzzzzzzz
-  8  MMMMMMMzMMMMMMMz
-  9  MMMMMMMzMMMMMMMz
- 10  MMMMMMMzMMMMMMMz
- 11  zzzzzzzzzzzzzzzz
- 12  MMMzMMMMMMMzMMMM
- 13  MMMzMMMMMMMzMMMM
- 14  MMMzMMMMMMMzMMMM
- 15  zzzzzzzzzzzzzzzz
+     0         1         2
+     0123456789012345678901234
+  0  KKKKKKKKKKKKKKKKKKKKKKKKK
+  1  KMMMMMMMMMMMMMMkKMMMMMMMM
+  2  KMzzzzzzzzzzzzzkKMzzzzzzz
+  3  KMzzzzzzzzzzzzzkKMzzzzzzz
+  4  KMzzzzzzzzzzzzzkKMzzzzzzz
+  5  KMzzzzzzzzzzzzzkKMzzzzzzz
+  6  KMzzzzzzzzzzzzzkKMzzzzzzz
+  7  KkkkkkkkkkkkkkkkKkkkkkkkk
+  8  KKKKKKKKKKKKKKKKKKKKKKKKK
+  9  MMMMMMMkKMMMMMMMMMMMMMMkK
 ```
-`. nothing  M stone.dk  z stone.pit`
+`K root.0  k root.1  M stone.dk  z stone.pit`
 
 ### 5.22 Pointer and held stack
 
@@ -3257,13 +3251,13 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | O1 | text | 113 | 24 | 200 | 10 | "Join a server", salt with shadow |
-| O2 | text | 113 | 44 | 60 | 10 | "Address", root.4 |
+| O2 | text | 113 | 44 | 60 | 10 | "Address", salt with shadow: a label on the ground is text on dark |
 | O3 | field | 113 | 54 | 200 | 16 | host and port; filled in when the page was served by a game server |
-| O4 | text | 113 | 78 | 60 | 10 | "Name", root.4 |
+| O4 | text | 113 | 78 | 60 | 10 | "Name", salt with shadow |
 | O5 | field | 113 | 88 | 200 | 16 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
-| O6 | text | 113 | 112 | 100 | 10 | "Password", root.4, and "if it has one" after it |
+| O6 | text | 113 | 112 | 200 | 10 | "Password, if it has one", salt with shadow |
 | O7 | field | 113 | 122 | 200 | 16 | drawn as one 3 by 3 dot to a character |
-| O8 | text | 113 | 144 | 200 | 10 | one line: what the server answered ("Spark, 3 of 8 here"), or why it refused, in blood.lt |
+| O8 | text | 113 | 144 | 200 | 10 | one line: what the server answered ("Spark, 3 of 8 here"), or why it refused, in blood.lt. A refusal about one field ("That name is taken", "Wrong password") stands instead 2 under that field, the field is framed in blood until it is changed, and the rows under it move down 12 |
 | O9 | button | 113 | 160 | 200 | 20 | "Join"; disabled until address and name are valid |
 | O10 | button | 113 | 184 | 200 | 20 | "Back" |
 

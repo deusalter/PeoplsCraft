@@ -1,7 +1,7 @@
 // The world map (section 6, World map): a stone slab with a tab for each place the crew can chart, the chart in a well
 // that pans and zooms by whole steps, the known places in a list, and Travel where the world allows a crossing.
 import { ALTAR_MARK, GATE_MARK, MOUTH_MARK, OWN_ARROW } from '../art/chart';
-import { GROUND } from '../art/ground';
+import { GROUND, GROUND_H, GROUND_W } from '../art/ground';
 import { HEADS } from '../art/heads';
 import { COMPASS_MARKS, PING } from '../art/marks';
 import { SILHOUETTES } from '../art/silhouettes';
@@ -116,7 +116,7 @@ function paintMarks(s: Surface, v: MapView): void {
 function paintStore(s: Surface, v: MapView): void {
   const z = v.zoom;
   const [ox, oy] = unitOf(v, 0, 0);
-  s.tile(GROUND, 0, 0, CW, CH, ((-ox % 16) + 16) % 16, ((-oy % 16) + 16) % 16);
+  s.tile(GROUND, 0, 0, CW, CH, ((-ox % GROUND_W) + GROUND_W) % GROUND_W, ((-oy % GROUND_H) + GROUND_H) % GROUND_H);
   for (const r of STORE.rooms) {
     const x = ox + Math.round(r.x / z), y = oy + Math.round(r.z / z), w = Math.round(r.w / z), h = Math.round(r.h / z);
     s.fill(x, y, w, h, 'root.0');

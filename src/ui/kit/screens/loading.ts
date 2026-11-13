@@ -37,7 +37,7 @@ export const loadingScreen: Screen<LoadingView> = (v, ui) => {
       x: 113, y: 142, w: 201, h: 11, anim: true,
       paint: (s, live) => {
         const said = v.here ? `${v.doing(live.t)}, ${v.here}` : v.doing(live.t);
-        line({ x: 0, y: 0, w: 200, text: said, c: 'root.4', shadow: true, centre: true }).paint!(s, live);
+        line({ x: 0, y: 0, w: 200, text: said, c: 'salt', shadow: true, centre: true }).paint!(s, live);
       },
     },
   ], { on: { key: (e) => { if (e.key === 'Escape') { v.onGiveUp(); return true; } } } });

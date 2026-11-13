@@ -2,7 +2,7 @@
 import type { Screen } from '../node';
 import { button } from '../parts/button';
 import { field } from '../parts/controls';
-import { groundMenu, line, lineW } from '../parts/menu';
+import { groundMenu, line } from '../parts/menu';
 import { ANSWERS, type ServerAnswer } from '../sample/menus';
 import { firstFieldFocus, go } from './books-common';
 import type { NamedScreen } from './index';
@@ -29,24 +29,32 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
   firstFieldFocus(ui, `join:${v.answer?.text ?? ''}`, first, false);
   const ok = validAddress(v.address) && validName(v.name);
   const enter = { key: (e: { key: string }) => { if (e.key === 'Enter') { if (ok) v.onJoin(); return true; } } };
+  const about = v.answer && !v.answer.ok ? v.answer.field : undefined;
   const f = (id: string, y: number, value: string, on: (t: string) => void, extra: Partial<Parameters<typeof field>[0]> = {}) => {
     const n = field({ id, x: 113, y, w: 200, h: 16, value, host: 'ground', onText: on, ui, ...extra });
     n.on = { ...n.on, ...enter };
     return n;
   };
-  const kids = [
-    line({ x: 113, y: 24, w: 200, text: 'Join a server', c: 'salt', shadow: true }),
-    line({ x: 113, y: 44, w: 60, text: 'Address', c: 'root.4', shadow: true }),
-    f('join.address', 54, v.address, v.onAddress, { limit: 64 }),
-    line({ x: 113, y: 78, w: 60, text: 'Name', c: 'root.4', shadow: true }),
-    f('join.name', 88, v.name, v.onName, { limit: 16, allow: NAME_CHAR }),
-    line({ x: 113, y: 112, w: 100, text: 'Password', c: 'root.4', shadow: true }),
-    line({ x: 113 + lineW('Password') + 4, y: 112, w: 100, text: 'if it has one', c: 'root.4', shadow: true }),
-    f('join.password', 122, v.password, v.onPassword, { limit: 64, password: true }),
+  // Labels on the ground are text on dark: salt with its shadow. A refusal about one field frames that field in blood
+  // and stands 2 under it, and what follows moves down to make room; any other answer stands above the buttons.
+  const kids = [line({ x: 113, y: 24, w: 200, text: 'Join a server', c: 'salt', shadow: true })];
+  let y = 44;
+  const row = (key: 'address' | 'name' | 'password', label: string, value: string, on: (t: string) => void, extra: Partial<Parameters<typeof field>[0]>) => {
+    kids.push(line({ x: 113, y, w: 200, text: label, c: 'salt', shadow: true }));
+    const refused = about === key;
+    kids.push(f(`join.${key}`, y + 10, value, on, refused ? { ...extra, show: { refused: true } } : extra));
+    y += 26;
+    if (refused) { kids.push(line({ x: 113, y: y + 2, w: 200, text: v.answer!.text, c: 'blood.lt', shadow: true })); y += 12; }
+    y += 8;
+  };
+  row('address', 'Address', v.address, v.onAddress, { limit: 64 });
+  row('name', 'Name', v.name, v.onName, { limit: 16, allow: NAME_CHAR });
+  row('password', 'Password, if it has one', v.password, v.onPassword, { limit: 64, password: true });
+  if (v.answer && !about) kids.push(line({ x: 113, y: 144, w: 200, text: v.answer.text, c: v.answer.ok ? 'salt' : 'blood.lt', shadow: true }));
+  kids.push(
     button({ id: 'join.join', x: 113, y: 160, w: 200, label: 'Join', disabled: !ok, onPress: v.onJoin }),
     button({ id: 'join.back', x: 113, y: 184, w: 200, label: 'Back', onPress: v.onBack }),
-  ];
-  if (v.answer) kids.push(line({ x: 113, y: 144, w: 200, text: v.answer.text, c: v.answer.ok ? 'salt' : 'blood.lt', shadow: true }));
+  );
   return groundMenu(ui, 'join', kids, { on: { key: (e) => { if (e.key === 'Escape') { v.onBack(); return true; } } } });
 };
 
@@ -61,8 +69,11 @@ function sample(name: string, init: Pick<JoinView, 'address' | 'name' | 'passwor
     build: (ui) => joinScreen({
       ...st,
       onAddress: (t) => { st.address = t; st.answer = validAddress(t) ? ANSWERS.here : undefined; ui.invalidate(); },
-      onName: (t) => { const was = validName(st.name); st.name = t; if (was !== validName(t)) ui.invalidate(); },
-      onPassword: (t) => { st.password = t; },
+      onName: (t) => {
+        const was = validName(st.name); st.name = t;
+        if (st.answer?.field === 'name') { st.answer = undefined; ui.invalidate(); } else if (was !== validName(t)) ui.invalidate();
+      },
+      onPassword: (t) => { st.password = t; if (st.answer?.field === 'password') { st.answer = undefined; ui.invalidate(); } },
       onJoin: () => {
         st.answer = TAKEN.includes(st.name) ? ANSWERS.taken : st.password && st.password !== PASSWORD ? ANSWERS.password : undefined;
         if (st.answer) { ui.invalidate(); return; }

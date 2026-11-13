@@ -24,9 +24,9 @@ export const newWorldScreen: Screen<NewWorldView> = (v, ui) => {
   seed.on = { ...seed.on, key: enter };
   return groundMenu(ui, 'new-world', [
     line({ x: 113, y: 40, w: 200, text: 'New world', c: 'salt', shadow: true }),
-    line({ x: 113, y: 60, w: 60, text: 'Name', c: 'root.4', shadow: true }),
+    line({ x: 113, y: 60, w: 60, text: 'Name', c: 'salt', shadow: true }),
     name,
-    line({ x: 113, y: 94, w: 60, text: 'Seed', c: 'root.4', shadow: true }),
+    line({ x: 113, y: 94, w: 60, text: 'Seed', c: 'salt', shadow: true }),
     seed,
     button({ id: 'new.create', x: 113, y: 150, w: 200, label: 'Create', disabled: !v.name.trim(), onPress: v.onCreate }),
     button({ id: 'new.back', x: 113, y: 174, w: 200, label: 'Back', onPress: v.onBack }),

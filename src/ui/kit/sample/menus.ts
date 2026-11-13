@@ -21,13 +21,18 @@ export const WORLDS: WorldRow[] = [
   { name: 'Davalavan', seed: 66190, played: '1 October', level: 1 },
 ];
 
-export interface ServerAnswer { ok: boolean; text: string }
+export interface ServerAnswer {
+  ok: boolean;
+  text: string;
+  /** The field a refusal is about, which is framed in blood with the refusal under it. */
+  field?: 'address' | 'name' | 'password';
+}
 
 /** What a server can say to a join, plainly. */
 export const ANSWERS: Record<string, ServerAnswer> = {
   here: { ok: true, text: 'Spark, 3 of 8 here' },
-  taken: { ok: false, text: 'That name is taken' },
-  password: { ok: false, text: 'Wrong password' },
+  taken: { ok: false, text: 'That name is taken', field: 'name' },
+  password: { ok: false, text: 'Wrong password', field: 'password' },
   full: { ok: false, text: 'The server is full' },
   version: { ok: false, text: 'This server runs another version' },
   none: { ok: false, text: 'No answer' },
