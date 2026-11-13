@@ -1635,7 +1635,7 @@ For the journal and the codex. 292 by 180. The cover is a margin of leather 6 de
 
 **Text on a page** is ink. A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
 
-**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, ending 8 left of the gutter's first column. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one, from the cover's bottom outline (row 0), which the ribbon covers:
+**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, the last starting 8 left of the gutter's first column. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one, from the cover's bottom outline (row 0), which the ribbon covers:
 
 ```
      0         1    
@@ -1658,28 +1658,25 @@ For the journal and the codex. 292 by 180. The cover is a margin of leather 6 de
 ```
      0         1         2
      012345678901234567890123456789
-  0  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
-  1  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
-  2  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
-  3  LLLLLLLLLLLLLILLLLLLLLLKtUUXXK
-  4  LLLLLLLLLLLLLIILLLLLLLLKtUUXXK
-  5  LLLLIIIIIIIIIIIILLLLLLLKtUUXXK
-  6  LLLLIIIIIIIIIIIIILLLLLLKtUUXXK
-  7  LLLLIIIIIIIIIIIILLLLLLLKtUUXXK
-  8  LLLLLLLLLLLLLIILLLLLLLLKtUUXXK
-  9  LLLLLLLLLLLLLILLLLLLLLLKtUUXXK
- 10  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
- 11  LLLLLLLLLLLLLLLLLLLLLLLKtUUXXK
+  0  LLLLLLLLLLLLLILLLLLLSLFKtUUXXK
+  1  LLLLLLLLLLLLLIILLLLLSLFKtUUXXK
+  2  LLLLIIIIIIIIIIIILLLLSLFKtUUXXK
+  3  LLLLIIIIIIIIIIIIILLLSLFKtUUXXK
+  4  LLLLIIIIIIIIIIIILLLLSLFKtUUXXK
+  5  LLLLLLLLLLLLLIILLLLLSLFKtUUXXK
+  6  LLLLLLLLLLLLLILLLLLLSLFKtUUXXK
+  7  LLLLLLLLLLLLLLLLLLLLSLFKtUUXXK
+  8  LLLLLLLLLLLLLLLLLLLLSLFKtUUXXK
+  9  SSSSSSSSSSSSSSSSSSSSSLFKtUUXXK
+ 10  LLLLLLLLLLLLLLLLLLLLLLFKtUUXXK
+ 11  FFFFFFFFFFFFFFFFFFFFFFFKtUUXXK
  12  KKKKKKKKKKKKKKKKKKKKKKKKtUUXXK
- 13  SSSSSSSSSSSSSSSSSSSSSSSKtUUXXK
- 14  FFFFFFFFFFFFFFFFFFFFFFFKtUUXXK
- 15  KKKKKKKKKKKKKKKKKKKKKKKKtUUXXK
- 16  tttttttttttttttttttttttttUUXXK
- 17  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
- 18  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
- 19  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
- 20  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
- 21  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+ 13  tttttttttttttttttttttttttUUXXK
+ 14  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
+ 15  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
+ 16  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
+ 17  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
+ 18  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
 `. nothing  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  t timber.sh  U timber.dk  X timber.pit`
 

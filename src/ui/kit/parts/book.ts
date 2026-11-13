@@ -66,10 +66,10 @@ function paintBook(s: Surface): void {
   s.fill(5, 6, 1, h - 12, 'timber.sh'); s.fill(w - 6, 6, 1, h - 12, 'timber.sh');
   s.fill(6, 6, w - 12, h - 12, 'root.0');
   s.fill(7, 7, w - 14, h - 14, 'clay.lt');
-  // The edges of the leaves under each page, stacked three deep at its outer side and its foot.
+  // The edges of the leaves, stacked three deep along each page's outer side and its foot, the outermost first.
   const leaves: Colour[] = ['clay.face', 'clay.lt', 'clay.sh'];
   leaves.forEach((c, i) => {
-    const y = h - 10 + i;
+    const y = h - 8 - i;
     s.fill(7 + i, y, w - 14 - 2 * i, 1, c);
     s.fill(7 + i, 7, 1, y - 7, c);
     s.fill(w - 8 - i, 7, 1, y - 7, c);
