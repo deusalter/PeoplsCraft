@@ -35,7 +35,7 @@ export const pauseScreen: Screen<PauseView> = (v, ui) => {
 
 const view = (o: Pick<PauseView, 'world' | 'server' | 'saved'>): PauseView => ({
   ...o,
-  onBack: () => go('hud'), onSettings: () => go('settings'), onControls: () => go('controls'), onLeave: () => go('title'),
+  onBack: () => go('hud'), onSettings: () => go('settings'), onControls: () => go('controls-play'), onLeave: () => go('title'),
 });
 
 export const SCREENS: NamedScreen[] = [

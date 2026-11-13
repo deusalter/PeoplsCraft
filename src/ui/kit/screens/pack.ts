@@ -4,6 +4,7 @@
 import { FRAMED_PLATE } from '../art/slab';
 import { SMALL } from '../font/face';
 import { clock, count, measure, rightX } from '../font/measure';
+import { cut } from '../font/wrap';
 import type { Node, Ui } from '../node';
 import { frameWell } from '../parts/well';
 import { progressArrow } from '../parts/gauges';
@@ -147,7 +148,7 @@ function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
 const STATES_LIST: { icon: string; name: string; good: boolean; seconds: number; part: Part; ends: string }[] = [
   { icon: 'loaf', name: 'Well Fed', good: true, seconds: 252, part: 'body', ends: 'Ends when the time runs out' },
   { icon: 'ironbark', name: 'Toughened', good: true, seconds: 151, part: 'body', ends: 'Ends when the time runs out' },
-  { icon: 'spore_sac', name: 'Spore in a wound', good: false, seconds: 38, part: 'legs', ends: 'A salve ends it' },
+  { icon: 'spore_sac', name: 'Spore in a wound', good: false, seconds: 38, part: 'body', ends: 'A salve ends it' },
 ];
 
 /** The second tab of the body panel: the figure with each state marked where it sits, and a row for each. */
@@ -171,7 +172,7 @@ function statesParts(st: PackState): Node[] {
         sf.icon(s.icon, 1, 1);
         const t = clock(s.seconds);
         sf.text(t, rightX(t, 87, SMALL), 6, s.seconds <= 10 ? 'blood.dk' : 'ink.faded', false, SMALL);
-        sf.text(s.name, 22, 4, 'ink');
+        sf.text(cut(s.name, rightX(t, 87, SMALL) - 25), 22, 4, 'ink');
       },
       tip: () => ({ lines: [{ text: s.name, c: s.good ? 'growth.lt' : 'blood.lt' }, { text: s.ends, c: 'root.4' }], delay: 0 }),
     });
@@ -255,9 +256,9 @@ function narrow(st: PackState, b: Bench, ui: Ui): Node {
   return overWorld(ui, win, [main], { outside: () => { st.hand.dropHeld(); b.after(); } });
 }
 
-function build(ui: Ui, id: string, kind: 'mid' | 'empty' | 'full'): Node {
+function build(ui: Ui, id: string, kind: 'mid' | 'empty' | 'full', bodyTab = 0): Node {
   let st = states.get(id);
-  if (!st) { st = sample(kind); states.set(id, st); }
+  if (!st) { st = sample(kind); st.bodyTab = bodyTab; states.set(id, st); }
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
   return ui.layout.wide ? wide(st, st.bench, ui) : narrow(st, st.bench, ui);
 }
@@ -266,4 +267,5 @@ export const SCREENS: NamedScreen[] = [
   { name: 'pack', title: 'Pack', world: true, build: (ui) => build(ui, 'pack', 'mid') },
   { name: 'pack-empty', title: 'Pack, empty', world: true, build: (ui) => build(ui, 'pack-empty', 'empty') },
   { name: 'pack-full', title: 'Pack, full', world: true, build: (ui) => build(ui, 'pack-full', 'full') },
+  { name: 'pack-states', title: 'Pack: states of the body', world: true, build: (ui) => build(ui, 'pack-states', 'mid', 1) },
 ];
