@@ -18,7 +18,7 @@ const ROW: Stack[] = [
 ];
 
 const COMPARE = [
-  { text: '+3 defence over Hide Trousers', c: 'growth.lt' as const },
+  { text: '+3 over Hide Trousers', c: 'growth.lt' as const },
   { text: '-4% speed: the hide set is broken', c: 'blood.lt' as const },
 ];
 

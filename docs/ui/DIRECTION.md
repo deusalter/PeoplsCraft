@@ -1196,7 +1196,7 @@ A channel 14 tall, sunk into its host the way a slot is: `root.0` along its top 
 
 A dark plate with a frame in the colour of the thing's grade (`root.4` for Surface and for anything that is not an item). The first cell is at 5, 3. Lines advance 10. After the first line 2 extra units. Width is the widest line plus 10; height is 10 to the line plus 7, plus the 2 when there is more than one line. Lines wrap at 180.
 
-Order of lines: the name in the grade's colour; the grade and kind in `root.4` ("Deep, tool"); what it does in `salt`; lines that compare, `growth.lt` or `blood.lt`; a set line in `arm.lt`; the telling of the thing in `root.4`; last, what the mouse does here in `root.4` with the mouse symbols.
+Order of lines: the name in the grade's colour; the grade and kind in `root.4` ("Deep, tool"); what it does in `salt`, each stat once with any modifier already in it ("+4 defence" for Thick Iron Greaves, never "+2 defence" and then "+2 more defence"); lines that compare, `growth.lt` or `blood.lt`, which name the stat's change and what it is set against and do not repeat the stat ("+3 over Hide Trousers"); a set line in `arm.lt`; the telling of the thing in `root.4`; last, what the mouse does here in `root.4` with the mouse symbols.
 
 ```
      0         1         2         3         4         5         

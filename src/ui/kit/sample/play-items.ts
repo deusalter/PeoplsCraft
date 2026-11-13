@@ -197,17 +197,20 @@ export function thing(key: string): Thing {
   return t;
 }
 
-/** The modifiers of the game: a name before the thing's and a step of grade. */
-export const MODS: Record<string, { name: string; rar: number; lines: TipLine[] }> = {
+/**
+ * The modifiers of the game: a name before the thing's and a step of grade. What one adds to defence is kept apart as
+ * `def`, so that a tooltip states the thing's defence once, with the modifier already in it.
+ */
+export const MODS: Record<string, { name: string; rar: number; lines: TipLine[]; def?: number }> = {
   keen: { name: 'Keen', rar: 0, lines: [{ text: '+5% critical chance', c: 'growth.lt' }] },
   savage: { name: 'Quenched', rar: 1, lines: [{ text: '+12% harm', c: 'growth.lt' }] },
   swift: { name: 'Lean', rar: 0, lines: [{ text: '+10% blow speed', c: 'growth.lt' }] },
   heavy: { name: 'Heavy', rar: 0, lines: [{ text: '+18% harm', c: 'growth.lt' }, { text: '-10% blow speed', c: 'blood.lt' }] },
   dull: { name: 'Dull', rar: -1, lines: [{ text: '-8% harm', c: 'blood.lt' }] },
   blessed: { name: 'Favoured', rar: 2, lines: [{ text: '+15% harm, +5% critical chance', c: 'growth.lt' }, { text: '+8% blow speed', c: 'growth.lt' }] },
-  warding: { name: 'Thick', rar: 0, lines: [{ text: '+2 more defence', c: 'growth.lt' }] },
-  brittle: { name: 'Brittle', rar: -1, lines: [{ text: '1 less defence', c: 'blood.lt' }] },
-  radiant: { name: 'Glowing', rar: 2, lines: [{ text: '+6% harm, +2 defence, +10 life', c: 'growth.lt' }] },
+  warding: { name: 'Thick', rar: 0, lines: [], def: 2 },
+  brittle: { name: 'Brittle', rar: -1, lines: [], def: -1 },
+  radiant: { name: 'Glowing', rar: 2, lines: [{ text: '+6% harm, +10 life', c: 'growth.lt' }], def: 2 },
 };
 
 /** A stack in a slot, by the game's key, with a modifier when it carries one. */
@@ -227,9 +230,12 @@ export type Hint = 'slot' | 'none' | string;
 export function stackTip(s: Stack, hint: Hint = 'slot', extra: TipLine[] = []): Tip {
   const t = thing(s.key), g = stackGrade(s);
   const lines: TipLine[] = [{ text: stackName(s), c: GRADES[g].dark }, { text: `${GRADES[g].name}, ${t.kind}`, c: 'root.4' }];
-  for (const d of t.does ?? []) lines.push({ text: d, c: 'salt' });
+  const mod = s.mod ? MODS[s.mod] : undefined;
+  const def = (t.def ?? 0) + (mod?.def ?? 0);
+  for (const d of t.does ?? []) lines.push({ text: t.def !== undefined && d === `+${t.def} defence` ? `${def < 0 ? '' : '+'}${def} defence` : d, c: 'salt' });
+  if (t.def === undefined && mod?.def) lines.push({ text: `${mod.def < 0 ? '' : '+'}${mod.def} defence`, c: mod.def < 0 ? 'blood.lt' : 'growth.lt' });
   if (t.fuel) lines.push({ text: `Burns ${t.fuel} s`, c: 'salt' });
-  if (s.mod) lines.push(...MODS[s.mod].lines);
+  if (mod) lines.push(...mod.lines);
   lines.push(...extra);
   if (t.set) lines.push({ text: t.set, c: 'arm.lt' });
   if (t.tell) lines.push({ text: t.tell, c: 'root.4' });
