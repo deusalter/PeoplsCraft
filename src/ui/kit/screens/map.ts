@@ -187,8 +187,11 @@ function paintStore(s: Surface, v: MapView): void {
   s.tile(GROUND, 0, 0, CW, CH, ((-ox % GROUND_W) + GROUND_W) % GROUND_W, ((-oy % GROUND_H) + GROUND_H) % GROUND_H);
   for (const r of STORE.rooms) {
     const x = ox + Math.round(r.x / z), y = oy + Math.round(r.z / z), w = Math.round(r.w / z), h = Math.round(r.h / z);
+    // A room is a floor block lit from the top left: root.0 outline, a lit row and column, a shaded row and column.
     s.fill(x, y, w, h, 'root.0');
-    s.fill(x + 1, y + 1, w - 2, h - 2, 'stone.lt');
+    s.fill(x + 1, y + 1, w - 2, h - 2, 'stone.sh');
+    s.fill(x + 1, y + 1, w - 3, h - 3, 'stone.lt');
+    s.fill(x + 2, y + 2, w - 4, h - 4, 'stone.face');
   }
   for (const d of STORE.doors) {
     const x = ox + Math.round(d.x / z), y = oy + Math.round(d.z / z);
@@ -196,8 +199,8 @@ function paintStore(s: Surface, v: MapView): void {
     if (d.locked) {
       if (d.across) s.fill(x, y - 1, len, 2, 'ember'); else s.fill(x - 1, y, 2, len, 'ember');
       s.draw(SILHOUETTES.key, x - 7, y - 4, { flat: 'salt' });
-    } else if (d.across) s.fill(x, y - 1, len, 2, 'stone.lt');
-    else s.fill(x - 1, y, 2, len, 'stone.lt');
+    } else if (d.across) s.fill(x, y - 1, len, 2, 'stone.face');
+    else s.fill(x - 1, y, 2, len, 'stone.face');
   }
   const [u, w] = unitOf(v, STORE.at.x, STORE.at.z);
   s.map(HEADS[STORE.at.seat - 1], u - 5, w - 5);

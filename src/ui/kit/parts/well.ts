@@ -27,9 +27,10 @@ export interface RowSpec {
 
 /** Paints one row of a list on the well's floor (5.8). */
 export function paintRow(s: Surface, r: RowSpec, w: number, live: Live, chosen: boolean, h = ROW_H): void {
-  if (chosen) { s.fill(0, 0, w, h, 'root.3'); ring(s, 0, 0, w, h, 'salt'); }
+  // The chosen row is a lighter floor only; a salt frame on a row means the keys are on it, and on nothing else.
+  if (chosen) s.fill(0, 0, w, h, 'root.3');
   else if (live.hover && !r.disabled) s.fill(0, 0, w, h, 'root.2');
-  if (live.focus && !chosen) ring(s, 0, 0, w, h, 'salt');
+  if (live.focus) ring(s, 0, 0, w, h, 'salt');
   if (r.body) { r.body(s, w, h, live); return; }
   const off = r.disabled;
   // A row shorter than 18 (the map's 16) holds its icon from its top and its text a little higher.
