@@ -476,7 +476,13 @@ export class Game {
   async pump(seconds: number): Promise<void> {
     const ch = new MessageChannel();
     const yieldNow = (): Promise<void> => new Promise((r) => { ch.port1.onmessage = () => r(); ch.port2.postMessage(0); });
-    for (let t = 0; t < seconds; t += STEP) { await this.runFrame(STEP); this.last = performance.now(); await yieldNow(); }
+    for (let t = 0; t < seconds; t += STEP) { await this.scriptFrame(STEP); this.last = performance.now(); await yieldNow(); }
+  }
+  /** A frame a script runs (`T.frame`, `T.run`, `T.loaded`). It waits out a display frame still awaiting its step instead
+   *  of standing in for it, so its own `dt` is always counted. */
+  async scriptFrame(dt: number): Promise<void> {
+    while (this.busy) await this.busy;
+    await this.runFrame(dt);
   }
   /** One frame. Where this client drives the host's clock and a step has to wait (for storage, or for another thread), the
    *  frame ends when the step has: the promise returned says when, and a frame that starts meanwhile does nothing. */

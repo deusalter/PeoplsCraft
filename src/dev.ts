@@ -17,7 +17,7 @@ export function installDevTools(game: Game, where: { sim?: Sim; ask: (src: strin
     /** Find the y of the first solid block at or below `y`. */
     floor(x: number, y: number, z: number): number { while (y > 1 && game.world.getBlock(x, y, z) === 0) y--; return y; },
     /** Exactly one frame of one step, whatever the wall clock says. */
-    async frame(): Promise<void> { await game.runFrame(STEP); await tick(); },
+    async frame(): Promise<void> { await game.scriptFrame(STEP); await tick(); },
     /** `n` frames with no pacing: what a script that must not depend on the wall clock uses instead of `run`. */
     async step(n: number): Promise<void> { for (let i = 0; i < n; i++) await T.frame(); },
     /** Run the game in real time for `ms` milliseconds. */
@@ -26,7 +26,7 @@ export function installDevTools(game: Game, where: { sim?: Sim; ask: (src: strin
       let last = performance.now();
       while (performance.now() < end) {
         const now = performance.now();
-        if (now - last >= 1000 / 60) { await game.runFrame(Math.min(0.05, (now - last) / 1000)); last = now; }
+        if (now - last >= 1000 / 60) { await game.scriptFrame(Math.min(0.05, (now - last) / 1000)); last = now; }
         await tick();
       }
     },
@@ -47,7 +47,7 @@ export function installDevTools(game: Game, where: { sim?: Sim; ask: (src: strin
       let last = performance.now() - 1000 / 60;
       while (performance.now() < end) {
         const now = performance.now();
-        if (now - last >= 1000 / 60) { await game.runFrame(Math.min(0.05, (now - last) / 1000)); last = now; if (ok()) return true; }
+        if (now - last >= 1000 / 60) { await game.scriptFrame(Math.min(0.05, (now - last) / 1000)); last = now; if (ok()) return true; }
         await tick();
       }
       return ok();

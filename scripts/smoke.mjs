@@ -11,6 +11,7 @@
 //   npm run smoke -- tpfar               step times of the solo worker during far teleports (risk R10)
 //   npm run smoke -- closetab            a solo world closed 4 s and 1 s after a change, then opened again (--r12: the risk's table)
 //   npm run smoke -- sameworld           a world played in one tab is neither opened nor deleted in another
+//   npm run smoke -- frames              a script's frames each step once beside the display's
 //   --repeat N                           run N times, stop at the first failure
 //   ?clone                               (or any ?a&b=c) added to the page's query: `npm run smoke -- golden ?clone` runs the
 //                                        scenario with every message between client and host taken through JSON
@@ -41,6 +42,7 @@ const SCENARIOS = {
   twotab: () => import('./twotab.mjs'),
   tpfar: () => import('./tpfar.mjs'),
   sameworld: () => import('./sameworld.mjs'),
+  frames: () => import('./frames.mjs'),
 };
 
 /** Flatten nested probes to dotted paths so a diff names the exact field. */

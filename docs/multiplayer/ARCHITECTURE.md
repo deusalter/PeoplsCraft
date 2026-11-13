@@ -3658,6 +3658,13 @@ to play it here.' in place of the world, and its Delete says 'Open in another ta
 its own, so a tab just closed finishes its last commit before another reads or deletes the world. A refusal is
 tried again for 2 s, since a reloaded tab ("Save and quit to title") may let go a moment after the new page asks.
 Where the browser has no Web Locks nothing is held, as before. Smoke `sameworld`.
+(e) Under a manual clock without `&det` (`?quick&worker`, or a loopback step that waits on storage) the display's own
+frames step too, and a frame a script ran while one of them was awaiting its step was handed that frame's promise: its
+`STEP` was never counted and its tick never ran. About one `T.frame()` in seven in the worker returned without a tick of
+its own, so `T.step(n)` ran a number of the script's steps the wall clock chose. A script's frames (`T.frame`, `T.run`,
+`T.loaded`, `Game.pump`) now go through `Game.scriptFrame`, which waits out a frame still awaiting its step and then runs
+its own; a display frame that starts meanwhile still does nothing, as 10.1 says, so the display can lose time but a
+script cannot. Smoke `frames`, part 1: each of two `T.step(300)` runs 300 ticks of its own, in the page and in the worker.
 
 ---
 
