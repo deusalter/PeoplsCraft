@@ -493,11 +493,12 @@ function find(file, needle, now) {
 }
 /** One literal sentence: surface, key, file, the text to look for, and what to record as the present text when it differs. */
 function L(surface, key, file, needle, o = {}) {
-  add(surface, key, { file, ...find(file, needle, o.now), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note, empty: o.empty });
+  add(surface, key, { file, ...find(file, needle, o.now), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note, empty: o.empty, slots: o.slots });
 }
 const G = 'src/game.ts', ACT = 'src/sim/actions.ts', EV = 'src/sim/events.ts', TRV = 'src/sim/travel.ts', NPC = 'src/sim/npcs.ts', PLY = 'src/sim/player.ts',
   GATE = 'src/sim/gates.ts', OPS = 'src/sim/invops.ts', CMB = 'src/client/combat.ts', WIN = 'src/ui/windows.ts', MENU = 'src/ui/menus.ts', HUD = 'src/ui/hud.ts',
-  QV = 'src/ui/questView.ts', HOST = 'src/net/host.ts', MAIN = 'src/main.ts', IDB = 'src/storage/idb.ts', CH = 'src/sim/cheats.ts', INVC = 'src/client/invclient.ts';
+  QV = 'src/ui/questView.ts', HOST = 'src/net/host.ts', MAIN = 'src/main.ts', IDB = 'src/storage/idb.ts', CH = 'src/sim/cheats.ts', INVC = 'src/client/invclient.ts',
+  SRC = 'src/data/sources.ts', RULES = 'src/sim/rules.ts', SIM = 'src/sim/sim.ts', WORKER = 'src/net/worker-client.ts';
 
 // ---- the three attacks ----
 L('banner', 'raid.start', EV, 'A raid gathers in the dark', { needs: ['event:raid'] });
@@ -512,8 +513,9 @@ L('banner', 'ashen.won', EV, 'The march is beaten off', { needs: ['event:ashen']
 L('banner.sub', 'event.won', EV, '`+${coins} coins`', { now: '+{n} coins' });
 L('banner', 'raid.lost', EV, 'Dawn scatters the raid', { needs: ['event:raid'] });
 L('banner', 'ashen.lost', EV, 'The march turns for home', { needs: ['event:ashen'] });
-L('hud', 'event.raid', INVC, 'Night raid  ${ev.k} / ${ev.g}', { now: 'Night raid  {k} / {g}', needs: ['event:raid'] });
-L('hud', 'event.ashen', INVC, 'Sand March  ${ev.k} / ${ev.g}', { now: 'Sand March  {k} / {g}', needs: ['event:ashen'] });
+L('hud', 'event.raid', INVC, 'Night raid  ${ev.k} / ${ev.g}', { now: 'Night raid  {k} / {g}', needs: ['event:raid'], note: 'plan D.2: {k} counts feeders only; a sand-country fighter killed in a raid adds nothing to it' });
+L('hud', 'event.ashen', INVC, 'Sand March  ${ev.k} / ${ev.g}', { now: 'Sand March  {k} / {g}', slots: [], needs: ['event:ashen'],
+  note: 'plan D.2: the line shows no count, since the count is of sand-country people killed (rule 12); it is the name of the march alone' });
 L('hud', 'event.moon', INVC, "case 'moon': return 'Amāvassa'", { now: 'Amāvassa', needs: ['event:moon'] });
 // ---- the eight ----
 L('eight.line', 'withdraws', 'src/sim/boss.ts', '${m.def.name} withdraws.', { now: '{name} withdraws.' });
@@ -560,6 +562,10 @@ L('toast', 'made_at', WIN, "'Made at the '", { now: 'Made at the {station}' });
 L('toast', 'made_n', WIN, 'Made ${q.n} ${item(r.out).name}', { now: 'Made {n} {item}' });
 L('toast', 'sell_again', WIN, "'Shift-click again to sell '", { now: 'Shift-click again to sell {item}' });
 L('toast', 'pickup', HUD, '+${n} ${name}  (${total})', { now: '+{n} {item}  ({total})' });
+L('toast', 'no_burn', RULES, 'That does not burn', { note: 'a refusal shown as a toast when a thing that is no fuel is put under a furnace (src/sim/invops.ts)' });
+L('toast', 'no_smelt', RULES, 'That cannot be smelted', { note: 'a refusal shown as a toast when a thing no furnace works is put in one' });
+L('toast', 'needs_forge', RULES, "'Needs a '", { now: 'Needs a {forge}', note: '{forge} is the name of the furnace that works the ore' });
+L('toast', 'needs_hotter', RULES, 'hotter forge', { now: 'Needs a hotter forge', note: 'the same refusal when no furnace of the table works the ore' });
 add('toast', 'codex_new', { planned: true, slots: ['{subject}'], note: 'plan D: a step of the codex has opened; {subject} is the name of the subject' });
 // ---- beds and rooms ----
 L('bed', 'not_enclosed_big', NPC, 'The room is not enclosed (or is larger than 32 blocks across).');
@@ -610,6 +616,7 @@ L('hud', 'hungry', HUD, 'HUNGRY ${foodI} / 20', { now: 'HUNGRY {n} / 20' });
 L('hud', 'saved', HUD, "'Saved'", { now: 'Saved' });
 L('hud', 'coins', HUD, '${inv.coins} coins', { now: '{n} coins' });
 L('hud', 'level', HUD, 'Lv ${st.level}', { now: 'Lv {n}' });
+L('hud', 'dodged', PLY, "'Dodged'", { now: 'Dodged', note: 'a word that floats up over a player when a blow does no harm' });
 // ---- windows ----
 for (const [k, text] of [['equipment', 'Equipment'], ['book', 'Recipe book'], ['guide', 'Guide'], ['can_make', 'Can make'], ['none_match', 'Nothing here matches'], ['chest', 'Chest'], ['smelting', 'Smelting'],
   ['inventory', 'Inventory'], ['buy_back', 'Buy back'], ['for_sale', 'For sale'], ['buy', 'Buy'], ['take_all', 'Take all'], ['back_crafting', 'Back to crafting']]) L('win', k, WIN, `'${text}'`, { now: text, limit: 24 });
@@ -651,6 +658,19 @@ for (const [k, needle, now] of [
 ]) L('tip', k, WIN, needle, { now: now ?? needle, needs: k === 'craft_anywhere' ? ['station:hand'] : undefined,
   note: k === 'damage' ? '{style} is the way of fighting in lower case; for a totem the code adds " per hit"' : k === 'slot_empty' ? '{slot} is Head, Body or Legs' : undefined });
 for (const [k, needle, now] of [['kind', '${RARITY[r].name} · ${kind}', '{grade} · {kind}']]) L('tip', k, WIN, needle, { now });
+// the kind of a thing, put into {kind} above
+for (const [k, needle, now] of [['kind.weapon', "' weapon'", '{style} weapon'], ['kind.tool', "'Tool'", 'Tool'], ['kind.armour', "d.armor ? 'Armour'", 'Armour'], ['kind.trinket', "d.acc ? 'Trinket'", 'Trinket'],
+  ['kind.food', "'Food'", 'Food'], ['kind.block', "'Block'", 'Block'], ['kind.usable', "'Usable'", 'Usable'], ['kind.material', "'Material'", 'Material']])
+  L('tip', k, WIN, needle, { now, limit: 24, note: k === 'kind.weapon' ? 'the kind of a weapon; {style} is the way of fighting' : 'the kind of a thing, put into {kind} of tip:kind' });
+L('tip', 'sells_each', WIN, 'for the stack)', { now: 'each ({total} for the stack)', note: 'follows tip:sells_for, with a space, when the stack holds more than one' });
+L('tip', 'needs_n', WIN, '${n} × ${esc(name)}', { now: '{n} x {item} ({have})', note: 'one ingredient of a recipe and how many the pack holds; the multiplication sign is not in the font' });
+// where a thing comes from (src/data/sources.ts), under the description of a material and under a missing ingredient. Two are joined in code.
+for (const [k, needle, now, note] of [['src.smelt', "'Smelt '", 'Smelt {item}', '{item} is what goes into the furnace'], ['src.hand', 'Craft by hand', null, null],
+  ['src.station', "'Craft at the '", 'Craft at the {station}', null], ['src.mine', "'Mine '", 'Mine {block}', '{block} is the block that drops it'],
+  ['src.dropped', "'Dropped by '", 'Dropped by {name}', '{name} is a creature'], ['src.dropped_great', "(mb.boss ? 'the ' : '')", 'Dropped by the {name}', '{name} is one of the eight'],
+  ['src.sold', "'Sold by the '", 'Sold by the {name}', '{name} is a townsperson'], ['src.chests', 'Found in chests', null, null], ['src.world', 'Found in the world', null, null],
+  ['src.any', "'Any '", 'Any {tag}', '{tag} is a kind of ingredient (any log, any planks); the same words are written in the recipe tooltip of src/ui/windows.ts']])
+  L('tip', k, SRC, needle, { now: now ?? needle, note: note ?? undefined });
 {
   const t = src(F_ITEMS);
   for (const [k, needle, now] of [['set.hide', '+1 defense, +4% speed', null], ['set.melee', '% melee damage, +${2 + ti} defense', '+{pct}% melee damage, +{n} defense'],
@@ -697,13 +717,18 @@ for (const [k, file, text] of [
   ['name_form', HOST, 'A name is 1 to 16 letters, digits, spaces, _ or -.'], ['name_taken', HOST, 'That name belongs to someone else here.'], ['replaced', HOST, 'Joined from somewhere else.'],
   ['full', HOST, 'The world is full.'], ['character', HOST, 'Your character could not be read.'], ['rate', HOST, 'Too many messages.'], ['chunk_rate', HOST, 'Too many chunk requests.'],
   ['host_message', HOST, 'The host could not handle a message.'], ['slow', HOST, 'The connection cannot keep up.'], ['idle', HOST, 'No movement for 30 seconds.'], ['stopping', HOST, 'The host is stopping.'],
-]) L('error', k, file, text);
+  ['sim_stopped', WORKER, 'the simulation stopped'], ['proto.no_hello', HOST, 'no hello'], ['proto.malformed', HOST, 'malformed message'], ['proto.bad_token', HOST, 'bad token'],
+  ['proto.hello_first', HOST, 'hello first'], ['proto.not_move', HOST, 'not a movement message'], ['proto.second_hello', HOST, 'a second hello'], ['proto.sequence', HOST, 'sequence out of order'],
+  ['step.aborted', IDB, 'transaction aborted'], ['step.open', IDB, 'open world'], ['step.list', IDB, 'list chunks'], ['step.backup', IDB, 'back up the old world'], ['step.migrate', IDB, 'migrate the world'],
+]) L('error', k, file, text, { note: k.startsWith('proto.') ? 'the host closes the connection with it; the page shows it on the loading screen' : k.startsWith('step.') ? 'shown after error:world_open, before the browser\'s own words for the failure' : k === 'sim_stopped' ? 'shown after error:world_open when the simulation gives no reason' : undefined });
+L('error', 'format_newer', IDB, 'is newer than this build', { now: 'world format {n} is newer than this build', note: 'shown after error:world_open' });
 // ---- the command line ----
 for (const [k, needle, now] of [['help', 'commands: give time tp fly creative god heal level kill spawn boss flag event dim gear locate', null], ['unknown_item', "'unknown item '", 'unknown item {key}'],
   ['unknown_creature', "'unknown creature '", 'unknown creature {key}'], ['full', "'inventory full'", 'inventory full'], ['gave', 'gave ${n} ${a[1]}', 'gave {n} {key}'], ['none_found', "'none found'", 'none found'],
   ['time', "'time set'", 'time set'], ['teleported', "'teleported'", 'teleported'], ['healed', "'healed'", 'healed'], ['level', "'level set'", 'level set'], ['cleared', "'cleared'", 'cleared'],
   ['spawned', "'spawned'", 'spawned'], ['failed', "'failed'", 'failed'], ['flag', "'flag set'", 'flag set'], ['event', "'event started'", 'event started'], ['travelling', "'travelling'", 'travelling'],
   ['caps', "'caps set'", 'caps set'], ['filled', "'filled'", 'filled']]) L('cmd', k, CH, needle, { now: now ?? needle });
+L('cmd', 'off', SIM, 'Commands are off on this server.', { note: 'the answer to the command line on a server that allows no commands' });
 
 // ====================================================================================================
 // Every key of src/data must be needed by some entry

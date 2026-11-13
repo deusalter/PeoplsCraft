@@ -339,7 +339,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 31
+   "entries": 35
   },
   "bed": {
    "about": "Answer of a bed or a room when it is checked",
@@ -381,7 +381,7 @@
    "voice": "label",
    "limit": 40,
    "assign": "system",
-   "entries": 8
+   "entries": 9
   },
   "win": {
    "about": "Titles, buttons and hints in the windows",
@@ -395,7 +395,7 @@
    "voice": "label",
    "limit": 70,
    "assign": "system",
-   "entries": 37
+   "entries": 57
   },
   "stat": {
    "about": "Name of a bonus, as \"+8% <name>\"",
@@ -437,14 +437,14 @@
    "voice": "label",
    "limit": 100,
    "assign": "system",
-   "entries": 26
+   "entries": 40
   },
   "cmd": {
    "about": "Answers of the command line",
    "voice": "label",
    "limit": 110,
    "assign": "system",
-   "entries": 18
+   "entries": 19
   },
   "site.sight": {
    "about": "One line the first time the crew comes on a kind of site",
@@ -4737,6 +4737,18 @@
    "limit": 110,
    "assign": "system"
   },
+  "cmd:off": {
+   "surface": "cmd",
+   "key": "off",
+   "needs": [],
+   "file": "src/sim/sim.ts",
+   "line": 212,
+   "now": "Commands are off on this server.",
+   "voice": "label",
+   "limit": 110,
+   "assign": "system",
+   "note": "the answer to the command line on a server that allows no commands"
+  },
   "cmd:spawned": {
    "surface": "cmd",
    "key": "spawned",
@@ -8834,6 +8846,21 @@
    "limit": 100,
    "assign": "system"
   },
+  "error:format_newer": {
+   "surface": "error",
+   "key": "format_newer",
+   "needs": [],
+   "file": "src/storage/idb.ts",
+   "line": 150,
+   "now": "world format {n} is newer than this build",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "shown after error:world_open"
+  },
   "error:full": {
    "surface": "error",
    "key": "full",
@@ -8966,6 +8993,90 @@
    "limit": 100,
    "assign": "system"
   },
+  "error:proto.bad_token": {
+   "surface": "error",
+   "key": "proto.bad_token",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 203,
+   "now": "bad token",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the loading screen"
+  },
+  "error:proto.hello_first": {
+   "surface": "error",
+   "key": "proto.hello_first",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 295,
+   "now": "hello first",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the loading screen"
+  },
+  "error:proto.malformed": {
+   "surface": "error",
+   "key": "proto.malformed",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 140,
+   "now": "malformed message",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the loading screen"
+  },
+  "error:proto.no_hello": {
+   "surface": "error",
+   "key": "proto.no_hello",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 136,
+   "now": "no hello",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the loading screen"
+  },
+  "error:proto.not_move": {
+   "surface": "error",
+   "key": "proto.not_move",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 296,
+   "now": "not a movement message",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the loading screen"
+  },
+  "error:proto.second_hello": {
+   "surface": "error",
+   "key": "proto.second_hello",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 303,
+   "now": "a second hello",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the loading screen"
+  },
+  "error:proto.sequence": {
+   "surface": "error",
+   "key": "proto.sequence",
+   "needs": [],
+   "file": "src/net/host.ts",
+   "line": 308,
+   "now": "sequence out of order",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "the host closes the connection with it; the page shows it on the loading screen"
+  },
   "error:rate": {
    "surface": "error",
    "key": "rate",
@@ -8999,6 +9110,18 @@
    "limit": 100,
    "assign": "system"
   },
+  "error:sim_stopped": {
+   "surface": "error",
+   "key": "sim_stopped",
+   "needs": [],
+   "file": "src/net/worker-client.ts",
+   "line": 41,
+   "now": "the simulation stopped",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "shown after error:world_open when the simulation gives no reason"
+  },
   "error:slow": {
    "surface": "error",
    "key": "slow",
@@ -9009,6 +9132,66 @@
    "voice": "label",
    "limit": 100,
    "assign": "system"
+  },
+  "error:step.aborted": {
+   "surface": "error",
+   "key": "step.aborted",
+   "needs": [],
+   "file": "src/storage/idb.ts",
+   "line": 48,
+   "now": "transaction aborted",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "shown after error:world_open, before the browser's own words for the failure"
+  },
+  "error:step.backup": {
+   "surface": "error",
+   "key": "step.backup",
+   "needs": [],
+   "file": "src/storage/idb.ts",
+   "line": 172,
+   "now": "back up the old world",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "shown after error:world_open, before the browser's own words for the failure"
+  },
+  "error:step.list": {
+   "surface": "error",
+   "key": "step.list",
+   "needs": [],
+   "file": "src/storage/idb.ts",
+   "line": 155,
+   "now": "list chunks",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "shown after error:world_open, before the browser's own words for the failure"
+  },
+  "error:step.migrate": {
+   "surface": "error",
+   "key": "step.migrate",
+   "needs": [],
+   "file": "src/storage/idb.ts",
+   "line": 180,
+   "now": "migrate the world",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "shown after error:world_open, before the browser's own words for the failure"
+  },
+  "error:step.open": {
+   "surface": "error",
+   "key": "step.open",
+   "needs": [],
+   "file": "src/storage/idb.ts",
+   "line": 148,
+   "now": "open world",
+   "voice": "label",
+   "limit": 100,
+   "assign": "system",
+   "note": "shown after error:world_open, before the browser's own words for the failure"
   },
   "error:stopping": {
    "surface": "error",
@@ -14501,6 +14684,18 @@
     "{n}"
    ]
   },
+  "hud:dodged": {
+   "surface": "hud",
+   "key": "dodged",
+   "needs": [],
+   "file": "src/sim/player.ts",
+   "line": 129,
+   "now": "Dodged",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "a word that floats up over a player when a blow does no harm"
+  },
   "hud:event.ashen": {
    "surface": "hud",
    "key": "event.ashen",
@@ -14513,10 +14708,7 @@
    "voice": "label",
    "limit": 40,
    "assign": "system",
-   "slots": [
-    "{k}",
-    "{g}"
-   ]
+   "note": "plan D.2: the line shows no count, since the count is of sand-country people killed (rule 12); it is the name of the march alone"
   },
   "hud:event.moon": {
    "surface": "hud",
@@ -14546,7 +14738,8 @@
    "slots": [
     "{k}",
     "{g}"
-   ]
+   ],
+   "note": "plan D.2: {k} counts feeders only; a sand-country fighter killed in a raid adds nothing to it"
   },
   "hud:hungry": {
    "surface": "hud",
@@ -19827,6 +20020,105 @@
     "{kind}"
    ]
   },
+  "tip:kind.armour": {
+   "surface": "tip",
+   "key": "kind.armour",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "Armour",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the kind of a thing, put into {kind} of tip:kind"
+  },
+  "tip:kind.block": {
+   "surface": "tip",
+   "key": "kind.block",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "Block",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the kind of a thing, put into {kind} of tip:kind"
+  },
+  "tip:kind.food": {
+   "surface": "tip",
+   "key": "kind.food",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "Food",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the kind of a thing, put into {kind} of tip:kind"
+  },
+  "tip:kind.material": {
+   "surface": "tip",
+   "key": "kind.material",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "Material",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the kind of a thing, put into {kind} of tip:kind"
+  },
+  "tip:kind.tool": {
+   "surface": "tip",
+   "key": "kind.tool",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "Tool",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the kind of a thing, put into {kind} of tip:kind"
+  },
+  "tip:kind.trinket": {
+   "surface": "tip",
+   "key": "kind.trinket",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "Trinket",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the kind of a thing, put into {kind} of tip:kind"
+  },
+  "tip:kind.usable": {
+   "surface": "tip",
+   "key": "kind.usable",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "Usable",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the kind of a thing, put into {kind} of tip:kind"
+  },
+  "tip:kind.weapon": {
+   "surface": "tip",
+   "key": "kind.weapon",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 588,
+   "now": "{style} weapon",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "slots": [
+    "{style}"
+   ],
+   "note": "the kind of a weapon; {style} is the way of fighting"
+  },
   "tip:light": {
    "surface": "tip",
    "key": "light",
@@ -19881,6 +20173,23 @@
     "{speed}"
    ]
   },
+  "tip:needs_n": {
+   "surface": "tip",
+   "key": "needs_n",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 624,
+   "now": "{n} x {item} ({have})",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{n}",
+    "{item}",
+    "{have}"
+   ],
+   "note": "one ingredient of a recipe and how many the pack holds; the multiplication sign is not in the font"
+  },
   "tip:no_difference": {
    "surface": "tip",
    "key": "no_difference",
@@ -19920,6 +20229,21 @@
    "slots": [
     "{n}"
    ]
+  },
+  "tip:sells_each": {
+   "surface": "tip",
+   "key": "sells_each",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 613,
+   "now": "each ({total} for the stack)",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{total}"
+   ],
+   "note": "follows tip:sells_for, with a space, when the stack holds more than one"
   },
   "tip:sells_for": {
    "surface": "tip",
@@ -20063,6 +20387,143 @@
     "{slot}"
    ],
    "note": "{slot} is Head, Body or Legs"
+  },
+  "tip:src.any": {
+   "surface": "tip",
+   "key": "src.any",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 30,
+   "now": "Any {tag}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{tag}"
+   ],
+   "note": "{tag} is a kind of ingredient (any log, any planks); the same words are written in the recipe tooltip of src/ui/windows.ts"
+  },
+  "tip:src.chests": {
+   "surface": "tip",
+   "key": "src.chests",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 22,
+   "now": "Found in chests",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system"
+  },
+  "tip:src.dropped": {
+   "surface": "tip",
+   "key": "src.dropped",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 20,
+   "now": "Dropped by {name}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ],
+   "note": "{name} is a creature"
+  },
+  "tip:src.dropped_great": {
+   "surface": "tip",
+   "key": "src.dropped_great",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 20,
+   "now": "Dropped by the {name}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ],
+   "note": "{name} is one of the eight"
+  },
+  "tip:src.hand": {
+   "surface": "tip",
+   "key": "src.hand",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 17,
+   "now": "Craft by hand",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system"
+  },
+  "tip:src.mine": {
+   "surface": "tip",
+   "key": "src.mine",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 19,
+   "now": "Mine {block}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{block}"
+   ],
+   "note": "{block} is the block that drops it"
+  },
+  "tip:src.smelt": {
+   "surface": "tip",
+   "key": "src.smelt",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 16,
+   "now": "Smelt {item}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{item}"
+   ],
+   "note": "{item} is what goes into the furnace"
+  },
+  "tip:src.sold": {
+   "surface": "tip",
+   "key": "src.sold",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 21,
+   "now": "Sold by the {name}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ],
+   "note": "{name} is a townsperson"
+  },
+  "tip:src.station": {
+   "surface": "tip",
+   "key": "src.station",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 17,
+   "now": "Craft at the {station}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{station}"
+   ]
+  },
+  "tip:src.world": {
+   "surface": "tip",
+   "key": "src.world",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 24,
+   "now": "Found in the world",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system"
   },
   "tip:take": {
    "surface": "tip",
@@ -20338,6 +20799,33 @@
     "{item}"
    ]
   },
+  "toast:needs_forge": {
+   "surface": "toast",
+   "key": "needs_forge",
+   "needs": [],
+   "file": "src/sim/rules.ts",
+   "line": 73,
+   "now": "Needs a {forge}",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "slots": [
+    "{forge}"
+   ],
+   "note": "{forge} is the name of the furnace that works the ore"
+  },
+  "toast:needs_hotter": {
+   "surface": "toast",
+   "key": "needs_hotter",
+   "needs": [],
+   "file": "src/sim/rules.ts",
+   "line": 73,
+   "now": "Needs a hotter forge",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "note": "the same refusal when no furnace of the table works the ore"
+  },
   "toast:no_arm": {
    "surface": "toast",
    "key": "no_arm",
@@ -20359,6 +20847,18 @@
    "voice": "label",
    "limit": 90,
    "assign": "system"
+  },
+  "toast:no_burn": {
+   "surface": "toast",
+   "key": "no_burn",
+   "needs": [],
+   "file": "src/sim/rules.ts",
+   "line": 69,
+   "now": "That does not burn",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "note": "a refusal shown as a toast when a thing that is no fuel is put under a furnace (src/sim/invops.ts)"
   },
   "toast:no_land": {
    "surface": "toast",
@@ -20403,6 +20903,18 @@
    "voice": "label",
    "limit": 90,
    "assign": "system"
+  },
+  "toast:no_smelt": {
+   "surface": "toast",
+   "key": "no_smelt",
+   "needs": [],
+   "file": "src/sim/rules.ts",
+   "line": 72,
+   "now": "That cannot be smelted",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "note": "a refusal shown as a toast when a thing no furnace works is put in one"
   },
   "toast:not_enough": {
    "surface": "toast",
