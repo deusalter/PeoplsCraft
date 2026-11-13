@@ -205,8 +205,8 @@ export const MODS: Record<string, { name: string; rar: number; lines: TipLine[] 
   heavy: { name: 'Heavy', rar: 0, lines: [{ text: '+18% harm', c: 'growth.lt' }, { text: '-10% blow speed', c: 'blood.lt' }] },
   dull: { name: 'Dull', rar: -1, lines: [{ text: '-8% harm', c: 'blood.lt' }] },
   blessed: { name: 'Favoured', rar: 2, lines: [{ text: '+15% harm, +5% critical chance', c: 'growth.lt' }, { text: '+8% blow speed', c: 'growth.lt' }] },
-  warding: { name: 'Thick', rar: 0, lines: [{ text: '+2 defence', c: 'growth.lt' }] },
-  brittle: { name: 'Brittle', rar: -1, lines: [{ text: '-1 defence', c: 'blood.lt' }] },
+  warding: { name: 'Thick', rar: 0, lines: [{ text: '+2 more defence', c: 'growth.lt' }] },
+  brittle: { name: 'Brittle', rar: -1, lines: [{ text: '1 less defence', c: 'blood.lt' }] },
   radiant: { name: 'Glowing', rar: 2, lines: [{ text: '+6% harm, +2 defence, +10 life', c: 'growth.lt' }] },
 };
 

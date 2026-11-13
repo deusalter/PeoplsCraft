@@ -9,7 +9,7 @@ function sample(): Hand {
   return new Hand({
     chest: store(27, {
       0: { key: 'cobble', n: 99 }, 1: { key: 'cobble', n: 99 }, 2: { key: 'cobble', n: 41 }, 3: { key: 'oak_log', n: 32 },
-      4: { key: 'oak_planks', n: 87 }, 6: { key: 'iron_ore', n: 23 }, 7: { key: 'coal', n: 58 }, 8: { key: 'bog_pearl', n: 999 },
+      4: { key: 'oak_planks', n: 87 }, 6: { key: 'iron_ore', n: 23 }, 7: { key: 'coal', n: 58 }, 17: { key: 'bog_pearl', n: 999 },
       9: { key: 'sand', n: 64 }, 10: { key: 'glass', n: 12 }, 12: { key: 'hide', n: 9 }, 13: { key: 'feather', n: 17 },
       14: { key: 'bone', n: 6 }, 15: { key: 'gel', n: 14 }, 18: { key: 'verdant_idol', n: 1 }, 19: { key: 'heartroot', n: 1 },
       20: { key: 'hide_0', n: 1 }, 21: { key: 'hide_2', n: 1 }, 24: { key: 'mushroom_red', n: 5 }, 25: { key: 'mushroom_brown', n: 7 },
