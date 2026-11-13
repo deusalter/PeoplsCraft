@@ -13,6 +13,8 @@ export interface PauseView {
   server: boolean;
   /** "Saved", "Saving", or why not, which is said in blood. */
   saved?: { text: string; ok: boolean };
+  /** On a server: where it is and who is on, so that the crew is known without closing the menu to hold Tab. */
+  crew?: { address: string; here: number; seats: number };
   onBack(): void;
   onSettings(): void;
   onControls(): void;
@@ -29,6 +31,7 @@ export const pauseScreen: Screen<PauseView> = (v, ui) => {
     button({ id: 'pause.controls', x: 8, y: 90, w: 200, label: 'Controls', onPress: v.onControls }),
     button({ id: 'pause.leave', x: 8, y: 114, w: 200, label: v.server ? 'Leave' : 'Save and leave', onPress: v.onLeave }),
   ];
+  if (v.crew) kids.push(line({ x: 8, y: 28, w: W - 16, text: `${v.crew.address}, ${v.crew.here} of ${v.crew.seats} here`, c: 'ink.faded', shadow: false }));
   if (v.saved) kids.push(line({ x: 8, y: 28, w: W - 16, text: v.saved.text, c: v.saved.ok ? 'ink.faded' : 'blood.dk', shadow: false }));
   return washedMenu(ui, 'pause', { c: 'root.0', quarters: 2 }, [
     slab({ x: X, y: Y, w: W, h: H, ramp: 'clay', title: v.server ? 'Menu' : 'Paused', kids }),
@@ -37,13 +40,13 @@ export const pauseScreen: Screen<PauseView> = (v, ui) => {
   });
 };
 
-const view = (o: Pick<PauseView, 'world' | 'server' | 'saved'>): PauseView => ({
+const view = (o: Pick<PauseView, 'world' | 'server' | 'saved' | 'crew'>): PauseView => ({
   ...o,
   onBack: () => go('hud'), onSettings: () => go('settings'), onControls: () => go('controls-play'), onLeave: () => go('title'),
 });
 
 export const SCREENS: NamedScreen[] = [
   { name: 'pause', title: 'Pause', world: true, build: (ui) => pauseScreen(view({ world: 'Hearth on the Yavas', server: false, saved: { text: 'Saved', ok: true } }), ui) },
-  { name: 'pause-server', title: 'Pause, on a server', world: true, build: (ui) => pauseScreen(view({ world: 'Spark', server: true }), ui) },
+  { name: 'pause-server', title: 'Pause, on a server', world: true, build: (ui) => pauseScreen(view({ world: 'Spark', server: true, crew: { address: 'spark.local:8420', here: 8, seats: 8 } }), ui) },
   { name: 'pause-unsaved', title: 'Pause, not saved', world: true, build: (ui) => pauseScreen(view({ world: 'Tusāravan pines under Sānu', server: false, saved: { text: 'Not saved: the browser is out of room', ok: false } }), ui) },
 ];

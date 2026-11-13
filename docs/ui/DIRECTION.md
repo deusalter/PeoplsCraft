@@ -3385,7 +3385,7 @@ Size 427 by 240. Material: a clay slab 216 by 144 over the world under a half of
 | S0 | slab | 105 | 48 | 216 | 144 | clay; title at 8, 6: "Paused", on a server "Menu", since the world goes on |
 | Z1 | text | 113 | 54 | 200 | 9 | the title, ink, no shadow (5.3) |
 | Z2 | text | 113 | 66 | 200 | 9 | the world's name, ink.faded |
-| Z3 | text | 113 | 76 | 200 | 9 | one line: "Saved", "Saving" in ink.faded, or why not in blood.dk |
+| Z3 | text | 113 | 76 | 200 | 9 | one line: "Saved", "Saving" in ink.faded, or why not in blood.dk; on a server, where it is and who is on, in ink.faded: "spark.local:8420, 8 of 8 here" |
 | Z4 | button | 113 | 90 | 200 | 20 | "Back to the game" |
 | Z5 | button | 113 | 114 | 200 | 20 | "Settings" |
 | Z6 | button | 113 | 138 | 200 | 20 | "Controls" |
