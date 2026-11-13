@@ -6,6 +6,8 @@
 //
 //   npm run smoke -- closetab          4 s: both changes are there. 1 s: the world opens and is consistent
 //                                      (no item lost or doubled, the block there exactly when its cobble is gone).
+//                                      Also: hiding the tab saves, and "Save and quit to title" right after a change
+//                                      keeps it.
 //   npm run smoke -- closetab --r12    the table of risk R12: closed 1, 4 and 10 s after the change, with and
 //                                      without the tab hidden first, and with the page asked to run `beforeunload`
 //                                      (its prompt accepted) as well as closed outright. Prints what survived.
@@ -21,11 +23,11 @@ export async function run({ page, ctx, origin, log, extra, errors, args }) {
   const q = extra ? '?' + extra.slice(1) : '';
   let d = driver(page, log), cur = page, chest, gy, sx, sz;
   const cell = (dx, dy, dz) => [sx + dx, gy + dy, sz + dz];
+  let hiddenSaved = false, asked = false;
 
   /** From the title menu of a fresh page, open the world and wait until it is in play. */
-  const reopen = async () => {
-    cur = await ctx.newPage(); watch(cur);
-    await cur.goto(`${origin}/${q}`, { waitUntil: 'load' });
+  const reopen = async (same = false) => {
+    if (!same) { cur = await ctx.newPage(); watch(cur); await cur.goto(`${origin}/${q}`, { waitUntil: 'load' }); }
     await cur.click(`.world:has-text("${NAME}")`, { timeout: 20000 });
     d = driver(cur, log);
     await d.boot(); await d.grab();
@@ -65,8 +67,27 @@ export async function run({ page, ctx, origin, log, extra, errors, args }) {
     await d.ev(() => D.save());
   });
 
+  await d.step('hiding the tab saves', async () => {
+    const r = await d.ev(async () => {
+      const was = T.game.lastSave;
+      await T.cmd('give dirt 1');
+      const t0 = performance.now();
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+      document.dispatchEvent(new Event('visibilitychange'));
+      // a save at most a second after the one before it, well inside the 3 s after the change
+      const saved = await T.until(() => T.game.lastSave > was, 2500), ms = performance.now() - t0;
+      delete document.hidden; delete document.visibilityState;
+      document.dispatchEvent(new Event('visibilitychange'));
+      return { saved, ms };
+    });
+    if (!r.saved) throw new Error('hiding the tab did not save');
+    log(`  saved ${(r.ms / 1000).toFixed(2)} s after the tab was hidden`);
+    hiddenSaved = r.saved;
+  });
+
   /** Trial `i`: the two changes, then the page goes `after` ms after the second. */
-  const trial = async (i, after, { hidden = false, unload = false, mute = false } = {}) => {
+  const trial = async (i, after, { hidden = false, unload = false, mute = false, quit = false } = {}) => {
     const k = STACKS[i], before = await look(i);
     await d.tp(sx + i - 6 + 0.5, gy + 1, sz - 1 + 0.5);
     await d.placeOn('cobble', ...cell(i - 6, 0, -3));
@@ -92,13 +113,19 @@ export async function run({ page, ctx, origin, log, extra, errors, args }) {
     }
     await cur.waitForTimeout(Math.max(0, after - (Date.now() - t)));
     const waited = Date.now() - t;
-    if (unload) {
+    if (quit) {
+      // the pause menu's "Save and quit to title" reloads the page into the title menu once the host says it saved
+      cur.on('dialog', (dl) => { asked = true; void dl.accept(); });
+      await cur.evaluate(() => T.game.menu.pause());
+      await cur.click('button:has-text("Save and quit to title")');
+      await cur.waitForSelector(`.world:has-text("${NAME}")`, { timeout: 20000 });
+    } else if (unload) {
       cur.on('dialog', (dl) => void dl.accept());
       const gone = new Promise((res) => cur.once('close', res));
       await cur.close({ runBeforeUnload: true });
       await gone;
     } else await cur.close();
-    await reopen();
+    await reopen(quit);
     const got = await look(i);
     const total = before.inChest + before.inPack;
     const consistent = got.inChest + got.inPack === total && got.cobble + (got.block ? 1 : 0) === before.cobble;
@@ -133,7 +160,12 @@ export async function run({ page, ctx, origin, log, extra, errors, args }) {
     if (!r.consistent) throw new Error(`after 1 s the world is not consistent: ${JSON.stringify(r)}`);
     log(`  after 1 s: block ${r.block ? 'kept' : 'lost'}, stack ${r.stack ? 'kept' : 'lost'} (block placed ${(r.placedBefore / 1000).toFixed(1)} s before the stack moved)`);
   });
-  return { 'after4.block': results[0].block, 'after4.stack': results[0].stack, 'after4.consistent': results[0].consistent, 'after1.consistent': results[1].consistent };
+  await d.step('quit to the title at once after the change', async () => {
+    const r = await trial(2, 0, { quit: true });
+    results.push(r);
+    if (!r.block || !r.stack || !r.consistent) throw new Error(`after quitting to the title: ${JSON.stringify(r)}`);
+  });
+  return { hiddenSaves: hiddenSaved, 'quit.noPrompt': !asked, 'quit.block': results[2].block, 'quit.stack': results[2].stack, 'after4.block': results[0].block, 'after4.stack': results[0].stack, 'after4.consistent': results[0].consistent, 'after1.consistent': results[1].consistent };
 }
 
-export const expect = { 'after4.block': true, 'after4.stack': true, 'after4.consistent': true, 'after1.consistent': true };
+export const expect = { hiddenSaves: true, 'quit.noPrompt': true, 'quit.block': true, 'quit.stack': true, 'after4.block': true, 'after4.stack': true, 'after4.consistent': true, 'after1.consistent': true };

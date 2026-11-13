@@ -49,7 +49,7 @@ export interface SharedState {
 }
 
 /** Milliseconds of generation one step may spend under a real clock when the chunk source generates in this thread. */
-const GEN_BUDGET_MS = 4;
+const GEN_BUDGET_MS = 2;
 const STATS_EVERY = 60 / STATS_PER_SEC;
 const plain = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 

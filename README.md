@@ -18,7 +18,10 @@ npm run smoke -- golden   # a scripted play-through in headless Chrome, compared
                           # (add '?clone' to take every message between client and host through JSON)
 ```
 
-Needs a WebGL2 browser. Worlds are saved to IndexedDB in that browser.
+Needs a WebGL2 browser. Worlds are saved to IndexedDB in that browser: 3 seconds after you change a
+block, a chest or your inventory, when you pause, when you switch away from the tab, when you quit to the
+title, and every 30 seconds while you walk. Closing the tab can therefore lose at most the last 3 seconds of
+building and the last 30 seconds of walking, and the world always opens as one consistent moment.
 
 ## Controls
 
@@ -65,7 +68,8 @@ src/
                open chest or forge is one op, carried out by its applyOp and by nothing else
   net/         the wire between a host and a client, and both ends of it that need no screen:
                protocol.ts (every message), snapshot.ts (the two binary ones), codec.ts, validate.ts,
-               transport.ts (the two ends of a connection) and loopback.ts (both ends in one thread);
+               transport.ts (the two ends of a connection), loopback.ts (both ends in one thread) and
+               worker-client.ts (the page's end of the connection to the simulation's worker);
                host.ts (SimHost: connections, hello, checked dispatch, the step, saving) with hostchunks.ts
                (chunk subscriptions and edit sets) and hostsnap.ts + interest.ts (snapshots, events and who
                is told what); clientvoxels.ts (the client's block data) and invsync.ts (inventory reconcile)
@@ -86,11 +90,13 @@ src/
   game.ts      the client: view, input, HUD and audio, the local player's body; it knows the simulation only
                through its session
   main.ts      the title menu, then a host for the chosen world and a game connected to it
+  sim-worker.ts  the simulation's own thread in solo play: the same host, on IndexedDB, generating its terrain
   dev.ts       window.T
 scripts/
   headless.mjs   the game in headless Chrome with the real GPU, for automated checks
   smoke.mjs      smoke scenarios on top of it: golden/ (the scripted play-through and its baseline),
-                 fixtures/ (a save made by the build before the simulation was split out), perf.mjs
+                 fixtures/ (a save made by the build before the simulation was split out), perf.mjs,
+                 closetab.mjs, det.mjs, twotab.mjs, solofar.mjs, tpfar.mjs
   run.mjs        bundle a TypeScript entry and run it under Node
   test.mjs       npm test: every tests/*.test.ts through run.mjs
   lint-sim.mjs   keeps src/sim free of wall-clock time, unseeded randomness, logging and client imports
@@ -105,12 +111,16 @@ Design notes worth knowing before changing things:
   a client file. A `SimHost` owns one simulation and its storage, and speaks to clients in messages.
   `Game` is a client: it owns the local player's body and camera, tells the host where the body is
   and what the hands do, shows a break, a placement or an inventory change at once and takes the
-  host's word when it differs, and draws creatures from the host's snapshots. Today the host runs in
-  the page's own thread and the two are joined by `net/loopback.ts`, with the game's frame stepping
-  the host. The client shares rules and tables with the simulation (`sim/rules.ts`, `sim/invops.ts`,
-  the physics) but reaches the running one only through its session: no client file but `dev.ts`
-  imports `sim/sim.ts`. The co-op plan moves the host into a worker for solo play and into a Node
-  server for friends, on the same messages.
+  host's word when it differs, and draws creatures from the host's snapshots. In solo play the host
+  runs in a Web Worker of its own (`src/sim-worker.ts`): it keeps its own clock, 60 steps a second,
+  generates the terrain it simulates inside its steps, and saves to IndexedDB; the page sends it
+  messages and draws what comes back. Pausing, or switching away from the tab, stops the world, as
+  does a loading screen. `?quick` runs the host in the page's own thread instead, joined by
+  `net/loopback.ts` and stepped by the game's frames (`&worker` puts it in the worker, still stepped
+  by the frames). The client shares rules and tables with the simulation (`sim/rules.ts`,
+  `sim/invops.ts`, the physics) but reaches the running one only through its session: no client file
+  but `main.ts` and `dev.ts` imports `sim/sim.ts`. The co-op plan adds a Node server for friends, on
+  the same messages.
 - **Inventory ops.** A click in a window does not move an item. The window sends an op
   (`click`, `quick`, `book`, `buy` ...) and `applyOp` in `sim/invops.ts` carries it out or refuses it,
   returning the sound and the line to show. A refused op changes nothing.
@@ -155,15 +165,21 @@ All content is data. Nothing below needs engine changes.
 
 ## Testing hooks
 
-- `?quick=<seed>` skips the menu into a throwaway world; add `&fresh` to wipe it first.
+- `?quick=<seed>` skips the menu into a throwaway world; add `&fresh` to wipe it first, `&worker` to
+  run its host in the worker, `&det` to make two runs of one script step for step alike.
 - `window.T` drives the game without real input or `requestAnimationFrame`
-  (`T.run(ms)`, `T.loaded()`, `T.key`, `T.click`, `T.grab`, `T.cmd('give iron_sword')`).
+  (`T.run(ms)`, `T.loaded()`, `T.step(n)`, `T.key`, `T.click`, `T.grab`, `T.cmd('give iron_sword')`;
+  `T.ask((sim, arg) => ...)` reads the simulation wherever it runs).
   Background tabs throttle `requestAnimationFrame`, so automated checks must use these.
 - `T.showcase(['b_colossus', 'woolback'])` lines creatures up, frozen, on a platform, and
   `T.orbit(angle)` walks the camera round them.
 - `npm run smoke -- golden` plays a fixed script (mine, build, craft, chest, forge, boss, gate, death,
   save and reload) and compares what no random draw can change with `scripts/golden/baseline.json`;
-  `npm run smoke -- legacy` opens a save written by an older build; `npm run smoke -- perf` is a timed flight.
+  `npm run smoke -- legacy` opens a save written by an older build; `npm run smoke -- perf` is a timed flight
+  (`--solo` flies a world made in the title menu). `closetab` closes the tab 4 s and 1 s after a change and
+  opens the world again, `det` runs one script twice and compares, `twotab` upgrades the database under an
+  old tab, `solofar` checks that nothing far away is culled, `tpfar` times the worker's steps on far jumps.
+  Run them one at a time.
 - `?gallery` shows every block tile (as a 2x2 repeat, so seams show) and every item icon enlarged;
   `?gallery=tiles&scale=6` and `?gallery=icons` narrow it down.
 

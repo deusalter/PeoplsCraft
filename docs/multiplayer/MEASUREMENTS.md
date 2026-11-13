@@ -314,3 +314,92 @@ The checks of "Done when" for stage 2.
   cast, a salve, a thrown stack picked up again, a shop, a night slept through and a placement out of
   reach (shown, refused, undone) each behave on both sides; the client's estimate of the host's tick
   stays within 1.5 ticks of it across a pause, a loading screen and a crossing.
+
+## 7. Stage 3: solo in the simulation's worker (6.6 item 2, risks R6, R8, R10, R12, and the checks of section 11)
+
+Machine and browser as in section 1. 2026-11-12, evening, with other work on the machine (1-minute load
+average 2.7 to 6.2 during the performance runs).
+
+### Why the harness saw 30 frames a second
+
+`npm run smoke -- perf` at the end of stage 2 reported `intervalOver25` = 1.0 on the stage 0 tree and on HEAD:
+600 frames in the 20 s flight, every interval 33.3 ms, and a frame CPU of about 4.2 ms because each frame ran
+two ticks. The game was not running at 30. The cause was the browser: the Mac was on battery at 16%, and
+Chrome's energy saver, which by default turns itself on below 20% battery, holds every page to 30 frames a
+second. A plain `requestAnimationFrame` loop on an empty page measured the same 33.3 ms in that Chrome with
+the harness's flags, without them, and with `--disable-gpu-vsync`; `--disable-frame-rate-limit` gave 18 ms;
+a fresh profile whose `Local State` sets `performance_tuning.battery_saver_mode.state` to 0 gave 16.7 ms,
+and the same profile with the state at 1 gave 33.3 ms again. Earlier sections ran on mains power.
+
+`scripts/headless.mjs` now launches every run on a fresh temporary profile with the energy saver off. With it,
+HEAD (then `f82bab3` plus the harness change) on the same battery: 1,200 frames, interval mean 16.67 ms,
+p95 18.4, max 19.1, `intervalOver25` 0, frame CPU 2.06 / 3.7 / 5.8 ms (mean / p95 / max), prof sum 6.9.
+Before the change, the run just before it: 600 frames, interval mean 33.33 ms, p99 35.3, frame CPU 4.21 ms.
+
+Command for the rate alone (the page's own frame clock, no game):
+`node scripts/headless.mjs --run <script> ` with a script that times 180 `requestAnimationFrame` callbacks.
+
+### Performance: the stage 0 tree against this tree
+
+Control: the stage 0 tree (`git archive 4ff2b0d` into `.claude/mp-work/pad/control-4ff2b0d`, this checkout's
+`node_modules` linked, its own Vite cache folder, and this tree's `scripts/headless.mjs` and `scripts/perf.mjs`
+copied in so that both run the same harness and the same flight; nothing under `src/` changed). Runs in turn,
+one at a time:
+
+- control: `node scripts/smoke.mjs perf` in the control folder (the world in the page, as stage 0 has it);
+- solo: `npm run smoke -- perf --solo` here: the world is made in the title menu and runs in the simulation's
+  worker on its own clock, as a player's does, so `tick` is the client's tick alone (its body, its hands, the
+  session's pumps and the entity store);
+- quick: `npm run smoke -- perf` here: `?quick`, the host in the page on the loopback, stepped by the frames.
+
+Load is the 1-minute average when the run ended. Each row is one flight of about 1,200 frames.
+
+| Round | build | load | prof sum (world + tick + render) | frame CPU mean / p95 / max | tick mean |
+| --- | --- | --- | --- | --- | --- |
+| 1 | control | 3.0 | 6.1 (1.3 + 0.4 + 4.4) | 2.09 / 3.8 / 4.5 | 0.08 |
+| 1 | solo | 3.9 | 7.1 (2.0 + 0.3 + 4.8) | 1.88 / 3.7 / 4.9 | 0.07 |
+| 1 | quick | 3.3 | 6.5 (1.6 + 1.0 + 3.9) | 1.97 / 3.8 / 5.0 | 0.21 |
+| 2 | control | 3.3 | 6.5 (1.7 + 0.5 + 4.3) | 2.10 / 3.7 / 4.6 | 0.08 |
+| 2 | solo | 3.6 | 6.2 (1.7 + 0.5 + 4.0) | 1.87 / 3.6 / 4.8 | 0.07 |
+| 2 | quick | 4.9 | 6.6 (1.9 + 0.9 + 3.8) | 1.88 / 3.6 / 4.3 | 0.20 |
+| 3 | control | 6.2 | 7.9 (1.9 + 0.5 + 5.5) | 2.03 / 3.7 / 5.6 | 0.09 |
+| 3 | solo | 6.1 | 6.4 (1.8 + 0.4 + 4.2) | 1.95 / 3.5 / 4.3 | 0.07 |
+| 3 | quick | 4.8 | 7.0 (1.9 + 0.8 + 4.3) | 2.01 / 3.7 / 5.0 | 0.21 |
+| 4 | control | 4.8 | 6.8 (1.4 + 0.8 + 4.6) | 2.04 / 3.8 / 4.7 | 0.09 |
+| 4 | solo | 4.4 | 6.3 (1.8 + 0.6 + 3.9) | 2.02 / 3.5 / 4.6 | 0.08 |
+| 4 | quick | 4.8 | 7.1 (2.0 + 1.0 + 4.1) | 2.03 / 3.7 / 4.6 | 0.20 |
+| 5 | control | 4.4 | 7.0 (2.1 + 0.6 + 4.3) | 2.08 / 3.8 / 4.5 | 0.09 |
+| 5 | solo | 4.3 | 7.9 (2.0 + 0.5 + 5.4) | 1.90 / 3.6 / 5.7 | 0.07 |
+| 5 | quick | 5.0 | 8.4 (1.7 + 1.2 + 5.5) | 2.13 / 3.5 / 5.8 | 0.21 |
+| 6 | control | 2.7 | 7.5 (2.4 + 0.5 + 4.6) | 2.05 / 3.9 / 4.8 | 0.08 |
+| 6 | solo | 3.0 | 6.8 (1.9 + 0.4 + 4.5) | 1.95 / 3.6 / 5.0 | 0.07 |
+| 7 | control | 3.1 | 8.2 (1.9 + 0.5 + 5.8) | 2.17 / 3.8 / 5.9 | 0.08 |
+| 7 | solo | 2.7 | 7.1 (2.1 + 0.7 + 4.3) | 1.88 / 3.7 / 4.5 | 0.08 |
+| 8 | control | 3.2 | 6.5 (1.8 + 0.3 + 4.4) | 2.12 / 3.8 / 6.0 | 0.09 |
+| 8 | solo | 3.8 | 6.4 (2.1 + 0.4 + 3.9) | 2.03 / 3.5 / 4.2 | 0.08 |
+| 9 | control | 4.2 | 6.9 (1.6 + 0.5 + 4.8) | 2.12 / 3.9 / 4.9 | 0.09 |
+| 9 | solo | 4.9 | 7.2 (2.5 + 0.3 + 4.4) | 1.98 / 3.8 / 4.8 | 0.07 |
+| 10 | control | 4.4 | 6.9 (1.9 + 0.6 + 4.4) | 2.11 / 3.9 / 4.8 | 0.08 |
+| 10 | solo | 4.5 | 6.9 (2.2 + 0.4 + 4.3) | 1.97 / 3.3 / 4.5 | 0.07 |
+| 11 | control | 4.3 | 6.8 (1.6 + 0.6 + 4.6) | 2.09 / 3.8 / 5.0 | 0.09 |
+| 11 | solo | 3.4 | 7.0 (1.9 + 0.4 + 4.7) | 1.88 / 3.6 / 4.9 | 0.07 |
+
+| | runs | prof sum, median | worst tick, median (mean) | frame CPU mean, median (range) | p95, median (range) | tick mean |
+| --- | --- | --- | --- | --- | --- | --- |
+| control (stage 0) | 11 | 6.9 | 0.5 (0.53) | 2.09 (2.03 to 2.17) | 3.8 (3.7 to 3.9) | 0.08 to 0.09 |
+| solo (this tree, worker) | 11 | 6.9 | 0.4 (0.45) | 1.95 (1.87 to 2.03) | 3.6 (3.3 to 3.8) | 0.07 to 0.08 |
+| quick (this tree, page) | 5 | 7.0 | 1.0 (0.98) | 2.01 (1.88 to 2.13) | 3.7 (3.5 to 3.8) | 0.20 to 0.21 |
+
+Against the budget. The solo median sum equals the control's (budget: within 1.0 ms). The mean frame CPU is
+0.14 ms under the control's and its p95 0.2 ms under. The client's tick is below the control's tick, which is
+the whole simulation: 0.4 against 0.5 on the median of the worst frame, 0.07 against 0.08 to 0.09 on the
+mean. In the page (`?quick`) the tick is where stage 2 left it (the host's step on top of the client's), and the
+sum is 0.2 ms above the control's median of the same five rounds (6.8).
+
+Where the client's tick goes, from one solo flight with each part timed (0.1 ms clock, so means are of
+coarse samples): the client's own tick 0.04 to 0.05 ms (of which the movement message, every third tick,
+0.05 ms each: a `postMessage` with the buffer transferred), the entity store 0.027, the session's pumps 0.009
+each. No pump took 0.3 ms or more: what the worker sends arrives by structured clone, and that copy is made
+when the browser delivers the message, between frames, not inside a pump (R6). No frame of the 22 solo and
+control flights missed a refresh (`intervalOver25` 0 in all), so whatever that delivery costs, the frame
+rate did not show it.

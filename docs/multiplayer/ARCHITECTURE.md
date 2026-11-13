@@ -3610,6 +3610,22 @@ transports give the same values as each other.
 (i) Where a page cannot save, the title menu, the banner in the game and the pause screen say why in the same words
 (`noSaveText` in `ui/menus.ts`): a database written by a newer build (`StorageError('version')`) is named as such in all
 three, where the banner and the pause screen still blamed the browser (D36 (l)).
+(j) Risk R10. A world on the worker's own clock has its terrain made by one worker of its own (`PoolSource` on a
+`WorkerPool` of one, nested in the simulation's worker), not by `InlineSource` inside the steps, which 1 has for solo.
+Generating inline, three jumps of 4,000 blocks gave a step p99 of 8 to 12 ms with a 4 ms budget and 5.5 to 12 ms
+with 2 ms: one chunk now and then takes 13 to 22 ms by itself, which no budget can split. On the nested worker the
+same jumps give p99 0.8 to 3.3 ms, max 9.1, and the world comes into play as soon as before (1.0 to 1.3 s). The
+simulation's worker falls back to `InlineSource` where a worker cannot start one of its own; `GEN_BUDGET_MS` is
+2 ms for that case. Under a manual clock (`&worker` in the harness) it generates inline as 3.5 has it, two chunks
+a step, so the steps a chunk lands in do not depend on another thread. The page's own pool keeps
+`max(2, min(6, cores - 3))` workers beside the two (2.3).
+(k) `sim/clock.ts` is unchanged: both clocks are driven by `SimHost` (`stepManual` and the real clock's timer, which
+while paused looks again one step later instead of spinning), and nothing else needs more of the clock than `STEP`.
+(l) What a solo player can notice. The world keeps its 60 steps a second when the page draws fewer frames (before,
+a frame ran at most five steps, and a slower page slowed the world). A world comes into play when the chunks within
+3 of the player are ready, not all 121 (D35 (a)). A change to blocks, chests or the inventory is saved 3 s after
+it, as well as on pause, on hiding the tab and every 30 s. Closing the tab in Chrome saves as it closes: the page
+goes hidden first, which sends `pause`, and the worker commits before it is torn down (MEASUREMENTS 7).
 
 ---
 

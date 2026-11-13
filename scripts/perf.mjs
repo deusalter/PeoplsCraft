@@ -8,7 +8,8 @@
 // Game.runFrame, its sim portion, the frame-to-frame interval, how many frames took over 16.7 ms of
 // CPU and how many display refreshes were missed. The worst values are single frames, so anything
 // else that wants the CPU during the flight raises them: each run also reports the machine's 1-minute
-// load average before and after, and with --repeat the median of the sums so far.
+// load average before and after, and with --repeat the median of the sums so far. --solo flies a world made in the
+// title menu instead, which runs in the simulation's worker on its own clock: the tick is then the client's alone.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { loadavg } from 'node:os';
 import { resolve } from 'node:path';
@@ -17,10 +18,17 @@ export const query = 'quick=perf&fresh';
 const FLIGHT_MS = 20000, VIEW = 12;
 const sums = [];
 
-export async function run({ page, url, log }) {
+export async function run({ page, url, origin, log, args }) {
   // settings live in localStorage: set the view, then load the world again so it starts with it
   await page.evaluate((v) => localStorage.setItem('cairnlight.settings', JSON.stringify({ gfx: { renderDist: v } })), VIEW);
-  await page.goto(url, { waitUntil: 'load' });
+  // --solo: the world is made in the title menu, as a player makes one, and runs in the simulation's worker on its own clock
+  const solo = args?.flag('solo');
+  if (solo) {
+    await page.goto(origin + '/', { waitUntil: 'load' });
+    await page.click('button:has-text("Begin"), button:has-text("New world")');
+    await page.fill('input[placeholder^="Seed"]', 'perf');
+    await page.click('button:has-text("Create world")');
+  } else await page.goto(url, { waitUntil: 'load' });
   await page.waitForFunction(() => window.T, null, { timeout: 60000 });
   const load0 = loadavg()[0];
   const r = await page.evaluate(async ([ms, view]) => {
@@ -64,7 +72,7 @@ export async function run({ page, url, log }) {
   const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
   const sum = (a) => ({ mean: +mean(a).toFixed(2), p50: +q(a, 0.5).toFixed(2), p95: +q(a, 0.95).toFixed(2), p99: +q(a, 0.99).toFixed(2), max: +Math.max(...a).toFixed(2) });
   const out = {
-    when: new Date().toISOString(), view: r.view, preset: r.preset, frames: r.cpu.length, flownBlocks: +r.flown.toFixed(1), renderScaleAtEnd: r.scale,
+    when: new Date().toISOString(), mode: solo ? 'solo: title menu, worker, own clock' : 'quick: this page, loopback', view: r.view, preset: r.preset, frames: r.cpu.length, flownBlocks: +r.flown.toFixed(1), renderScaleAtEnd: r.scale,
     profWorst: { world: +r.prof.world.toFixed(2), tick: +r.prof.tick.toFixed(2), render: +r.prof.render.toFixed(2), sum: +(r.prof.world + r.prof.tick + r.prof.render).toFixed(2) },
     frameCpuMs: sum(r.cpu), simMs: sum(r.sim), intervalMs: sum(r.gap),
     cpuOver16_7: +(r.cpu.filter((v) => v > 1000 / 60).length / r.cpu.length).toFixed(4),

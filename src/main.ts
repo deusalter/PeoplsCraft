@@ -58,7 +58,7 @@ async function boot(): Promise<void> {
   const play = async (w: WorldChoice, quick: boolean): Promise<void> => {
     const inWorker = !quick || q.has('worker'), det = q.has('det');
     // one core is the simulation's when it has a thread of its own
-    const pool = new WorkerPool(Math.max(2, Math.min(6, cores - (inWorker ? 3 : 2))));
+    const pool = new WorkerPool(inWorker ? WorkerPool.soloSize(cores) : Math.max(2, Math.min(6, cores - 2)));
     let session: Session, step: (() => Promise<void> | null) | undefined, sim: Sim | undefined, ask: (src: string, arg: unknown) => Promise<unknown>;
     if (inWorker) {
       const t = new WorkerTransport(new Worker(new URL('./sim-worker.ts', import.meta.url), { type: 'module' }));

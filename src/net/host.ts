@@ -417,7 +417,8 @@ export class SimHost {
       while (now >= this.due && n < CATCH_UP) { this.step(); this.due += STEP_MS; n++; }
       if (now >= this.due) { env.log('warn', `the clock fell ${Math.round(now - this.due)} ms behind: skipped`); this.due = now + STEP_MS; }
     }
-    this.timer = env.setTimer(this.wake, Math.max(1, this.due - env.now()));
+    // a paused clock looks again a step from now rather than spinning on a `due` that no longer moves
+    this.timer = env.setTimer(this.wake, this.paused ? STEP_MS : Math.max(1, this.due - env.now()));
   };
 
   // ---- saving ----

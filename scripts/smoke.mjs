@@ -8,6 +8,7 @@
 //   npm run smoke -- det                 two runs of one script on a &det world agree after each of 20 calls (?loopback: in the page)
 //   npm run smoke -- solofar             a solo world culls nothing by distance, in the page and in the worker
 //   npm run smoke -- twotab              the database upgraded while an old tab holds it, two handles at once, a newer build's database
+//   npm run smoke -- tpfar               step times of the solo worker during far teleports (risk R10)
 //   npm run smoke -- closetab            a solo world closed 4 s and 1 s after a change, then opened again (--r12: the risk's table)
 //   --repeat N                           run N times, stop at the first failure
 //   ?clone                               (or any ?a&b=c) added to the page's query: `npm run smoke -- golden ?clone` runs the
@@ -37,6 +38,7 @@ const SCENARIOS = {
   det: () => import('./det.mjs'),
   solofar: () => import('./solofar.mjs'),
   twotab: () => import('./twotab.mjs'),
+  tpfar: () => import('./tpfar.mjs'),
 };
 
 /** Flatten nested probes to dotted paths so a diff names the exact field. */
