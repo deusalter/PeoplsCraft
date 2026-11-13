@@ -1,6 +1,6 @@
 // Settings (section 6, Settings): a clay slab with four tabs, rows of controls that scroll on the slab, and Done.
 import { GROUND } from '../art/ground';
-import { count, rightX } from '../font/measure';
+import { count, measure, rightX } from '../font/measure';
 import type { KeyEv, Node, Screen, Ui } from '../node';
 import { button } from '../parts/button';
 import { checkbox, slider } from '../parts/controls';
@@ -32,7 +32,11 @@ function valueText(s: Setting): string {
 function rowNodes(v: SettingsView, i: number, s: Setting, y: number, ui: Ui): Node[] {
   const id = `set.${v.tabs[v.tab].key}.${i}`;
   const change = (n: Setting) => v.onChange(v.tab, i, n);
-  const label: Node = { x: 0, y: y + 3, w: 130, h: 10, paint: (g) => { g.text(s.label, 0, 0, 'ink'); } };
+  const label: Node = { x: 0, y: y + 3, w: measure(s.label), h: 10, paint: (g) => { g.text(s.label, 0, 0, 'ink'); } };
+  if (s.tip) {
+    const tip = s.tip;
+    Object.assign(label, { takes: true, tip: () => ({ lines: [{ text: s.label, c: 'salt' }, { text: tip, c: 'root.4' }], delay: 0.4 }) });
+  }
   if (s.kind === 'switch') {
     return [label, checkbox({ id, x: 213, y: y + 2, on: s.on, host: 'clay', onToggle: (on) => { change({ ...s, on }); ui.invalidate(); } })];
   }
