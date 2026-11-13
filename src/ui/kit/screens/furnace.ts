@@ -8,7 +8,7 @@ import { burnGauge, progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
 import { type RowSpec, well } from '../parts/well';
 import { type Stack, gradeColour, stackTip, thing } from '../sample/play-items';
-import { Bench, STILL, overWorld, packBlock, place, stackSlot } from './play/common';
+import { Bench, STILL, ink, overWorld, packBlock, place, stackSlot } from './play/common';
 import { Hand, type Place, store } from './play/hand';
 import type { NamedScreen } from './index';
 
@@ -168,7 +168,7 @@ const BRICK_TONES: Record<string, Colour>[] = [
 /**
  * The bed (F2): a firebox of the furnace's stones, a round arch over a hearth, its slot of remains in the middle and
  * eight coal bricks round the slot that show its heat. Each brick goes from cold stone to ember.lt to ember.hi as the
- * heat passes its sixteenth, the floor's first and the top's last. "Bed" is written over it in ink.
+ * heat passes its sixteenth, the floor's first and the top's last.
  */
 export function bed(x: number, y: number, stones: Stones, heat: number): Node {
   const key: Record<string, Colour> = { K: 'root.0', l: stones[0], f: stones[1], s: stones[2], z: 'root.0', '0': 'root.0', '1': 'root.1' };
@@ -200,25 +200,39 @@ function build(ui: Ui, id: string): Node {
   const burning = f.burn[0] > 0 && !!work;
   const progress = STILL ? f.still : st.started >= 0 && work ? (ui.t - st.started) / work.time : 0;
   const heat = burning || STILL ? (f.burn[1] ? (8 * f.burn[0]) / f.burn[1] : 0) : 0;
+  // Nothing runs while there is work and room but no fire and no fuel, so the slab says why under the arrow.
+  const unfed = !!work && f.burn[0] <= 0 && !h.stores.fuel[0];
   const main: Node[] = [
-    { x: 10, y: 17, w: 30, h: 10, paint: (s) => { s.text('Bed', 0, 0, 'ink'); } },
-    bed(10, 28, f.stones, heat),
-    stackSlot(b, { store: 'bed', i: 0 }, { x: 10 + BED_SLOT, y: 28 + BED_SLOT, ramp: 'stone', locked: f.remains ? { key: f.remains, n: 1 } : null, missing: 'scorched_core', tip: () => (f.remains ? stackTip({ key: f.remains, n: 1 }, 'Built into the bed') : { lines: [{ text: 'An empty hollow', c: 'salt' }, { text: 'Remains bedded here loosen what plain fire cannot', c: 'root.4' }] }) }),
-    stackSlot(b, { store: 'ore', i: 0 }, { x: 70, y: 17, ramp: 'stone', silhouette: 'work', showAccepts: true }),
-    { ...burnGauge({ x: 71, y: 36, f: f.burn[1] ? f.burn[0] / f.burn[1] : 0, ramp: 'stone' }), tip: () => ({ lines: f.burn[0] > 0 ? [{ text: `Fuel for ${clock(f.burn[0])}`, c: 'salt' }] : [{ text: 'No fire', c: 'salt' }, { text: 'Fuel goes in the slot below', c: 'root.4' }] }) },
-    stackSlot(b, { store: 'fuel', i: 0 }, { x: 70, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
-    { ...progressArrow({ x: 96, y: 36, f: burning || STILL ? progress : 0, ramp: 'stone' }), anim: burning && !STILL },
-    stackSlot(b, { store: 'out', i: 0 }, { x: 128, y: 31, ramp: 'stone', large: true }),
+    bed(10, 29, f.stones, heat),
+    stackSlot(b, { store: 'bed', i: 0 }, { x: 10 + BED_SLOT, y: 29 + BED_SLOT, ramp: 'stone', locked: f.remains ? { key: f.remains, n: 1 } : null, missing: 'scorched_core', tip: () => (f.remains ? stackTip({ key: f.remains, n: 1 }, 'Built into the bed') : { lines: [{ text: 'An empty hollow', c: 'salt' }, { text: 'Remains bedded here loosen what plain fire cannot', c: 'root.4' }] }) }),
+    stackSlot(b, { store: 'ore', i: 0 }, { x: 70, y: 19, ramp: 'stone', silhouette: 'work', showAccepts: true }),
+    { ...burnGauge({ x: 71, y: 38, f: f.burn[1] ? f.burn[0] / f.burn[1] : 0, ramp: 'stone' }), tip: () => ({ lines: f.burn[0] > 0 ? [{ text: `Fuel for ${clock(f.burn[0])}`, c: 'salt' }] : [{ text: 'No fire', c: 'salt' }, { text: 'Fuel goes in the slot below', c: 'root.4' }] }) },
+    stackSlot(b, { store: 'fuel', i: 0 }, { x: 70, y: 55, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
+    { ...progressArrow({ x: 96, y: 38, f: burning || STILL ? progress : 0, ramp: 'stone' }), anim: burning && !STILL },
+    stackSlot(b, { store: 'out', i: 0 }, { x: 128, y: 33, ramp: 'stone', large: true }),
+    ...(unfed ? [ink(92, 60, 'Needs fuel', 'ink.faded')] : []),
     ...packBlock(b, 'stone', 73, 84),
   ];
   const works = worksOf(f);
   // A work can be done now when what it is made from is in the ore slot, the pack or the hotbar.
   const held = new Set([...h.stores.ore, ...h.stores.pack, ...h.stores.bar].filter((x): x is Stack => !!x).map((x) => x.key));
+  // The name keeps its grade's colour, as on every list of things; what only this bed can work carries the bed mark,
+  // which the Stone Furnace, whose works every bed can do, never shows.
+  const own = (w: Work) => f.forge > 1 && w.forge === f.forge;
   const rows: RowSpec[] = works.map((w) => ({
     id: `${id}.work.${w.out}`, icon: thing(w.out).icon, name: thing(w.out).name, colour: gradeColour(thing(w.out).grade), disabled: !held.has(w.from),
-    tip: () => ({ ...stackTip({ key: w.out, n: 1 }, 'none'), lines: [...stackTip({ key: w.out, n: 1 }, 'none').lines.slice(0, 2), { text: `From ${thing(w.from).name}`, c: 'salt' }, { text: `${w.time} s to a piece`, c: 'root.4' }] }),
+    ...(own(w) ? { num: '{bed}', numColour: 'root.4' as Colour } : {}),
+    tip: () => ({
+      ...stackTip({ key: w.out, n: 1 }, 'none'),
+      lines: [
+        ...stackTip({ key: w.out, n: 1 }, 'none').lines.slice(0, 2), { text: `From ${thing(w.from).name}`, c: 'salt' }, { text: `${w.time} s to a piece`, c: 'root.4' },
+        ...(own(w) && f.remains ? [{ text: `Only a bed of ${thing(f.remains).name} works it`, c: 'root.4' as Colour }] : []),
+      ],
+    }),
   }));
-  const side: Node[] = [well({ id: `${id}.works`, x: 8, y: 18, w: 100, h: 128, host: 'stone', rows, ui })];
+  // The work under way is the one whose ore lies in the ore slot; it is drawn chosen.
+  const active = work ? works.indexOf(work) : -1;
+  const side: Node[] = [well({ id: `${id}.works`, x: 8, y: 18, w: 100, h: 128, host: 'stone', rows, chosen: active, ui })];
   const win = place(ui, 291, 166);
   return overWorld(ui, win, [
     slab({ x: 0, y: 0, w: 176, h: 166, ramp: 'stone', title: f.name, kids: main }),

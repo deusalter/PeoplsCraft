@@ -371,7 +371,7 @@ In each sheet the first line names the glyph, `#` is ink, and the last line is i
 
 **Marks.** The macron is 3 units wide on row 0 for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
 
-**Symbols.** 16 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
+**Symbols.** 17 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
 
 ```
 tofu   lees     check    cross  right  left   up     down   step  shield   lmb      rmb      mmb      
@@ -387,18 +387,18 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 .....  .......  .......  .....  .....  .....  .....  .....  ...   .......  .......  .......  .......
 5      7        7        5      5      5      5      5      3     7        7        7        7
 
-muda     back     cairn
-.......  .......  .......
-.#####.  ..#....  ...##..
-##...##  .##....  ..###..
-#..#..#  #######  .......
-#.###.#  .##...#  .#####.
-#..#..#  ..#...#  .......
-##...##  ......#  #######
-.#####.  ..#####  #######
-.......  .......  .......
-.......  .......  .......
-7        7        7
+muda     back     cairn    bed
+.......  .......  .......  .......
+.#####.  ..#....  ...##..  ..###..
+##...##  .##....  ..###..  .#...#.
+#..#..#  #######  .......  #.....#
+#.###.#  .##...#  .#####.  #..#..#
+#..#..#  ..#...#  .......  #.###.#
+##...##  ......#  #######  #.###.#
+.#####.  ..#####  #######  #######
+.......  .......  .......  .......
+.......  .......  .......  .......
+7        7        7        7
 
 ```
 
@@ -420,8 +420,9 @@ muda     back     cairn
 | `{muda}` | 7 |
 | `{back}` | 7 |
 | `{cairn}` | 7 |
+| `{bed}` | 7 |
 
-`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence.
+`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{bed}` is a fire under an arch: in a furnace's list of works it stands at the right of each work that only that furnace's bed can do. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence.
 
 **Shadow.** Text on a dark plate, on the ground tile, on a button or on the world has a shadow: the same glyphs one unit right and one unit down in `root.0`, drawn first. Text on a light face (a slab, a page, a key cap) has none. The shadow is always `root.0` and never a darker copy of the text's colour, so that the palette stays closed.
 
@@ -2592,19 +2593,20 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | F0 | slab | 0 | 0 | 176 | 166 | stone slab |
 | F1 | text | 8 | 6 | 120 | 10 | "Stone Furnace", "Maruhar Furnace", "Guhamāt Furnace", "Ratan Furnace" or "Kuranga Furnace" |
-| F2 | bed | 10 | 28 | 34 | 34 | the bed, captioned "Bed" in ink with its cell at 10, 17: a firebox in the furnace's stones. A round arch two units deep (outline root.0; outer row the stones' light tone where it faces up or left and their shaded tone where it faces down or right; inner row their face) springs from two jambs at half height and stands on a sill two units deep; joints of root.0 cut it into voussoirs at 20, 50, 80, 100, 130 and 160 degrees, the keystone between 80 and 100, and the jambs and sill into blocks. Inside, a hearth of root.1 with root.0 in the arch's shadow along its top and left. A locked slot 18 square at 18, 36 holds the remains built in, or, empty, their silhouette (5.4). Round it eight coal bricks 4 square, three on the floor under the slot, two up each jamb and one under the keystone, each lit from the top left (highlight along its top and left, shade along its bottom and right). They show the bed's heat: each passes from cold (stone.sh, highlight stone.face) to ember.lt (highlight ember.hi) to ember.hi (highlight salt) as the heat passes its sixteenths, the floor's middle first and the top last, as fire climbs. The bed's tooltip: "Bed lit, 5 of 8" and "It heats while the fire burns" in `root.4`, or "Bed cold". Eight lamps in a square ring read as a loading ring, not as a fire |
-| F3 | slots | 70 | 17 | 18 | 18 | what is to be worked, lump silhouette |
-| F4 | flame | 71 | 36 | 13 | 15 | burn gauge: the fuel left, emptying downward |
-| F5 | slots | 70 | 53 | 18 | 18 | fuel, flame silhouette |
-| F6 | arrow | 96 | 36 | 22 | 15 | progress arrow, filling unit by unit |
-| F7 | bigslot | 128 | 31 | 26 | 26 | what comes out |
+| F2 | bed | 10 | 29 | 34 | 34 | the bed, uncaptioned, centred on the column of ore, flame and fuel: a firebox in the furnace's stones. A round arch two units deep (outline root.0; outer row the stones' light tone where it faces up or left and their shaded tone where it faces down or right; inner row their face) springs from two jambs at half height and stands on a sill two units deep; joints of root.0 cut it into voussoirs at 20, 50, 80, 100, 130 and 160 degrees, the keystone between 80 and 100, and the jambs and sill into blocks. Inside, a hearth of root.1 with root.0 in the arch's shadow along its top and left. A locked slot 18 square at 18, 37 holds the remains built in, or, empty, their silhouette (5.4). Round it eight coal bricks 4 square, three on the floor under the slot, two up each jamb and one under the keystone, each lit from the top left (highlight along its top and left, shade along its bottom and right). They show the bed's heat: each passes from cold (stone.sh, highlight stone.face) to ember.lt (highlight ember.hi) to ember.hi (highlight salt) as the heat passes its sixteenths, the floor's middle first and the top last, as fire climbs. The bed's tooltip: "Bed lit, 5 of 8" and "It heats while the fire burns" in `root.4`, or "Bed cold". Eight lamps in a square ring read as a loading ring, not as a fire. A caption "Bed" over it sat a unit under the title and read as a second title; the arch says what it is and the tooltip names it |
+| F3 | slots | 70 | 19 | 18 | 18 | what is to be worked, lump silhouette |
+| F4 | flame | 71 | 38 | 13 | 15 | burn gauge: the fuel left, emptying downward |
+| F5 | slots | 70 | 55 | 18 | 18 | fuel, flame silhouette |
+| F6 | arrow | 96 | 38 | 22 | 15 | progress arrow, filling unit by unit |
+| F6b | text | 92 | 60 | 60 | 10 | "Needs fuel" in `ink.faded`, beside the fuel slot and under the arrow, while there is ore to work and room for it but no fire and no fuel; nothing else on the slab says why nothing happens |
+| F7 | bigslot | 128 | 33 | 26 | 26 | what comes out |
 | F8 | text | 8 | 73 | 40 | 10 | "Pack" |
 | F9 | button | 138 | 70 | 30 | 12 | "Sort" |
 | F10 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | F11 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | L0 | slab | 175 | 0 | 116 | 166 | side panel, fastened right |
 | L1 | text | 183 | 6 | 80 | 10 | "Works" |
-| L2 | well | 183 | 18 | 100 | 128 | dark well of list rows 18 tall: icon and name of each thing this bed loosens or this fire sets; seven show, the rest scroll. A row whose ore is in neither the ore slot, the pack nor the hotbar cannot be worked now and is drawn as a row that cannot be used (5.8): its icon flat in root.4, its name in root.4 |
+| L2 | well | 183 | 18 | 100 | 128 | dark well of list rows 18 tall: icon and name of each thing this bed loosens or this fire sets; seven show, the rest scroll. A row whose ore is in neither the ore slot, the pack nor the hotbar cannot be worked now and is drawn as a row that cannot be used (5.8): its icon flat in root.4, its name in root.4. The work under way, the one whose ore lies in the ore slot, is the chosen row (5.8). A name keeps its grade's colour, as on every list of things. A work that only this furnace's bed can do carries `{bed}` in `root.4` right-aligned 3 from the row's end, and its tooltip adds "Only a bed of Kuranga Remains works it" in `root.4`; the Stone Furnace, whose works every bed can do, shows no mark. The column of ore, flame and fuel starts at y 19 so that a long title ("Kuranga Furnace") stands 5 clear of the ore slot |
 
 The fuel left is not written on the slab: the flame empties as it burns, and its tooltip says "Fuel for 0:52", or "No fire" and "Fuel goes in the slot below" in `root.4`. A bare time in the panel's corner was cut off from what it timed.
 
