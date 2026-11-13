@@ -9,6 +9,7 @@ import type { Colour } from '../palette';
 import { button } from '../parts/button';
 import { chat, nameTag } from '../parts/plates';
 import { since } from './play/common';
+import { seat } from '../sample/crew';
 import type { NamedScreen } from './index';
 
 /** `lie` is where the shed lees lie and `at` where the body fell, as the compass's place line writes them. */
@@ -51,13 +52,13 @@ function build(ui: Ui, id: string): Node {
   if (f.server) {
     const sw = ui.layout.stage;
     over.push(
-      nameTag({ cx: sw.x + Math.floor(sw.w * 0.14), y: 112, name: 'kiln_rat', seat: 2, life: 0.8 }),
-      nameTag({ cx: sw.x + Math.floor(sw.w * 0.84), y: 96, name: 'Ishaan', seat: 3, life: 0.35 }),
+      nameTag({ cx: sw.x + Math.floor(sw.w * 0.14), y: 112, name: seat(2).name, seat: 2, life: seat(2).life }),
+      nameTag({ cx: sw.x + Math.floor(sw.w * 0.84), y: 96, name: seat(3).name, seat: 3, life: seat(3).life }),
       chat({
         x: sw.x + 4, bottom: sw.y + 226, lines: [
-          { text: 'tovah fell to a Tama' },
-          { seat: 2, from: 'kiln_rat', text: 'coming down' },
-          { seat: 3, from: 'Ishaan', text: 'lees by the torch' },
+          { text: `${seat(1).name} fell to a Tama` },
+          { seat: 2, from: seat(2).name, text: 'coming down' },
+          { seat: 3, from: seat(3).name, text: 'lees by the torch' },
         ],
       }),
     );

@@ -3318,7 +3318,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | O5 | field | 113 | 104 | 200 | 20 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
 | O6 | text | 113 | 148 | 200 | 10 | "Password, if it has one", salt with shadow |
 | O7 | field | 113 | 158 | 200 | 20 | drawn as one 3 by 3 dot to a character |
-| O8 | strip | 113 | 71 | 200 | 12 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b, 1 under the field), on a strip 12 tall sunk in the ground tile with the edges of a well, the text's cell at 4, 1 with its shadow and clipped to the strip's floor, so that the line is read off a dark floor and not off the courses: a refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 3 of 8 here" in root.4, "The server is full" in blood.lt) under the address. The strip is drawn only while there is an answer. Nothing moves when an answer comes |
+| O8 | strip | 113 | 71 | 200 | 12 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b, 1 under the field), on a strip 12 tall sunk in the ground tile with the edges of a well, the text's cell at 4, 1 with its shadow and clipped to the strip's floor, so that the line is read off a dark floor and not off the courses: a refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 7 of 8 here" in root.4, "The server is full" in blood.lt) under the address. The strip is drawn only while there is an answer. Nothing moves when an answer comes |
 | O9 | button | 113 | 194 | 200 | 20 | "Join"; disabled until address and name are valid. After "The server is full" it reads "Try again in 5" and stands disabled, counting each second down, then "Try again" |
 | O10 | button | 113 | 218 | 200 | 20 | "Back" |
 
@@ -3553,7 +3553,7 @@ Size 427 by 240. Material: the world under a flat wash of blood.pit at three qua
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| D1 | raised | 175 | 56 | 78 | 22 | "You fell" in raised letters (5.28), centred on the column, with a flat `root.0` copy of the whole drawing 2 right and 2 down under it, as a shadow at the letters' own block of 2. "Fell" is this ground's word for a death wherever it is said (chat's "tovah fell to a Tama", the compass's mark of where one fell), so the headline keeps it and does not switch to "died" |
+| D1 | raised | 175 | 56 | 78 | 22 | "You fell" in raised letters (5.28), centred on the column, with a flat `root.0` copy of the whole drawing 2 right and 2 down under it, as a shadow at the letters' own block of 2. "Fell" is this ground's word for a death wherever it is said (chat's "Rook fell to a Tama", the compass's mark of where one fell), so the headline keeps it and does not switch to "died" |
 | D2 | text | 113 | 86 | 200 | 10 | what did it, centred, salt with shadow: "to a Tama", "from a height", "to hunger" |
 | D3 | text | 113 | 98 | 200 | 10 | what was shed, centred, salt with shadow: the jar mark and "14 shed in the wood"; left out when nothing was |
 | D3b | text | 113 | 110 | 200 | 10 | where the shed lees lie, centred, in arm.lt with shadow as a place to go: "Lees lie at x -104  z 2210"; when nothing was shed, in its place, where the body fell in `root.4`: "At x 312  z -88" |
@@ -3899,5 +3899,7 @@ Taken where the direction is silent, in its spirit. Builders may rely on them.
 **The tree** pans no further than its farthest node and a margin of 8. On the tree screen the crew's side tabs start 14 down, clear of the first job's tab.
 
 **Pictures of the books** (creatures, the eight, sites, peoples, old things, the bed and the mouth) were drawn as masks of materials and shaded by the rule for raised shapes: a unit whose neighbour above or to the left is not of its material takes the material's light tone, one whose neighbour below or to the right is not takes its dark tone, the rest its face, and every empty unit beside the shape is `root.0`. Only the shaded rows are kept in the kit.
+
+**One sample crew.** Every mock screen that shows a player takes them from one crew of eight in `sample/crew.ts`, on the server Spark: the same handles, seats, levels and places on the HUD, the roster, chat, the fall, the pack, the journal, the map and the join screen, so that a check of one name can be followed from screen to screen. The handles keep the join screen's rule (one to sixteen of A to Z, a to z, 0 to 9, space, _ and -), so the longest is sixteen and none carries a macron; a longer one could not be typed. One of the eight is away, for the screens that show it.
 
 **Moving samples** (the loading channel, the Recall Stone's cooling) hold still for their first three seconds, so that a shot taken as the page opens is the frame the grid check models.

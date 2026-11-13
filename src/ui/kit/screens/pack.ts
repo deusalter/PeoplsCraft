@@ -18,6 +18,7 @@ import { Bench, cutLine, ink, inkRight, overWorld, place, small, stackGrid } fro
 import { BARE, FIGURE_SIZE, type Part, type Tones, figure, floor } from './play/figure';
 import { Hand, type Place, store } from './play/hand';
 import { type Grid, type PanelState, RECIPE_W, gridMatch, recipeControls, recipePanel, resultSlot } from './play/making';
+import { seat } from '../sample/crew';
 import { type NamedScreen, SCREEN_FILES } from './index';
 
 const WEAR_SLOTS: Part[] = ['head', 'body', 'legs'];
@@ -84,7 +85,7 @@ function sample(kind: 'mid' | 'empty' | 'full'): PackState {
   return {
     hand, grid, bench: null,
     panel: { search: '', canMake: false, tab: 0 },
-    name: kind === 'empty' ? 'tovah' : 'Ānanya_Kīrtimālā_Sūryavansh',
+    name: seat(1).name,
     level: kind === 'empty' ? 1 : 14,
     practice: kind === 'empty' ? [0, 40] : [320, 900],
     attrs: kind === 'empty' ? [0, 0, 0, 0] : [6, 3, 5, 2],

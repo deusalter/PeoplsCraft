@@ -17,4 +17,4 @@ function build(ui: Ui): Node {
   };
 }
 
-export const SCREENS: NamedScreen[] = [{ name: 'roster', title: 'Roster, eight players', world: true, build }];
+export const SCREENS: NamedScreen[] = [{ name: 'roster', title: 'Roster, the crew who are here', world: true, build }];

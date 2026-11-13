@@ -9,6 +9,7 @@ import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
 import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
+import { CREW, SERVER, seat, strides } from '../../sample/crew';
 import { type Stack, stackGrade, stackName, thing } from '../../sample/play-items';
 
 /** The pick each ore of the sample needs, and the picks in the order of what they break. */
@@ -26,27 +27,20 @@ function oreLine(ore: string, held: string | null): { line: string; refusal: boo
 }
 import { STILL } from './common';
 
-/** Everyone on the sample server: seat 1 is the one who plays. */
-export const PLAYERS: Member[] = [
-  { seat: 1, name: 'Ānanya_Kīrtimālā_Sūryavansh', life: 0.84, place: 'Vana', level: 14, bars: 3 },
-  { seat: 2, name: 'kiln_rat', life: 1, place: 'Vana', level: 12, metres: 18, bars: 3 },
-  { seat: 3, name: 'Ishaan', life: 0.35, place: 'Vana', level: 15, metres: 42, bars: 2 },
-  { seat: 4, name: 'Pallavi', life: 0.92, place: 'Fungus Caverns', level: 9, bars: 3 },
-  { seat: 5, name: 'nightjar', life: 0.6, place: 'Pabbat', level: 21, metres: 1240, bars: 1 },
-  { seat: 6, name: 'brakeless', life: 0, place: 'Village', level: 7, metres: 386, bars: 3 },
-  { seat: 7, name: 'Ūrmilā', life: 1, place: 'Crystal Islands', level: 30, bars: 2 },
-  { seat: 8, name: 'mossback_the_unhurried_one', life: 0.71, place: 'Marudesha', level: 3, metres: 2210, bars: 0 },
-];
+/** Everyone on the sample server who is here, from the one sample crew: seat 1 is the one who plays. */
+export const PLAYERS: Member[] = CREW.filter((m) => m.online).map((m) => ({
+  seat: m.seat, name: m.name, life: m.life, place: m.place, level: m.level, metres: strides(m), bars: m.bars,
+}));
 
-export const SERVER = 'The hearth on the Pabbat road';
+export { SERVER };
 
 export const CHAT: ChatLine[] = [
   { text: 'The bell is rung, and something pale comes up.' },
-  { seat: 2, from: 'kiln_rat', text: 'on the north wall' },
-  { seat: 3, from: 'Ishaan', text: 'anyone got a salve' },
+  { seat: 2, from: seat(2).name, text: 'on the north wall' },
+  { seat: 3, from: seat(3).name, text: 'anyone got a salve' },
   { text: 'It turns, throwing pale matter in spirals.' },
-  { seat: 7, from: 'Ūrmilā', text: 'keep it off the brazier side, the floor there is cracked and I am not going down that hole again tonight' },
-  { seat: 6, from: 'brakeless', text: 'coming from the Village with arrows' },
+  { seat: 8, from: seat(8).name, text: 'keep it off the brazier side, the floor there is cracked and I am not going down that hole again tonight' },
+  { seat: 6, from: seat(6).name, text: 'coming from the Yavas with arrows' },
 ];
 
 export interface HudOpts {
@@ -223,8 +217,8 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   }));
 
   if (o.world && !first) {
-    out.push(nameTag({ cx: L(cx + 34), y: 150, name: 'kiln_rat', seat: 2, life: 1 }));
-    out.push(nameTag({ cx: L(cx + 84), y: 162, name: 'Ishaan', seat: 3, life: 0.35 }));
+    out.push(nameTag({ cx: L(cx + 34), y: 150, name: seat(2).name, seat: 2, life: seat(2).life }));
+    out.push(nameTag({ cx: L(cx + 84), y: 162, name: seat(3).name, seat: 3, life: seat(3).life }));
     out.push(nameTag({ cx: L(cx + 62), y: 128, name: 'Kammār' }));
     out.push(ping({ cx: L(cx + 24), y: 104, seat: 2, metres: 18 }));
   }

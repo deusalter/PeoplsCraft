@@ -9,6 +9,7 @@ import { field } from '../parts/controls';
 import { FORM, formButtonsY, formTitle, groundMenu, line } from '../parts/menu';
 import { ANSWERS, type ServerAnswer } from '../sample/menus';
 import { firstFieldFocus, go } from './books-common';
+import { CREW, seat } from '../sample/crew';
 import type { NamedScreen } from './index';
 
 export interface JoinView {
@@ -98,8 +99,8 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
   return groundMenu(ui, 'join', kids, { on: { key: (e) => { if (e.key === 'Escape') { v.onBack(); return true; } } } });
 };
 
-// The sample server is called Spark and has three of its eight seats taken; these names are already there.
-const TAKEN = ['Kammar', 'Desik', 'Vejja'];
+// The sample server is the crew's: the names of those who are here are taken.
+const TAKEN = CREW.filter((m) => m.online).map((m) => m.name);
 const PASSWORD = 'yavas';
 
 function sample(name: string, init: Pick<JoinView, 'address' | 'name' | 'password' | 'answer' | 'retryAt'>): NamedScreen {
@@ -128,7 +129,7 @@ function sample(name: string, init: Pick<JoinView, 'address' | 'name' | 'passwor
 
 export const SCREENS: NamedScreen[] = [
   sample('join', { address: 'spark.local:8420', name: '', password: '', answer: ANSWERS.here }),
-  sample('join-taken', { address: 'spark.local:8420', name: 'Desik', password: '', answer: ANSWERS.taken }),
+  sample('join-taken', { address: 'spark.local:8420', name: seat(2).name, password: '', answer: ANSWERS.taken }),
   // The answer came as the page opened; the wait is held whole for the first three seconds, as moving samples are.
   sample('join-full', { address: 'spark.local:8420', name: 'Posak-of-Vana', password: 'yavas', answer: ANSWERS.full, retryAt: 3 + RETRY_WAIT }),
 ];

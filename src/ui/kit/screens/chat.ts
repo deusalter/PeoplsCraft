@@ -7,6 +7,7 @@ import type { Node, Ui } from '../node';
 import { type ChatLine, chat } from '../parts/plates';
 import { STILL } from './play/common';
 import { CHAT, PLAYERS, chatBottom, chatWrap, hud } from './play/hud';
+import { SERVER, seat } from '../sample/crew';
 import type { NamedScreen } from './index';
 
 const ENTRY = 'chat.entry';
@@ -14,8 +15,8 @@ const ENTRY = 'chat.entry';
 interface State { lines: ChatLine[]; entry: string; sent: string[]; walk: number; back: number; focused: boolean; open: boolean }
 const st: State = {
   lines: [
-    { text: 'kiln_rat joined the hearth on the Pabbat road' },
-    { seat: 5, from: 'nightjar', text: 'found a Sealed Store under the Pabbat, two rooms are nests' },
+    { text: `${seat(5).name} joined ${SERVER}` },
+    { seat: 4, from: seat(4).name, text: 'found a Sealed Store under the Pabbat, two rooms are nests' },
     ...CHAT,
   ],
   entry: 'heading down now, bring torches',

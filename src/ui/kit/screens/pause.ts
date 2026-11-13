@@ -5,6 +5,7 @@ import { button } from '../parts/button';
 import { line, washedMenu } from '../parts/menu';
 import { slab } from '../parts/slab';
 import { firstFocus, go } from './books-common';
+import { HERE, SERVER } from '../sample/crew';
 import type { NamedScreen } from './index';
 
 export interface PauseView {
@@ -47,6 +48,6 @@ const view = (o: Pick<PauseView, 'world' | 'server' | 'saved' | 'crew'>): PauseV
 
 export const SCREENS: NamedScreen[] = [
   { name: 'pause', title: 'Pause', world: true, build: (ui) => pauseScreen(view({ world: 'Hearth on the Yavas', server: false, saved: { text: 'Saved', ok: true } }), ui) },
-  { name: 'pause-server', title: 'Pause, on a server', world: true, build: (ui) => pauseScreen(view({ world: 'Spark', server: true, crew: { address: 'spark.local:8420', here: 8, seats: 8 } }), ui) },
+  { name: 'pause-server', title: 'Pause, on a server', world: true, build: (ui) => pauseScreen(view({ world: SERVER, server: true, crew: { address: 'spark.local:8420', here: HERE, seats: 8 } }), ui) },
   { name: 'pause-unsaved', title: 'Pause, not saved', world: true, build: (ui) => pauseScreen(view({ world: 'Tusāravan pines under Sānu', server: false, saved: { text: 'Not saved: the browser is out of room', ok: false } }), ui) },
 ];

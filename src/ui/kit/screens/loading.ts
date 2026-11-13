@@ -9,6 +9,7 @@ import { titleMark } from '../parts/keycap';
 import { groundMenu, line } from '../parts/menu';
 import { LOADING_STEPS } from '../sample/menus';
 import { go } from './books-common';
+import { HERE } from '../sample/crew';
 import type { NamedScreen } from './index';
 
 export interface LoadingView {
@@ -81,5 +82,5 @@ const view = (here?: string): LoadingView => ({
 
 export const SCREENS: NamedScreen[] = [
   { name: 'loading', title: 'Loading', world: false, build: (ui) => loadingScreen(view(), ui) },
-  { name: 'loading-server', title: 'Loading, joining a server', world: false, build: (ui) => loadingScreen(view('3 of 8 here'), ui) },
+  { name: 'loading-server', title: 'Loading, joining a server', world: false, build: (ui) => loadingScreen(view(`${HERE} of 8 here`), ui) },
 ];

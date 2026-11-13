@@ -1,4 +1,5 @@
 // Sample data for the full-screen menus: the build, the worlds saved in this browser, what servers answer.
+import { HERE, SERVER } from './crew';
 
 export const BUILD = '0.1.0';
 
@@ -30,7 +31,7 @@ export interface ServerAnswer {
 
 /** What a server can say to a join, plainly. */
 export const ANSWERS: Record<string, ServerAnswer> = {
-  here: { ok: true, text: 'Spark, 3 of 8 here' },
+  here: { ok: true, text: `${SERVER}, ${HERE} of 8 here` },
   taken: { ok: false, text: 'That name is taken', field: 'name' },
   password: { ok: false, text: 'Wrong password', field: 'password' },
   full: { ok: false, text: 'The server is full' },
