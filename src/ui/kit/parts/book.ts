@@ -2,9 +2,9 @@ import { PAGE_ARROW, PAGE_ARROW_LEFT } from '../art/book';
 import { SMALL } from '../font/face';
 import { centreX } from '../font/measure';
 import type { Live, Node } from '../node';
-import type { Colour } from '../palette';
+import { type Colour, SEATS } from '../palette';
 import type { Surface } from '../surface';
-import { type Force, lv } from './common';
+import { type Force, lv, ring } from './common';
 
 export const BOOK_W = 292;
 export const BOOK_H = 180;
@@ -104,3 +104,23 @@ export function pageHeading(o: { x: number; y: number; w: number; text: string }
     paint: (s) => { s.text(o.text, 0, 0, 'ink'); s.fill(0, 11, o.w, 1, 'clay.sh'); },
   };
 }
+
+/**
+ * A row of a list written on a page: hovered, its floor is `clay.face`; chosen, `clay.sh`. It is chosen on the press,
+ * and Up and Down move the choice when it has the focus.
+ */
+export function pageRow(o: { id: string; x: number; y: number; w: number; h: number; chosen: boolean; onChoose: () => void; paint: (s: Surface, live: Live) => void }): Node {
+  return {
+    id: o.id, x: o.x, y: o.y, w: o.w, h: o.h, takes: true, focus: true,
+    on: { down: o.onChoose },
+    paint: (s, live) => {
+      if (o.chosen) s.fill(0, 0, o.w, o.h, 'clay.sh');
+      else if (live.hover) s.fill(0, 0, o.w, o.h, 'clay.face');
+      if (live.focus) ring(s, 0, 0, o.w, o.h, 'salt');
+      o.paint(s, live);
+    },
+  };
+}
+
+/** A player's colour on a light face: a flag 2 by 7 beside their name in ink. */
+export function flag(s: Surface, seat: number, x: number, y: number): void { s.fill(x, y, 2, 7, SEATS[seat - 1]); }

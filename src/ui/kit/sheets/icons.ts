@@ -16,7 +16,8 @@ const NAMES: Record<string, string> = {
 
 const TAB_NAMES: Record<string, string> = {
   pack: 'Pack', body: 'Body', patterns: 'Patterns', guide: 'The Guide', bounty: 'Bounties',
-  standing: 'Standing', codex: 'Codex', map: 'Map', skills: 'Skills',
+  standing: 'Standing', codex: 'Codex', map: 'Map', skills: 'Skills', picture: 'Picture', play: 'Play', sound: 'Sound',
+  interface: 'Interface',
 };
 
 export const iconsSheet: Sheet = {
@@ -39,9 +40,9 @@ export const iconsSheet: Sheet = {
     // Tab marks, for tabs and ribbons that open a page.
     const tabs = Object.keys(TAB_MARKS);
     kids.push(slab({
-      x: 0, y: 147, w: 302, h: 84, ramp: 'stone', title: 'Marks of tabs that open a page',
+      x: 0, y: 147, w: 302, h: 18 + Math.ceil(tabs.length / 4) * 20 + 4, ramp: 'stone', title: 'Marks of tabs that open a page',
       kids: tabs.map((t, i): Node => ({
-        x: 8 + (i % 3) * 98, y: 18 + Math.floor(i / 3) * 20, w: 96, h: 18,
+        x: 8 + (i % 4) * 72, y: 18 + Math.floor(i / 4) * 20, w: 70, h: 18,
         kids: [slot({ id: `tm.${t}`, x: 0, y: 0, ramp: 'stone', stack: { icon: t, n: 1 } }), ink(22, 5, TAB_NAMES[t] ?? t)],
       })),
     }));

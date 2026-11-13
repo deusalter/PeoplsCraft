@@ -1,4 +1,5 @@
 import { bookSheet } from './book';
+import { booksSheet } from './books';
 import type { Sheet } from './common';
 import { controlsSheet } from './controls';
 import { gaugesSheet } from './gauges';
@@ -16,4 +17,5 @@ export const SHEETS: Record<string, Sheet> = {
   'parts-plates': platesSheet,
   'parts-book': bookSheet,
   'parts-icons': iconsSheet,
+  'parts-books': booksSheet,
 };
