@@ -21,7 +21,8 @@ export interface Entry {
   steps: Steps | string[];
 }
 
-export interface Spread { heading: string; entries: Entry[] }
+/** A spread of the codex: its heading, two lines said under its grid, and its entries. */
+export interface Spread { heading: string; blurb: string; entries: Entry[] }
 export interface Section { key: string; name: string; spreads: Spread[] }
 
 const hearth = (meaning: string) => `Householders: ${meaning}`;
@@ -106,9 +107,9 @@ const OLD: Entry[] = [
 ];
 
 export const CODEX: Section[] = [
-  { key: 'creatures', name: 'Creatures', spreads: [{ heading: 'Kinds of the ground', entries: KINDS }, { heading: 'The eight', entries: EIGHT }] },
-  { key: 'matter', name: 'Matter', spreads: [{ heading: 'Matter', entries: MATTER }] },
-  { key: 'places', name: 'Places', spreads: [{ heading: 'Places', entries: PLACES }] },
-  { key: 'peoples', name: 'Peoples', spreads: [{ heading: 'Peoples', entries: PEOPLES }] },
-  { key: 'old', name: 'Old things', spreads: [{ heading: 'Old things', entries: OLD }] },
+  { key: 'creatures', name: 'Creatures', spreads: [{ heading: 'Kinds of the ground', blurb: 'What lives up here, filled in as met.', entries: KINDS }, { heading: 'The eight', blurb: 'The strongest, each at its own altar.', entries: EIGHT }] },
+  { key: 'matter', name: 'Matter', spreads: [{ heading: 'Matter', blurb: 'What the crew has had in hand.', entries: MATTER }] },
+  { key: 'places', name: 'Places', spreads: [{ heading: 'Places', blurb: 'Where the crew has stood.', entries: PLACES }] },
+  { key: 'peoples', name: 'Peoples', spreads: [{ heading: 'Peoples', blurb: 'Who holds ground here besides feeders.', entries: PEOPLES }] },
+  { key: 'old', name: 'Old things', spreads: [{ heading: 'Old things', blurb: 'What the builders left under their hearths.', entries: OLD }] },
 ];

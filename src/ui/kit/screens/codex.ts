@@ -117,7 +117,9 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
   const entries = sp.entries.slice(0, CELLS);
   firstFocus(ui, 'codex', null);
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: sp.heading })];
-  for (let i = 0; i < CELLS; i++) {
+  // Only the rows the spread fills are drawn, so a short chapter is a short grid with its two lines under it.
+  const rows = Math.max(1, Math.ceil(entries.length / COLS));
+  for (let i = 0; i < rows * COLS; i++) {
     const e = entries[i];
     left.push({
       id: e ? `cx.entry.${i}` : undefined, x: (i % COLS) * 18, y: 14 + Math.floor(i / COLS) * 18, w: 18, h: 18,
@@ -127,6 +129,8 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
       paint: (s, live) => paintEntry(s, e, live, i === v.chosen),
     });
   }
+  const blurb = box(sp.blurb, PW, 2);
+  left.push({ x: 0, y: 14 + rows * 18 + 4, w: PW, h: blurb.h, paint: (s) => { for (const l of blurb.lines) s.text(l.text, 0, l.y, 'ink'); } });
   // Page numbers run on through the sections' spreads.
   let before = 0;
   for (let k = 0; k < v.section; k++) before += v.sections[k].spreads.length;
