@@ -1,4 +1,4 @@
-import { GROUND } from '../art/ground';
+import { PLANKS } from '../art/ground';
 import { NODE_FRAMES, type NodeShape, type NodeState } from '../art/tree';
 import { SMALL } from '../font/face';
 import { centreX, measure } from '../font/measure';
@@ -101,7 +101,7 @@ export function tree(o: TreeOpts): Node {
       },
     },
     paint: (s) => {
-      s.tile(GROUND, 0, 0, fw, fh, px, py);
+      s.tile(PLANKS, 0, 0, fw, fh, px, py);
       s.translate(ox, oy);
       const links = o.links.map(([a, b]) => ({ a: byId.get(a)!, b: byId.get(b)! })).filter((l) => l.a && l.b);
       for (const l of links) run(s, path(l.a, l.b), 1, 'root.0');
