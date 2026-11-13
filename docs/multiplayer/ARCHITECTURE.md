@@ -3811,6 +3811,22 @@ a `ready` for the current `tp` for `LOAD_CLOSE` (120 s, in `protocol.ts`), and p
 It is counted in host steps from the step the wait was first seen, since moves sent while loading refresh
 `lastMoveTick` and are then dropped (4.5 step 1). A client that has said `ready` and waits for the host's own sim
 chunks is not counted. `idle` stays a code the client retries on, so a slow client that is closed starts again.
+(c) A damaged region could stop the storage queue for good (8.1, 3.6). A `loadChunk` that found a bad CRC queued the
+repair behind the queue while its unfinished read stayed the region's pending read; a commit already running in the
+queue that reached the same region waited on that read, and the repair waited on the commit. Every later commit and
+backup, and the save on `SIGTERM`, hung behind them. A pending read in `diskstorage.ts` now only reads and decodes and
+never waits for the queue; a caller that finds the file bad repairs it itself when it runs in the queue (a commit) and
+otherwise queues the repair. A queued repair reads the file again first, since a commit may have written a good one
+while it waited.
+(d) A repaired region could lose the backup copy it was given (8.1). The bad file was renamed aside first, and the
+backup copy was written back only when the repair was not made inside a commit and the write succeeded; otherwise
+the copy lived only in memory, and once a stop, a failed commit followed by a stop, or the 5 minute sweep took it from
+there, the region had no file and read as unedited. The next commit then wrote it from nothing, and its chest and
+items were gone. A region with a bad CRC or magic is now copied to `.bad-<stamp>` rather than renamed, and the backup
+copy is always written over it with a rename, so the file is never missing: until that write succeeds the bad file
+stays in place and the next read repairs it again from the backup. A region that no backup holds is still renamed
+aside, since counting as unedited is then the result. This departs from the "Rename it" of the 8.1 table in that one
+way, which leaves the same files behind when nothing fails.
 
 ---
 

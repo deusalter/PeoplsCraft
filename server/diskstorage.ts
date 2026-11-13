@@ -1,6 +1,6 @@
 // The server's Storage (8.1): one folder, JSON for the world and each player, region files for chunk edits,
 // a journal that makes each commit whole, rolling backups, and what to do with every file that does not read.
-import { mkdir, readFile, readdir, rename, unlink } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, readdir, rename, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { type Batch, type ChunkRecord, type PlayerRecord, type Storage, StorageError, type WorldRecord } from '../src/sim/storage';
 import {
@@ -58,7 +58,9 @@ export class DiskStorage implements Storage {
   /** Regions that have a file, as listed at `open` and added to by commits. */
   private readonly listed = new Set<string>();
   private readonly regions = new Map<string, Region>();
-  private readonly loading = new Map<string, Promise<Region>>();
+  /** Reads of region files under way. A read only reads and decodes: it never waits for the queue, so a commit, which
+   *  is the queue, can wait for one. */
+  private readonly loading = new Map<string, Promise<Map<number, ChunkRecord> | { bad: string }>>();
   /** Player ids whose file a commit wrote since a repair of that file was asked for. */
   private readonly written = new Set<string>();
   private backedUp = false;
@@ -259,60 +261,69 @@ export class DiskStorage implements Storage {
     const c = r.chunks.get(localKey(cx, cz));
     return c ? copyChunk(c) : null;
   }
-  /** A region from memory or its file. `queued`: the caller already runs in the queue, which a repair needs. */
+  /** A region from memory or its file. `queued`: the caller already runs in the queue, where a repair runs. */
   private region(dim: number, rx: number, rz: number, queued: boolean): Promise<Region> {
     const k = regionKey(dim, rx, rz), have = this.regions.get(k);
     if (have) return Promise.resolve(have);
-    const pending = this.loading.get(k);
-    if (pending) return pending;
-    const p = this.readRegion(dim, rx, rz, queued).finally(() => this.loading.delete(k));
-    this.loading.set(k, p);
-    return p;
+    let read = this.loading.get(k);
+    if (!read) {
+      read = this.readRegion(dim, rx, rz).finally(() => this.loading.delete(k));
+      this.loading.set(k, read);
+    }
+    return read.then(async (got) => {
+      if (got instanceof Map) return this.keep(dim, rx, rz, got);
+      const fix = (): Promise<Map<number, ChunkRecord>> => this.repairRegion(dim, rx, rz, got.bad);
+      return this.keep(dim, rx, rz, await (queued ? fix() : this.run(fix)));
+    });
   }
-  private async readRegion(dim: number, rx: number, rz: number, queued: boolean): Promise<Region> {
-    const k = regionKey(dim, rx, rz), name = regionFile(dim, rx, rz);
-    const keep = (chunks: Map<number, ChunkRecord>): Region => {
-      // a commit that ran meanwhile has put the newer content in memory
-      const r = this.regions.get(k) ?? { dim, rx, rz, chunks, touched: this.now() };
-      this.regions.set(k, r);
-      return r;
-    };
+  private keep(dim: number, rx: number, rz: number, chunks: Map<number, ChunkRecord>): Region {
+    const k = regionKey(dim, rx, rz);
+    // a commit or a repair that ran meanwhile has put the newer content in memory
+    const r = this.regions.get(k) ?? { dim, rx, rz, chunks, touched: this.now() };
+    this.regions.set(k, r);
+    return r;
+  }
+  private async readRegion(dim: number, rx: number, rz: number): Promise<Map<number, ChunkRecord> | { bad: string }> {
+    const name = regionFile(dim, rx, rz);
     let b: Uint8Array;
     try { b = await readFile(this.path(name)); } catch (e) {
-      if (errCode(e) === 'ENOENT') return keep(new Map());
+      if (errCode(e) === 'ENOENT') return new Map();
       throw ioError(e, 'load region');
     }
-    try { return keep(decodeRegion(b, dim, rx, rz)); } catch (e) {
+    try { return decodeRegion(b, dim, rx, rz); } catch (e) {
       if (e instanceof FormatError && e.kind === 'version') throw new StorageError('version', `${name}: ${e.message}`);
-      const why = (e as Error).message;
-      const chunks = queued ? await this.repairRegion(dim, rx, rz, why, false) : await this.run(() => this.repairRegion(dim, rx, rz, why, true));
-      return keep(chunks);
+      return { bad: (e as Error).message };
     }
   }
-  /** 8.1: renamed aside; the newest backup copy that validates is used (written back unless a commit is about to
-   *  write the region anyway), or the region counts as unedited. */
-  private async repairRegion(dim: number, rx: number, rz: number, why: string, writeBack: boolean): Promise<Map<number, ChunkRecord>> {
+  /** 8.1: the newest backup copy that validates is used, or the region counts as unedited. Runs in the queue. The bad
+   *  file is copied aside and stays where it is until the backup copy has durably replaced it: a region without a file
+   *  reads as unedited, which would lose the backup's chunks to a stop or to the region leaving memory. */
+  private async repairRegion(dim: number, rx: number, rz: number, why: string): Promise<Map<number, ChunkRecord>> {
     const k = regionKey(dim, rx, rz), name = regionFile(dim, rx, rz), have = this.regions.get(k);
     if (have) return have.chunks;
+    // a commit that ran while this waited may have written a good file, and the region may have left memory since
+    const now = await this.readRegion(dim, rx, rz);
+    if (now instanceof Map) return now;
     const bad = `${name}.bad-${this.stamp()}`;
-    await rename(this.path(name), this.path(bad)).catch(() => {});
     const copy = await regionFromBackup(this.dir, dim, regionName(rx, rz));
     const chunks = copy ? decodeRegion(copy.bytes, dim, rx, rz) : new Map<number, ChunkRecord>();
-    if (copy && writeBack) {
+    let kept = true;
+    if (copy) {
+      await copyFile(this.path(name), this.path(bad)).catch(() => { kept = false; });
       try {
         await this.io.write(this.path(name + '.tmp'), copy.bytes);
         await rename(this.path(name + '.tmp'), this.path(name));
         await syncDir(dirname(this.path(name)));
       } catch (e) {
         await unlink(this.path(name + '.tmp')).catch(() => {});
-        this.log('warn', `region ${k}: the backup copy could not be written back (${(e as Error).message}); it is used from memory`);
+        this.log('warn', `region ${k}: the backup copy could not be written back (${(e as Error).message}); it is used from memory, and the unreadable file stays in place to be repaired again`);
       }
-    }
+    } else await rename(this.path(name), this.path(bad)).catch(() => { kept = false; });
     const where = dim === 0 ? 'the Overworld' : `realm ${dim}`;
     const text = copy
       ? `Part of ${where} near ${rx * 512}, ${rz * 512} could not be read. It was put back as it was in the backup of ${copy.stamp}.`
       : `Part of ${where} near ${rx * 512}, ${rz * 512} could not be read, and no backup holds it. It is back as it was first made.`;
-    this.log('error', `region ${k}: ${why}; moved to ${bad}; ${copy ? 'restored from backup ' + copy.stamp : 'no backup copy, counts as unedited'}`);
+    this.log('error', `region ${k}: ${why}; ${kept ? `kept as ${bad}` : 'could not be kept aside'}; ${copy ? 'restored from backup ' + copy.stamp : 'no backup copy, counts as unedited'}`);
     this.opt.notice?.({ kind: 'region', id: k, from: copy?.stamp ?? null, text });
     return chunks;
   }

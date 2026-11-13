@@ -449,6 +449,48 @@ function tests(): void {
     await st.close();
   });
 
+  test('a damaged region loaded while a commit into it is under way: both finish, and the backup copy is kept', async () => {
+    const { dir } = await seeded('region-race');
+    const s2 = stateAt(2);
+    const b = await readFile(regionPath(dir, 0)); b[b.length - 1] ^= 255; await writeFile(regionPath(dir, 0), b);
+    const st = await opened(dir);
+    // the commit starts with the backup of the first commit since start; the load reads the file meanwhile
+    const commit = st.commit({ players: [], chunks: [chestRec(0, 33, 90)] });
+    const load = st.loadChunk(...CHESTS[1]);
+    const r = await Promise.race([Promise.allSettled([commit, load]).then(() => 'settled'), new Promise((ok) => setTimeout(() => ok('hung'), 5000))]);
+    assert.equal(r, 'settled', 'the commit and the load do not wait on each other');
+    await commit;
+    assert.equal(coinsOf(await load), s2.box[1]);
+    assert.equal(coinsOf(await st.loadChunk(...CHESTS[0])), 33);
+    await st.close();
+  });
+
+  test('a damaged region repaired by a commit that fails: the backup copy is not lost to a stop, a sweep or the next commit', async () => {
+    const { dir } = await seeded('region-lost');
+    const s2 = stateAt(2), io = new QuotaIO(0);
+    const b = await readFile(regionPath(dir, 0)); b[b.length - 1] ^= 255; await writeFile(regionPath(dir, 0), b);
+    let t = 0;
+    let st = await opened(dir, { io, now: () => t, regionLinger: 1e9 });
+    await rejects(st.commit({ players: [], chunks: [chestRec(0, 33, 90)] }), 'full');
+    await st.close();
+    // a stop before the next commit that succeeds
+    st = await opened(dir, { io, now: () => t, regionLinger: 1e9 });
+    assert.equal(coinsOf(await st.loadChunk(...CHESTS[1])), s2.box[1], 'after a stop');
+    // saves fail for longer than the region lingers, then the disk has room again
+    await rejects(st.commit({ players: [], chunks: [chestRec(0, 33, 90)] }), 'full');
+    t = 2e9;
+    await (st as unknown as { run(f: () => Promise<void>): Promise<void>; sweep(): void }).run(async () => (st as unknown as { sweep(): void }).sweep());
+    assert.equal(st.regionsHeld, 0);
+    io.budget = 1e12;
+    await st.commit({ players: [], chunks: [chestRec(0, 33, 90)] });
+    assert.equal(coinsOf(await st.loadChunk(...CHESTS[1])), s2.box[1], 'after a sweep and the commit that succeeds');
+    await st.close();
+    st = await opened(dir);
+    assert.equal(coinsOf(await st.loadChunk(...CHESTS[0])), 33);
+    assert.equal(coinsOf(await st.loadChunk(...CHESTS[1])), s2.box[1]);
+    await st.close();
+  });
+
   test('the journal: an unreadable one refuses to start, a whole one is finished, stray temporaries are dropped', async () => {
     const { dir } = await seeded('journal');
     // a commit of 4 stopped after its journal: two files in place, two still .tmp
