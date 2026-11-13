@@ -290,22 +290,25 @@ const indexScreen: DemoScreen = {
   title: 'Index',
   world: false,
   build(ui) {
+    // Each screen by the name `?screen=` takes, in as many columns as the list needs; its title is its tooltip.
     const names = Object.keys(SCREENS).filter((n) => n !== 'index');
-    const w = 176, h = 18 + names.length * 12 + 8;
+    const perCol = Math.max(1, Math.floor((ui.h - 6 - 18 - 8) / 12));
+    const cols = Math.ceil(names.length / perCol);
+    const colW = Math.min(118, Math.floor((ui.w - 6 - 16) / cols));
+    const w = 12 + cols * colW, h = 18 + Math.min(perCol, names.length) * 12 + 8;
     const at = centred(ui.w, ui.h, w, h);
     return {
       x: 0, y: 0, w: ui.w, h: ui.h,
       paint: (s) => s.tile(GROUND, 0, 0, ui.w, ui.h),
-      kids: [slab(at.x, at.y, w, h, 'clay', [
+      kids: [slab(Math.max(0, at.x), Math.max(0, at.y), w, h, 'clay', [
         label(8, 6, 'Screens of the kit', 'ink'),
         ...names.map((n, i): Node => ({
-          id: `screen.${n}`, x: 6, y: 18 + i * 12, w: w - 12, h: 12, focus: true,
+          id: `screen.${n}`, x: 6 + Math.floor(i / perCol) * colW, y: 18 + (i % perCol) * 12, w: colW, h: 12, focus: true,
           paint: (s, live) => {
-            if (live.hover || live.focus) s.fill(0, 0, w - 12, 12, 'clay.lt');
-            s.text(SCREENS[n].title, 2, 1, 'arm.dk');
-            const q = `?screen=${n}`;
-            s.text(q, rightX(q, w - 15), 1, 'ink.faded');
+            if (live.hover || live.focus) s.fill(0, 0, colW, 12, 'clay.lt');
+            s.text(cut(n, colW - 4), 2, 1, 'arm.dk');
           },
+          tip: () => ({ lines: [{ text: SCREENS[n].title, c: 'salt' }], delay: 0.4 }),
           on: { click: () => { location.search = `?screen=${n}`; } },
         })),
       ])],
