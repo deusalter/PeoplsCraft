@@ -48,24 +48,45 @@ const done = (t: IdbTransaction): Promise<void> => new Promise((res, rej) => {
   t.onabort = () => rej(t.error ?? new StorageError('io', 'transaction aborted'));
 });
 
+/** An open refused because another tab holds the database at an older version and does not let go. The request
+ *  stays queued in the browser: `through` settles when it finally goes through (its handle is then closed, since
+ *  nobody is waiting for it) or fails. */
+export class LockedError extends StorageError {
+  constructor(readonly through: Promise<void>) { super('locked', 'Another tab holds this game open: close it to continue.'); }
+}
+
 /** Open (and if need be create or upgrade) the database. The upgrade creates stores and touches no data. */
 export function openDb(env: IdbEnv = browserEnv()): Promise<IdbDatabase> {
   return new Promise((res, rej) => {
     let r: IdbOpenRequest;
     try { r = env.open(DB_NAME, DB_VERSION); } catch (e) { rej(fail(e, 'open')); return; }
+    let refused: (() => void) | null = null;
     r.onupgradeneeded = () => {
       const d = r.result;
       for (const s of STORES) if (!d.objectStoreNames.contains(s)) { if (s === 'worlds') d.createObjectStore(s, { keyPath: 'id' }); else d.createObjectStore(s); }
     };
-    r.onblocked = () => rej(new StorageError('locked', 'another tab holds this game open: close it to continue'));
+    r.onblocked = () => { if (!refused) rej(new LockedError(new Promise((ok) => { refused = ok; }))); };
     r.onsuccess = () => {
       const d = r.result;
+      if (refused) { d.close(); refused(); return; }
       // a newer build in another tab wants to upgrade: let it
       d.onversionchange = () => d.close();
       res(d);
     };
-    r.onerror = () => rej(fail(r.error, 'open'));
+    r.onerror = () => { if (refused) refused(); else rej(fail(r.error, 'open')); };
   });
+}
+
+/** Whether this page can save: null when it can, else why not. An upgrade that another tab holds up is waited
+ *  out, `onLocked` being told why first; the database is tried again once that tab has let go. */
+export async function storageReady(onLocked: (msg: string) => void, env: IdbEnv = browserEnv()): Promise<StorageError | null> {
+  for (;;) {
+    try { (await openDb(env)).close(); return null; } catch (e) {
+      if (!(e instanceof LockedError)) return fail(e, 'open');
+      onLocked(e.message);
+      await e.through;
+    }
+  }
 }
 
 /** One world in the title menu. */

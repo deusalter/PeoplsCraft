@@ -17,7 +17,7 @@ import { unrle } from '../../src/sim/rle';
 import { Sim } from '../../src/sim/sim';
 import { type PlayerRecord, StorageError, type WorldRecord } from '../../src/sim/storage';
 import { EditMaps, SimChunks } from '../../src/sim/voxels';
-import { DB_NAME, type IdbEnv, IdbStorage, deleteWorld, listWorlds } from '../../src/storage/idb';
+import { DB_NAME, type IdbEnv, IdbStorage, deleteWorld, listWorlds, openDb, storageReady } from '../../src/storage/idb';
 
 // ---- a stand-in for IndexedDB: transactions on copies, committed whole when the last request is done ----
 
@@ -36,21 +36,34 @@ class FakeIdb {
   /** The next read-write transaction aborts with an error of this name, and writes nothing. */
   failNext: string | null = null;
   opens = 0;
+  /** Connections opened and not yet closed. */
+  live = 0;
+  /** Another tab holds the database open at its version and does not close on `versionchange`: an upgrade is blocked until `release`. */
+  held = false;
+  private waiting: (() => void)[] = [];
   env(): IdbEnv { return { open: (n, v) => this.open(n, v) as any, bound: (lo, hi) => ({ lo, hi }), now: () => performance.now() }; }
   open(name: string, version: number): FReq {
     const r = new FReq();
     this.opens++;
-    setTimeout(() => {
+    const finish = (): void => {
       let d = this.dbs.get(name);
       if (d && d.version > version) { r.error = { name: 'VersionError', message: `database is at ${d.version}` }; r.onerror?.({}); return; }
       if (!d) { d = { version: 0, stores: new Map() }; this.dbs.set(name, d); }
       const c = new FConn(this, d);
       r.result = c;
+      this.live++;
       if (d.version < version) { d.version = version; r.onupgradeneeded?.({}); }
       r.onsuccess?.({});
+    };
+    setTimeout(() => {
+      const d = this.dbs.get(name);
+      if (this.held && d && d.version < version) { r.onblocked?.({}); this.waiting.push(finish); return; }
+      finish();
     }, 0);
     return r;
   }
+  /** The other tab closes: every upgrade it held up goes ahead, in the order asked. */
+  release(): void { this.held = false; const w = this.waiting; this.waiting = []; for (const f of w) setTimeout(f, 0); }
   store(name: string): Rec { return this.dbs.get(DB_NAME)!.stores.get(name)!.data; }
 }
 class FConn {
@@ -60,7 +73,8 @@ class FConn {
   get version(): number { return this.d.version; }
   createObjectStore(n: string, opt?: { keyPath?: string }): void { this.d.stores.set(n, { keyPath: opt?.keyPath, data: new Map() }); }
   transaction(names: string | string[], mode: 'readonly' | 'readwrite'): FTx { return new FTx(this.idb, this.d, ([] as string[]).concat(names), mode); }
-  close(): void {}
+  private open = true;
+  close(): void { if (this.open) { this.open = false; this.idb.live--; } }
 }
 class FTx {
   oncomplete: Handler = null; onerror: Handler = null; onabort: Handler = null; error: any = null;
@@ -360,6 +374,36 @@ test('the title menu: worlds of both formats listed, a deleted world gone from a
   await deleteWorld(MAIN, idb.env());
   for (const s of ['worlds', 'players', 'edits', 'backup', 'chunks']) for (const k of idb.store(s).keys()) assert.ok(!k.startsWith(MAIN), `${s} ${k}`);
   assert.ok(idb.store('chunks').size === 0 && idb.store('worlds').has(DEAD) && idb.store('worlds').has('other'));
+});
+
+test('an upgrade another tab holds up: refused as locked, and the open it left waiting closes its handle when it goes through', async () => {
+  const idb = oldProfile();
+  idb.held = true;
+  await assert.rejects(openDb(idb.env()), (e: unknown) => e instanceof StorageError && e.code === 'locked');
+  idb.release();
+  await new Promise((res) => setTimeout(res, 5));
+  assert.equal(idb.dbs.get(DB_NAME)!.version, 2, 'the upgrade went through once the other tab let go');
+  assert.equal(idb.live, 0, 'no handle is left open that nobody holds');
+});
+
+test('the title menu waits out a tab that holds the old version open, says why, and lists the worlds once it closes', async () => {
+  const idb = oldProfile();
+  idb.held = true;
+  const told: string[] = [];
+  let answer: StorageError | null | undefined;
+  const ready = storageReady((msg) => told.push(msg), idb.env()).then((a) => { answer = a; });
+  await new Promise((res) => setTimeout(res, 20));
+  assert.equal(answer, undefined, 'nothing is decided while the other tab holds the database');
+  assert.equal(told.length, 1); assert.match(told[0], /close it/);
+  idb.release();
+  await ready;
+  assert.equal(answer, null, 'saving is available');
+  assert.equal(idb.live, 0);
+  assert.deepEqual((await listWorlds(idb.env())).map((w) => w.id).sort(), [DEAD, MAIN].sort());
+  // a database of a newer build is not waited for: the menu is told why it cannot save
+  idb.dbs.get(DB_NAME)!.version = 3;
+  const newer = await storageReady(() => assert.fail('not a lock'), idb.env());
+  assert.ok(newer instanceof StorageError && newer.code === 'version');
 });
 
 test('diffLegacyChunk: a generator container the player removed stays removed; one in the legacy list is stored', async () => {

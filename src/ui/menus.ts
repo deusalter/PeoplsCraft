@@ -110,7 +110,8 @@ export class TitleMenu {
   /** What Escape does on the current screen (null on the home screen). */
   private back: (() => void) | null = null;
   private onEsc = (e: KeyboardEvent): void => { if (e.code === 'Escape' && this.back) { e.preventDefault(); this.back(); } };
-  constructor(ui: HTMLElement, private settings: Settings, private onPlay: (w: WorldChoice) => void, private canSave = true) {
+  constructor(ui: HTMLElement, private settings: Settings, private onPlay: (w: WorldChoice) => void, private canSave = true,
+    private noSaveWhy = 'This browser is blocking storage. Worlds will not be saved.') {
     this.root = el('div', '#menu', ui); this.root.classList.add('solid');
     window.addEventListener('keydown', this.onEsc);
     void this.home();
@@ -119,7 +120,7 @@ export class TitleMenu {
     this.root.innerHTML = '';
     drawCairn(el('canvas', '#cairn', this.root));
     el('h1', '', this.root, GAME_TITLE.toUpperCase()); el('div', 'sub', this.root, sub);
-    if (!this.canSave) el('div', 'warn', this.root, 'This browser is blocking storage. Worlds will not be saved.');
+    if (!this.canSave) el('div', 'warn', this.root, this.noSaveWhy);
   }
   private async home(): Promise<void> {
     this.head('a voxel sandbox of lost lights'); this.back = null;

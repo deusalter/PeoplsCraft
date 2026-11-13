@@ -3546,6 +3546,16 @@ numbers answers with its usage (`tp <x> <y> <z>`, `give <item> [count]`, `spawna
 and does nothing, where it used to leave the player stuck or answer as if it had worked; `level`, `boss`,
 `gear`, `dim` and `caps` take the default they took for a word that is not a number, for a number out of range as
 well.
+(l) A page whose upgrade of the database another tab holds up waits for that tab, and says so (8.2, D31 (g)).
+`boot` took every refusal of `openDb` alike and ran the page without saving: a tab of the build before this one,
+which keeps version 1 open and never closes it on `versionchange`, made the title menu say that the browser
+blocks storage and list no worlds, and a world begun then was lost with the tab. The upgrade the browser had
+queued went through when that tab closed and left a handle that nobody held. `openDb` still rejects with
+`StorageError('locked')`, now a `LockedError` whose `through` settles when the queued open goes through or fails,
+and that open closes its own handle. `storageReady` (`storage/idb.ts`) shows the reason ("close it to continue")
+on the loading screen, waits for `through` and tries again, so the menu opens with every world once the other tab
+is gone. A database of a newer build (`'version'`) is not waited for: the menu says that its worlds were saved by
+a newer version, where it said the browser blocks storage.
 
 ---
 

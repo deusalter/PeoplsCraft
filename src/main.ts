@@ -9,7 +9,7 @@ import { loopback } from './net/loopback';
 import { VIEW_MAX, VIEW_MIN } from './net/protocol';
 import type { HostEnv } from './net/transport';
 import { MemStorage, type Storage } from './sim/storage';
-import { IdbStorage, deleteWorld, openDb } from './storage/idb';
+import { IdbStorage, deleteWorld, storageReady } from './storage/idb';
 import './style.css';
 import { TitleMenu, type WorldChoice, applyUiScale, loadSettings } from './ui/menus';
 import { el } from './ui/hud';
@@ -30,8 +30,15 @@ async function boot(): Promise<void> {
   if (import.meta.env.DEV) { const bad = validateData(); if (bad.length) console.error('DATA PROBLEMS\n' + bad.join('\n')); (window as any).dataProblems = bad; }
   const q = new URLSearchParams(location.search);
   if (q.has('gallery')) { (await import('./gallery')).showGallery(); return; }
-  let canSave = true;
-  try { (await openDb()).close(); } catch (e) { console.warn('saving is unavailable', e); canSave = false; }
+  const wait: HTMLElement[] = [];
+  const noSave = await storageReady((msg) => {
+    const box = wait[0] ?? (wait[0] = el('div', '#loading', ui));
+    box.innerHTML = '<h1>PEOPLS CRAFT</h1><div class="msg"></div>';
+    (box.querySelector('.msg') as HTMLElement).textContent = msg;
+  });
+  wait[0]?.remove();
+  if (noSave) console.warn('saving is unavailable', noSave);
+  const canSave = !noSave;
   const settings = loadSettings();
   applyUiScale(settings.uiScale);
 
@@ -68,6 +75,6 @@ async function boot(): Promise<void> {
     await play({ id, name: 'Quick world', seed: /^-?\d+$/.test(seedText) ? Number(seedText) | 0 : strSeed(seedText), seedText }, true);
     return;
   }
-  new TitleMenu(ui, settings, (w) => void play(w, false), canSave);
+  new TitleMenu(ui, settings, (w) => void play(w, false), canSave, noSave?.code === 'version' ? 'These worlds were saved by a newer version of the game. Nothing will be saved here.' : undefined);
 }
 void boot();
