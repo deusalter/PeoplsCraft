@@ -386,3 +386,63 @@ test('a command with numbers that are not numbers, or out of their range, change
   assert.equal(p.dim, 0); assert.ok(Number.isFinite(sim.shared.clock)); assert.ok(p.stats.level < 1e9);
   assert.ok(sim.realms[0].mobs.list.every((m) => !m.active || Number.isFinite(m.x)));
 });
+
+test('a solo world saves 3 s after a change, once for a run of changes, and not for a player who has only come in', async () => {
+  let now = 0;
+  const timers: { fn: () => void; at: number }[] = [];
+  const env = {
+    now: () => now, log: () => {},
+    setTimer: (fn: () => void, ms: number) => { const t = { fn, at: now + ms }; timers.push(t); return t; },
+    clearTimer: (h: unknown) => { const i = timers.indexOf(h as { fn: () => void; at: number }); if (i >= 0) timers.splice(i, 1); },
+  };
+  /** Move the host's clock on, firing its timers in order, and let the commits they start resolve. */
+  const pass = async (ms: number): Promise<void> => {
+    const end = now + ms;
+    for (;;) {
+      const due = timers.filter((t) => t.at <= end).sort((a, b) => a.at - b.at)[0];
+      if (!due) break;
+      now = due.at; timers.splice(timers.indexOf(due), 1); due.fn();
+      await new Promise((res) => setTimeout(res, 1));
+    }
+    now = end;
+    await new Promise((res) => setTimeout(res, 1));
+  };
+  const storage = new MemStorage();
+  const open = async (): Promise<{ host: SimHost; r: Rig; c: Client }> => {
+    const host = new SimHost(env, storage, new FlatSource(), { id: 'w', name: 'Test', seed: 7, seedText: '7', cheats: true, password: null, maxPlayers: 1, viewMax: 8,
+      clock: 'manual', saveEvery: 0, solo: true });
+    await host.start();
+    const r: Rig = { host, storage, logs: [] }, c = client(host);
+    c.hello(); await enter(r, c);
+    await run(r, 10, c); await pass(5000);
+    return { host, r, c };
+  };
+  // a new world begins (its first flag): that is saved
+  await open();
+  assert.equal(storage.commits, 1);
+  storage.commits = 0;
+  const { host, r, c } = await open();
+  assert.equal(storage.commits, 0, 'a player who has only come in is not a change');
+  c.s.send({ t: 'cmd', id: 1, text: 'give cobble 3' });
+  await run(r, 2, c); await pass(1000);
+  c.s.send({ t: 'cmd', id: 2, text: 'give flint 2' });
+  await run(r, 2, c); await pass(1900);
+  assert.equal(storage.commits, 0, 'not before 3 s');
+  await pass(200);
+  assert.equal(storage.commits, 1, 'one save 3 s after the first change, with both in it');
+  const inv = JSON.stringify(storage.players.get('local')!.inv);
+  assert.ok(inv.includes('cobble') && inv.includes('flint'));
+  // what the guide makes of the new items (its flags, its step) is a change of its own: let it settle
+  await run(r, 60, c); await pass(4000);
+  const settled = storage.commits;
+  // walking and the clock alone wait for the 30 s save, which this host does not have
+  c.pos = [c.pos[0] + 1, c.pos[1], c.pos[2]]; c.s.move();
+  await run(r, 60, c); await pass(5000);
+  assert.equal(storage.commits, settled);
+  // a block is a change too
+  const x = Math.floor(c.pos[0]) + 1, z = Math.floor(c.pos[2]);
+  host.sim.handle(host.sim.players.get('local')!, { t: 'cmd', id: 3, text: 'creative' });
+  c.s.act({ t: 'edit', seq: 1, k: 0, x, y: GROUND - 1, z, id: B.stone });
+  await run(r, 2, c); await pass(3100);
+  assert.equal(storage.commits, settled + 1);
+});

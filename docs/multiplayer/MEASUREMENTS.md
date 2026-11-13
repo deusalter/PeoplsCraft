@@ -336,12 +336,12 @@ HEAD (then `f82bab3` plus the harness change) on the same battery: 1,200 frames,
 p95 18.4, max 19.1, `intervalOver25` 0, frame CPU 2.06 / 3.7 / 5.8 ms (mean / p95 / max), prof sum 6.9.
 Before the change, the run just before it: 600 frames, interval mean 33.33 ms, p99 35.3, frame CPU 4.21 ms.
 
-Command for the rate alone (the page's own frame clock, no game):
-`node scripts/headless.mjs --run <script> ` with a script that times 180 `requestAnimationFrame` callbacks.
+The rate alone was read with `node scripts/headless.mjs --run <script>`, the script timing 180
+`requestAnimationFrame` callbacks on the title menu, and with the same loop on an empty page in a bare launch.
 
 ### Performance: the stage 0 tree against this tree
 
-Control: the stage 0 tree (`git archive 4ff2b0d` into `.claude/mp-work/pad/control-4ff2b0d`, this checkout's
+Control: the stage 0 tree (`git archive 4ff2b0d` into a scratch folder, this checkout's
 `node_modules` linked, its own Vite cache folder, and this tree's `scripts/headless.mjs` and `scripts/perf.mjs`
 copied in so that both run the same harness and the same flight; nothing under `src/` changed). Runs in turn,
 one at a time:
