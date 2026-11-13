@@ -1,5 +1,6 @@
 // What the screens of the books set share on the kit page: going from one mock screen to another as the game would.
 export { flag, pageRow } from '../parts/book';
+import { WHERE_MARK } from '../art/marks';
 import { rightX } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { Node, Ui } from '../node';
@@ -40,6 +41,21 @@ export function firstFieldFocus(ui: Ui, key: string, id: string, selectAll: bool
 export function para(x: number, y: number, w: number, text: string, c: Colour, lines = Infinity): Node {
   const b = box(text, w, lines);
   return { x, y, w, h: Math.max(1, b.h), paint: (s) => { for (const l of b.lines) s.text(l.text, 0, l.y, c); } };
+}
+
+/**
+ * Where to go, on a page: the compass mark at the left and the words beside it in ink, wrapped onto a second line
+ * rather than cut, since it is the line the crew acts on.
+ */
+export function whereLine(x: number, y: number, w: number, text: string, lines = 2): Node {
+  const b = box(text, w - 12, lines);
+  return {
+    x, y, w, h: Math.max(10, b.h),
+    paint: (s) => {
+      s.draw(WHERE_MARK, 0, 0, { tint: 'ink' });
+      for (const l of b.lines) s.text(l.text, 12, l.y, 'ink');
+    },
+  };
 }
 
 /** One line of ink on a light face, cut with `…` to its width, or right-aligned to its right end. */

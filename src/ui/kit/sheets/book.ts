@@ -6,6 +6,7 @@ import { book, pageHeading } from '../parts/book';
 import { titleMark } from '../parts/keycap';
 import { slot } from '../parts/slot';
 import { tree } from '../parts/tree';
+import { whereLine } from '../screens/books-common';
 import { type Sheet, ink, page, salt } from './common';
 
 const TEXT_L = 'The kilns of Īshū stand in a row along the low field. Each is fed from the left and drawn from the right, and the jars come out the colour of the ground they were dug from.';
@@ -30,7 +31,7 @@ export const bookSheet: Sheet = {
       ],
       prev: () => {}, next: () => {},
       force: { next: { hover: true } },
-      left: [pageHeading({ x: 0, y: 0, w: 126, text: 'The kiln row' }), para(0, 16, TEXT_L, 8), ink(0, 108, 'Where to go next', 'arm.dk')],
+      left: [pageHeading({ x: 0, y: 0, w: 126, text: 'The kiln row' }), para(0, 16, TEXT_L, 8), whereLine(0, 108, 126, 'The kiln row: 40 strides west')],
       right: [
         pageHeading({ x: 0, y: 0, w: 126, text: 'Bounties' }),
         slot({ id: 'b.0', x: 0, y: 16, ramp: 'clay', stack: { icon: 'ore', n: 20 } }),

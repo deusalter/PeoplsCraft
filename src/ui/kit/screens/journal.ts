@@ -13,7 +13,7 @@ import { paintSlot } from '../parts/slot';
 import { centred } from '../scale';
 import { CREW, type CrewMember } from '../sample/crew';
 import { BOUNTIES, type Bounty, CHAPTERS, type Chapter, PEOPLES, PRESENT, type People } from '../sample/journal';
-import { firstFocus, flag, go, inkLine, para, pageRow } from './books-common';
+import { firstFocus, flag, go, inkLine, para, pageRow, whereLine } from './books-common';
 import type { NamedScreen } from './index';
 
 export type JournalSection = 'guide' | 'bounties' | 'standing' | 'crew';
@@ -79,7 +79,7 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
   // gives moves down under it, keeping clear of the page's foot.
   let below = 108;
   if (st.where && s !== 'done') {
-    const where = para(0, 94, PW, st.where, 'arm.dk', 2);
+    const where = whereLine(0, 94, PW, st.where);
     right.push(where);
     below = 94 + where.h + 4;
   }
@@ -191,7 +191,7 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
     inkLine(14, 24, PW - 14, m.online ? `In ${m.place}` : 'Not here now', m.online ? 'ink' : 'ink.faded'),
   ];
   if (m.seat === v.seat) right.push(inkLine(14, 34, PW - 14, 'You', 'ink.faded'));
-  else if (m.online && m.at) right.push(inkLine(14, 34, PW - 14, `${count(dist)} strides from you`, 'arm.dk'));
+  else if (m.online && m.at) right.push(whereLine(14, 34, PW - 14, `${count(dist)} strides from you`, 1));
   right.push(inkLine(0, 48, PW, 'Worn'));
   WORN_SLOTS.forEach((sil, k) => {
     const icon = m.worn[k];

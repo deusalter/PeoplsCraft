@@ -49,3 +49,19 @@ export const PING = pixmap({ rows: [
   '...KcK...',
   '....K....',
 ], key: { K: 'root.0', c: 'tint' } }, 'ping');
+
+/**
+ * The mark of a line that says where to go, 9 by 9: a ring with its needle's north half bold. It is drawn in the line's
+ * own colour, so that where to go is ink on a page and blue is kept for what can be pressed.
+ */
+export const WHERE_MARK = pixmap({ rows: [
+  '..#####..',
+  '.#.....#.',
+  '#...#...#',
+  '#..###..#',
+  '#..###..#',
+  '#...#...#',
+  '#...#...#',
+  '.#.....#.',
+  '..#####..',
+], key: { '#': 'tint' } }, 'mark.where');

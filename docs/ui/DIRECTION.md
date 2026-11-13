@@ -109,7 +109,8 @@ Three rules follow and are used everywhere below.
 | A grade | the table above | the table above |
 | Better than what is worn or held; can be afforded | `growth.lt` | `growth.dk` |
 | Worse; cannot be afforded; a refusal; a warning | `blood.lt` | `blood.dk` |
-| A set bonus; where to go; a link to another page | `arm.lt` | `arm.dk` |
+| A set bonus; where to go | `arm.lt` | where to go: `ink` after the compass mark (5.19); a set bonus: `arm.dk` |
+| A link to another page, which can be pressed | `arm.lt` | `arm.dk`, with a rule of itself one unit under its words only while hovered. Blue on a page is kept for what can be pressed, so that a line that cannot be pressed never reads as a link |
 | The hovered button's label | `ember.hi` | not used |
 | One of the eight players | their colour, below | their colour as a 2 by 7 flag beside a name in ink |
 
@@ -1642,7 +1643,24 @@ For the journal and the codex. 292 by 180. The cover is a board of leather 4 dee
 ```
 `. nothing  F clay.face  f timber.lt  K root.0  L clay.lt  S clay.sh  t timber.sh  X timber.pit`
 
-**Text on a page** is ink. A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
+**Text on a page** is ink. A line that says where to go starts with the compass mark, 9 by 9 in the line's ink, and the words 12 to its right:
+
+```
+     0       
+     012345678
+  0  ..IIIII..
+  1  .I.....I.
+  2  I...I...I
+  3  I..III..I
+  4  I..III..I
+  5  I...I...I
+  6  I...I...I
+  7  .I.....I.
+  8  ..IIIII..
+```
+`. nothing  I ink`
+
+A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
 
 **Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, the last starting 16 left of the crease. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one, from the cover's bottom outline (row 0), which the ribbon covers:
 
@@ -2795,7 +2813,7 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19): a leather c
 | G7 | text | 154 | 10 | 126 | 10 | right page heading: the chosen step |
 | G8 | text | 154 | 24 | 126 | 60 | its telling, wrapped to 126, six lines at most |
 | G9 | gauge | 154 | 88 | 126 | 7 | a sunk channel filling in ember, with "3 of 5" right-aligned above it; only for steps that count |
-| G10 | text | 154 | 104 | 126 | 20 | where to: "Nearest altar 212 east", in arm.dk. It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
+| G10 | text | 154 | 104 | 126 | 20 | where to: the compass mark (9 by 9, ink) at 0, 0 and the words in ink at 12, saying the thing, then how far and which way: "Vanahar Altar: 212 strides east", "Iron ore: 38 strides down". It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
 | G11 | text | 154 | 118 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink; three lines at most, or two starting 4 under a where-to of two lines |
 | G12 | turn | 264 | 161 | 16 | 7 | page on |
 | G13 | text | 210 | 162 | 16 | 6 | page number |
