@@ -135,6 +135,19 @@ function faceMap(f: Face, rows: string[], seat: number, name: string): PixelMap 
   return pixmap({ rows, key }, name);
 }
 
+/**
+ * A seat's bare face for a picture of the body: 8 by 8, or 10 by 10 (`wide`), as rows of colours, null where the
+ * square is empty. Its skin's three tones come with it, for the hands.
+ */
+export function seatFace(seat: number, wide = false): { rows: (Colour | null)[][]; skin: readonly [Colour, Colour, Colour] } {
+  const f = FACES[(seat - 1) % FACES.length];
+  const [L, s, t, m] = f.skin, [H, h, d] = f.hair;
+  const key: Record<string, Colour> = { L, s, t, m, H, h, d, e: 'root.0' };
+  if (f.cloth) [key.c, key.C, key.x] = f.cloth;
+  const rows = (wide ? widened(f.rows) : [...f.rows]).map((r) => [...r].map((ch) => (ch === '.' ? null : key[ch])));
+  return { rows, skin: [L, s, t] };
+}
+
 /** The head that stands for a player beside their name, on the compass and on the map: 10 by 10 with its frame. */
 export const HEADS: readonly PixelMap[] = FACES.map((f, i) => faceMap(f, framed(f.rows), i + 1, `head.small.${i + 1}`));
 

@@ -663,7 +663,7 @@ States, left to right: hovered (floor `sh`); accepts the held stack (a frame of 
 
 The hover changes the floor under the icon and nothing else. It does not tint the icon.
 
-**Stack count.** In the text face, `salt` with its shadow, right-aligned so that its last column is the slot's x 15, cell at y 8 (digits on rows 9 to 15). The count and its shadow stay on the floor: the shadow's column 16 and row 16 keep the digits off the light edge, where salt digits would run into the bright rim and into the next slot's count. A count of 100 or more no longer fits 15 units in the text face and is written in the small face, last column on x 15, lowest row on y 15. A count of 1 is not written. The large slot places its count the same way from its own floor's bottom right, x 23 and y 23.
+**Stack count.** In the text face, `salt` with its shadow, right-aligned so that its last column is the slot's x 15, cell at y 8 (digits on rows 9 to 15). The count and its shadow stay on the floor: the shadow's column 16 and row 16 keep the digits off the light edge, where salt digits would run into the bright rim and into the next slot's count. A count of 100 or more no longer fits 15 units in the text face and is written in the small face, last column on x 15, lowest row on y 15. A count of 1,000 or more is written in thousands in the small face (`1k`, `12k`), so that a count is never more than three glyphs and never reaches past the slot's x 1. A count of 1 is not written. The large slot places its count the same way from its own floor's bottom right, x 23 and y 23.
 
 ```
      0         1       
@@ -2179,6 +2179,19 @@ A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the t
 ```
 `. nothing  K root.0  L clay.lt  S clay.sh  W salt  Z clay.pit`
 
+### 5.29 The body as worn
+
+The player drawn front on, as the tradition puts the player's model in the pack: a person, not a mannequin. Two sizes, built by the same plan: small, 18 by 34 with its outline, for the pack's well; large, 26 by 54, for the States tab. Every limb is lit from the top left: its left column in the lit tone of its ramp, its right column in the shade, the middle in the mid tone; the whole is outlined in `root.0`.
+
+| Part | Small | Large | Drawn in |
+| --- | --- | --- | --- |
+| Head | 8 by 8 | 10 by 10 | the seat's own face (5.25), the large one its 10 by 10 face. A worn helm covers the top 3 (4) rows and runs down both sides 3 rows more in its material, so the eyes still show |
+| Torso | 8 by 12 | 12 by 20 | a tunic of the timber ramp (`timber.lt`, `timber.face`, `timber.sh`) when bare; the worn chest piece's tones over it |
+| Arms | 4 by 12 | 6 by 20 | the chest's tones, the last 2 (3) rows the face's skin ramp for the hands |
+| Legs | 4 by 12 each, under the torso | 6 by 22 each | trousers of `clay.sh`, `clay.dk`, `clay.pit` when bare, the worn leg piece's tones over them; the last 3 (5) rows boots of `timber.sh`, `timber.dk`, `timber.pit`; a split of `root.0` one unit wide between the legs from their third row down |
+
+The material of a worn piece gives its tones: iron `stone.lt`, `stone.face`, `stone.sh`; hide `timber.lt`, `timber.face`, `timber.sh`; lumenite `cyan.lt`, `cyan.lt`, `cyan.dk`. The picture changes as soon as a piece is put on or taken off. The figure stands on one course of the ground tile, 8 tall, along the bottom of its well, with a shadow of `root.1` 10 wide on the ground's top row under the feet.
+
 ---
 
 ## 6. Screens
@@ -2269,82 +2282,104 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 
 ### Pack, with the body panel and the patterns made by hand
 
-Size 394 by 182, with tabs standing 21 above. Material: clay. Anchor: centre of the screen.
+The pack is the main slab, 176 by 182, centred on the screen, with one row of tabs standing 21 above it. Material: clay. The tab chosen fastens one panel to the main slab and nothing else: Body or States, a panel 112 by 166 at its top left, narrower and 16 shorter, flush with its top and sharing its left outline column; or Making, the recipe panel 116 by 166 at its right, flush with its top. The recipe panel is closed until Making is chosen, as the tradition keeps its recipe book. Skills opens the tree. So the window is never three equal columns: one slab stands, one smaller panel hangs from it. With Body chosen (x counted from the body panel's left; the main slab's left is x 111):
 
 ```
-+------+                                                                                     +------+
-|T1    |+------+------+                                                                      |T4    +------+
-|      ||T2    |T3    |                                                                      |      |T5    |
-+------++------+------+                                                                      +------+------+
-#=================================#=============================================+--------+===#======================================#
-#  "S1"                           #  "M1"                                       +-M2-----+   # "R1"                                 #
-#                                 #  .----. +---------------+                                # +---------------+ +--------------+   #
-#  "S2"                           #  |M3  | | M4 well       |                                # +-R2 field------+ +-R4 button----+   #
-#  [S3                         ]  #  '----' |               | .----..----.                   #                                      #
-#                                 #  .----. |               | |M5  ||    |          .----.   # +--+                                 #
-#  +---------------------------+  #  |    | |               | '----''----'          |M7  |   # +--+                                 #
-#  | S4 rows                   |  #  '----' |               | .----..----.  ==M6=>  '----'   #                                      #
-#  |                           |  #  .----. |               | |    ||    |                   # +-------------------------------+    #
-#  |                           |  #  |    | |               | '----''----'                   # | R5 well                       |    #
-#  |                           |  #  '----' +---------------+                                # |                               |    #
-#  |                           |  #                                                          # |                               |    #
-#  |                           |  #  .----..----..----..----..----.                          # |                               |    #
-#  +---------------------------+  #  |M8  ||    ||    ||    ||    |  "M9"                    # |                               |    #
-#  "S5"                           #  '----''----''----''----''----'                          # |                               |    #
-#                                 #                                                          # |                               |    #
-#  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  #  .----..----..----..----..----..----..----..----..----.  # |                               |    #
-#  +---------------------------+  #  |M10 ||    ||    ||    ||    ||    ||    ||    ||    |  # |                               |    #
-#  | S7 rows                   |  #  '----''----''----''----''----''----''----''----''----'  # |                               |    #
-#  |                           |  #  .----..----..----..----..----..----..----..----..----.  # |                               |    #
-#  |                           |  #  |    ||    ||    ||    ||    ||    ||    ||    ||    |  # |                               |    #
-#  |                           |  #  '----''----''----''----''----''----''----''----''----'  # |                               |    #
-#  |                           |  #  .----..----..----..----..----..----..----..----..----.  # |                               |    #
-#  |                           |  #  |    ||    ||    ||    ||    ||    ||    ||    ||    |  # |                               |    #
-#  |                           |  #  '----''----''----''----''----''----''----''----''----'  # |                               |    #
-#  |                           |  #                                                          # +-------------------------------+    #
-#  |                           |  #  .----..----..----..----..----..----..----..----..----.  #                                      #
-#  |                           |  #  |M11 ||    ||    ||    ||    ||    ||    ||    ||    |  #                                      #
-#  +---------------------------+  #  '----''----''----''----''----''----''----''----''----'  # "R6"                                 #
-#                                 #                                                          #                                      #
-#=================================#==========================================================#======================================#
+                                     +-------+
+                                     |T1     +------+-------+-------+
+                                     |       |T2    |T3     |T4     |
+                                     |       |      |       |       |
+                                     |       |      |       |       |
+#====================================#=========================================================#
+# S0                                 # M0                                          +---------+ #
+#  "S1"                              #  "M1"                                       |M2       | #
+#                                    #                                             |         | #
+#                                    #  +----++----------------+                   +---------+ #
+#  "S2"          +-S3-------------+  #  |M3  ||M4 well         |                               #
+#                +----------------+  #  |    ||                |                               #
+#  +------------------------------+  #  |    ||                | +-----------+                 #
+#  |S4 rows                       |  #  |    ||                | |M5         |                 #
+#  |                              |  #  |    ||                | |           |=M6=>    +-----+ #
+#  |                              |  #  |    ||                | |           |         |M7   | #
+#  |                              |  #  |    ||                | |           |         |     | #
+#  |                              |  #  |    ||                | |           |         |     | #
+#  |                              |  #  |    ||                | |           |         +-----+ #
+#  |                              |  #  |    ||                | |           |                 #
+#  |                              |  #  |    ||                | +-----------+                 #
+#  |                              |  #  |    ||                |                               #
+#  |                              |  #  +----++----------------+                               #
+#  +------------------------------+  #                                                         #
+#  "S5"                              #  +----------------------------+                         #
+#                                    #  |M8                          |          "M9"           #
+#                                    #  |                            |                         #
+#                                    #  |                            |                         #
+#  ~S6~                              #  +----------------------------+                         #
+#  +------------------------------+  #                                                         #
+#  |S7 rows                       |  #  +----------------------------------------------------+ #
+#  |                              |  #  |M10                                                 | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  |                                                    | #
+#  |                              |  #  +----------------------------------------------------+ #
+#  |                              |  #  +----------------------------------------------------+ #
+#  |                              |  #  |M11                                                 | #
+#==+------------------------------+==#  |                                                    | #
+                                     #  |                                                    | #
+                                     #  +----------------------------------------------------+ #
+                                     #                                                         #
+                                     #=========================================================#
 ```
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| S0 | slab | 0 | 0 | 104 | 182 | body panel, fastened to the left side |
-| T1 | tab | 0 | -21 | 24 | 24 | top tabs of the body panel: Body (chosen), then States and Skills when those steps land |
-| T2 | tab | 23 | -18 | 24 | 18 | States (to come) |
-| T3 | tab | 46 | -18 | 24 | 18 | Skills (to come; opens the tree) |
-| S1 | text | 8 | 6 | 88 | 10 | the player's name |
-| S2 | text | 8 | 18 | 88 | 10 | "Level 14" in ink; practice as "320 / 900" in the small face, right-aligned to x 96 |
-| S3 | strip | 8 | 29 | 88 | 5 | practice strip, thin, eleven segments |
-| S4 | rows | 8 | 38 | 88 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 80; a 12 by 12 button "+" at x 84 while there are points |
-| S5 | text | 8 | 87 | 88 | 10 | "3 to spend", only while there are points |
-| S6 | rule | 8 | 98 | 88 | 2 | cut line |
-| S7 | rows | 8 | 102 | 88 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 96: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
-| M0 | slab | 103 | 0 | 176 | 182 | main slab |
-| M1 | text | 111 | 6 | 40 | 10 | "Pack" |
-| M2 | button | 241 | 3 | 30 | 12 | "Sort": merges and orders the pack, leaves the hotbar |
-| M3 | slots | 111 | 16 | 18 | 54 | head, body, legs, each with its silhouette |
-| M4 | well | 131 | 16 | 50 | 54 | figure well: the body as worn |
-| M5 | slots | 187 | 25 | 36 | 36 | the two by two grid |
-| M6 | arrow | 227 | 37 | 22 | 15 | progress arrow, empty until a pattern matches, then full |
-| M7 | slots | 253 | 34 | 18 | 18 | what the grid makes |
-| M8 | slots | 111 | 74 | 90 | 18 | five trinket slots with the ring silhouette |
-| M9 | text | 207 | 78 | 64 | 10 | lees carried: the jar mark and the number, right-aligned to x 168 |
-| M10 | slots | 111 | 98 | 162 | 54 | the pack, nine by three |
-| M11 | slots | 111 | 156 | 162 | 18 | the hotbar row, four units below the pack |
-| R0 | slab | 278 | 0 | 116 | 182 | recipe panel, fastened to the right side and sharing the outline column |
-| R1 | text | 286 | 6 | 60 | 10 | "By hand": the station whose patterns are listed |
-| R2 | field | 286 | 16 | 50 | 14 | search; placeholder "Search"; longer text scrolls inside the field |
-| R3 | check | 286 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
-| R4 | button | 338 | 16 | 48 | 14 | kind of thing: All, Tools, Weapons, Armour, Trinkets, Blocks, Other; a click steps on, a right click steps back |
-| R5 | well | 286 | 52 | 98 | 110 | dark well: five by 6 pattern cells of 18, then a scroll track 6 wide |
-| R6 | text | 286 | 166 | 100 | 10 | "{lmb} lay out {rmb} make", in faded ink |
-| T4 | tab | 278 | -21 | 24 | 24 | top tabs of the recipe panel: one for each station whose patterns may be read, the one in use first and chosen |
-| T5 | tab | 301 | -18 | 24 | 18 | a station built before |
+| T1 | tab | 111 | -21 | 24 | 24 | the main slab's tabs, the only tab row: Body (the person), States, Making (the pattern grid), Skills (opens the tree) |
+| T2 | tab | 134 | -18 | 24 | 18 | States |
+| T3 | tab | 157 | -18 | 24 | 18 | Making |
+| T4 | tab | 180 | -18 | 24 | 18 | Skills |
+| S0 | slab | 0 | 0 | 112 | 166 | body panel, plain, no tabs of its own |
+| S1 | text | 8 | 6 | 96 | 10 | the player's name |
+| S2 | text | 8 | 17 | 40 | 10 | "Level 14" in ink |
+| S3 | strip | 52 | 19 | 52 | 5 | practice strip, thin, from 6 after the level to x 104, a segment to 8 units; the practice in numbers ("320 of 900 to level 15") is its tooltip |
+| S4 | rows | 8 | 28 | 96 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 88; a 12 by 12 button "+" at x 92 while there are points |
+| S5 | text | 8 | 77 | 96 | 10 | "3 to spend", only while there are points |
+| S6 | rule | 8 | 89 | 96 | 2 | cut line |
+| S7 | rows | 8 | 92 | 96 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 104: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
+| M0 | slab | 111 | 0 | 176 | 182 | main slab |
+| M1 | text | 119 | 6 | 40 | 10 | "Pack" |
+| M2 | button | 249 | 3 | 30 | 12 | "Sort": merges and orders the pack, leaves the hotbar |
+| M3 | slots | 119 | 16 | 18 | 54 | head, body, legs, each with its silhouette |
+| M4 | well | 139 | 16 | 50 | 54 | figure well: the body as worn (5.29), standing on one course of the ground tile 8 tall along the well's floor |
+| M5 | slots | 195 | 25 | 36 | 36 | the two by two grid |
+| M6 | arrow | 235 | 37 | 22 | 15 | progress arrow, empty until a pattern matches, then full |
+| M7 | slots | 261 | 34 | 18 | 18 | what the grid makes |
+| M8 | slots | 119 | 74 | 90 | 18 | five trinket slots with the ring silhouette |
+| M9 | text | 215 | 78 | 64 | 10 | lees carried: the jar mark and the number, right-aligned to x 279 |
+| M10 | slots | 119 | 98 | 162 | 54 | the pack, nine by three |
+| M11 | slots | 119 | 156 | 162 | 18 | the hotbar row, four units below the pack |
 
-- **Shows.** What is carried and worn, what the body can do, and what two hands can make. The figure well shows the body with the worn pieces lit. The body panel holds the level, the four attributes and the seven totals. The recipe panel lists every pattern that can be laid on the two by two grid, and through its tabs the patterns of any station the crew has built.
+**States chosen.** The body panel shows instead a well 96 by 84 at 8, 16 with the large figure standing on the ground tile and a framed state beside the part of the body it sits on, then a row 19 tall to each state from y 104: its frame, its name, the time left in the small face right-aligned.
+
+**Making chosen.** No panel stands at the left; the main slab's left is x 0 and the recipe panel's is x 175:
+
+| | Part | x | y | w | h | What |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| R0 | slab | 175 | 0 | 116 | 166 | recipe panel, plain: the pack lists only what two hands can make, so it has no station tabs and no tab row of its own |
+| R1 | text | 183 | 6 | 60 | 10 | "By hand" |
+| R2 | field | 183 | 16 | 50 | 14 | search; placeholder "Search"; longer text scrolls inside the field |
+| R3 | check | 183 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
+| R4 | button | 235 | 16 | 48 | 14 | kind of thing: All, Tools, Weapons, Armour, Trinkets, Blocks, Other; a click steps on, a right click steps back |
+| R5 | well | 183 | 52 | 98 | 96 | dark well: five pattern cells of 18 to the row, then a scroll track 6 wide |
+| R6 | text | 183 | 152 | 100 | 10 | "{lmb} lay out {rmb} make", in faded ink |
+
+- **Shows.** What is carried and worn, what the body can do, and what two hands can make. The figure well shows the player with their own face and each worn piece drawn on the body. The body panel holds the level, the four attributes and the seven totals. The recipe panel, opened with Making, lists every pattern that can be laid on the two by two grid; the patterns of a station are read at that station.
 - **Clickable.** Every slot (see Behaviour). "Sort". The "+" beside an attribute spends a point. A pattern cell: left click lays the pattern on the grid, right click makes one straight into the pack, shift and left click makes as many as the pack affords. The search field. "Can make". The kind button. Tabs.
 - **Keys.** E or Esc closes. 1 to 9 swaps the hovered slot with that hotbar slot. Q drops one from the hovered slot, Ctrl and Q the stack. Tab walks: search, "Can make", kind, pattern cells, grid, result, equipment, trinkets, pack, hotbar, "Sort", attributes. Arrows move inside a grid. Enter is a left click on the focused part, Shift and Enter a shift click. G opens the journal. Typing a letter while nothing has focus puts it in the search field.
 - **First.** No part has focus. The pointer stands where it last stood. The first Tab press lands on the search field.
@@ -3574,7 +3609,7 @@ The HUD's chat with its entry (5.23): twelve lines ending where closed chat ends
 
 ### States of a body (to come)
 
-The second tab of the body panel. The upper part is a well 88 by 96 at 8, 16 holding a figure 32 by 64 drawn front on; a state marks the part of the body it sits in with its status icon (the arm for an overdriven arm, the trunk for spore in a wound, the back for remains carried). Under the well, list rows 18 tall on the slab: status icon in its frame, the state's name in ink, the time left right-aligned, and in the tooltip what ends it. The six kinds of harm are not shown on the body; each is a 9 by 9 mark beside a number wherever a tooltip gives harm (an edge, a weight, a flame, the loosening, a fall, the sun), and a creature's entry in the codex lists the kinds it yields to and the kinds it turns.
+The States tab of the pack (the second of its four). The upper part is a well 96 by 84 at 8, 16 holding the large figure of 5.29 standing on the ground tile; a state marks the part of the body it sits in with its status icon (the arm for an overdriven arm, the trunk for spore in a wound, the back for remains carried). Under the well, list rows 18 tall on the slab: status icon in its frame, the state's name in ink, the time left right-aligned, and in the tooltip what ends it. The six kinds of harm are not shown on the body; each is a 9 by 9 mark beside a number wherever a tooltip gives harm (an edge, a weight, a flame, the loosening, a fall, the sun), and a creature's entry in the codex lists the kinds it yields to and the kinds it turns.
 
 ### Keys and stores (to come)
 

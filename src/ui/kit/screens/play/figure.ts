@@ -1,77 +1,93 @@
-// The body as worn, drawn front on in a well: a figure built from rectangles, each lit along its top and left and
-// shaded along its right and bottom, outlined in root.0. A piece that is worn is drawn in its material's tones; the
-// rest of the body is a silhouette in the dark plate's tones.
+// The body as worn, drawn front on in a well: the player's own face (art/heads.ts), a tunic and trousers of their own
+// when bare, and over them each piece that is worn in its material's tones, so the picture changes as armour changes.
+// Every limb is lit from the top left: its left column in the lit tone, its right column in the shade, a root.0 split
+// between the legs, and the whole outlined in root.0. Under the feet lies a course of the ground tile with a shadow on it.
+import { GROUND } from '../../art/ground';
+import { seatFace } from '../../art/heads';
 import type { Node } from '../../node';
-import type { Colour } from '../../palette';
+import { type Colour, CODE, COLOURS } from '../../palette';
 import { type PixelMap, coded } from '../../pixmap';
-import { CODE, COLOURS } from '../../palette';
 
 export type Part = 'head' | 'body' | 'legs';
 
-interface Rect { x: number; y: number; w: number; h: number; part: Part }
-
-/** The figure's rectangles at two sizes: the pack's well (20 by 36) and the states panel's (32 by 64). */
-const SHAPES: Record<'small' | 'large', { w: number; h: number; rects: Rect[] }> = {
-  small: {
-    w: 20, h: 37,
-    rects: [
-      { x: 6, y: 1, w: 8, h: 8, part: 'head' },
-      { x: 6, y: 10, w: 8, h: 12, part: 'body' },
-      { x: 2, y: 10, w: 3, h: 12, part: 'body' },
-      { x: 15, y: 10, w: 3, h: 12, part: 'body' },
-      { x: 6, y: 23, w: 4, h: 13, part: 'legs' },
-      { x: 10, y: 23, w: 4, h: 13, part: 'legs' },
-    ],
-  },
-  large: {
-    w: 32, h: 64,
-    rects: [
-      { x: 10, y: 1, w: 12, h: 12, part: 'head' },
-      { x: 10, y: 14, w: 12, h: 22, part: 'body' },
-      { x: 3, y: 14, w: 6, h: 22, part: 'body' },
-      { x: 23, y: 14, w: 6, h: 22, part: 'body' },
-      { x: 10, y: 37, w: 6, h: 26, part: 'legs' },
-      { x: 16, y: 37, w: 6, h: 26, part: 'legs' },
-    ],
-  },
-};
-
-/** The tones of a piece: lit, mid, shade. */
+/** The tones of a worn piece: lit, mid, shade. `BARE` stands for nothing worn there. */
 export type Tones = [Colour, Colour, Colour];
 export const BARE: Tones = ['root.3', 'root.2', 'root.2'];
 
+const TUNIC: Tones = ['timber.lt', 'timber.face', 'timber.sh'];
+const TROUSERS: Tones = ['clay.sh', 'clay.dk', 'clay.pit'];
+const BOOTS: Tones = ['timber.sh', 'timber.dk', 'timber.pit'];
+
+/** The measures of the body at its two sizes: the pack's well and the states panel's. */
+interface Plan { head: number; wide: boolean; torsoW: number; torsoH: number; armW: number; legW: number; legH: number; boot: number; hands: number; helm: number }
+const PLANS: Record<'small' | 'large', Plan> = {
+  small: { head: 8, wide: false, torsoW: 8, torsoH: 12, armW: 4, legW: 4, legH: 12, boot: 3, hands: 2, helm: 3 },
+  large: { head: 10, wide: true, torsoW: 12, torsoH: 20, armW: 6, legW: 6, legH: 22, boot: 5, hands: 3, helm: 4 },
+};
+
+function size(p: Plan): { w: number; h: number } {
+  return { w: p.torsoW + 2 * p.armW + 2, h: p.head + p.torsoH + p.legH + 2 };
+}
+
 const cache = new Map<string, PixelMap>();
+const code = (c: Colour) => CODE[COLOURS.indexOf(c)];
+const worn = (t: Tones) => t !== BARE && t.join() !== BARE.join();
 
-function code(c: Colour): string { return CODE[COLOURS.indexOf(c)]; }
+/** Fills a limb lit from the left: its left column lit, its right column in shade. */
+function limb(g: (Colour | null)[][], x: number, y: number, w: number, h: number, t: Tones): void {
+  for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) g[j][i] = i === x ? t[0] : i === x + w - 1 ? t[2] : t[1];
+}
 
-/** The figure's pixel map with each part in its tones. */
-export function figureMap(size: 'small' | 'large', tones: Record<Part, Tones>): PixelMap {
-  const key = `${size}|${tones.head}|${tones.body}|${tones.legs}`;
+/** The figure's pixel map with each worn piece in its tones and the seat's face. */
+export function figureMap(sz: 'small' | 'large', tones: Record<Part, Tones>, seat = 1): PixelMap {
+  const key = `${sz}|${seat}|${tones.head}|${tones.body}|${tones.legs}`;
   const hit = cache.get(key);
   if (hit) return hit;
-  const sh = SHAPES[size];
-  const g: string[][] = Array.from({ length: sh.h }, () => Array(sh.w).fill('.'));
-  for (const r of sh.rects) {
-    const [lt, mid, dk] = tones[r.part].map(code);
-    for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) {
-      const edgeL = x === r.x || y === r.y, edgeR = x === r.x + r.w - 1 || y === r.y + r.h - 1;
-      g[y][x] = edgeL && !edgeR ? lt : edgeR ? dk : mid;
-    }
+  const p = PLANS[sz];
+  const { w, h } = size(p);
+  const g: (Colour | null)[][] = Array.from({ length: h }, () => Array(w).fill(null));
+  const ox = 1, oy = 1;
+  const tx = ox + p.armW, hx = tx + Math.floor((p.torsoW - p.head) / 2);
+  const face = seatFace(seat, p.wide);
+  face.rows.forEach((r, j) => r.forEach((c, i) => { if (c) g[oy + j][hx + i] = c; }));
+  if (worn(tones.head)) {
+    const t = tones.head;
+    for (let j = 0; j < p.helm; j++) for (let i = 0; i < p.head; i++) g[oy + j][hx + i] = j === 0 || i === 0 ? t[0] : j === p.helm - 1 || i === p.head - 1 ? t[2] : t[1];
+    for (let j = p.helm; j < p.helm + 3; j++) { g[oy + j][hx] = t[0]; g[oy + j][hx + p.head - 1] = t[2]; }
   }
-  // Eyes on a worn helm's face would be ornament; the head stays plain. The outline is every empty unit beside a filled one.
-  const filled = (x: number, y: number) => y >= 0 && y < sh.h && x >= 0 && x < sh.w && g[y][x] !== '.' && g[y][x] !== 'K';
-  for (let y = 0; y < sh.h; y++) for (let x = 0; x < sh.w; x++) {
-    if (g[y][x] !== '.') continue;
-    if (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1)) g[y][x] = 'K';
+  const ty = oy + p.head;
+  const chest = worn(tones.body) ? tones.body : TUNIC;
+  limb(g, tx, ty, p.torsoW, p.torsoH, chest);
+  for (const ax of [ox, tx + p.torsoW]) {
+    limb(g, ax, ty, p.armW, p.torsoH - p.hands, chest);
+    limb(g, ax, ty + p.torsoH - p.hands, p.armW, p.hands, face.skin as Tones);
   }
-  const m = coded(g.map((r) => r.join('')), `figure.${key}`);
+  const ly = ty + p.torsoH;
+  const legs = worn(tones.legs) ? tones.legs : TROUSERS;
+  for (const lx of [tx, tx + p.torsoW - p.legW]) {
+    limb(g, lx, ly, p.legW, p.legH - p.boot, legs);
+    limb(g, lx, ly + p.legH - p.boot, p.legW, p.boot, BOOTS);
+  }
+  for (let j = ly + 2; j < ly + p.legH; j++) g[j][tx + p.legW - 1] = 'root.0';
+  const rows = g.map((r) => r.map((c) => (c ? code(c) : '.')));
+  const filled = (x: number, y: number) => y >= 0 && y < h && x >= 0 && x < w && g[y][x] !== null && g[y][x] !== 'root.0';
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (g[y][x] !== null) continue;
+    if (filled(x - 1, y) || filled(x + 1, y) || filled(x, y - 1) || filled(x, y + 1)) rows[y][x] = code('root.0');
+  }
+  const m = coded(rows.map((r) => r.join('')), `figure.${key}`);
   cache.set(key, m);
   return m;
 }
 
-export function figure(x: number, y: number, size: 'small' | 'large', tones: Record<Part, Tones>): Node {
-  const m = figureMap(size, tones);
+export function figure(x: number, y: number, sz: 'small' | 'large', tones: Record<Part, Tones>, seat = 1): Node {
+  const m = figureMap(sz, tones, seat);
   return { x, y, w: m.w, h: m.h, paint: (s) => s.map(m, 0, 0) };
 }
 
-export const FIGURE_SIZE = { small: { w: 20, h: 37 }, large: { w: 32, h: 64 } };
+/** The ground the figure stands on, across a well's inner width: one course of the ground tile, a shadow 10 wide under the feet at `cx`. */
+export function floor(x: number, y: number, w: number, h: number, cx: number): Node {
+  return { x, y, w, h, paint: (s) => { s.tile(GROUND, 0, 0, w, h, 3, 0); s.fill(cx - x - 5, 0, 10, 1, 'root.1'); } };
+}
+
+export const FIGURE_SIZE = { small: size(PLANS.small), large: size(PLANS.large) };

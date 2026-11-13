@@ -15,9 +15,9 @@ import { tabbedSlab } from '../parts/tabs';
 import { PATTERNS } from '../sample/play-patterns';
 import { type Stack, thing } from '../sample/play-items';
 import { Bench, cutLine, ink, inkRight, overWorld, place, small, stackGrid } from './play/common';
-import { BARE, type Part, type Tones, figure } from './play/figure';
+import { BARE, FIGURE_SIZE, type Part, type Tones, figure, floor } from './play/figure';
 import { Hand, type Place, store } from './play/hand';
-import { type Grid, type PanelState, gridMatch, recipeControls, recipePanel, resultSlot } from './play/making';
+import { type Grid, type PanelState, RECIPE_W, gridMatch, recipeControls, recipePanel, resultSlot } from './play/making';
 import { type NamedScreen, SCREEN_FILES } from './index';
 
 const WEAR_SLOTS: Part[] = ['head', 'body', 'legs'];
@@ -120,27 +120,35 @@ function totals(st: PackState): [string, string][] {
   ];
 }
 
-/** The body panel's own parts, from its top left, as the wide pack and the narrow Body tab both lay them. */
+/** The width and height of the body panel when wide: narrower and shorter than the main slab, fastened at its top left. */
+const BODY_W = 112, BODY_H = 166;
+
+/**
+ * The body panel's own parts, from its top left, as the wide pack and the narrow Body tab both lay them. The level and
+ * its practice strip share a row; the practice in numbers is the strip's tooltip.
+ */
 function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
   const out: Node[] = [];
-  out.push(ink(8, 6, st.name, 'ink', 88));
-  out.push(ink(8, 18, `Level ${st.level}`));
-  const pr = `${count(st.practice[0])} / ${count(st.practice[1])}`;
-  out.push(inkRight(96, 20, pr, 'ink.faded', SMALL));
-  out.push(strip({ x: 8, y: 29, w: 88, f: st.practice[0] / st.practice[1], tones: ['growth.lt', 'growth', 'growth.dk'], segments: 11, thin: true }));
+  const R = narrow ? 96 : BODY_W - 8, plusX = R - 12;
+  out.push(ink(8, 6, st.name, 'ink', R - 8));
+  const lvl = `Level ${st.level}`;
+  out.push(ink(8, 17, lvl));
+  const sx = 8 + measure(lvl) + 6;
+  const pr = `${count(st.practice[0])} of ${count(st.practice[1])} to level ${st.level + 1}`;
+  out.push({ ...strip({ x: sx, y: 19, w: R - sx, f: st.practice[0] / st.practice[1], tones: ['growth.lt', 'growth', 'growth.dk'], segments: Math.max(1, Math.round((R - sx) / 8)), thin: true }), takes: true, tip: () => ({ lines: [{ text: 'Practice', c: 'growth.lt' }, { text: pr, c: 'root.4' }], delay: 0.2 }) });
   ATTRS.forEach((a, i) => {
-    const y = 38 + i * 12;
+    const y = 28 + i * 12;
     out.push(ink(8, y + 1, a));
-    out.push(inkRight(80, y + 1, String(st.attrs[i])));
-    if (st.points > 0) out.push(plusButton({ id: `body.plus.${i}`, x: 84, y, onPress: () => { st.attrs[i]++; st.points--; ui.cue('press'); ui.invalidate(); } }));
+    out.push(inkRight(plusX - 4, y + 1, String(st.attrs[i])));
+    if (st.points > 0) out.push(plusButton({ id: `body.plus.${i}`, x: plusX, y, onPress: () => { st.attrs[i]++; st.points--; ui.cue('press'); ui.invalidate(); } }));
   });
-  if (st.points > 0) out.push(ink(8, 87, `${st.points} to spend`));
+  if (st.points > 0) out.push(ink(8, 77, `${st.points} to spend`));
   const rows = totals(st);
   if (narrow) {
     rows.forEach(([k, v], i) => { out.push(ink(100, 16 + i * 10, k, 'ink.faded', 68 - measure(v) - 4)); out.push(inkRight(168, 16 + i * 10, v)); });
   } else {
-    out.push(cutLine(8, 98, 88, 'clay'));
-    rows.forEach(([k, v], i) => { out.push(ink(8, 102 + i * 10, k, 'ink.faded', 88 - measure(v) - 4)); out.push(inkRight(96, 102 + i * 10, v)); });
+    out.push(cutLine(8, 89, R - 8, 'clay'));
+    rows.forEach(([k, v], i) => { out.push(ink(8, 92 + i * 10, k, 'ink.faded', R - 8 - measure(v) - 4)); out.push(inkRight(R, 92 + i * 10, v)); });
   }
   return out;
 }
@@ -151,28 +159,34 @@ const STATES_LIST: { icon: string; name: string; good: boolean; seconds: number;
   { icon: 'spore_sac', name: 'Spore in a wound', good: false, seconds: 38, part: 'body', ends: 'A salve ends it' },
 ];
 
-/** The second tab of the body panel: the figure with each state marked where it sits, and a row for each. */
+/** The States tab: the figure in a well with each state marked where it sits, and a row for each under it. */
 function statesParts(st: PackState): Node[] {
   const wear = st.hand.stores.wear;
   const tones = { head: materialTones(wear[0]), body: materialTones(wear[1]), legs: materialTones(wear[2]) };
-  const marks: Record<Part, [number, number]> = { head: [36, 4], body: [36, 26], legs: [36, 58] };
+  const ww = BODY_W - 16, wh = 84, ground = 8;
+  const fig = FIGURE_SIZE.large, fx = 10, fy = wh - 2 - ground - fig.h + 1;
+  const marks: Record<Part, number> = { head: fy + 1, body: fy + 12, legs: fy + 32 };
   const out: Node[] = [frameWell({
-    x: 8, y: 16, w: 88, h: 96, host: 'clay',
-    kids: [figure(6, 15, 'large', tones), ...STATES_LIST.map((s, i): Node => ({
-      x: 50 + (i % 2) * 18, y: marks[s.part][1] + (i > 1 ? 20 : 0) + 4, w: 18, h: 18,
-      paint: (sf) => { sf.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: s.good ? 'growth' : 'blood' }); sf.icon(s.icon, 1, 1); },
-    }))],
+    x: 8, y: 16, w: ww, h: wh, host: 'clay',
+    kids: [
+      floor(0, wh - 2 - ground, ww - 2, ground, fx + Math.floor(fig.w / 2)),
+      figure(fx, fy, 'large', tones),
+      ...STATES_LIST.map((s, i): Node => ({
+        x: 50 + (i % 2) * 20, y: marks[s.part] + (i > 1 ? 20 : 0), w: 18, h: 18,
+        paint: (sf) => { sf.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: s.good ? 'growth' : 'blood' }); sf.icon(s.icon, 1, 1); },
+      })),
+    ],
   })];
   STATES_LIST.forEach((s, i) => {
-    const y = 116 + i * 20;
+    const y = 104 + i * 19, rw = BODY_W - 16;
     out.push({
-      id: `states.row.${i}`, x: 8, y, w: 88, h: 18, takes: true,
+      id: `states.row.${i}`, x: 8, y, w: rw, h: 18, takes: true,
       paint: (sf) => {
         sf.nine(FRAMED_PLATE, 0, 0, 18, 18, { tint: s.good ? 'growth' : 'blood' });
         sf.icon(s.icon, 1, 1);
         const t = clock(s.seconds);
-        sf.text(t, rightX(t, 87, SMALL), 6, s.seconds <= 10 ? 'blood.dk' : 'ink.faded', false, SMALL);
-        sf.text(cut(s.name, rightX(t, 87, SMALL) - 25), 22, 4, 'ink');
+        sf.text(t, rightX(t, rw - 1, SMALL), 6, s.seconds <= 10 ? 'blood.dk' : 'ink.faded', false, SMALL);
+        sf.text(cut(s.name, rightX(t, rw - 1, SMALL) - 25), 22, 4, 'ink');
       },
       tip: () => ({ lines: [{ text: s.name, c: s.good ? 'growth.lt' : 'blood.lt' }, { text: s.ends, c: 'root.4' }], delay: 0 }),
     });
@@ -180,11 +194,17 @@ function statesParts(st: PackState): Node[] {
   return out;
 }
 
+/** The body as worn, 50 by 54 beside the worn slots: the figure standing on a course of the ground tile. */
 function figureWell(st: PackState, x: number, y: number): Node {
   const wear = st.hand.stores.wear;
+  const iw = 48, ih = 52, ground = 8, fig = FIGURE_SIZE.small;
+  const fx = Math.floor((iw - fig.w) / 2), fy = ih - ground - fig.h + 1;
   return frameWell({
     x, y, w: 50, h: 54, host: 'clay',
-    kids: [figure(14, 8, 'small', { head: materialTones(wear[0]), body: materialTones(wear[1]), legs: materialTones(wear[2]) })],
+    kids: [
+      floor(0, ih - ground, iw, ground, fx + Math.floor(fig.w / 2)),
+      figure(fx, fy, 'small', { head: materialTones(wear[0]), body: materialTones(wear[1]), legs: materialTones(wear[2]) }),
+    ],
   });
 }
 
@@ -217,18 +237,32 @@ function goSkills(): void {
   if (name) location.search = `?screen=${name}`;
 }
 
+/**
+ * Wide: the pack is the main slab, centred, with one row of tabs. The tab chosen fastens one panel to it: the body
+ * panel or the states, narrower and shorter, at its top left; or the patterns that two hands can make at its right,
+ * which are closed until asked for. Skills leaves for the tree.
+ */
 function wide(st: PackState, b: Bench, ui: Ui): Node {
-  const win = place(ui, 394, 182, 21);
-  const body = tabbedSlab({
-    id: 'body', x: 0, y: 0, w: 104, h: 182, ramp: 'clay', edge: 'top',
-    tabs: [{ id: 'body.tab.0', icon: 'body', name: 'Body' }, { id: 'body.tab.1', icon: 'states', name: 'States' }, { id: 'body.tab.2', icon: 'skills', name: 'Skills' }],
+  const making = st.bodyTab === 2;
+  const left = making ? 0 : BODY_W - 1, right = making ? RECIPE_W - 1 : 0;
+  const mx = Math.min(Math.max(3 + left, Math.floor((ui.w - 176) / 2)), ui.w - 3 - 176 - right);
+  const at = place(ui, 176, 182, 21);
+  const win = { x: mx - left, y: at.y, w: left + 176 + right, h: 182 };
+  const main = tabbedSlab({
+    id: 'pack.main', x: left, y: 0, w: 176, h: 182, ramp: 'clay', edge: 'top', title: 'Pack', titleRoom: 40,
+    tabs: [
+      { id: 'body.tab.0', icon: 'body', name: 'Body' }, { id: 'body.tab.1', icon: 'states', name: 'States' },
+      { id: 'body.tab.2', icon: 'patterns', name: 'Making' }, { id: 'body.tab.3', icon: 'skills', name: 'Skills' },
+    ],
     chosen: st.bodyTab,
-    onTab: (i) => { if (i === 2) { goSkills(); return; } st.bodyTab = i; ui.cue('tab'); ui.invalidate(); },
-    kids: st.bodyTab === 1 ? statesParts(st) : bodyParts(st, ui, false),
+    onTab: (i) => { if (i === 3) { goSkills(); return; } st.bodyTab = i; ui.cue('tab'); ui.invalidate(); },
+    kids: mainParts(st, b, true),
   });
-  const main = slab({ x: 103, y: 0, w: 176, h: 182, ramp: 'clay', title: 'Pack', titleRoom: 40, kids: mainParts(st, b, true) });
-  const recipes = recipePanel({ b, st: st.panel, id: 'pack.recipes', x: 278, y: 0, h: 182, ramp: 'clay', stations: ['hand', 'workbench', 'anvil'], wellH: 110, hintY: 166, grid: st.grid });
-  return overWorld(ui, win, [body, recipes, main], { outside: () => { st.hand.dropHeld(); b.after(); } });
+  const kids: Node[] = [];
+  if (making) kids.push(recipePanel({ b, st: st.panel, id: 'pack.recipes', x: left + 175, y: 0, h: BODY_H, ramp: 'clay', stations: ['hand'], wellH: 96, hintY: 152, grid: st.grid }));
+  else kids.push(slab({ x: 0, y: 0, w: BODY_W, h: BODY_H, ramp: 'clay', kids: st.bodyTab === 1 ? statesParts(st) : bodyParts(st, ui, false) }));
+  kids.push(main);
+  return overWorld(ui, win, kids, { outside: () => { st.hand.dropHeld(); b.after(); } });
 }
 
 /** Under 400 units of width: the main slab alone with side tabs; Body and Making replace its upper 92 units. */
@@ -268,4 +302,5 @@ export const SCREENS: NamedScreen[] = [
   { name: 'pack-empty', title: 'Pack, empty', world: true, build: (ui) => build(ui, 'pack-empty', 'empty') },
   { name: 'pack-full', title: 'Pack, full', world: true, build: (ui) => build(ui, 'pack-full', 'full') },
   { name: 'pack-states', title: 'Pack: states of the body', world: true, build: (ui) => build(ui, 'pack-states', 'mid', 1) },
+  { name: 'pack-making', title: 'Pack: the patterns two hands can make, opened', world: true, build: (ui) => build(ui, 'pack-making', 'mid', 2) },
 ];

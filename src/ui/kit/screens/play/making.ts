@@ -6,6 +6,7 @@ import type { Ramp } from '../../palette';
 import { paintButton } from '../../parts/button';
 import { checkbox, field } from '../../parts/controls';
 import { paintCount } from '../../parts/slot';
+import { slab } from '../../parts/slab';
 import { tabbedSlab } from '../../parts/tabs';
 import { TRACK_W, paintThumb } from '../../parts/well';
 import { sunk } from '../../parts/common';
@@ -135,6 +136,8 @@ export interface PanelOpts {
 }
 
 const PANEL_W = 116;
+/** The recipe panel's width, for screens that fasten it. */
+export const RECIPE_W = PANEL_W;
 
 function patternTip(h: Hand, p: Pattern, here: boolean, station: Station): ReturnType<typeof stackTip> {
   const extra: TipLine[] = needs(p).map(([w, n]) => ({
@@ -258,6 +261,8 @@ export function recipePanel(o: PanelOpts): Node {
   const { b, st } = o;
   const ui = b.ui;
   const station = o.stations[Math.min(st.tab, o.stations.length - 1)];
+  // With one station there is nothing to choose between, and the panel carries no tab row of its own.
+  if (o.stations.length === 1) return slab({ x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title: STATION_NAME[station], kids: recipeControls(o) });
   return tabbedSlab({
     id: o.id, x: o.x, y: o.y, w: PANEL_W, h: o.h, ramp: o.ramp, title: STATION_NAME[station], edge: 'top',
     tabs: o.stations.map((s) => ({ id: `${o.id}.tab.${s}`, icon: STATION_ICON[s], name: STATION_NAME[s] })),

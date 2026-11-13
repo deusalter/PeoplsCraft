@@ -14,7 +14,7 @@ import { THINGS } from '../sample/play-items';
 import { page } from '../sheets/common';
 import { ink, lit } from './play/common';
 import { SALT } from './play/art';
-import { BARE, figure } from './play/figure';
+import { BARE, figure, floor } from './play/figure';
 import { tracker } from './play/hud';
 import { bed } from './furnace';
 import { line } from './joining';
@@ -90,8 +90,8 @@ function build(ui: Ui): Node {
   kids.push(slab({
     x: 0, y: 86, w: 156, h: 84, ramp: 'clay', title: 'The body as worn',
     kids: [
-      { x: 8, y: 18, w: 50, h: 54, paint: (s) => sunk(s, 0, 0, 50, 54, 'clay'), kids: [figure(15, 9, 'small', { head: BARE, body: BARE, legs: BARE })] },
-      { x: 62, y: 18, w: 50, h: 54, paint: (s) => sunk(s, 0, 0, 50, 54, 'clay'), kids: [figure(15, 9, 'small', { head: [...worn.head], body: [...worn.body], legs: [...worn.legs] })] },
+      { x: 8, y: 18, w: 50, h: 54, paint: (s) => sunk(s, 0, 0, 50, 54, 'clay'), kids: [floor(1, 45, 48, 8, 25), figure(16, 12, 'small', { head: BARE, body: BARE, legs: BARE })] },
+      { x: 62, y: 18, w: 50, h: 54, paint: (s) => sunk(s, 0, 0, 50, 54, 'clay'), kids: [floor(1, 45, 48, 8, 25), figure(16, 12, 'small', { head: [...worn.head], body: [...worn.body], legs: [...worn.legs] })] },
       ink(116, 22, 'Bare,', 'ink.faded'), ink(116, 32, 'then', 'ink.faded'), ink(116, 42, 'iron,', 'ink.faded'), ink(116, 52, 'hide', 'ink.faded'),
     ],
   }));
