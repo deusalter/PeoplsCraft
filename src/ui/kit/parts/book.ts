@@ -35,53 +35,52 @@ export interface BookOpts {
   force?: { prev?: Force; next?: Force; ribbon?: { i: number; force: Force } };
 }
 
-/** The first column of the gutter: 3 and 3 of darker parchment, a fold of 4, 3 and 3 again, round the middle. */
-const GUTTER = BOOK_W / 2 - 8;
-const GUTTER_TONES: Colour[] = [
-  'clay.face', 'clay.face', 'clay.face', 'clay.sh', 'clay.sh', 'clay.sh',
-  'clay.dk', 'clay.pit', 'clay.pit', 'clay.dk',
-  'clay.sh', 'clay.sh', 'clay.sh', 'clay.face', 'clay.face', 'clay.face',
-];
+/**
+ * The gutter, three columns at the middle: the left page's last column in `clay.sh`, a crease of root.0, and the right
+ * page's first column in `clay.lt`, the page itself, so that the fold is a cut and not a ramp of stripes.
+ */
+const GUTTER = BOOK_W / 2 - 1;
+const GUTTER_TONES: Colour[] = ['clay.sh', 'root.0', 'clay.lt'];
+/** Where the block of pages starts: its outline of root.0 stands this far in from the book's edge. */
+const BLOCK = 4;
 
 /** The leather of the boards, by role, so that the tabs are cut from the same hide as the cover. */
-const LEATHER: Tones = (r) => ({ hi: 'timber.lt', lt: 'timber.sh', face: 'timber.dk', sh: 'timber.pit', dk: 'timber.pit', pit: 'timber.pit' } as const)[r];
+const LEATHER: Tones = (r) => ({ hi: 'timber.lt', lt: 'timber.sh', face: 'timber.sh', sh: 'timber.pit', dk: 'timber.pit', pit: 'timber.pit' } as const)[r];
+/** A tab not open lightens under the pointer to `timber.dk`, a step above its `timber.pit` and below the open one. */
+const LEATHER_SHUT: Tones = (r) => (r === 'face' ? 'timber.dk' : LEATHER(r));
 
 /**
- * The cover, the block of pages and the gutter (5.19). The cover is a margin of leather 6 deep: the outline, a light edge
- * two deep on the top and left and a dark one on the bottom and right as on a slab, two rows of `timber.dk`, then a lip
- * of `timber.sh` round the pages. The block of pages has its outline of root.0; the edges of the leaves show three deep
- * along each page's outer side and foot; the gutter is two bands of darker parchment 3 wide either side of a fold of four.
+ * The cover, the block of pages and the gutter (5.19). The cover is a board of leather: the outline with its corners
+ * left out, a light row and column of `timber.lt` on the top and left, a face of `timber.sh`, a dark row and column of
+ * `timber.pit` on the bottom and right, and nothing more. The block of pages has its outline of root.0; the edges of
+ * the leaves show three deep along each page's outer side and foot; the gutter is a crease between the two pages.
  */
 function paintBook(s: Surface): void {
-  const w = BOOK_W, h = BOOK_H;
-  const t = LEATHER;
+  const w = BOOK_W, h = BOOK_H, b = BLOCK;
   s.fill(1, 0, w - 2, 1, 'root.0'); s.fill(1, h - 1, w - 2, 1, 'root.0');
   s.fill(0, 1, 1, h - 2, 'root.0'); s.fill(w - 1, 1, 1, h - 2, 'root.0');
-  s.fill(1, 1, w - 2, h - 2, t('face'));
-  s.fill(1, 1, w - 3, 1, t('hi')); s.fill(1, 2, 1, h - 4, t('hi'));
-  s.fill(2, 2, w - 5, 1, t('lt')); s.fill(2, 3, 1, h - 6, t('lt'));
-  s.fill(w - 2, 2, 1, h - 3, t('pit')); s.fill(2, h - 2, w - 3, 1, t('pit'));
-  s.fill(w - 3, 3, 1, h - 5, t('sh')); s.fill(3, h - 3, w - 5, 1, t('sh'));
-  s.fill(5, 5, w - 10, 1, 'timber.sh'); s.fill(5, h - 6, w - 10, 1, 'timber.sh');
-  s.fill(5, 6, 1, h - 12, 'timber.sh'); s.fill(w - 6, 6, 1, h - 12, 'timber.sh');
-  s.fill(6, 6, w - 12, h - 12, 'root.0');
-  s.fill(7, 7, w - 14, h - 14, 'clay.lt');
+  s.fill(1, 1, w - 2, h - 2, 'timber.sh');
+  s.fill(1, 1, w - 3, 1, 'timber.lt'); s.fill(1, 2, 1, h - 4, 'timber.lt');
+  s.fill(2, h - 2, w - 3, 1, 'timber.pit'); s.fill(w - 2, 2, 1, h - 4, 'timber.pit');
+  s.fill(b, b, w - 2 * b, h - 2 * b, 'root.0');
+  s.fill(b + 1, b + 1, w - 2 * b - 2, h - 2 * b - 2, 'clay.lt');
   // The edges of the leaves, stacked three deep along each page's outer side and its foot, the outermost first.
   const leaves: Colour[] = ['clay.face', 'clay.lt', 'clay.sh'];
+  const p = b + 1;
   leaves.forEach((c, i) => {
-    const y = h - 8 - i;
-    s.fill(7 + i, y, w - 14 - 2 * i, 1, c);
-    s.fill(7 + i, 7, 1, y - 7, c);
-    s.fill(w - 8 - i, 7, 1, y - 7, c);
+    const y = h - p - 1 - i;
+    s.fill(p + i, y, w - 2 * p - 2 * i, 1, c);
+    s.fill(p + i, p, 1, y - p, c);
+    s.fill(w - p - 1 - i, p, 1, y - p, c);
   });
-  GUTTER_TONES.forEach((c, i) => s.fill(GUTTER + i, 7, 1, h - 14, c));
+  GUTTER_TONES.forEach((c, i) => s.fill(GUTTER + i, p, 1, h - 2 * p, c));
 }
 
 /** A ribbon hangs from the foot of the book for each section, 6 wide, its end cut in a V; the open one hangs 4 longer. */
 export const RIBBON_W = 6;
 const RIBBON_DROP = 12, RIBBON_OPEN = 4, RIBBON_PITCH = 8;
 /** Where the first ribbon hangs: the ribbons stand together just left of the spine, under the left page's gutter edge. */
-const ribbonX = (n: number) => GUTTER - n * RIBBON_PITCH;
+const ribbonX = (n: number) => BOOK_W / 2 - 8 - n * RIBBON_PITCH;
 
 function paintRibbon(s: Surface, r: Ribbon, open: boolean, hot: boolean): void {
   const long = RIBBON_DROP + (open ? RIBBON_OPEN : 0);
@@ -112,7 +111,7 @@ export function book(o: BookOpts): Node {
         const l = lv(live, f);
         const fill: Fill = (x, y, w, h, c) => s.fill(x - at, y + rise, w, h, c);
         if (chosen) chosenTab(fill, at, LEATHER);
-        else { otherTab(fill, at, LEATHER, i === 0); otherTabState(fill, at, LEATHER, l.hover, l.focus); }
+        else { otherTab(fill, at, LEATHER, i === 0); otherTabState(fill, at, LEATHER_SHUT, l.hover, l.focus); }
         s.icon(r.icon, 4, chosen ? 4 : 2);
       },
     };

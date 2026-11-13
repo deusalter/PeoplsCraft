@@ -1598,55 +1598,53 @@ A world event (Night raid, Sand March, Amāvassa) is the same with a thin strip 
 
 ### 5.19 Book
 
-For the journal and the codex. 292 by 180. The cover is a margin of leather 6 deep, built as a slab is with its own tones: the outline with its corners left out; a light edge two deep on the top and left (`timber.lt`, then `timber.sh`) and a dark edge two deep of `timber.pit` on the bottom and right, `timber.dk` on the diagonal where they meet; two rows of `timber.dk`; then a lip of `timber.sh` one unit deep round the pages. The block of pages starts 6 in with a line of `root.0` round it; a page is `clay.lt`. The edges of the leaves show three deep along each page's outer side and along the foot of both, `clay.face`, `clay.lt`, `clay.sh` from the outside in, so that the outer bottom corners read as a stack of pages. The gutter is the middle 16 columns: on each page two flat bands of darker parchment 3 wide, `clay.face` then `clay.sh`, toward a fold of four, `clay.dk`, `clay.pit`, `clay.pit`, `clay.dk`. Two flat cream rectangles in a brown frame read as a two-column panel, not as a book opened.
+For the journal and the codex. 292 by 180. The cover is a board of leather 4 deep, built as a slab is with its own tones and with nothing more: the outline with its corners left out; a light row and column of `timber.lt` on the top and left; a face of `timber.sh`; a dark row and column of `timber.pit` on the bottom and right, the face on the diagonal where they meet. The block of pages starts 4 in with a line of `root.0` round it; a page is `clay.lt`. The edges of the leaves show three deep along each page's outer side and along the foot of both, `clay.face`, `clay.lt`, `clay.sh` from the outside in, so that the outer bottom corners read as a stack of pages. The gutter is three columns at the middle: the left page's last column `clay.sh`, a crease of `root.0`, and the right page's first column, which is the page's own `clay.lt`. An earlier gutter of 16 columns stepping down to the fold and back, and a board edge of five rows each a step darker, were bands of equal stripes: pillow shading, which this interface refuses.
 
-**Tabs** mark the sections, as on a slab (5.7), cut from the cover's leather: 24 wide at a pitch of 23 along the cover's top edge from its left corner, each carrying the 16 by 16 mark of its section, its name as its tooltip. The open one rises 21 and is joined to the cover, in the cover's tones (`timber.lt` and `timber.sh` light edges, `timber.dk` face, `timber.pit` dark edge); the others rise 18, flat `timber.pit` with a light row and column of `timber.sh`, and lighten to `timber.dk` under the pointer. A colour alone never tells the sections apart. The top left corner of the book, its first tab open and its second not:
+**Tabs** mark the sections, as on a slab (5.7), cut from the cover's leather: 24 wide at a pitch of 23 along the cover's top edge from its left corner, each carrying the 16 by 16 mark of its section, its name as its tooltip. The open one rises 21 and is joined to the cover, in the cover's tones (a `timber.lt` light edge, `timber.sh` face, `timber.pit` dark edge); the others rise 18, flat `timber.pit` with a light row and column of `timber.sh`, and lighten to `timber.dk` under the pointer. A colour alone never tells the sections apart. The top left corner of the book, its first tab open and its second not:
 
 ```
      0         1         2         3         4         5
      0123456789012345678901234567890123456789012345678901
   0  .KKKKKKKKKKKKKKKKKKKKKK.............................
-  1  KfffffffffffffffffffffUK............................
-  2  KftttttttttttttttttttUXK............................
-  3  KftUUUUUUUUUUUUUUUUUUXXKKKKKKKKKKKKKKKKKKKKKKK......
-  4  KftUUUUUUUUUUUUUUUUUUXXKtttttttttttttttttttttXK.....
-  5  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  6  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  7  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  8  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  9  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 10  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 11  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 12  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 13  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 14  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 15  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 16  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 17  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 18  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 19  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 20  KftUUUUUUUUUUUUUUUUUUXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 21  KftUUUUUUUUUUUUUUUUUUXXKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 22  KftUUUUUUUUUUUUUUUUUUUffffffffffffffffffffffffffffff
- 23  KftUUUUUUUUUUUUUUUUUUttttttttttttttttttttttttttttttt
- 24  KftUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
- 25  KftUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUU
- 26  KftUUttttttttttttttttttttttttttttttttttttttttttttttt
- 27  KftUUtKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 28  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 29  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 30  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 31  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 32  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 33  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 34  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 35  KftUUtKLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+  1  KffffffffffffffffffffftK............................
+  2  KfttttttttttttttttttttXK............................
+  3  KftttttttttttttttttttXXKKKKKKKKKKKKKKKKKKKKKKK......
+  4  KftttttttttttttttttttXXKtttttttttttttttttttttXK.....
+  5  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  6  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  7  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  8  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+  9  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 10  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 11  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 12  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 13  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 14  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 15  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 16  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 17  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 18  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 19  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 20  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
+ 21  KftttttttttttttttttttXXKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 22  Kfttttttttttttttttttttffffffffffffffffffffffffffffff
+ 23  Kftttttttttttttttttttttttttttttttttttttttttttttttttt
+ 24  Kftttttttttttttttttttttttttttttttttttttttttttttttttt
+ 25  KfttKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 26  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 27  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 28  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 29  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 30  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 31  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 32  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 33  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
 ```
-`. nothing  f timber.lt  K root.0  L clay.lt  t timber.sh  U timber.dk  X timber.pit`
+`. nothing  F clay.face  f timber.lt  K root.0  L clay.lt  S clay.sh  t timber.sh  X timber.pit`
 
 **Text on a page** is ink. A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
 
-**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, the last starting 8 left of the gutter's first column. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one, from the cover's bottom outline (row 0), which the ribbon covers:
+**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, the last starting 16 left of the crease. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one, from the cover's bottom outline (row 0), which the ribbon covers:
 
 ```
      0         1    
@@ -1669,27 +1667,27 @@ For the journal and the codex. 292 by 180. The cover is a margin of leather 6 de
 ```
      0         1         2
      012345678901234567890123456789
-  0  LLLLLLLLLLLLLILLLLLLSLFKtUUXXK
-  1  LLLLLLLLLLLLLIILLLLLSLFKtUUXXK
-  2  LLLLIIIIIIIIIIIILLLLSLFKtUUXXK
-  3  LLLLIIIIIIIIIIIIILLLSLFKtUUXXK
-  4  LLLLIIIIIIIIIIIILLLLSLFKtUUXXK
-  5  LLLLLLLLLLLLLIILLLLLSLFKtUUXXK
-  6  LLLLLLLLLLLLLILLLLLLSLFKtUUXXK
-  7  LLLLLLLLLLLLLLLLLLLLSLFKtUUXXK
-  8  LLLLLLLLLLLLLLLLLLLLSLFKtUUXXK
-  9  SSSSSSSSSSSSSSSSSSSSSLFKtUUXXK
- 10  LLLLLLLLLLLLLLLLLLLLLLFKtUUXXK
- 11  FFFFFFFFFFFFFFFFFFFFFFFKtUUXXK
- 12  KKKKKKKKKKKKKKKKKKKKKKKKtUUXXK
- 13  tttttttttttttttttttttttttUUXXK
- 14  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
- 15  UUUUUUUUUUUUUUUUUUUUUUUUUUUXXK
- 16  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
+  0  LLLLLLLLLLLLLILLLLLLLLSLFKttXK
+  1  LLLLLLLLLLLLLIILLLLLLLSLFKttXK
+  2  LLLLIIIIIIIIIIIILLLLLLSLFKttXK
+  3  LLLLIIIIIIIIIIIIILLLLLSLFKttXK
+  4  LLLLIIIIIIIIIIIILLLLLLSLFKttXK
+  5  LLLLLLLLLLLLLIILLLLLLLSLFKttXK
+  6  LLLLLLLLLLLLLILLLLLLLLSLFKttXK
+  7  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
+  8  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
+  9  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
+ 10  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
+ 11  SSSSSSSSSSSSSSSSSSSSSSSLFKttXK
+ 12  LLLLLLLLLLLLLLLLLLLLLLLLFKttXK
+ 13  FFFFFFFFFFFFFFFFFFFFFFFFFKttXK
+ 14  KKKKKKKKKKKKKKKKKKKKKKKKKKttXK
+ 15  ttttttttttttttttttttttttttttXK
+ 16  ttttttttttttttttttttttttttttXK
  17  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
  18  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
-`. nothing  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  t timber.sh  U timber.dk  X timber.pit`
+`. nothing  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  t timber.sh  X timber.pit`
 
 ### 5.20 Tree field, nodes and links
 
