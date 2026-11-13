@@ -1,7 +1,6 @@
 // The five furnaces (section 6): one stone layout. A bed of eight raised stones holds the remains built in, beside
 // the ore, the flame of the fuel left and the fuel, the arrow and what comes out; a side panel lists what the bed works.
 // A furnace goes on working with the window shut, so the mock's furnaces keep their own clock.
-import { SMALL } from '../font/face';
 import { clock } from '../font/measure';
 import type { Node, Ui } from '../node';
 import type { Colour } from '../palette';
@@ -167,19 +166,20 @@ function build(ui: Ui, id: string): Node {
     bed(10, 28, f.stones, heat),
     stackSlot(b, { store: 'bed', i: 0 }, { x: 22, y: 40, ramp: 'stone', locked: f.remains ? { key: f.remains, n: 1 } : null, missing: 'scorched_core', tip: () => (f.remains ? stackTip({ key: f.remains, n: 1 }, 'Built into the bed') : { lines: [{ text: 'An empty hollow', c: 'salt' }, { text: 'Remains bedded here loosen what plain fire cannot', c: 'root.4' }] }) }),
     stackSlot(b, { store: 'ore', i: 0 }, { x: 70, y: 17, ramp: 'stone', silhouette: 'work', showAccepts: true }),
-    burnGauge({ x: 71, y: 36, f: f.burn[1] ? f.burn[0] / f.burn[1] : 0, ramp: 'stone' }),
+    { ...burnGauge({ x: 71, y: 36, f: f.burn[1] ? f.burn[0] / f.burn[1] : 0, ramp: 'stone' }), tip: () => ({ lines: f.burn[0] > 0 ? [{ text: `Fuel for ${clock(f.burn[0])}`, c: 'salt' }] : [{ text: 'No fire', c: 'salt' }, { text: 'Fuel goes in the slot below', c: 'root.4' }] }) },
     stackSlot(b, { store: 'fuel', i: 0 }, { x: 70, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
     { ...progressArrow({ x: 96, y: 36, f: burning || STILL ? progress : 0, ramp: 'stone' }), anim: burning && !STILL },
     stackSlot(b, { store: 'out', i: 0 }, { x: 128, y: 31, ramp: 'stone', large: true }),
     ...packBlock(b, 'stone', 73, 84),
   ];
   const works = worksOf(f);
+  // A work can be done now when what it is made from is in the ore slot, the pack or the hotbar.
+  const held = new Set([...h.stores.ore, ...h.stores.pack, ...h.stores.bar].filter((x): x is Stack => !!x).map((x) => x.key));
   const rows: RowSpec[] = works.map((w) => ({
-    id: `${id}.work.${w.out}`, icon: thing(w.out).icon, name: thing(w.out).name, colour: gradeColour(thing(w.out).grade),
+    id: `${id}.work.${w.out}`, icon: thing(w.out).icon, name: thing(w.out).name, colour: gradeColour(thing(w.out).grade), disabled: !held.has(w.from),
     tip: () => ({ ...stackTip({ key: w.out, n: 1 }, 'none'), lines: [...stackTip({ key: w.out, n: 1 }, 'none').lines.slice(0, 2), { text: `From ${thing(w.from).name}`, c: 'salt' }, { text: `${w.time} s to a piece`, c: 'root.4' }] }),
   }));
   const side: Node[] = [well({ id: `${id}.works`, x: 8, y: 18, w: 100, h: 128, host: 'stone', rows, ui })];
-  if (burning) side.push({ x: 8, y: 150, w: 30, h: 6, paint: (s) => { s.text(clock(f.burn[0]), 0, 0, 'ink', false, SMALL); } });
   const win = place(ui, 291, 166);
   return overWorld(ui, win, [
     slab({ x: 0, y: 0, w: 176, h: 166, ramp: 'stone', title: f.name, kids: main }),

@@ -2621,8 +2621,9 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | F11 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | L0 | slab | 175 | 0 | 116 | 166 | side panel, fastened right |
 | L1 | text | 183 | 6 | 80 | 10 | "Works" |
-| L2 | well | 183 | 18 | 100 | 128 | dark well of list rows 18 tall: icon and name of each thing this bed loosens or this fire sets; seven show, the rest scroll |
-| L3 | text | 183 | 150 | 100 | 10 | the fuel left in seconds, small face, while burning |
+| L2 | well | 183 | 18 | 100 | 128 | dark well of list rows 18 tall: icon and name of each thing this bed loosens or this fire sets; seven show, the rest scroll. A row whose ore is in neither the ore slot, the pack nor the hotbar cannot be worked now and is drawn as a row that cannot be used (5.8): its icon flat in root.4, its name in root.4 |
+
+The fuel left is not written on the slab: the flame empties as it burns, and its tooltip says "Fuel for 0:52", or "No fire" and "Fuel goes in the slot below" in `root.4`. A bare time in the panel's corner was cut off from what it timed.
 
 - **Shows.** One layout for all five. They differ by the title, by the remains in the bed, and by the list of what the bed works. A furnace goes on working with the window shut.
 - **Clickable.** The three slots. A row of the list: hovering shows what it is made from and how long it takes; a click does nothing.
