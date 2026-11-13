@@ -342,18 +342,18 @@ Punctuation:
 .  ..  .  ..  .  .....  .  ...  ..  ..  ..  ..  ...  ...  ...  .....  .......  .....  .....  .....  .....
 1  2   1  2   1  5      1  3    2   2   2   2   3    3    3    5      7        5      5      5      5
 
-*      %      #      &      _      <    >    @        ~      ^    |  `  $      ×    …      °
-.....  .....  .....  .....  .....  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
-#.#.#  ##..#  .....  .##..  .....  ...  ...  .#####.  .....  .#.  #  #.  .####  ...  .....  ###
-.###.  ##.#.  .#.#.  #..#.  .....  ..#  #..  #.....#  .....  #.#  #  .#  #.#..  ...  .....  #.#
-#####  ...#.  #####  #..#.  .....  .#.  .#.  #.###.#  .##.#  ...  #  ..  #.#..  ...  .....  ###
-.###.  ..#..  .#.#.  .##..  .....  #..  ..#  #.#.#.#  #..#.  ...  #  ..  .###.  #.#  .....  ...
-#.#.#  .#...  #####  #..##  .....  .#.  .#.  #.####.  .....  ...  #  ..  ..#.#  .#.  .....  ...
-.....  .#.##  .#.#.  #..#.  .....  ..#  #..  #......  .....  ...  #  ..  ..#.#  #.#  .....  ...
-.....  #..##  .....  .##.#  .....  ...  ...  .#####.  .....  ...  #  ..  ####.  ...  #.#.#  ...
-.....  .....  .....  .....  #####  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
-.....  .....  .....  .....  .....  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
-5      5      5      5      5      3    3    7        5      3    1  2   5      3    5      3
+*      %        #      &      _      <    >    @        ~      ^    |  `  $      ×    …      °
+.....  .......  .....  .....  .....  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
+#.#.#  ##....#  .....  .##..  .....  ...  ...  .#####.  .....  .#.  #  #.  .####  ...  .....  ###
+.###.  #.#..#.  .#.#.  #..#.  .....  ..#  #..  #.....#  .....  #.#  #  .#  #.#..  ...  .....  #.#
+#####  .##.#..  #####  #..#.  .....  .#.  .#.  #.###.#  .##.#  ...  #  ..  #.#..  ...  .....  ###
+.###.  ...#...  .#.#.  .##..  .....  #..  ..#  #.#.#.#  #..#.  ...  #  ..  .###.  #.#  .....  ...
+#.#.#  ..#.##.  #####  #..##  .....  .#.  .#.  #.####.  .....  ...  #  ..  ..#.#  .#.  .....  ...
+.....  .#..#.#  .#.#.  #..#.  .....  ..#  #..  #......  .....  ...  #  ..  ..#.#  #.#  .....  ...
+.....  #....##  .....  .##.#  .....  ...  ...  .#####.  .....  ...  #  ..  ####.  ...  #.#.#  ...
+.....  .......  .....  .....  #####  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
+.....  .......  .....  .....  .....  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
+5      7        5      5      5      3    3    7        5      3    1  2   5      3    5      3
 
 
 ```
@@ -366,9 +366,9 @@ In each sheet the first line names the glyph, `#` is ink, and the last line is i
 | 2 | l , ; ( ) [ ] backtick |
 | 3 | space I j r Ī ī " { } - < > ^ × ° |
 | 4 | E F J L c f k s t z ṭ |
-| 5 | 0 1 2 3 4 5 6 7 8 9 A B C D G H K N O P Q R S T U V X Y Z a b d e g h n o p u v x y Ā ā Ū ū ? – + = / \ % * # & _ ~ $ … |
+| 5 | 0 1 2 3 4 5 6 7 8 9 A B C D G H K N O P Q R S T U V X Y Z a b d e g h n o p u v x y Ā ā Ū ū ? – + = / \ * # & _ ~ $ … |
 | 6 | q, whose descender ends in a spur to the right on row 9 so that it is never read as g |
-| 7 | M W m w — @ |
+| 7 | M W m w — @ %, whose two rings are each 3 by 3 with the face's cut corners, apart from the diagonal that joins them: at 5 wide its rings were 2 by 2 blocks touching the stroke and "+20%" read as "+20/." |
 
 **Marks.** The macron is 3 units wide on row 0 for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
 
@@ -2298,7 +2298,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 
 ### Pack, with the body panel and the patterns made by hand
 
-The pack is the main slab, 176 by 182, centred on the screen, with one row of tabs standing 21 above it. Material: clay. The tab chosen fastens one panel to the main slab and nothing else: Body or States, a panel 136 by 166 at its top left, narrower and 16 shorter, flush with its top and sharing its left outline column; or Making, the recipe panel 116 by 166 at its right, flush with its top. The recipe panel is closed until Making is chosen, as the tradition keeps its recipe book. Skills opens the tree. So the window is never three equal columns: one slab stands, one smaller panel hangs from it. With Body chosen (x counted from the body panel's left; the main slab's left is x 135):
+The pack is the main slab, 176 by 182, with one row of tabs standing 21 above it; the main slab and the panel fastened to it are centred on the screen together, as the tradition moves its pack aside when its recipe book opens, so that the panel never stands near the screen's edge. Material: clay. The tab chosen fastens one panel to the main slab and nothing else: Body or States, a panel 136 by 166 at its top left, narrower and 16 shorter, flush with its top and sharing its left outline column; or Making, the recipe panel 116 by 166 at its right, flush with its top. The recipe panel is closed until Making is chosen, as the tradition keeps its recipe book. Skills opens the tree. So the window is never three equal columns: one slab stands, one smaller panel hangs from it. With Body chosen (x counted from the body panel's left; the main slab's left is x 135):
 
 ```
                                      +-------+
@@ -2364,7 +2364,7 @@ The pack is the main slab, 176 by 182, centred on the screen, with one row of ta
 | S1 | text | 8 | 6 | 120 | 10 | the player's name; one too long for 120 is cut with "…" and its tooltip gives it whole with the level under it |
 | S2 | text | 8 | 17 | 40 | 10 | "Level 14" in ink |
 | S3 | strip | 52 | 19 | 76 | 5 | practice strip, thin, from 6 after the level to x 128, a segment to 8 units; the practice in numbers ("320 of 900 to level 15") is its tooltip |
-| S4 | rows | 8 | 28 | 120 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; value right-aligned to x 112; while there are points, a clay button "+" 11 by 11 at x 116 at the top of each row, so that one clear unit parts each from the next |
+| S4 | rows | 8 | 28 | 120 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; each name's tooltip says in two grey lines what a point raises ("+2% crystal-work and totem harm", "+6 arm per point"), so that a word of the game's own such as Arm is never left to be guessed; value right-aligned to x 112; while there are points, a clay button "+" 11 by 11 at x 116 at the top of each row, so that one clear unit parts each from the next |
 | S5 | text | 8 | 77 | 120 | 10 | "3 to spend", only while there are points |
 | S6 | rule | 8 | 89 | 120 | 2 | cut line |
 | S7 | rows | 8 | 92 | 120 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 128: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |

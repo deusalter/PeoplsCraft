@@ -39,6 +39,13 @@ interface PackState {
 }
 
 const ATTRS = ['Strength', 'Agility', 'Vitality', 'Arm'];
+/** What a point in each attribute raises, as its tooltip says; "Arm" is the game's word and is read off this line. */
+const ATTR_RAISES = [
+  ['+2% melee harm per point', '+1% mining speed per point'],
+  ['+1.5% ranged harm per point', '+0.5% critical chance per point'],
+  ['+6 life per point', '+0.25 defence per point'],
+  ['+2% crystal-work and totem harm', '+6 arm per point'],
+];
 
 function takesFor(p: Place, s: Stack): boolean {
   const t = thing(s.key);
@@ -142,7 +149,8 @@ function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
   out.push({ ...strip({ x: sx, y: 19, w: R - sx, f: st.practice[0] / st.practice[1], tones: ['growth.lt', 'growth', 'growth.dk'], segments: Math.max(1, Math.round((R - sx) / 8)), thin: true }), takes: true, tip: () => ({ lines: [{ text: 'Practice', c: 'growth.lt' }, { text: pr, c: 'root.4' }], delay: 0.2 }) });
   ATTRS.forEach((a, i) => {
     const y = 28 + i * 12;
-    out.push(ink(8, y + 1, a));
+    // The name is the hover target for what a point raises, so a word like "Arm" is never left unexplained.
+    out.push({ ...ink(8, y + 1, a), id: `body.attr.${i}`, takes: true, tip: () => ({ lines: [{ text: a, c: 'salt' }, ...ATTR_RAISES[i].map((t) => ({ text: t, c: 'root.4' as const }))], delay: 0.2 }) });
     out.push(inkRight(plusX - 4, y + 1, String(st.attrs[i])));
     if (st.points > 0) out.push(plusButton({ id: `body.plus.${i}`, x: plusX, y, size: 11, ramp: 'clay', onPress: () => { st.attrs[i]++; st.points--; ui.cue('press'); ui.invalidate(); } }));
   });
@@ -249,7 +257,9 @@ function goSkills(): void {
 function wide(st: PackState, b: Bench, ui: Ui): Node {
   const making = st.bodyTab === 2;
   const left = making ? 0 : BODY_W - 1, right = making ? RECIPE_W - 1 : 0;
-  const mx = Math.min(Math.max(3 + left, Math.floor((ui.w - 176) / 2)), ui.w - 3 - 176 - right);
+  // The slab and its panel are centred together, as the tradition moves its pack aside when the recipe book opens, so
+  // that neither side of the pair stands near an edge of the screen.
+  const mx = Math.min(Math.max(3 + left, Math.floor((ui.w - left - 176 - right) / 2) + left), ui.w - 3 - 176 - right);
   const at = place(ui, 176, 182, 21);
   const win = { x: mx - left, y: at.y, w: left + 176 + right, h: 182 };
   const main = tabbedSlab({
