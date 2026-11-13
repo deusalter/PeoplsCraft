@@ -59,7 +59,7 @@ export interface WellOpts {
   rowH?: number;
   /** A second press on a row, or Enter on the chosen one. */
   onUse?: (i: number) => void;
-  /** Said in the middle of the well, in salt, when it holds no rows. */
+  /** Said at the left of the well's first row, in grey, when it holds no rows. */
   empty?: string;
   /** A second line under `empty`, grey: what to do about it. */
   emptyHint?: string;
@@ -101,13 +101,15 @@ export function well(o: WellOpts): Node {
     },
   }));
   if (!o.rows.length && o.empty) {
-    const t = cut(o.empty, fw - 8), hint = o.emptyHint ? cut(o.emptyHint, fw - 8) : null;
-    const ty = Math.floor((fh - (hint ? 22 : 10)) / 2);
+    // Said where the first row's text would stand, at the left in grey, as one more row of the list: centred words
+    // in the middle of an empty dark box are a web page's empty state, not a list's.
+    const t = cut(o.empty, fw - 12), hint = o.emptyHint ? cut(o.emptyHint, fw - 12) : null;
+    const ty = RH >= 30 ? 7 : 4;
     kids.push({
       x: 1, y: 1, w: fw, h: fh,
       paint: (s) => {
-        s.text(t, centreX(t, 0, fw), ty, 'salt', true);
-        if (hint) s.text(hint, centreX(hint, 0, fw), ty + 12, 'root.4', true);
+        s.text(t, 6, ty, 'root.4', true);
+        if (hint) s.text(hint, 6, ty + (RH >= 30 ? 12 : RH), 'root.4', true);
       },
     });
   }

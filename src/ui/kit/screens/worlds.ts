@@ -30,7 +30,8 @@ function row(w: WorldRow, i: number): RowSpec {
     body: (s, rw) => {
       s.map(worldPreview(w.seed), 2, 2);
       s.text(cut(w.name, rw - 44), 38, 7, 'salt', true);
-      s.text(cut(`seed ${w.seed}, last played ${w.played}, level ${w.level}`, rw - 44), 38, 19, 'root.4', true);
+      // The level first, since it is what tells one world from another and must not be the part a cut takes.
+      s.text(cut(`level ${w.level}, ${w.played}, seed ${w.seed}`, rw - 44), 38, 19, 'root.4', true);
     },
   };
 }
@@ -43,8 +44,9 @@ export const worldsScreen: Screen<WorldsView> = (v, ui) => {
   return groundMenu(ui, 'worlds', [
     line({ x: 73, y: 8, w: 100, text: 'Worlds', c: 'salt', shadow: true }),
     well({
-      id: 'worlds.list', x: 73, y: 22, w: 280, h: 146, host: 'ground', ui, rowH: ROW_H,
-      rows: v.worlds.map(row), chosen: any ? v.chosen : undefined, empty: 'No world yet', emptyHint: 'New world raises one',
+      // With no world the well is three rows deep, and the ground shows under it down to the buttons, which stay put.
+      id: 'worlds.list', x: 73, y: 22, w: 280, h: any ? 146 : ROW_H * 3 + 2, host: 'ground', ui, rowH: ROW_H,
+      rows: v.worlds.map(row), chosen: any ? v.chosen : undefined, empty: 'No world yet', emptyHint: 'Press New world to start one.',
       onChoose: v.onChoose, onUse: v.onPlay,
     }),
     button({ id: 'worlds.play', x: 73, y: 176, w: 136, label: 'Play', disabled: !w, onPress: () => v.onPlay(v.chosen) }),

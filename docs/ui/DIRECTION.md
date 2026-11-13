@@ -3188,7 +3188,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | V1 | text | 73 | 8 | 100 | 10 | "Worlds", salt with shadow |
-| V2 | well | 73 | 22 | 280 | 146 | dark well, the ground tile showing above and below it: rows 36 tall. At 2, 2 of each row the world's picture, 32 by 32 in a frame of root.0: the game's picture of the world's spawn once it has one, until then a cut through the ground the seed raises (meadow, snow or dunes; a flat sky in `arm`, the sun at the top left, turf lit where it faces up or left, two layers, a seam of `stone.pit`, `stone.dk` under it, a few trees). From x 38, line one the world's name in salt at y 7; line two in root.4 at y 19: "seed 4471, last played 12 November, level 14". A list of words with no picture is a file list, not a list of worlds |
+| V2 | well | 73 | 22 | 280 | 146 | dark well, the ground tile showing above and below it: rows 36 tall. At 2, 2 of each row the world's picture, 32 by 32 in a frame of root.0: the game's picture of the world's spawn once it has one, until then a cut through the ground the seed raises (meadow, snow or dunes; a flat sky in `arm`, the sun at the top left, turf lit where it faces up or left, two layers, a seam of `stone.pit`, `stone.dk` under it, a few trees). From x 38, line one the world's name in salt at y 7; line two in root.4 at y 19: "level 14, 12 November, seed 4471", the level first, since a long seed cut the level off when it came last. A list of words with no picture is a file list, not a list of worlds |
 | V3 | button | 73 | 176 | 136 | 20 | "Play"; disabled with no row chosen |
 | V4 | button | 217 | 176 | 136 | 20 | "New world" |
 | V5 | button | 73 | 200 | 136 | 20 | "Delete"; pressed once it reads "Delete for good"; if the world is open in another tab it reads "Open in another tab" and is disabled |
@@ -3197,7 +3197,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 - **Shows.** The worlds saved in this browser, newest first.
 - **Clickable.** A row chooses it, a second click plays it. The four buttons.
 - **Keys.** Up and Down choose, Enter plays, N makes a new one, Delete asks, Esc goes back.
-- **First.** The newest world is chosen and "Play" has focus. With no worlds the well holds, centred in it, "No world yet" in salt and under it "New world raises one" in root.4, and "New world" has focus.
+- **First.** The newest world is chosen and "Play" has focus. With no worlds the well is three rows deep (110 tall) and the ground tile shows under it down to the buttons, which do not move; its first row says at the left, where a world's name would stand, "No world yet" and under it "Press New world to start one.", both in root.4, and "New world" has focus. A large dark box with two centred lines in it was a web page's empty state. Any other empty list says its line the same way, at the left of its first row.
 
 ### New world
 
