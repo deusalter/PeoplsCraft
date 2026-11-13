@@ -23,7 +23,7 @@ export function keycap(o: { x: number; y: number; label: string }): Node {
   };
 }
 
-/** The title mark (5.28): one pixel map of 187 by 36, never scaled. */
+/** The title mark (5.28): one pixel map, never scaled. */
 export function titleMark(o: { cx: number; y: number }): Node {
   return { x: o.cx - Math.floor(TITLE_MARK.w / 2), y: o.y, w: TITLE_MARK.w, h: TITLE_MARK.h, paint: (s) => s.map(TITLE_MARK, 0, 0) };
 }

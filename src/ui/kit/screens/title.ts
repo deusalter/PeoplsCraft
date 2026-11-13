@@ -20,7 +20,7 @@ export interface TitleView {
 export const titleScreen: Screen<TitleView> = (v, ui) => {
   firstFocus(ui, 'title', 'title.worlds');
   const kids: Node[] = [
-    titleMark({ cx: 213, y: 28 }),
+    titleMark({ cx: 213, y: 30 }),
     button({ id: 'title.worlds', x: 113, y: 96, w: 200, label: 'Worlds', onPress: v.onWorlds }),
     button({ id: 'title.join', x: 113, y: 120, w: 200, label: 'Join a server', onPress: v.onJoin }),
     button({ id: 'title.settings', x: 113, y: 144, w: 200, label: 'Settings', onPress: v.onSettings }),
