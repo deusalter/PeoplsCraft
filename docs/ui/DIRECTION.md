@@ -3637,10 +3637,11 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | I1 | logo | 104 | 60 | 219 | 40 | the title mark |
-| I2 | gauge | 122 | 130 | 182 | 7 | a sunk channel on the tile filling in ember, unit by unit, never running back |
-| I3 | text | 113 | 142 | 200 | 10 | one line, centred, root.4: what is being done ("Laying the ground", "Coming up") |
+| I4 | picture | 197 | 106 | 32 | 32 | a drawn picture of what is being raised, lit from the top left and outlined in root.0: the ground laid (turf over soil over stone), a village's house, a hearth lit |
+| I2 | gauge | 122 | 141 | 183 | 11 | a dark well sunk in the tile (5.8) with, 3 in, a strip 177 by 5: a frame of root.0 round sixteen segments of 10 with cuts of one between them, each segment root.2 when empty and, as it fills unit by unit, ember with a top row of ember.lt; it never runs back |
+| I3 | text | 113 | 154 | 200 | 10 | one line, centred, salt with its shadow: what is being done ("Laying the ground", "Coming up") |
 
-- **Shows.** The mark, a channel and one line. On a server the line also says how many are there.
+- **Shows.** The mark, a picture of what is being raised, a strip and one line. On a server the line also says how many are there.
 - **Clickable.** Nothing.
 - **Keys.** Esc gives up a join and goes back to the title.
 - **First.** Nothing has focus.
