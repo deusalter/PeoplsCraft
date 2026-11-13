@@ -1,13 +1,25 @@
 // The pot (section 6, to come): remains, salt and fuel in, a night passing, lees out. Nothing in the game's tables
 // boils remains down yet, so its sample is what the telling says a hearth does with them; there is no salt to lay in.
 import type { Node, Ui } from '../node';
-import { burnGauge, channel } from '../parts/gauges';
+import { coded } from '../pixmap';
+import { burnGauge, channel, progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
 import { type Stack, thing } from '../sample/play-items';
 import { Bench, STILL, cycle, overWorld, packBlock, place, stackGrid, stackSlot } from './play/common';
 import { SALT } from './play/art';
 import { Hand, type Place, store } from './play/hand';
 import type { NamedScreen } from './index';
+
+/** The mark over the water channel: a drop, 7 by 7, lit from the top left. */
+const DROP = coded([
+  '...K...',
+  '..KbK..',
+  '.KbBBK.',
+  'KbBBBdK',
+  'KBBBBdK',
+  '.KBddK.',
+  '..KKK..',
+], 'pot.drop');
 
 const REMAINS = new Set(['shade_essence', 'chitin', 'gel', 'bone', 'spore_sac', 'raw_meat']);
 
@@ -50,16 +62,23 @@ function build(ui: Ui): Node {
   // A night of the mock passes in four minutes; the gauge fills by whole units from the bottom.
   const night = (t: number) => (boiling ? cycle(t - st.opened + 96, 240, 0.4) : 0);
   const main: Node[] = [
-    stackGrid(b, { store: 'remains', x: 34, y: 17, cols: 2, rows: 1, ramp: 'clay', each: () => ({ silhouette: 'work', showAccepts: true }) }),
+    stackGrid(b, { store: 'remains', x: 26, y: 17, cols: 2, rows: 1, ramp: 'clay', each: () => ({ silhouette: 'work', showAccepts: true }) }),
     stackSlot(b, { store: 'salt', i: 0 }, {
-      x: 78, y: 17, ramp: 'clay', silMap: SALT,
+      x: 66, y: 17, ramp: 'clay', silMap: SALT,
       tip: () => ({ lines: [{ text: 'Salt', c: 'salt' }, { text: 'No salt is dug on this ground yet', c: 'root.4' }] }),
     }),
-    burnGauge({ x: 53, y: 36, f: boiling ? 0.7 : 0, ramp: 'clay' }),
-    stackSlot(b, { store: 'fuel', i: 0 }, { x: 43, y: 53, ramp: 'clay', silhouette: 'fuel', showAccepts: true }),
+    burnGauge({ x: 38, y: 36, f: boiling ? 0.7 : 0, ramp: 'clay' }),
+    stackSlot(b, { store: 'fuel', i: 0 }, { x: 35, y: 53, ramp: 'clay', silhouette: 'fuel', showAccepts: true }),
+    { x: 57, y: 37, w: 7, h: 7, paint: (s) => s.map(DROP, 0, 0) },
     {
-      x: 100, y: 20, w: 6, h: 50,
-      paint: (s, live) => channel({ x: 0, y: 0, len: 50, f: night(live.t), ramp: 'clay', upright: true }).paint!(s, live),
+      x: 57, y: 45, w: 6, h: 26,
+      paint: (s, live) => channel({ x: 0, y: 0, len: 26, f: boiling ? 1 - 0.75 * night(live.t) : 0, ramp: 'clay', colour: 'arm', upright: true }).paint!(s, live),
+      anim: boiling && !STILL,
+      tip: () => ({ lines: [{ text: 'Water in the pot', c: 'salt' }, { text: 'It boils down through the night', c: 'root.4' }], delay: 0.4 }),
+    },
+    {
+      ...progressArrow({ x: 92, y: 36, f: 0, ramp: 'clay' }),
+      paint: (s, live) => progressArrow({ x: 0, y: 0, f: night(live.t), ramp: 'clay' }).paint!(s, live),
       anim: boiling && !STILL,
       tip: () => ({ lines: [{ text: 'The night', c: 'salt' }, { text: 'Nothing comes out before first light', c: 'root.4' }], delay: 0.4 }),
     },

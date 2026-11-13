@@ -2635,16 +2635,16 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 ```
 #==========================================================#
 #  "P1"                                                    #
-#                                                          #
-#          .----..----.   .----. ++                        #
-#          |P2  ||    |   |P3  | ||                        #
-#          '----''----'   '----' ||      .-------.         #
-#                 +--+           ||      |       |         #
-#                 |  |           ||      | P7    |         #
-#                 +--+           ||      |       |         #
-#             .----.             ||      '-------'         #
-#             |P5  |             ++                        #
-#             '----'                                       #
+#                                                        #
+#        .----..----.  .----.                            #
+#        |P2  ||    |  |P3  |                            #
+#        '----''----'  '----'                            #
+#            +--+   P6                   .-------.       #
+#            |P4|   ++         ====\     |       |       #
+#            +--+   ||         P11 >     | P7    |       #
+#           .----.  ||         ====/     |       |       #
+#           |P5  |  ||                   '-------'       #
+#           '----'  ++                                   #
 #                                                          #
 #  "P8"                                                    #
 #  .----..----..----..----..----..----..----..----..----.  #
@@ -2668,11 +2668,12 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | P0 | slab | 0 | 0 | 176 | 166 | clay slab |
 | P1 | text | 8 | 6 | 60 | 10 | "Pot" |
-| P2 | slots | 34 | 17 | 36 | 18 | remains to boil down, two slots |
-| P3 | slots | 78 | 17 | 18 | 18 | salt |
-| P4 | flame | 53 | 36 | 13 | 15 | burn gauge |
-| P5 | slots | 43 | 53 | 18 | 18 | fuel |
-| P6 | gauge | 100 | 20 | 6 | 50 | upright gauge: the night gone, filling from the bottom; nothing comes out before first light |
+| P2 | slots | 26 | 17 | 36 | 18 | remains to boil down, two slots |
+| P3 | slots | 66 | 17 | 18 | 18 | salt |
+| P4 | flame | 38 | 36 | 13 | 15 | burn gauge |
+| P5 | slots | 35 | 53 | 18 | 18 | fuel |
+| P6 | gauge | 57 | 37 | 7 | 34 | the water in the pot: a drop 7 by 7 in arm blue over an upright channel 6 by 26 filled in `arm`, which boils down through the night |
+| P11 | arrow | 92 | 36 | 22 | 15 | the progress arrow (5.13): the night gone, filling from the left; nothing comes out before first light |
 | P7 | bigslot | 122 | 31 | 26 | 26 | lees, as coin |
 | P8 | text | 8 | 73 | 40 | 10 | "Pack" |
 | P9 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
