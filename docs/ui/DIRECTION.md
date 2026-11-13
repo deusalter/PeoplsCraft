@@ -502,7 +502,43 @@ A slab 24 by 14:
 ```
 `. nothing  1 hi  2 lt  3 face  4 sh  6 pit  K root.0   (digits are tones of the host slab's ramp; shown in timber)`
 
-It is drawn as nine slices with corners 3 by 3. The face is flat: no grain, no speckle, no second tone.
+It is drawn as nine slices with corners 3 by 3. The face of clay and timber is flat: no grain, no speckle, no second tone. Stone is dressed, as the stance says, and so not the grey of a plain slab: over its face lies the **tooling**, a tile 24 by 24 laid from the face's top left corner (3, 3), of short level strokes of `lt` 3 to 5 long, one to a course of six rows and staggered course to course (at 3, 2; 15, 8; 9, 14; 20, 20 wrapping). A light stroke is the bright floor of a chisel's cut; it is used rather than a dark one because a dark stroke beside ink reads as a dash. A stone slab 60 by 30:
+
+```
+     0         1         2         3         4         5
+     012345678901234567890123456789012345678901234567890123456789
+  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+  1  K1111111111111111111111111111111111111111111111111111111113K
+  2  K1222222222222222222222222222222222222222222222222222222236K
+  3  K1233333333333333333333333333333333333333333333333333333346K
+  4  K1233333333333333333333333333333333333333333333333333333346K
+  5  K1233322223333333333333333333322223333333333333333333322246K
+  6  K1233333333333333333333333333333333333333333333333333333346K
+  7  K1233333333333333333333333333333333333333333333333333333346K
+  8  K1233333333333333333333333333333333333333333333333333333346K
+  9  K1233333333333333333333333333333333333333333333333333333346K
+ 10  K1233333333333333333333333333333333333333333333333333333346K
+ 11  K1233333333333333322222333333333333333333322222333333333346K
+ 12  K1233333333333333333333333333333333333333333333333333333346K
+ 13  K1233333333333333333333333333333333333333333333333333333346K
+ 14  K1233333333333333333333333333333333333333333333333333333346K
+ 15  K1233333333333333333333333333333333333333333333333333333346K
+ 16  K1233333333333333333333333333333333333333333333333333333346K
+ 17  K1233333333322233333333333333333333322233333333333333333346K
+ 18  K1233333333333333333333333333333333333333333333333333333346K
+ 19  K1233333333333333333333333333333333333333333333333333333346K
+ 20  K1233333333333333333333333333333333333333333333333333333346K
+ 21  K1233333333333333333333333333333333333333333333333333333346K
+ 22  K1233333333333333333333333333333333333333333333333333333346K
+ 23  K1223333333333333333333222223333333333333333333222223333346K
+ 24  K1233333333333333333333333333333333333333333333333333333346K
+ 25  K1233333333333333333333333333333333333333333333333333333346K
+ 26  K1233333333333333333333333333333333333333333333333333333346K
+ 27  K1344444444444444444444444444444444444444444444444444444446K
+ 28  K3666666666666666666666666666666666666666666666666666666666K
+ 29  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+```
+`. nothing  1 hi  2 lt  3 face  4 sh  6 pit  K root.0   (digits are tones of the host slab's ramp; shown in stone)`
 
 | Slab | Ramp | Used for |
 | --- | --- | --- |
@@ -1236,26 +1272,26 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
 
 ### 5.14 Gauges
 
-**Burn gauge**, 13 by 15: a hollow in the shape of a flame, by the same rule. It shows the fuel left and empties from the top: the two highest lit rows are `ember.hi`, the rows under them `ember.lt`, the lowest three `ember`. **Upright gauge**, 6 wide: a channel 4 wide that fills from the bottom in one colour. Empty flame, a flame at 55 hundredths, an upright gauge at four tenths:
+**Burn gauge**, 13 by 15: a hollow in the shape of one tongue of flame, leaning a little to the right, by the same rule; it has no cleft, so that it fills as one shape. It shows the fuel left and empties from the top by whole rows. Its fill is shaped as a flame lit from within, never banded: `ember` on the body, `ember.dk` on the right unit of each row and along the bottom row, an inner tongue of `ember.lt` that widens toward the base (column 6 on rows 4 and 5, 5 to 6 on rows 6 and 7, 4 to 6 on row 8, 4 to 7 on rows 9 and 10, 5 to 7 on row 11), and `ember.hi` only at the tip: the top unit of rows 1 and 2 when full, otherwise the tongue's highest lit row. **Upright gauge**, 6 wide: a channel 4 wide that fills from the bottom in one colour. Empty flame, a flame at 55 hundredths, an upright gauge at four tenths:
 
 ```
-     0         1         2         3     
+     0         1         2         3
      012345678901234567890123456789012345
-  0  .....6..............6..........6666.
-  1  ....656............656........655551
-  2  ....6551...........6551.......655551
-  3  ...65556..........65556.......655551
-  4  ...655551.6.......655551.6....655551
-  5  ..6555556651.....6555556651...655551
-  6  .65555555651....65555555651...655551
-  7  .65555555556....6yyyyyyyyy6...655551
-  8  6555555555551..6yyyyyyyyyyy1..655551
-  9  6555565555551..6oooo6oooooo1..655551
- 10  65551.6555551..6ooo1.6ooooo1..655551
- 11  65551.6555551..6OOO1.6OOOOO1..655551
- 12  .6556.655551....6OO6.6OOOO1...655551
- 13  ..655655551......6OO6OOOO1....6OOOO1
- 14  ...11.1111........11.1111.....6OOOO1
+  0  ......6..............6.........6666.
+  1  .....656............656.......655551
+  2  .....6551...........6551......655551
+  3  ....65556..........65556......655551
+  4  ....655551.........655551.....655551
+  5  ...6555551........6555551.....655551
+  6  ..65555556.......65555556.....655551
+  7  ..655555556......6OOyyOOu6....655551
+  8  .65555555551....6OOoooOOOu1...655551
+  9  655555555556...6OOOooooOOu6...655551
+ 10  6555555555551..6OOOooooOOOu1..655551
+ 11  6555555555551..6OOOOoooOOOu1..655551
+ 12  .65555555551....6OOOOOOOOu1...655551
+ 13  ..655555551......6uuuuuuu1....6OOOO1
+ 14  ...1111111........1111111.....6OOOO1
  15  ..............................6OOOO1
  16  ..............................6OOOO1
  17  ..............................6OOOO1
@@ -1264,7 +1300,7 @@ A hollow in the shape of an arrow, 22 by 15 with its rim. It is built by the rul
  20  ..............................6OOOO1
  21  ...............................1111.
 ```
-`. nothing  1 hi  5 dk  6 pit  o ember.lt  O ember  y ember.hi   (digits are tones of the host slab's ramp; shown in timber)`
+`. nothing  1 hi  5 dk  6 pit  o ember.lt  O ember  u ember.dk  y ember.hi   (digits are tones of the host slab's ramp; shown in timber)`
 
 **Channel**, 7 tall: a channel 5 tall that fills from the left. Used for a count toward a step, for standing, for loading.
 
@@ -2503,7 +2539,7 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | F0 | slab | 0 | 0 | 176 | 166 | stone slab |
 | F1 | text | 8 | 6 | 120 | 10 | "Stone Furnace", "Maruhar Furnace", "Guhamāt Furnace", "Ratan Furnace" or "Kuranga Furnace" |
-| F2 | ring | 10 | 20 | 42 | 42 | the bed: eight raised stones round a locked slot 18 square at 22, 32. The slot shows the remains built in; in the Stone Furnace it is an empty hollow |
+| F2 | ring | 10 | 28 | 42 | 42 | the bed, captioned "Bed" in ink with its cell at 10, 17: a locked slot 18 square at 22, 40 holding the remains built in, or, empty, their silhouette (5.4); round it eight lamps 9 by 9 at the corners and the middles of the ring's sides, which show the bed's heat: dull in the furnace's stones until the bed reaches each eighth, then lit in ember, clockwise from the top left. The ring's tooltip: "Bed lit, 5 of 8" and "It heats while the fire burns" in `root.4`, or "Bed cold" |
 | F3 | slots | 70 | 17 | 18 | 18 | what is to be worked, lump silhouette |
 | F4 | flame | 71 | 36 | 13 | 15 | burn gauge: the fuel left, emptying downward |
 | F5 | slots | 70 | 53 | 18 | 18 | fuel, flame silhouette |

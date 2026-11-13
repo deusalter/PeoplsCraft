@@ -14,6 +14,39 @@ export const SLAB = coded([
   '.KKKKK.',
 ], 'slab', [3, 3, 3, 3]);
 
+/**
+ * The tooling of dressed stone (5.1), a tile 24 by 24 laid over the face of a stone slab from its corner: short level
+ * strokes of `lt`, the bright floor of the cuts a claw chisel leaves, one to a course of six rows and staggered course
+ * to course, so that the face reads as worked stone and not as the grey of a plain slab. It is sparse, and a light
+ * stroke never reads as a dash beside dark ink as a dark one does, so text on it keeps its contrast.
+ */
+export const TOOLING = coded([
+  '........................',
+  '........................',
+  '...2222.................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '...............22222....',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '.........222............',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '........................',
+  '2...................2222',
+  '........................',
+  '........................',
+  '........................',
+], 'tooling');
+
 /** The plain dark plate (5.2): a light edge of `root.3` along the top and left only. */
 export const PLATE = coded([
   '.KKK.',

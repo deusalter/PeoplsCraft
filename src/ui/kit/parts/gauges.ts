@@ -1,4 +1,4 @@
-import { ARROW, ARROW_FILL, FLAME, FLAME_FILL } from '../art/gauges';
+import { ARROW, ARROW_FILL, FLAME, FLAME_ROWS } from '../art/gauges';
 import type { Node } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
 
@@ -25,27 +25,35 @@ export function progressArrow(o: ArrowOpts): Node {
 
 export interface FlameOpts { x: number; y: number; f: number; ramp: Ramp }
 
+/** The inner tongue of the flame, by row from row 4: its first and last column. */
+const CORE: Record<number, readonly [number, number]> = { 4: [6, 6], 5: [6, 6], 6: [5, 6], 7: [5, 6], 8: [4, 6], 9: [4, 7], 10: [4, 7], 11: [5, 7] };
+
 /**
- * The burn gauge (5.14): a hollow in the shape of a flame, 13 by 15, showing the fuel left. It empties from the top:
- * the two highest lit rows `ember.hi`, the lowest three `ember`, `ember.lt` between.
+ * The burn gauge (5.14): a hollow in the shape of a flame, 13 by 15, showing the fuel left. It empties from the top by
+ * whole rows, and its fill has the form of a flame lit from within rather than bands: `ember` on the body, `ember.dk`
+ * on the right unit of each row and along the bottom row, an inner tongue of `ember.lt` that widens toward the base,
+ * and `ember.hi` only at the tip: the top two units of the flame when it is full, else the tongue's highest lit row.
  */
 export function burnGauge(o: FlameOpts): Node {
   return {
     x: o.x, y: o.y, w: 13, h: 15,
     paint: (s) => {
       s.map(FLAME, 0, 0, o.ramp);
-      // The hollow's rows run from 1 to 13.
       const n = lit(o.f, 13);
       if (!n) return;
       const top = 14 - n;
-      const band = (y0: number, y1: number, c: Colour) => {
-        const a = Math.max(y0, top), b = y1;
-        if (b <= a) return;
-        s.clip(0, a, 13, b - a); s.draw(FLAME_FILL, 0, 0, { flat: c }); s.unclip();
-      };
-      band(top, Math.min(14, top + 2), 'ember.hi');
-      band(top + 2, 11, 'ember.lt');
-      band(Math.max(top + 2, 11), 14, 'ember');
+      const tongueTop = Math.max(4, top);
+      for (let y = top; y <= 13; y++) {
+        const [a, b] = FLAME_ROWS[y - 1];
+        const core = CORE[y];
+        for (let x = a; x <= b; x++) {
+          let c: Colour = 'ember';
+          if (y <= 2 && x === 6) c = 'ember.hi';
+          else if (y === 13 || x === b) c = 'ember.dk';
+          else if (core && x >= core[0] && x <= core[1]) c = y === tongueTop && top > 2 ? 'ember.hi' : 'ember.lt';
+          s.fill(x, y, 1, 1, c);
+        }
+      }
     },
   };
 }

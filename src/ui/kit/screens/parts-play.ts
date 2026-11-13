@@ -66,11 +66,11 @@ function build(ui: Ui): Node {
   kids.push(slab({
     x: 158, y: 0, w: 140, h: 84, ramp: 'stone', title: 'Beds of furnaces',
     kids: [
-      bed(8, 18, ['stone.hi', 'stone.lt', 'stone.sh']),
-      { x: 20, y: 30, w: 18, h: 18, paint: (s) => paintSlot(s, { ramp: 'stone', mark: 'locked' }, REST) },
-      bed(64, 18, ['stone.sh', 'stone.dk', 'stone.pit']),
+      bed(8, 18, ['stone.hi', 'stone.lt', 'stone.sh'], 0),
+      { x: 20, y: 30, w: 18, h: 18, paint: (s) => paintSlot(s, { ramp: 'stone', mark: 'locked', missing: 'scorched_core' }, REST) },
+      bed(64, 18, ['stone.sh', 'stone.dk', 'stone.pit'], 5),
       { x: 76, y: 30, w: 18, h: 18, paint: (s) => paintSlot(s, { ramp: 'stone', mark: 'locked', stack: { icon: 'scorched_core', n: 1 } }, REST) },
-      ink(8, 64, 'Plain; with remains', 'ink.faded'),
+      ink(8, 64, 'Cold; then lit 5 of 8', 'ink.faded'),
     ],
   }));
 

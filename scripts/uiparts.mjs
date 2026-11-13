@@ -42,52 +42,54 @@ const fakeUi = { scroll: () => 0, setScroll() {}, invalidate() {}, field: () => 
 
 // 5.1 slab 24 by 14
 compare('slab', render(24, 14, (g) => paint(g, mods.slab({ x: 0, y: 0, w: 24, h: 14, ramp: 'timber' }))), grab(488, 0, 14, 0, 24));
+// 5.1 a stone slab carries its tooling
+compare('stone slab', render(60, 30, (g) => paint(g, mods.slab({ x: 0, y: 0, w: 60, h: 30, ramp: 'stone' }))), grab(510, 0, 30, 0, 60), 'stone');
 // 5.4 slot states
 const st = [{}, { mark: 'accepts' }, { mark: 'refused' }, { mark: 'chosen' }, { mark: 'locked' }];
-st.forEach((o, i) => compare(`slot ${i}`, render(18, 18, (g) => mods.paintSlot(g, { ramp: 'timber', ...o }, { ...live, hover: i === 0 })), grab(607, 0, 18, i * 20, 18)));
-compare('large slot', render(26, 26, (g) => mods.paintSlot(g, { ramp: 'timber', large: true }, live)), grab(663, 0, 26, 0, 26));
-compare('dark slot', render(18, 18, (g) => mods.paintSlot(g, { ramp: 'dark' }, live)), grab(697, 0, 18, 0, 18), 'clay');
-compare('dark slot hover', render(18, 18, (g) => mods.paintSlot(g, { ramp: 'dark' }, { ...live, hover: true })), grab(697, 0, 18, 20, 18), 'clay');
+st.forEach((o, i) => compare(`slot ${i}`, render(18, 18, (g) => mods.paintSlot(g, { ramp: 'timber', ...o }, { ...live, hover: i === 0 })), grab(643, 0, 18, i * 20, 18)));
+compare('large slot', render(26, 26, (g) => mods.paintSlot(g, { ramp: 'timber', large: true }, live)), grab(699, 0, 26, 0, 26));
+compare('dark slot', render(18, 18, (g) => mods.paintSlot(g, { ramp: 'dark' }, live)), grab(733, 0, 18, 0, 18), 'clay');
+compare('dark slot hover', render(18, 18, (g) => mods.paintSlot(g, { ramp: 'dark' }, { ...live, hover: true })), grab(733, 0, 18, 20, 18), 'clay');
 // 5.7 top tab: slab 60 wide from row 21, tabs chosen 0
 {
   const g = render(60, 34, (g) => paint(g, mods.tabbedSlab({ x: 0, y: 21, w: 60, h: 40, ramp: 'timber', edge: 'top', tabs: [{ id: 'a', icon: 'x', name: 'a' }, { id: 'b', icon: 'x', name: 'b' }], chosen: 0 })));
-  compare('top tabs', g, grab(895, 0, 34, 0, 60));
+  compare('top tabs', g, grab(931, 0, 34, 0, 60));
 }
 {
   const g = render(40, 56, (g) => paint(g, mods.tabbedSlab({ x: 21, y: -17, w: 40, h: 80, ramp: 'timber', edge: 'left', tabs: [{ id: 'a', icon: 'x', name: 'a' }, { id: 'b', icon: 'x', name: 'b' }, { id: 'c', icon: 'x', name: 'c' }], chosen: 1 })));
-  compare('side tabs', g, grab(937, 6, 50, 0, 40), 'timber', 0, 6);
+  compare('side tabs', g, grab(973, 6, 50, 0, 40), 'timber', 0, 6);
 }
 // 5.10 checkbox
-compare('checkbox on', render(12, 12, (g) => paint(g, mods.checkbox({ id: 'c', x: 0, y: 0, on: true, host: 'clay' }))), grab(1083, 0, 12, 0, 12), 'clay');
+compare('checkbox on', render(12, 12, (g) => paint(g, mods.checkbox({ id: 'c', x: 0, y: 0, on: true, host: 'clay' }))), grab(1119, 0, 12, 0, 12), 'clay');
 // 5.11 slider: handle at 21 of a 60-wide groove
-compare('slider', render(60, 14, (g) => paint(g, mods.slider({ id: 's', x: 0, y: 0, w: 60, value: 21 / 53, host: 'timber', ui: fakeUi }))), grab(1105, 0, 14, 0, 60));
+compare('slider', render(60, 14, (g) => paint(g, mods.slider({ id: 's', x: 0, y: 0, w: 60, value: 21 / 53, host: 'timber', ui: fakeUi }))), grab(1141, 0, 14, 0, 60));
 // 5.13 arrow 60%, 5.14 flame 55%, upright 40%, channel
-compare('arrow 0.6', render(22, 15, (g) => paint(g, mods.progressArrow({ x: 0, y: 0, f: 0.6, ramp: 'timber' }))), grab(1219, 0, 15, 24, 22));
-compare('flame 0.55', render(13, 15, (g) => paint(g, mods.burnGauge({ x: 0, y: 0, f: 0.55, ramp: 'timber' }))), grab(1244, 0, 15, 15, 13));
-compare('upright 0.4', render(6, 22, (g) => paint(g, mods.channel({ x: 0, y: 0, len: 22, f: 0.4, ramp: 'timber', upright: true }))), grab(1244, 0, 22, 30, 6));
-compare('channel', render(42, 7, (g) => paint(g, mods.channel({ x: 0, y: 0, len: 42, f: 22 / 40, ramp: 'timber' }))), grab(1274, 0, 7, 0, 42));
+compare('arrow 0.6', render(22, 15, (g) => paint(g, mods.progressArrow({ x: 0, y: 0, f: 0.6, ramp: 'timber' }))), grab(1255, 0, 15, 24, 22));
+compare('flame 0.55', render(13, 15, (g) => paint(g, mods.burnGauge({ x: 0, y: 0, f: 0.55, ramp: 'timber' }))), grab(1280, 0, 15, 15, 13));
+compare('upright 0.4', render(6, 22, (g) => paint(g, mods.channel({ x: 0, y: 0, len: 22, f: 0.4, ramp: 'timber', upright: true }))), grab(1280, 0, 22, 30, 6));
+compare('channel', render(42, 7, (g) => paint(g, mods.channel({ x: 0, y: 0, len: 42, f: 22 / 40, ramp: 'timber' }))), grab(1310, 0, 7, 0, 42));
 // 5.15 strips
-compare('thin strip', render(42, 5, (g) => paint(g, mods.strip({ x: 0, y: 0, w: 42, f: 24 / 40, tones: ['growth.lt', 'growth', 'growth.dk'], segments: 4, thin: true }))), grab(1332, 0, 5, 0, 42));
-compare('strip', render(56, 7, (g) => paint(g, mods.strip({ x: 0, y: 0, w: 56, f: 27 / 54, was: 33 / 54, tones: ['blood.lt', 'blood', 'blood.dk'], segments: 3 }))), grab(1345, 0, 7, 0, 56));
+compare('thin strip', render(42, 5, (g) => paint(g, mods.strip({ x: 0, y: 0, w: 42, f: 24 / 40, tones: ['growth.lt', 'growth', 'growth.dk'], segments: 4, thin: true }))), grab(1368, 0, 5, 0, 42));
+compare('strip', render(56, 7, (g) => paint(g, mods.strip({ x: 0, y: 0, w: 56, f: 27 / 54, was: 33 / 54, tones: ['blood.lt', 'blood', 'blood.dk'], segments: 3 }))), grab(1381, 0, 7, 0, 56));
 // pips row: full, half, empty
 for (const [k, r0] of [['life', 0], ['hunger', 9], ['arm', 20]]) {
   const g = render(29, 9, (g) => { mods.paintPip(g, k, 'full', 0, 0); mods.paintPip(g, k, 'half', 10, 0); mods.paintPip(g, k, 'empty', 20, 0); });
-  compare(`pips ${k}`, g, grab(1291, r0, 9, 0, 29));
+  compare(`pips ${k}`, g, grab(1327, r0, 9, 0, 29));
 }
 // 5.16 hotbar: first three cells, the first chosen (no icons, no count)
 {
   const g = render(66, 24, (g) => paint(g, mods.hotbar({ x: 1, y: 1, chosen: 0, cells: [null, { icon: 'none', n: 64 }] })));
-  compare('hotbar', g, grab(1362, 0, 24, 0, 66));
+  compare('hotbar', g, grab(1398, 0, 24, 0, 66));
 }
 // 5.18 status frame
-compare('status', render(18, 18, (g) => paint(g, mods.statusFrame({ x: 0, y: 0, icon: 'x', good: true, seconds: 999 }))), grab(1472, 0, 18, 0, 18));
+compare('status', render(18, 18, (g) => paint(g, mods.statusFrame({ x: 0, y: 0, icon: 'x', good: true, seconds: 999 }))), grab(1508, 0, 18, 0, 18));
 // 5.19 book corners
 {
   const g = render(292, 180, (g) => paint(g, mods.book({ id: 'b', x: 0, y: 0, ribbons: [], chosen: -1 })));
-  compare('book top left', g, grab(1508, 0, 14, 0, 26));
-  compare('book bottom right', g, grab(1566, 0, 22, 0, 30).map((r) => r.replace(/I/g, 'L')), 'timber', 262, 158);
+  compare('book top left', g, grab(1544, 0, 14, 0, 26));
+  compare('book bottom right', g, grab(1602, 0, 22, 0, 30).map((r) => r.replace(/I/g, 'L')), 'timber', 262, 158);
 }
 // 5.25 ping, 5.28 crosshair
-compare('crosshair', render(9, 9, (g) => paint(g, mods.crosshair({ x: 0, y: 0 }))), grab(2029, 0, 9, 0, 9));
+compare('crosshair', render(9, 9, (g) => paint(g, mods.crosshair({ x: 0, y: 0 }))), grab(2065, 0, 9, 0, 9));
 await server.close();
 process.exit(faults ? 1 : 0);

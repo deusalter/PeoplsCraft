@@ -115,20 +115,40 @@ function tick(st: State, ui: Ui): void {
   ui.invalidate();
 }
 
-/** Eight raised stones round the hollow of the bed, each lit on its top and left and dark on its bottom and right. */
-export function bed(x: number, y: number, stones: Stones): Node {
-  const at = [[0, 0], [15, 0], [30, 0], [0, 15], [30, 15], [0, 30], [15, 30], [30, 30]];
+// A lamp of the bed, 9 by 9: s the bright spot, l the lit ring by it, b the body, d the shade, K root.0.
+const LAMP = [
+  '..KKKKK..',
+  '.KslbbbK.',
+  'KslbbbbdK',
+  'KlbbbbbdK',
+  'KbbbbbbdK',
+  'KbbbbbbdK',
+  'KbbbbbddK',
+  '.KdddddK.',
+  '..KKKKK..',
+];
+const LIT: Record<string, Colour> = { s: 'ember.hi', l: 'ember.lt', b: 'ember', d: 'ember.dk', K: 'root.0' };
+
+/** Where the eight lamps stand round the bed's slot, clockwise from the top left, in a box 42 square. */
+const LAMPS = [[0, 0], [17, 0], [33, 0], [33, 17], [33, 33], [17, 33], [0, 33], [0, 17]];
+
+/**
+ * The bed (F2): its slot of remains in the middle, ringed by eight lamps that show its heat. A lamp is dull, in the
+ * stones of this furnace, until the bed reaches its eighth of the heat, then lit in ember; they light clockwise from
+ * the top left. The ring's tooltip says how far it is lit. "Bed" is written over it in ink.
+ */
+export function bed(x: number, y: number, stones: Stones, heat: number): Node {
+  const dull: Record<string, Colour> = { s: stones[0], l: stones[0], b: stones[1], d: stones[2], K: 'root.0' };
+  const n = Math.max(0, Math.min(8, Math.round(heat)));
   return {
     x, y, w: 42, h: 42,
     paint: (s) => {
-      for (const [sx, sy] of at) {
-        s.fill(sx + 1, sy, 10, 1, 'root.0'); s.fill(sx + 1, sy + 11, 10, 1, 'root.0');
-        s.fill(sx, sy + 1, 1, 10, 'root.0'); s.fill(sx + 11, sy + 1, 1, 10, 'root.0');
-        s.fill(sx + 1, sy + 1, 10, 10, stones[1]);
-        s.fill(sx + 1, sy + 1, 9, 1, stones[0]); s.fill(sx + 1, sy + 2, 1, 8, stones[0]);
-        s.fill(sx + 2, sy + 10, 9, 1, stones[2]); s.fill(sx + 10, sy + 1, 1, 9, stones[2]);
-      }
+      LAMPS.forEach(([lx, ly], i) => {
+        const key = i < n ? LIT : dull;
+        LAMP.forEach((row, r) => { for (let c = 0; c < 9; c++) if (row[c] !== '.') s.fill(lx + c, ly + r, 1, 1, key[row[c]]); });
+      });
     },
+    tip: () => ({ lines: [{ text: n ? `Bed lit, ${n} of 8` : 'Bed cold', c: 'salt' }, { text: 'It heats while the fire burns', c: 'root.4' }] }),
   };
 }
 
@@ -141,9 +161,11 @@ function build(ui: Ui, id: string): Node {
   const work = ore ? worksOf(f).find((w) => w.from === ore.key) : undefined;
   const burning = f.burn[0] > 0 && !!work;
   const progress = STILL ? f.still : st.started >= 0 && work ? (ui.t - st.started) / work.time : 0;
+  const heat = burning || STILL ? (f.burn[1] ? (8 * f.burn[0]) / f.burn[1] : 0) : 0;
   const main: Node[] = [
-    bed(10, 20, f.stones),
-    stackSlot(b, { store: 'bed', i: 0 }, { x: 22, y: 32, ramp: 'stone', locked: f.remains ? { key: f.remains, n: 1 } : null, tip: () => (f.remains ? stackTip({ key: f.remains, n: 1 }, 'Built into the bed') : { lines: [{ text: 'An empty hollow', c: 'salt' }, { text: 'Remains bedded here loosen what plain fire cannot', c: 'root.4' }] }) }),
+    { x: 10, y: 17, w: 30, h: 10, paint: (s) => { s.text('Bed', 0, 0, 'ink'); } },
+    bed(10, 28, f.stones, heat),
+    stackSlot(b, { store: 'bed', i: 0 }, { x: 22, y: 40, ramp: 'stone', locked: f.remains ? { key: f.remains, n: 1 } : null, missing: 'scorched_core', tip: () => (f.remains ? stackTip({ key: f.remains, n: 1 }, 'Built into the bed') : { lines: [{ text: 'An empty hollow', c: 'salt' }, { text: 'Remains bedded here loosen what plain fire cannot', c: 'root.4' }] }) }),
     stackSlot(b, { store: 'ore', i: 0 }, { x: 70, y: 17, ramp: 'stone', silhouette: 'work', showAccepts: true }),
     burnGauge({ x: 71, y: 36, f: f.burn[1] ? f.burn[0] / f.burn[1] : 0, ramp: 'stone' }),
     stackSlot(b, { store: 'fuel', i: 0 }, { x: 70, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),

@@ -1,4 +1,4 @@
-import { FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB } from '../art/slab';
+import { FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB, TOOLING } from '../art/slab';
 import { cut } from '../font/wrap';
 import type { Node } from '../node';
 import type { Colour, Ramp } from '../palette';
@@ -14,13 +14,14 @@ export interface SlabOpts {
   kids?: Node[];
 }
 
-/** A window slab (5.1) of clay, timber or stone, with its title (5.3). */
+/** A window slab (5.1) of clay, timber or stone, with its title (5.3); stone carries its tooling. */
 export function slab(o: SlabOpts): Node {
   const { w, h, ramp } = o;
   return {
     id: o.id, x: o.x, y: o.y, w, h,
     paint: (s) => {
       s.nine(SLAB, 0, 0, w, h, ramp);
+      if (ramp === 'stone') s.tile(TOOLING, 3, 3, w - 6, h - 6, 0, 0, 'stone');
       if (o.title) s.text(cut(o.title, w - 16 - (o.titleRoom ?? 0)), 8, 6, 'ink');
     },
     kids: o.kids,
