@@ -403,3 +403,126 @@ each. No pump took 0.3 ms or more: what the worker sends arrives by structured c
 when the browser delivers the message, between frames, not inside a pump (R6). No frame of the 22 solo and
 control flights missed a refresh (`intervalOver25` 0 in all), so whatever that delivery costs, the frame
 rate did not show it.
+
+The rounds above ran the worker with its terrain generated inline (the build of `d4a1bcc` plus `--solo`). The
+final build gives the worker a generating worker of its own (D37 (j)); five more rounds on it, the control the
+same, load 1.9 to 5.5:
+
+| Round | control: sum (world + tick + render) | frame CPU mean / p95 / max | solo: sum (world + tick + render) | frame CPU mean / p95 / max | solo tick mean |
+| --- | --- | --- | --- | --- | --- |
+| 12 | 6.8 (1.7 + 0.4 + 4.7) | 2.01 / 3.8 / 5.0 | 6.1 (1.8 + 0.4 + 3.9) | 1.78 / 3.4 / 4.2 | 0.06 |
+| 13 | 6.4 (1.6 + 0.4 + 4.4) | 1.99 / 3.7 / 4.8 | 6.4 (1.8 + 0.3 + 4.3) | 1.79 / 3.5 / 5.2 | 0.07 |
+| 14 | 6.6 (1.7 + 0.4 + 4.5) | 2.05 / 3.8 / 4.9 | 6.4 (1.9 + 0.6 + 3.9) | 1.94 / 3.6 / 4.5 | 0.08 |
+| 15 | 6.5 (1.7 + 0.4 + 4.4) | 2.08 / 3.8 / 4.7 | 7.8 (2.2 + 0.3 + 5.3) | 1.84 / 3.7 / 5.5 | 0.07 |
+| 16 | 6.5 (1.7 + 0.5 + 4.3) | 2.07 / 3.9 / 4.5 | 5.9 (1.5 + 0.3 + 4.1) | 1.82 / 3.6 / 4.5 | 0.07 |
+
+Medians: sum 6.5 (control) against 6.4 (solo); worst tick 0.4 against 0.3; frame CPU mean 2.05 against 1.82; p95
+3.8 against 3.6. Every condition of the stage holds on these five as on the eleven before: the sum within 1.0 ms
+of the control, the mean frame and its p95 not above the control's, the client's tick below the control's.
+
+### Risk R10: the worker's steps during far teleports
+
+Command: `npm run smoke -- tpfar`. A world made in the title menu (the worker, its own clock) at a 12-chunk
+view, flying (creative), is teleported 4,000 blocks east three times; for each jump the host's own step times
+are read from the `tp` until 2 s after the view is meshed again (180 to 260 steps a jump). It passes when every
+jump's p99 is at most 10 ms.
+
+Generating inline in the simulation's worker, as 1 has it for solo (`InlineSource`, `poll(Infinity, budget)`),
+load average 3 to 5. The first two runs at 4 ms were made while the scenario was being written (in the first the
+view was not waited for after each jump, in the second the body fell from 120 and died); every other run flew:
+
+| Budget | Runs | p99 of the three jumps, per run | max | steps over 10 ms in the run |
+| --- | --- | --- | --- | --- |
+| 4 ms (as built) | 3 | 8.3 / 9.7 / 8.5; 8.6 / 9.8 / 9.0; 5.7 / 12.0 / 5.9 | 6.7 to 14.8 | 2 to 4 |
+| 2 ms | 3 | 9.2 / 6.2 / 5.5; 7.7 / 6.5 / 4.5; 12.1 / 6.8 / 4.9 | 5.2 to 17.2 | 1 to 2 |
+
+The long steps were caught with each phase of the step timed in the worker: all of them were in the chunk
+source's `poll`, where one chunk took 7 to 22 ms by itself (2 ms is usual). No budget splits one chunk, so the
+budget only thinned them out. With a generating worker of its own (D37 (j)):
+
+| Run | jump 1: p50 / p95 / p99 / max | jump 2 | jump 3 | in play after the jump |
+| --- | --- | --- | --- | --- |
+| 1 | 0.1 / 0.5 / 3.3 / 3.4 | 0.1 / 0.4 / 0.8 / 1.0 | 0.1 / 0.4 / 1.0 / 1.1 | 1.3, 1.2, 1.0 s |
+| 2 | 0.1 / 0.5 / 3.2 / 9.1 | 0.1 / 0.5 / 0.9 / 1.2 | 0.1 / 0.4 / 0.9 / 1.0 | 1.2, 1.2, 1.1 s |
+
+Inline, the same jumps came into play after 1.1 to 2.4 s. The scenario also checks that the world stands still
+while the loading screen of a crossing is up (two looks at `sim.tick` 200 ms apart behind it: 0 ticks, in every
+run) and while the game is paused (1.5 s paused: 0 or 1 tick, the one being the step that ran before the
+`pause` arrived; 0.5 s after it: 29 ticks).
+
+### Risk R8: two tabs and the upgrade to version 2
+
+Command: `npm run smoke -- twotab`. A page of the same origin that runs no game code opens "cairnlight" at
+version 1, as the build before stage 2 did, puts one world in it and keeps the handle (that build never closed
+it). A tab of this build then shows "Another tab holds this game open: close it to continue." and is still
+waiting 1.5 s later; once the old tab is closed, its menu lists the old world within the next poll and the
+database is at version 2 (1.8 s from the start). That world is played in the worker while a third tab opens the
+title menu and lists it (two version 2 handles at once, the page's and the worker's), and a save made then goes
+through. Then a page upgrades the database to version 3, as a newer build would: the worker's handle lets go
+(`onversionchange`), and a new tab of this build says "These worlds were saved by a newer version of the game.
+Nothing will be saved here." in its menu and "These worlds were saved by a newer version of the game. Progress
+is lost when the tab closes." in the banner of a world begun there, where the banner used to blame the browser.
+
+### Determinism (10.1)
+
+Command: `npm run smoke -- det` (worker, `&worker&det`) and `npm run smoke -- det ?loopback` (`&det` alone).
+Two runs of one script of 20 calls (`T.step`, `T.key`, `T.click`, `T.cmd`: walking, a jump, digging, a placed
+block, two creatures spawned and fought, night, spawning caps raised, everything hostile killed), each call
+followed by `simhash`. Both runs give the same tick and hash after every call: from `simhash fc591e3b tick 30`
+to `simhash a1b6541 tick 693`, and the worker and the page give the same 20 values as each other. Before display
+frames stopped counting time under `&det` (D37 (h)), the two runs were 3 ticks apart from the first call.
+
+### D36 (m) and (n) in the worker
+
+Command: `npm run smoke -- solofar`. In the page and in the worker alike: a creature 90 blocks away (past
+`MOB_R` 88), a drop 55 blocks away (past `DROP_R` 48) and a damage number 40 blocks away (past `FLOAT_R` 32)
+each reach the client, and the simulation reports `opt.solo`.
+
+### Risk R12: what closing the tab keeps
+
+Command: `npm run smoke -- closetab --r12` (Chrome only: no Firefox is installed on this machine, and
+Playwright's own WebKit build here is not the revision this `playwright-core` drives). A world made in the title
+menu (the worker, its own clock). Each trial places a cobble block, then 0.4 to 0.5 s later moves a stack into a
+chest (shift-click), and the page goes the stated time after that second change. "No beforeunload": the page is
+closed without the browser running `beforeunload` (Playwright's `page.close()`), so no prompt can be shown or
+answered. "Accepted": `beforeunload` runs and its prompt is answered "leave". "Hidden first": the page's
+`visibilitychange` to hidden is dispatched 0.3 s before the close (headless Chrome does not hide a tab by
+itself). Then a new page opens the world from the menu.
+
+| Closed after | no beforeunload | hidden first, no beforeunload | accepted | hidden first, accepted |
+| --- | --- | --- | --- | --- |
+| 1 s | both kept | both kept | both kept | both kept |
+| 4 s | both kept | both kept | both kept | both kept |
+| 10 s | both kept | both kept | both kept | both kept |
+
+Every world opened consistent: the items in the pack and the chest added up, and the block was there exactly
+when its cobble had left the pack. What kept the 1 s changes: closing a tab in Chrome makes the page hidden
+before it goes, the page then sends `pause` (and `save`), and the worker's commit finished before the worker was
+torn down. With the page's own `save` and `pause` taken away (`mute` in the scenario), so that only the host's
+timers can save:
+
+| Closed after, nothing sent at the close | block | stack |
+| --- | --- | --- |
+| 1 s | lost | lost |
+| 4 s | kept | kept |
+
+which is the bound of 8.2: up to 3 s of changes, lost together. The plain scenario (`npm run smoke -- closetab`)
+checks the 4 s case and the consistency of the 1 s case, that hiding the tab saves (0.1 s after it is hidden,
+well inside the 3 s), and that "Save and quit to title" pressed at once after a change keeps it, without a prompt.
+Passed three times in a row. The debounce stays at 3 s: nothing here shows it too long in practice.
+
+While measuring this, opening a world started the 3 s timer by itself (the player's inventory, read from its
+record, counted as a change) and saved for nothing; one trial kept a muted 1 s change that way. Fixed in the
+same commit as this section: a player who has just come in is not a change.
+
+### The other checks of "Done when" for stage 3
+
+- Worlds from the title menu run on the worker transport (`closetab`, `twotab` and `perf --solo` read
+  `session.transport.kind`).
+- `npm run smoke -- golden`, `golden '?clone'` and `golden '?worker'`: all 174 probes match the stage 0 baseline.
+- `npm run smoke -- legacy`: all 66 probes, three times in a row; and `legacy '?worker'`, where the migration of
+  the old records runs in the simulation's worker: all 66.
+- `npm run smoke -- det`: three times in a row, and once more with `?loopback`.
+- `npm run smoke -- closetab`: three times in a row. `twotab`, `solofar`, `tpfar`: pass.
+- `npm test`, `npm run check` and `npm run build` pass. The build has the worker as its own file
+  (`dist/assets/sim-worker-*.js`).

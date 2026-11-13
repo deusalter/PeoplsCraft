@@ -3591,7 +3591,8 @@ a promise. `T.cmd` on a host with its own clock waits up to 10 s of wall time fo
 (c) The save 3 s after a change (8.2) is the host's, in solo only: a timer started by the first step that sees a change,
 not started again by the next ones, so a player who keeps building is still saved every 3 s. A change is an inventory's
 `rev`, an edit map marked dirty (blocks, chests, forges, nests), the number of flags and the quest index. After a failed
-commit the timer waits for a commit that succeeds; the 10 s retry stands.
+commit the timer waits for a commit that succeeds; the 10 s retry stands. A player who has just come in is not a
+change: the inventory read from its record would otherwise have saved every world 3 s after it was opened.
 (d) `simhash` and `hash` are commands of `sim/cheats.ts` (10.1). `simhash` is FNV-1a over the JSON of every player's
 record, every live creature, shot and drop, and the shared state with the random stream; nothing a page's wall clock
 sets (round trips, `seen`) is in it. `tickstats` is answered by the host, which holds the step times: p50, p95, p99 and

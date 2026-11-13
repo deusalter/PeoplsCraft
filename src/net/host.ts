@@ -84,7 +84,8 @@ export class SimHost {
   private saving: Promise<void> | null = null; private saveWanted = false; private saveTimer: unknown = null;
   private saveStart = -1e9; private saveEnd = 0; private savedTick = -1;
   /** The solo save after a change: its timer, and what the inventories, flags and guide were when it was last looked at. */
-  private changeTimer: unknown = null; private seenRev = -1; private seenFlags = -1; private seenQuest = -1; private saveFailed = false;
+  private changeTimer: unknown = null; private seenRev = new WeakMap<SimPlayer, number>(); private seenFlags = -1; private seenQuest = -1;
+  private saveFailed = false;
 
   constructor(private env: HostEnv, private storage: Storage, private source: ChunkSource, readonly opt: HostOptions) {}
 
@@ -386,10 +387,14 @@ export class SimHost {
    *  map, a flag, the guide. Position, clock and vitals alone are not; the 30 s save carries them. */
   private changed(): boolean {
     const sim = this.sim;
-    let rev = 0;
-    for (const p of sim.players.values()) rev += p.inv.rev;
-    const moved = rev !== this.seenRev || sim.flags.size !== this.seenFlags || sim.shared.quest !== this.seenQuest;
-    this.seenRev = rev; this.seenFlags = sim.flags.size; this.seenQuest = sim.shared.quest;
+    let moved = sim.flags.size !== this.seenFlags || sim.shared.quest !== this.seenQuest;
+    this.seenFlags = sim.flags.size; this.seenQuest = sim.shared.quest;
+    // a player who has just come in brings an inventory read from its record: nothing to save yet
+    for (const p of sim.players.values()) {
+      const r = this.seenRev.get(p);
+      if (r !== undefined && r !== p.inv.rev) moved = true;
+      this.seenRev.set(p, p.inv.rev);
+    }
     if (moved) return true;
     for (const e of this.edits.values()) if (e.dirty) return true;
     return false;
