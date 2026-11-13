@@ -2,7 +2,10 @@ import { CHECK, HANDLE } from '../art/controls';
 import { measure } from '../font/measure';
 import type { Live, Node, Ui } from '../node';
 import type { Surface } from '../surface';
-import { type Force, type Host, hostHi, lv, ring, sunk } from './common';
+import { tone } from '../palette';
+import { type Force, type Host, lv, ring, sunk } from './common';
+
+const HANDLE_W = 8;
 
 export interface FieldOpts {
   id: string;
@@ -124,17 +127,22 @@ export interface SliderOpts {
 }
 
 /**
- * A slider (5.11): a row 14 tall, a groove 6 tall at y 4 with `root.4` from its left end to the handle, and a handle of
- * 7 by 14 in dressed stone that moves by whole units.
+ * A slider (5.11): a channel 14 tall sunk into its host like a slot, the run up to the handle a shade lighter than the
+ * floor, a notch at each step when there are few enough to count, and a handle of 8 by 14 in dressed stone that
+ * stands across the channel and moves by whole units.
  */
 export function slider(o: SliderOpts): Node {
-  const w = o.w, stops = w - 7;
+  const w = o.w, stops = w - HANDLE_W;
   const snap = (v: number) => {
     const c = Math.min(1, Math.max(0, v));
     return o.steps ? Math.round(c * o.steps) / o.steps : c;
   };
   const hx = Math.round(snap(o.value) * stops);
-  const set = (x: number) => { o.onChange?.(snap((x - 3) / stops)); o.ui.invalidate(); };
+  const set = (x: number) => { o.onChange?.(snap((x - HANDLE_W / 2) / stops)); o.ui.invalidate(); };
+  const ramp = o.host === 'dark' || o.host === 'ground' ? null : o.host;
+  const floor = ramp ? tone(ramp, 'dk') : 'root.1';
+  const run = ramp ? tone(ramp, 'sh') : 'root.2';
+  const notch = ramp ? tone(ramp, 'pit') : 'root.3';
   return {
     id: o.id, x: o.x, y: o.y, w, h: 14,
     focus: true, takes: true,
@@ -149,16 +157,20 @@ export function slider(o: SliderOpts): Node {
     },
     paint: (s, live) => {
       const l = lv(live, o.force);
-      s.fill(0, 4, w - 1, 1, 'root.0');
-      s.fill(0, 5, 1, 4, 'root.0');
-      s.fill(1, 9, w - 1, 1, hostHi(o.host));
-      s.fill(w - 1, 5, 1, 4, hostHi(o.host));
-      s.fill(1, 5, w - 2, 4, 'root.1');
-      if (hx > 1) s.fill(1, 5, hx - 1, 4, 'root.4');
+      sunk(s, 0, 0, w, 14, o.host, floor);
+      if (hx > 0) s.fill(1, 1, hx, 12, run);
+      // A notch at each step, top and bottom, where the handle's centre would stand; none when the steps are too
+      // close to tell apart.
+      if (o.steps && o.steps > 1 && stops / o.steps >= 4) {
+        for (let k = 1; k < o.steps; k++) {
+          const nx = Math.round((k / o.steps) * stops) + HANDLE_W / 2 - 1;
+          s.fill(nx, 1, 1, 2, notch); s.fill(nx, 11, 1, 2, notch);
+        }
+      }
       s.map(HANDLE, hx, 0);
       if (l.hover || l.down || l.focus) {
-        s.fill(hx + 1, 0, 5, 1, 'salt'); s.fill(hx + 1, 13, 5, 1, 'salt');
-        s.fill(hx, 1, 1, 12, 'salt'); s.fill(hx + 6, 1, 1, 12, 'salt');
+        s.fill(hx + 1, 0, HANDLE_W - 2, 1, 'salt'); s.fill(hx + 1, 13, HANDLE_W - 2, 1, 'salt');
+        s.fill(hx, 1, 1, 12, 'salt'); s.fill(hx + HANDLE_W - 1, 1, 1, 12, 'salt');
       }
     },
   };

@@ -40,7 +40,7 @@ function rowNodes(v: SettingsView, i: number, s: Setting, y: number, ui: Ui): No
     const steps = Math.round((s.max - s.min) / s.step);
     return [
       label,
-      { x: 100, y: y + 3, w: 39, h: 10, paint: (g) => { g.text(t, rightX(t, 38), 0, 'ink'); } },
+      { x: 100, y: y + 3, w: 40, h: 10, paint: (g) => { g.text(t, rightX(t, 39), 0, 'ink'); } },
       slider({
         id, x: 144, y: y + 1, w: 80, value: (s.value - s.min) / (s.max - s.min), steps, host: 'clay', ui,
         onChange: (f) => change({ ...s, value: s.min + Math.round(f * steps) * s.step }),

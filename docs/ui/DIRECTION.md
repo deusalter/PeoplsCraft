@@ -1170,27 +1170,27 @@ A sunk dark field, 14 tall in a window and 16 tall in a full-screen menu, with t
 
 ### 5.11 Slider
 
-A row 14 tall. The groove is 6 tall at y 4: `root.0` along its top and left, `hi` of the host ramp along its bottom and right, floor `root.1`, and `root.4` from its left end to the handle. The handle is 7 by 14: outline, a top row of `stone.lt`, a body of `stone.sh` with one grip column of `stone.dk`, two bottom rows of `stone.dk`. Hovered, dragged or focused, the handle's outline is `salt`. The handle moves by whole units; a slider 80 wide has 72 stops, and the value snaps to the nearest step of its setting.
+A channel 14 tall, sunk into its host the way a slot is: `root.0` along its top and left, `hi` of the host ramp along its bottom and right, floor `dk` of the host ramp (`root.1` on dark or on the ground tile). The run from its left end to the handle is `sh` of the ramp (`root.2` on dark): the hollow fills as the value grows. When the setting has few enough steps that they stand 4 units or more apart, a notch of `pit` (`root.3` on dark) 1 by 2 marks each step at the top and at the bottom of the floor, where the handle's centre would stand. The handle is 8 by 14 and stands across the channel: outline `root.0` with its corners left out, `stone.hi` along its top and left, a face of `stone.face`, `stone.sh` along its right and bottom, and a grip cut down its middle as a `stone.dk` column beside a `stone.hi` column, rows 4 to 9. Hovered, dragged or focused, the handle's outline is `salt`. The handle moves by whole units; a slider 80 wide has 72 stops, and the value snaps to the nearest step of its setting. The value is not written on the slider: it stands in ink in the label column, right-aligned 4 units left of the channel. A thin groove with a pale fill and a small knob reads as a web page's range input, not as a thing cut in the slab.
 
 ```
      0         1         2         3         4         5         
      012345678901234567890123456789012345678901234567890123456789
-  0  ......................KKKKK.................................
-  1  .....................KGGGGGK................................
-  2  .....................KJJJJJK................................
-  3  .....................KJJJJJK................................
-  4  KKKKKKKKKKKKKKKKKKKKKKJJMJJKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
-  5  KggggggggggggggggggggKJJMJJKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk1
-  6  KggggggggggggggggggggKJJMJJKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk1
-  7  KggggggggggggggggggggKJJMJJKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk1
-  8  KggggggggggggggggggggKJJMJJKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk1
-  9  .11111111111111111111KJJJJJK11111111111111111111111111111111
- 10  .....................KJJJJJK................................
- 11  .....................KMMMMMK................................
- 12  .....................KMMMMMK................................
- 13  ......................KKKKK.................................
+  0  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+  1  K444444444444644444446KAAAAAHK555555565555555655555556555551
+  2  K444444444444644444446KAHHHHJK555555565555555655555556555551
+  3  K444444444444444444444KAHHHHJK555555555555555555555555555551
+  4  K444444444444444444444KAHMAHJK555555555555555555555555555551
+  5  K444444444444444444444KAHMAHJK555555555555555555555555555551
+  6  K444444444444444444444KAHMAHJK555555555555555555555555555551
+  7  K444444444444444444444KAHMAHJK555555555555555555555555555551
+  8  K444444444444444444444KAHMAHJK555555555555555555555555555551
+  9  K444444444444444444444KAHMAHJK555555555555555555555555555551
+ 10  K444444444444444444444KAHHHHJK555555555555555555555555555551
+ 11  K444444444444644444446KAHHHHJK555555565555555655555556555551
+ 12  K444444444444644444446KHJJJJJK555555565555555655555556555551
+ 13  K1111111111111111111111KKKKKK1111111111111111111111111111111
 ```
-`. nothing  1 hi  g root.4  G stone.lt  J stone.sh  k root.1  K root.0  M stone.dk   (digits are tones of the host slab's ramp; shown in timber)`
+`. nothing  1 hi  4 sh  5 dk  6 pit  A stone.hi  H stone.face  J stone.sh  K root.0  M stone.dk   (digits are tones of the host slab's ramp)`
 
 ### 5.12 Tooltip
 
@@ -3461,11 +3461,11 @@ Size 248 by 206, with tabs standing 21 above. Material: clay. Anchor: centre of 
 | E0 | slab | 0 | 0 | 248 | 206 | clay slab |
 | T1 | tab | 0 | -21 | 24 | 24 | top tabs: Picture, Play, Sound, Interface |
 | E1 | text | 8 | 6 | 100 | 10 | the tab's name |
-| E2 | rows | 8 | 20 | 224 | 160 | ten rows 16 tall, the rest scroll. Label in ink at x 8. A switch is a checkbox right-aligned to x 232. A measure is a slider 80 wide at x 152 with its value right-aligned to x 146. A choice is a button 80 by 14 at x 152 that steps through its values |
+| E2 | rows | 8 | 20 | 224 | 160 | ten rows 16 tall, the rest scroll. Label in ink at x 8. A switch is a checkbox right-aligned to x 232. A measure is a slider 80 wide at x 152 with its value right-aligned to x 147. A choice is a button 80 by 14 at x 152 that steps through its values |
 | E3 | scroll | 234 | 20 | 6 | 160 | scroll track, light variant (floor clay.dk, thumb as the slider handle) |
 | E4 | button | 74 | 184 | 100 | 16 | "Done" |
 
-- **Shows.** Picture: preset, render distance, field of view, resolution scale, texture filtering, adaptive resolution, bloom, sun shadows, tone mapping, vignette, the two edge smoothings, clouds, sway, eye adaptation. Play: mouse sensitivity, view bobbing, screen shake, auto-jump, tool switching, double-tap to fly, raw mouse. Sound: effects, music. Interface: scale (Auto, then each whole number that fits), chat lines shown, coordinates on or off.
+- **Shows.** Picture: preset, render distance, field of view, resolution scale, texture filtering, adaptive resolution, bloom, sun shadows, tone mapping, vignette, the two edge smoothings, clouds, sway, eye adaptation. Play: mouse sensitivity, view bobbing, screen shake, auto-jump, tool switching, double-tap to fly, raw mouse. Play also: invert looking up and down, crouch and run while the key is held. Sound: all sound, effects, music, wind, water and birds, rain and thunder, footsteps, crew voices, interface clicks, sound when the window is away, write what is heard. Interface: scale (Auto, then each whole number that fits), chat lines shown, chat width, how long chat stays, and a switch for each part of the HUD a player may want gone: the crew list, toasts, the pickup log, the name of the thing in hand, coordinates, the compass. Every tab fills the ten rows the slab shows, so that the slab keeps one height across the tabs and "Done" stands under the last row, not under an empty face.
 - **Clickable.** Controls, tabs, "Done". A change takes effect at once and is saved at once; there is no "Apply".
 - **Keys.** Up and Down move along the rows, Left and Right change the focused control by one step, Space flips a switch, Q and E step through the tabs, Esc is "Done".
 - **First.** Focus on the first row of the tab last open.
