@@ -22,13 +22,13 @@ Three rules follow and are used everywhere below.
 
 ## 2. Palette
 
-47 colours. No opaque part of the interface uses any other. Each ramp runs light to dark and its hue moves as it darkens: clay from yellow toward red-brown, timber from yellow-orange toward wine, stone from green-grey toward blue-grey, root stays cold. The **Code** is the character that stands for the colour in every diagram of this document.
+49 colours. No opaque part of the interface uses any other. Each ramp runs light to dark and its hue moves as it darkens: clay from yellow toward red-brown, timber from yellow-orange toward wine, stone from green-grey toward blue-grey, root stays cold. The **Code** is the character that stands for the colour in every diagram of this document.
 
 | Name | Hex | Code | Use |
 | --- | --- | --- | --- |
 | `root.0` | `#0c0d13` | `K` | outline of every part; text shadow; the dim behind windows |
 | `root.1` | `#191b26` | `k` | face of dark plates: tooltip, toast, readout, hotbar floor, list well |
-| `root.2` | `#2a2d3c` | `j` | raised or hovered row on a dark plate; empty gauge and pip |
+| `root.2` | `#2a2d3c` | `j` | raised or hovered row on a dark plate; empty gauge and pip; face of a block of the ground tile |
 | `root.3` | `#454a5e` | `h` | light edge of a dark plate; dividers on dark; disabled text on dark |
 | `root.4` | `#8b92a8` | `g` | grey text on dark: the less important lines |
 | `salt` | `#f7f2e3` | `W` | white: text on dark and on the world; hottest edge of a clay slab; selector; outline of a hovered button; core of an earned link |
@@ -47,8 +47,8 @@ Three rules follow and are used everywhere below.
 | `stone.lt` | `#c3cab9` | `G` | light edge of a stone slab; top row of a button; face of a key cap |
 | `stone.face` | `#9da695` | `H` | face of a stone slab |
 | `stone.sh` | `#6f7a76` | `J` | button face; inner dark edge in stone; hovered slot floor |
-| `stone.dk` | `#4e585d` | `M` | slot floor in stone; tooling and lower edge of a button and of a key cap; blocks of the ground tile |
-| `stone.pit` | `#323844` | `z` | dark edge in stone; disabled button face; joints of the ground tile |
+| `stone.dk` | `#4e585d` | `M` | slot floor in stone; lower edge of a button and of a key cap |
+| `stone.pit` | `#323844` | `z` | dark edge in stone; disabled button face; the lip of a block of the ground tile |
 | `ink` | `#2b1f2e` | `I` | text on any light face |
 | `ink.faded` | `#5c4c56` | `i` | secondary and disabled text on a light face |
 | `blood.lt` | `#f2785c` | `r` | worse-than lines and refusals on dark; lit top of the life fill |
@@ -73,6 +73,8 @@ Three rules follow and are used everywhere below.
 | `rose.dk` | `#96164a` | `P` | grade Floor on a light face |
 | `gilt.dk` | `#6b4d08` | `Y` | grade Old on a light face |
 | `blood.pit` | `#4a1606` | `Q` | the wash of a fall, and nothing else: a red-brown dark enough that over a blue sky it stays red and never turns violet |
+| `grit.lt` | `#77827e` | `E` | the lit side of a pebble in the face of a menu button, and nothing else |
+| `grit.dk` | `#67726e` | `w` | the shade of a pebble and a crack in the face of a menu button, and nothing else |
 
 **Ramp roles.** The three slab ramps have the same six roles, lightest first: `hi`, `lt`, `face`, `sh`, `dk`, `pit`. In clay the `hi` role is `salt`. A part drawn on a slab takes its tones from that slab's ramp, so a slot in a timber slab is timber. In the diagrams such tones are the digits `1` to `6` in that order, and the diagram is drawn once for all three ramps.
 
@@ -864,7 +866,7 @@ A bar, a key, a piece to rework:
 
 A button 20 tall is dressed stone, on any slab and on the ground tile: these are the buttons of the menus. The classic button is 200 by 20; half is 98 by 20 (two with a gap of 4); the worlds screen uses 136 by 20. Inside windows a small button is 12, 14 or 16 tall and as wide as its label plus 10, and it is a raised piece of the slab it stands on, in that slab's ramp (below), so that a grey stone button is never pasted on clay or timber.
 
-Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall carries tooling, the same on every button: level cuts 3 units long and 1 tall in `stone.dk`, each with one unit of `stone.lt` under its right end, on rows 4 and 13, 12 apart, starting at x 5 on row 4 and at x 11 on row 13, the last one ending at `w - 5` or before. Nothing is cut inside the label's box widened by 2 units. Tooling placed by chance read as noise and stray pixels; a fixed course of cuts reads as a dressed face. Smaller buttons have no tooling. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
+Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall is grained: one tile of dressed stone 16 by 16 is repeated across the whole face inside the bevel, the label's ground included, from the face's top left. It is drawn in three tones only, `stone.sh` and the two grits a few levels either side of it (`grit.lt`, `grit.dk`, section 2): four pebbles of 2 by 1 or 2 by 2, each lit from the top left, and one crack of three units. Pressed, the grain drops a unit with the label. Smaller buttons are plain. A course of cuts in `stone.dk` kept clear of the label was tried first: at palette contrast its cuts read as specks, and leaving the middle bare bunched them at the two ends. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
 
 Normal and hovered. Hovered: the outline turns `salt`, the light row and column `stone.hi`, the label `ember.hi`. A button with keyboard focus has the `salt` outline and keeps its `salt` label.
 
@@ -894,7 +896,7 @@ Normal and hovered. Hovered: the outline turns `salt`, the light row and column 
 ```
 `. nothing  A stone.hi  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  y ember.hi  z stone.pit`
 
-Pressed and disabled. Pressed (held under the pointer, so the outline stays `salt` and the label `ember.hi`): the bevel turns over: the first row and column `stone.pit` with a row and a column of `stone.dk` inside them, the last row and column `stone.lt`, where the lower lip of the sunk face catches the light, and tooling and label drop one unit. So pressed never looks like focused, which keeps its raised bevel and a `salt` label. Disabled: a flat face of `stone.pit` with one row of `stone.dk` at the bottom, label `root.4` with no shadow, no tooling.
+Pressed and disabled. Pressed (held under the pointer, so the outline stays `salt` and the label `ember.hi`): the bevel turns over: the first row and column `stone.pit` with a row and a column of `stone.dk` inside them, the last row and column `stone.lt`, where the lower lip of the sunk face catches the light, and grain and label drop one unit. So pressed never looks like focused, which keeps its raised bevel and a `salt` label. Disabled: a flat face of `stone.pit` with one row of `stone.dk` at the bottom, label `root.4` with no shadow, no grain.
 
 ```
      0         1         2         3         4         5         6         7         8         9        
@@ -946,7 +948,7 @@ Small buttons in stone, 12, 14 and 16 tall, and the 12 by 12 "+" (on a column of
 ```
 `. nothing  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
 
-**The small button of a slab.** Inside the outline: the first row and column `hi`, the face `face`, the last row and column `dk` with a row and a column of `sh` inside them; the two units where light meets dark are face. The label is `ink` with no shadow, centred, its cell at `y = floor((h - 9) / 2)`. Hovered, the face turns `lt`. Pressed, the bevel turns over: the first row and column `dk` with `sh` inside them, the face `sh`, the last row and column `face`, and the label drops one unit. Disabled: a flat face of `sh`, the label `ink.faded`. Keyboard focus gives the outline `salt`. No tooling. On the Anvil, the furnaces and the map the ramp is stone, with the same roles. A clay "Sort", 30 by 12, normal and hovered:
+**The small button of a slab.** Inside the outline: the first row and column `hi`, the face `face`, the last row and column `dk` with a row and a column of `sh` inside them; the two units where light meets dark are face. The label is `ink` with no shadow, centred, its cell at `y = floor((h - 9) / 2)`. Hovered, the face turns `lt`. Pressed, the bevel turns over: the first row and column `dk` with `sh` inside them, the face `sh`, the last row and column `face`, and the label drops one unit. Disabled: a flat face of `sh`, the label `ink.faded`. Keyboard focus gives the outline `salt`. No grain. On the Anvil, the furnaces and the map the ramp is stone, with the same roles. A clay "Sort", 30 by 12, normal and hovered:
 
 ```
      0         1         2         3         4         5         6     
@@ -1774,23 +1776,29 @@ A node with more than one rank shows them as pips on its frame's bottom edge, no
 
 ### 5.21 Ground tile
 
-96 by 48: dressed stone, darkened as the ground behind a menu is, laid in six courses 8 tall. Each course is cut into blocks 10 to 22 units long, chosen by a fixed hash, with joints of one unit; no joint falls within 3 units of a joint in the course above or below, so the bond never lines up into columns. A block is lit from the top left: its top row and left column one step lighter than its face, its bottom row and right column `root.1`, the joint `root.0`. Faces are `stone.pit`; one block in five has a face one step lighter (`stone.dk`, lit edge `stone.sh`) and one in five one step darker (`root.1`, lit edge `stone.pit`), and about half the blocks carry one worn patch of 2 or 3 units a step darker than the face, so the courses read as single stones and the screen does not read as a mesh. It fills the screen behind the title, the world list, new world, join and loading, and it is the floor of a store's map. The tree has a floor of its own (5.20). Under a list on a full-screen menu it shows above and below the well. Text on it is text on dark: `salt` with its shadow. A block 16 long with the joint before it, and the course above and below (x and y here count from one unit before the block):
+16 by 16: a wall of dressed stone sunk to about a quarter of its light, as the tradition darkens the block behind a menu, so that it recedes behind the buttons and the words on it. Blocks are 16 by 8 in a running bond, each course set 8 along from the one above. A block's face is `root.2` with a lip of `stone.pit` along its top row and left column; the joint is `root.0`, one unit, along its bottom row and right column. Two tones and the joint and nothing else: no block is lighter or darker than another and no block carries a speck or a worn patch, which at this size read as noise. The brightest unit of the wall is darker than any button's face. It fills the screen behind the title, the world list, new world, join and loading, and it is the floor of a store's map. The tree has a floor of its own (5.20). Under a list on a full-screen menu it shows above and below the well. Text on it is text on dark: `salt` with its shadow, and no strip under it. Two courses:
 
 ```
-     0         1         2
-     0123456789012345678901234
-  0  KKKKKKKKKKKKKKKKKKKKKKKKK
-  1  KMMMMMMMMMMMMMMkKMMMMMMMM
-  2  KMzzzzzzzzzzzzzkKMzzzzzzz
-  3  KMzzzzzzzzzzzzzkKMzzzzzzz
-  4  KMzzzzzzzzzzzzzkKMzzzzzzz
-  5  KMzzzzzzzzzzzzzkKMzzzzzzz
-  6  KMzzzzzzzzzzzzzkKMzzzzzzz
-  7  KkkkkkkkkkkkkkkkKkkkkkkkk
-  8  KKKKKKKKKKKKKKKKKKKKKKKKK
-  9  MMMMMMMkKMMMMMMMMMMMMMMkK
+     0         1         2         3
+     01234567890123456789012345678901
+  0  zzzzzzzzzzzzzzzKzzzzzzzzzzzzzzzK
+  1  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
+  2  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
+  3  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
+  4  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
+  5  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
+  6  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
+  7  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+  8  zzzzzzzKzzzzzzzzzzzzzzzKzzzzzzzz
+  9  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
+ 10  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
+ 11  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
+ 12  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
+ 13  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
+ 14  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
+ 15  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 ```
-`K root.0  k root.1  M stone.dk  z stone.pit`
+`j root.2  K root.0  z stone.pit`
 
 ### 5.22 Pointer and held stack
 

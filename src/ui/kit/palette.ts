@@ -1,4 +1,4 @@
-// The 47 colours of the interface (direction, section 2), in the order of its table. A colour is used by name in
+// The 49 colours of the interface (direction, section 2), in the order of its table. A colour is used by name in
 // code and by its one-character code in pixel maps; every other value is derived from this list.
 
 const TABLE = [
@@ -49,6 +49,8 @@ const TABLE = [
   ['rose.dk', '#96164a', 'P'],
   ['gilt.dk', '#6b4d08', 'Y'],
   ['blood.pit', '#4a1606', 'Q'],
+  ['grit.lt', '#77827e', 'E'],
+  ['grit.dk', '#67726e', 'w'],
 ] as const;
 
 export type Colour = (typeof TABLE)[number][0];
@@ -70,7 +72,7 @@ export const RGB: readonly (readonly [number, number, number])[] = TABLE.map((r)
 const INDEX = new Map<string, number>(TABLE.map((r, i) => [r[0], i]));
 const BY_CODE = new Map<string, number>(TABLE.map((r, i) => [r[2], i]));
 
-if (INDEX.size !== 47 || BY_CODE.size !== 47) throw new Error('palette: names or codes are not unique');
+if (INDEX.size !== 49 || BY_CODE.size !== 49) throw new Error('palette: names or codes are not unique');
 
 export function isColour(name: string): name is Colour { return INDEX.has(name); }
 export function isRole(name: string): name is Role { return (ROLES as readonly string[]).includes(name); }

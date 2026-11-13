@@ -1,103 +1,38 @@
 import { type Colour } from '../palette';
 import { pixmap } from '../pixmap';
 
-// The ground tile (5.21): dressed stone laid in courses 8 tall, darkened as the ground behind a menu should be. Each
-// course is cut into blocks of 10 to 22 units chosen by a fixed hash, with joints of one unit that never fall within 3
-// of a joint in the course below. A block is lit from the top left: its top row and left column a step lighter than its
-// face, its bottom row and right column `root.1`, the joint `root.0`. Faces are `stone.pit`, one block in five a step
-// lighter and one in five a step darker, and about half the faces carry one worn patch of 2 to 3 units a step darker.
-// The tile is 96 by 48 so that the pattern does not repeat closely.
+// The ground tile (5.21): a wall of dressed stone sunk to about a quarter of its light, so that it recedes behind the
+// buttons and the white words on it. Two tones and the joint only: faces `root.2` with a lip of `stone.pit` along their
+// top row and left column, joints `root.0` one unit wide, in a bond of blocks 16 by 8 whose courses are set 8 apart.
+// The brightest unit of the wall is darker than the face of any button, and nothing on a block is a speck.
 
-const W = 96, H = 48, BH = 8, COURSES = H / BH;
-const LENGTHS = [10, 12, 14, 16, 18, 20, 22];
+const W = 16, H = 16, BW = 16, BH = 8;
+
+function build(): string[] {
+  const rows: string[] = [];
+  for (let y = 0; y < H; y++) {
+    const course = Math.floor(y / BH), v = y % BH, off = course % 2 ? BW / 2 : 0;
+    let row = '';
+    for (let x = 0; x < W; x++) {
+      const u = (x + off) % BW;
+      row += v === BH - 1 || u === BW - 1 ? 'K' : v === 0 || u === 0 ? 'z' : 'j';
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+export const GROUND = pixmap({ rows: build(), key: { K: 'root.0', z: 'stone.pit', j: 'root.2' } }, 'ground');
+
+/** The tile's period, for parts that scroll it. */
+export const GROUND_W = W;
+export const GROUND_H = H;
 
 function hash(a: number, b: number, c = 0): number {
   let h = (a * 73856093) ^ (b * 19349663) ^ (c * 83492791) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
   return (h ^ (h >>> 15)) >>> 0;
 }
-
-/** The joints of each course: x positions (0 to W - 1) of the one-unit joint before each block. */
-function courses(): number[][] {
-  const all: number[][] = [];
-  for (let r = 0; r < COURSES; r++) {
-    const below = r > 0 ? all[r - 1] : [];
-    const above = r === COURSES - 1 ? all[0] : [];
-    for (let attempt = 0; ; attempt++) {
-      const joints: number[] = [];
-      let x = hash(r, attempt, 7) % 12;
-      const start = x;
-      let ok = true;
-      for (let i = 0; ; i++) {
-        joints.push(x);
-        const left = W - (x - start);
-        let len = LENGTHS[hash(r, i, attempt) % LENGTHS.length];
-        if (left - len < 10) len = left;
-        x += len;
-        if (x - start >= W) break;
-      }
-      const near = (j: number, set: number[]) => set.some((k) => { const d = Math.abs(j - k) % W; return Math.min(d, W - d) < 4; });
-      for (const j of joints) if (near(j, below) || near(j, above)) ok = false;
-      const lens = joints.map((j, i) => ((joints[(i + 1) % joints.length] - j) + W) % W || W);
-      if (lens.some((l) => l < 10)) ok = false;
-      if (ok || attempt > 400) { all.push(joints.map((j) => j % W)); break; }
-    }
-  }
-  return all;
-}
-
-const LIGHTER: Record<string, Colour> = { 'root.1': 'stone.pit', 'stone.pit': 'stone.dk', 'stone.dk': 'stone.sh' };
-const DARKER: Record<string, Colour> = { 'stone.dk': 'stone.pit', 'stone.pit': 'root.1', 'root.1': 'root.1' };
-
-function build(): string[] {
-  const key: Record<Colour, string> = {} as Record<Colour, string>;
-  const ch = (c: Colour) => (key[c] ??= 'abcdefgh'[Object.keys(key).length]);
-  const grid: Colour[][] = Array.from({ length: H }, () => Array<Colour>(W).fill('root.0'));
-  const joints = courses();
-  joints.forEach((js, r) => {
-    const sorted = [...js].sort((a, b) => a - b);
-    sorted.forEach((j, i) => {
-      const next = sorted[(i + 1) % sorted.length] + (i + 1 === sorted.length ? W : 0);
-      const len = next - j;
-      const p = hash(j, r, 3) % 5;
-      const face: Colour = p === 0 ? 'stone.dk' : p === 1 ? 'root.1' : 'stone.pit';
-      const lit = LIGHTER[face];
-      const y0 = r * BH;
-      for (let v = 0; v < BH; v++) for (let u = 0; u < len; u++) {
-        const x = (j + u) % W, y = y0 + v;
-        let c: Colour;
-        if (u === 0 || v === BH - 1) c = 'root.0';
-        else if (u === len - 1 || v === BH - 2) c = 'root.1';
-        else if (u === 1 || v === 0) c = lit;
-        else c = face;
-        grid[y][x] = c;
-      }
-      // Worn patches: a step darker, kept off the lit and shaded edges.
-      const patches = hash(j, r, 11) % 2;
-      for (let k = 0; k < patches; k++) {
-        const pw = 2 + (hash(j, r, 20 + k) % 2), ph = 1 + (hash(j, r, 30 + k) % 2);
-        const pu = 3 + (hash(j, r, 40 + k) % Math.max(1, len - pw - 5)), pv = 2 + (hash(j, r, 50 + k) % Math.max(1, BH - ph - 4));
-        for (let dv = 0; dv < ph; dv++) for (let du = 0; du < pw; du++) {
-          if (ph === 2 && pw === 3 && ((du === 0 && dv === 1) || (du === 2 && dv === 0))) continue;
-          const x = (j + pu + du) % W, y = y0 + pv + dv;
-          grid[y][x] = DARKER[face];
-        }
-      }
-    });
-  });
-  const out = grid.map((row) => row.map(ch).join(''));
-  KEY = Object.fromEntries(Object.entries(key).map(([c, k]) => [k, c as Colour]));
-  return out;
-}
-
-let KEY: Record<string, Colour> = {};
-const ROWS = build();
-
-export const GROUND = pixmap({ rows: ROWS, key: KEY }, 'ground');
-
-/** The tile's period, for parts that scroll it. */
-export const GROUND_W = W;
-export const GROUND_H = H;
 
 // The floor of the tree (5.20): boards of root-dark timber laid lengthwise, 6 tall with a joint of one unit, their ends
 // staggered by a fixed hash. A board is lit along its top row in `timber.dk`, has a face of `timber.pit` with two

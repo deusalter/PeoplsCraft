@@ -1,4 +1,5 @@
-import { centreX, measure } from '../font/measure';
+import { BUTTON_FACE } from '../art/button';
+import { centreX } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Live, Node, Tip } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
@@ -21,18 +22,12 @@ export interface ButtonOpts {
 }
 
 /**
- * The tooling of a face 20 tall, the same on every button: level cuts 3 long in `stone.dk` with a `stone.lt` unit
- * under the right end of each, on rows 4 and 13, 12 apart, the lower row set 6 along from the upper. None is cut
- * inside the label's box widened by 2.
+ * The grain of a face 20 tall or more: the stone tile laid over the whole face inside the bevel, the label's ground
+ * included. Pressed, the face starts a unit further in and the grain drops a unit with the label.
  */
-function tooling(s: Surface, w: number, box: [number, number, number, number], drop: number): void {
-  for (const [y, x0] of [[4, 5], [13, 11]] as const) {
-    for (let x = x0; x + 2 <= w - 5; x += 12) {
-      if (x + 3 > box[0] && x < box[0] + box[2]) continue;
-      s.fill(x, y + drop, 3, 1, 'stone.dk');
-      s.fill(x + 2, y + 1 + drop, 1, 1, 'stone.lt');
-    }
-  }
+function grain(s: Surface, w: number, h: number, pressed: boolean): void {
+  if (pressed) s.tile(BUTTON_FACE, 3, 3, w - 5, h - 5, 1, 0);
+  else s.tile(BUTTON_FACE, 2, 2, w - 5, h - 5);
 }
 
 /**
@@ -102,9 +97,9 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
     bevel(s, w, h, live.hover ? 'stone.hi' : 'stone.lt', null, 'stone.sh', 'stone.dk', 'stone.pit');
     if (live.hover) text = 'ember.hi';
   }
+  if (tall && !disabled) grain(s, w, h, pressed);
   const t = cut(label, w - 4);
   const tx = centreX(t, 0, w), ty = Math.floor((h - 9) / 2);
-  if (tall && !disabled) tooling(s, w, [tx - 2, ty - 2, measure(t) + 5, 14], drop);
   s.text(t, tx, ty + drop, text, shadow);
 }
 
