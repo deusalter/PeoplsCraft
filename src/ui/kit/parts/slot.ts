@@ -1,6 +1,7 @@
 import { SILHOUETTES, type SilhouetteName } from '../art/silhouettes';
 import { DARK_SLOT, LARGE_SLOT_SIZE, SLOT, SLOT_SIZE } from '../art/slot';
-import { count, rightX } from '../font/measure';
+import { SMALL } from '../font/face';
+import { rightX } from '../font/measure';
 import type { Handlers, Live, Node, Tip } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
 import type { Surface } from '../surface';
@@ -32,11 +33,16 @@ export interface SlotOpts {
   on?: Partial<Handlers>;
 }
 
-/** The stack count (5.4): salt with its shadow, its last column on x 16 of the slot, its cell at y 9; 1 is not written. */
-export function paintCount(s: Surface, n: number, right: number, y: number, c: Colour = 'salt'): void {
+/**
+ * The stack count (5.4), inside the floor with its shadow: its last column on `right` and its lowest row on `bottom`, so
+ * that the shadow falls on the floor and never on the light edge, where salt digits would run into the bright rim. Two
+ * digits are the text face; three no longer fit 15 units in it and take the small face. 1 is not written.
+ */
+export function paintCount(s: Surface, n: number, right: number, bottom: number, c: Colour = 'salt'): void {
   if (n <= 1) return;
-  const t = count(n);
-  s.text(t, rightX(t, right), y, c, true);
+  const t = String(Math.min(999, Math.trunc(n)));
+  if (t.length < 3) s.text(t, rightX(t, right), bottom - 7, c, true);
+  else s.text(t, rightX(t, right, SMALL), bottom - 4, c, true, SMALL);
 }
 
 const FRAME: Record<Exclude<SlotMark, 'locked'>, Colour> = { accepts: 'growth', refused: 'blood', chosen: 'salt' };
@@ -57,7 +63,7 @@ export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live):
   const sil: Colour = dark ? 'root.3' : tone(ramp, live.hover ? 'face' : 'sh');
   if (o.stack) {
     s.icon(o.stack.icon, at, at);
-    paintCount(s, o.stack.n, at + 15, at + 8);
+    paintCount(s, o.stack.n, size - 3, size - 3);
   } else if (o.missing) s.icon(o.missing, at, at, 'flat', sil);
   else if (o.silhouette) s.draw(SILHOUETTES[o.silhouette], at, at, { flat: sil });
 }

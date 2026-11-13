@@ -170,7 +170,7 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
         } else if (live.hover) s.fill(1, 1, 16, 16, 'root.2');
         if (live.focus) { s.fill(1, 1, 16, 1, 'salt'); s.fill(1, 16, 16, 1, 'salt'); s.fill(1, 2, 1, 14, 'salt'); s.fill(16, 2, 1, 14, 'salt'); }
         s.icon(thing(p.out).icon, 1, 1, makeable ? 'full' : 'flat', 'root.4');
-        paintCount(s, p.n, 16, 9, makeable ? 'salt' : 'root.4');
+        paintCount(s, p.n, 15, 15, makeable ? 'salt' : 'root.4');
       },
       tip: () => patternTip(b.hand, p, here && fitsGrid, station),
       on: {
