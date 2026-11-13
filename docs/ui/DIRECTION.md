@@ -1967,7 +1967,7 @@ Held open with Tab. A plain dark plate 312 wide, centred on the stage at y 30. W
 ```
 `. nothing  g root.4  h root.3  k root.1  K root.0  n growth.lt  W salt`
 
-The crew at the top left of the HUD is folded to heads: a column 12 wide, rows 15 tall, with no plate and no names: the head (5.25) at 1, +0 and under it a life strip 12 by 4 at 0, +10. The names are on the roster, held open with Tab. A HUD that wrote seven names, places and strips down the left took a fifth of the screen from the world.
+The crew at the top left of the HUD is folded to heads: a column 12 wide, rows 15 tall, with no plate and no names: the head (5.25) at 1, +0 and under it a life strip 12 by 4 at 0, +10. The names are on the roster, held open with Tab. A HUD that wrote seven names, places and strips down the left took a fifth of the screen from the world. A friend who has fallen and not yet risen keeps the frame of their seat, but their face gives way to a skull of bone 7 by 7 on `root.1` inside it (`salt` at its top left, `clay.lt`, `clay.sh` at its bottom and right, sockets and nose of `root.0`), over an empty strip; the roster draws the same head. An empty strip alone told the fall only by the absence of red. A wider strip of ten cells with a number was weighed and left: the column is 12 wide so that the crew takes no width from the world, and the roster gives the rest.
 
 ### 5.25 Name tag, ping, compass marks
 

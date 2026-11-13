@@ -271,8 +271,20 @@ export interface Member {
   bars: number;
 }
 
-/** The head of a player (art/heads.ts), 10 by 10 with its frame. */
-function head(s: Surface, seat: number, x: number, y: number): void { s.map(HEADS[seat - 1], x, y); }
+/** A skull of bone 7 by 7, lit from the top left: the face of a friend who has fallen, until they rise. */
+const SKULL = ['.WLLLL.', 'WLLLLLS', 'LKKLKKS', 'LKKLKKS', 'SLLKLLS', '.SLSLS.', '.S.S.S.'];
+const SKULL_TONES: Record<string, Colour> = { W: 'salt', L: 'clay.lt', S: 'clay.sh', K: 'root.0' };
+
+/**
+ * The head of a player (art/heads.ts), 10 by 10 with its frame. One who has fallen keeps the frame of their seat, and
+ * their face gives way to the skull, so that a fall is told by a shape and not by an empty strip alone.
+ */
+function head(s: Surface, seat: number, x: number, y: number, fallen = false): void {
+  s.map(HEADS[seat - 1], x, y);
+  if (!fallen) return;
+  s.fill(x + 1, y + 1, 8, 8, 'root.1');
+  SKULL.forEach((row, j) => { for (let i = 0; i < 7; i++) if (row[i] !== '.') s.fill(x + 1 + i, y + 1 + j, 1, 1, SKULL_TONES[row[i]]); });
+}
 
 /** The roster (5.24), held open with Tab: a plain dark plate 312 wide, a header, rows 16 tall from y 18. */
 export function roster(o: { cx: number; y: number; server: string; members: Member[]; seats?: number }): Node {
@@ -288,7 +300,7 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
       s.fill(1, 15, w - 3, 1, 'root.3');
       o.members.forEach((m, i) => {
         const y = 18 + i * 16;
-        head(s, m.seat, 5, y);
+        head(s, m.seat, 5, y, m.life <= 0);
         s.text(cut(m.name, 126), 18, y, 'salt', true);
         paintLife(s, 18, y + 11, LIFE_W, m.life);
         s.text(cut(m.place, 76), 148, y, 'root.4', true);
@@ -319,7 +331,7 @@ export function crewHeads(o: { x: number; y: number; members: Member[] }): Node 
     x: o.x, y: o.y, w: CREW_HEADS_W, h: o.members.length * CREW_ROW,
     paint: (s) => o.members.forEach((m, i) => {
       const y = i * CREW_ROW;
-      head(s, m.seat, 1, y);
+      head(s, m.seat, 1, y, m.life <= 0);
       paintLife(s, 0, y + 10, CREW_HEADS_W, m.life);
     }),
   };
@@ -331,7 +343,7 @@ export function crew(o: { x: number; y: number; members: Member[] }): Node {
     x: o.x, y: o.y, w: 92, h: o.members.length * CREW_ROW,
     paint: (s) => o.members.forEach((m, i) => {
       const y = i * CREW_ROW;
-      head(s, m.seat, 0, y);
+      head(s, m.seat, 0, y, m.life <= 0);
       s.text(cut(m.name, 80), 12, y, 'salt', true);
       paintLife(s, 12, y + 11, LIFE_W, m.life);
     }),

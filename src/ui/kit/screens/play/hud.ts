@@ -33,7 +33,7 @@ export const PLAYERS: Member[] = [
   { seat: 3, name: 'Ishaan', life: 0.35, place: 'Vana', level: 15, metres: 42, bars: 2 },
   { seat: 4, name: 'Pallavi', life: 0.92, place: 'Fungus Caverns', level: 9, bars: 3 },
   { seat: 5, name: 'nightjar', life: 0.6, place: 'Pabbat', level: 21, metres: 1240, bars: 1 },
-  { seat: 6, name: 'brakeless', life: 0.12, place: 'Village', level: 7, metres: 386, bars: 3 },
+  { seat: 6, name: 'brakeless', life: 0, place: 'Village', level: 7, metres: 386, bars: 3 },
   { seat: 7, name: 'Ūrmilā', life: 1, place: 'Crystal Islands', level: 30, bars: 2 },
   { seat: 8, name: 'mossback_the_unhurried_one', life: 0.71, place: 'Marudesha', level: 3, metres: 2210, bars: 0 },
 ];
