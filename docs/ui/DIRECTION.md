@@ -2674,14 +2674,14 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 #  "P1"                                                    #
 #                                                          #
 #        .----..----.  .----.                              #
-#        |P2  ||    |  |P3  |                              #
+#        |P2  ||    |==|P3  |                              #
 #        '----''----'  '----'                              #
-#            +--+   P6                   .-------.         #
-#            |P4|   ++         ====\     |       |         #
-#            +--+   ||         P11 >     | P7    |         #
-#           .----.  ||         ====/     |       |         #
-#           |P5  |  ||                   '-------'         #
-#           '----'  ++                                     #
+#            +--+       P6                    .-------.    #
+#            |P4|       ++        ====\       |       |    #
+#            +--+       ||        P11 >       | P7    |    #
+#           .----.      ||        ====/       |       |    #
+#           |P5  |      ||                    '-------'    #
+#           '----'      ++                                 #
 #                                                          #
 #  "P8"                                                    #
 #  .----..----..----..----..----..----..----..----..----.  #
@@ -2706,12 +2706,13 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 | P0 | slab | 0 | 0 | 176 | 166 | clay slab |
 | P1 | text | 8 | 6 | 60 | 10 | "Pot" |
 | P2 | slots | 26 | 17 | 36 | 18 | remains to boil down, two slots |
-| P3 | slots | 66 | 17 | 18 | 18 | salt |
+| P12 | rule | 62 | 25 | 8 | 2 | cut line joining the remains to the salt, the full span between the slots |
+| P3 | slots | 70 | 17 | 18 | 18 | salt |
 | P4 | flame | 38 | 36 | 13 | 15 | burn gauge |
 | P5 | slots | 35 | 53 | 18 | 18 | fuel |
-| P6 | gauge | 57 | 37 | 7 | 34 | the water in the pot: a drop 7 by 7 in arm blue over an upright channel 6 by 26 filled in `arm`, which boils down through the night |
-| P11 | arrow | 92 | 36 | 22 | 15 | the progress arrow (5.13): the night gone, filling from the left; nothing comes out before first light |
-| P7 | bigslot | 122 | 31 | 26 | 26 | lees, as coin |
+| P6 | gauge | 75 | 37 | 7 | 34 | the water in the pot, under the salt: a drop 7 by 7 in arm blue over an upright channel 6 by 26 filled in `arm`, which boils down through the night |
+| P11 | arrow | 97 | 36 | 22 | 15 | the progress arrow (5.13): the night gone, filling from the left; nothing comes out before first light |
+| P7 | bigslot | 128 | 31 | 26 | 26 | lees, as coin |
 | P8 | text | 8 | 73 | 40 | 10 | "Pack" |
 | P9 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | P10 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
@@ -3038,17 +3039,16 @@ Size 176 by 166. Material: stone. Anchor: centre of the screen.
 
 ```
 #==========================================================#
-#  "Q1"                                                    #
-#                                                          #
-#          .----.                                          #
-#          |Q4  |                                          #
-#          '----'                        .-------.         #
-#  .----.            +--+                |       |         #
-#  |Q2  |~~~         |  |     ==Q8=>     | Q9    |         #
-#  '----'            +--+                |       |         #
-#          .----.    .----.              '-------'         #
-#          |Q5  |    |Q7  |     +------------------+       #
-#          '----'    '----'     +-Q10 button-------+       #
+#  "Q1"                                         .-------.  #
+#      .----.  .----.  .----.                   |       |  #
+#      |Q4  |==|Q2  |==|Q5  |     ==Q8=>        | Q9    |  #
+#      '----'  '----'  '----'                   |       |  #
+#               +--+                            '-------'  #
+#               |Q6|                +------------------+   #
+#               +--+                +-Q10 button-------+   #
+#              .----.                                      #
+#              |Q7  |                                      #
+#              '----'                                      #
 #                                                          #
 #  "Q11"                                                   #
 #  .----..----..----..----..----..----..----..----..----.  #
@@ -3072,15 +3072,16 @@ Size 176 by 166. Material: stone. Anchor: centre of the screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | Q0 | slab | 0 | 0 | 176 | 166 | stone slab |
 | Q1 | text | 8 | 6 | 100 | 10 | the bench's name |
-| Q2 | slots | 8 | 35 | 18 | 18 | the remains built in, locked |
-| Q3 | rule | 26 | 43 | 8 | 2 | cut line |
-| Q4 | slots | 34 | 17 | 18 | 18 | the piece to rework, blade silhouette |
-| Q5 | slots | 34 | 53 | 18 | 18 | a bar of the same metal, bar silhouette |
-| Q6 | flame | 63 | 36 | 13 | 15 | burn gauge |
-| Q7 | slots | 62 | 53 | 18 | 18 | fuel |
-| Q8 | arrow | 90 | 36 | 22 | 15 | progress arrow |
-| Q9 | bigslot | 122 | 31 | 26 | 26 | the piece as it comes out |
-| Q10 | button | 96 | 57 | 60 | 14 | "Work it"; disabled until piece, bar and fuel are in |
+| Q4 | slots | 21 | 17 | 18 | 18 | the piece to rework, blade silhouette |
+| Q3 | rule | 39 | 25 | 8 | 2 | cut line, the full span between the slots |
+| Q2 | slots | 47 | 17 | 18 | 18 | the remains built in, locked |
+| Q14 | rule | 65 | 25 | 8 | 2 | cut line |
+| Q5 | slots | 73 | 17 | 18 | 18 | a bar of the same metal, bar silhouette |
+| Q6 | flame | 50 | 36 | 13 | 15 | burn gauge, under the remains |
+| Q7 | slots | 47 | 53 | 18 | 18 | fuel |
+| Q8 | arrow | 97 | 19 | 22 | 15 | progress arrow, on the row it reads from |
+| Q9 | bigslot | 128 | 13 | 26 | 26 | the piece as it comes out |
+| Q10 | button | 94 | 43 | 60 | 14 | "Work it", right-aligned with the result; disabled until piece, bar and fuel are in |
 | Q11 | text | 8 | 73 | 40 | 10 | "Pack" |
 | Q12 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | Q13 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |

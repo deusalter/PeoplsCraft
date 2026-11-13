@@ -82,20 +82,21 @@ function build(ui: Ui): Node {
   const can = ready(h);
   const out = h.stores.out[0];
   const main: Node[] = [
-    stackSlot(b, { store: 'remains', i: 0 }, { x: 8, y: 35, ramp: 'stone', locked: { key: 'queen_spore', n: 1 }, hint: 'Built into the bench' }),
-    cutLine(26, 43, 8, 'stone'),
-    stackSlot(b, { store: 'piece', i: 0 }, {
-      x: 34, y: 17, ramp: 'stone', silhouette: 'rework', showAccepts: true,
-    }),
-    stackSlot(b, { store: 'metal', i: 0 }, { x: 34, y: 53, ramp: 'stone', silhouette: 'bar', showAccepts: true }),
-    burnGauge({ x: 63, y: 36, f: h.stores.fuel[0] ? 0.8 : 0, ramp: 'stone' }),
-    stackSlot(b, { store: 'fuel', i: 0 }, { x: 62, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
+    // One row read left to right: the piece, the remains built into the bench, the bar, joined by cut lines, then the
+    // arrow and what comes out. The fire that works it stands under the remains, as under a furnace's ore.
+    stackSlot(b, { store: 'piece', i: 0 }, { x: 21, y: 17, ramp: 'stone', silhouette: 'rework', showAccepts: true }),
+    cutLine(39, 25, 8, 'stone'),
+    stackSlot(b, { store: 'remains', i: 0 }, { x: 47, y: 17, ramp: 'stone', locked: { key: 'queen_spore', n: 1 }, hint: 'Built into the bench' }),
+    cutLine(65, 25, 8, 'stone'),
+    stackSlot(b, { store: 'metal', i: 0 }, { x: 73, y: 17, ramp: 'stone', silhouette: 'bar', showAccepts: true }),
+    burnGauge({ x: 50, y: 36, f: h.stores.fuel[0] ? 0.8 : 0, ramp: 'stone' }),
+    stackSlot(b, { store: 'fuel', i: 0 }, { x: 47, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
     {
-      x: 90, y: 36, w: 22, h: 15, anim: st.working >= 0 && !STILL,
+      x: 97, y: 19, w: 22, h: 15, anim: st.working >= 0 && !STILL,
       paint: (s, live) => progressArrow({ x: 0, y: 0, f: st.working >= 0 ? (live.t - st.working) / WORK_S : out ? 1 : 0, ramp: 'stone' }).paint!(s, live),
     },
     stackSlot(b, { store: 'out', i: 0 }, {
-      x: 122, y: 31, ramp: 'stone', large: true,
+      x: 128, y: 13, ramp: 'stone', large: true,
       missing: !out && can && piece ? thing(piece.key).icon : undefined,
       tip: () => {
         if (out) return stackTip(out);
@@ -110,7 +111,7 @@ function build(ui: Ui): Node {
         };
       },
     }),
-    button({ id: 'rework.work', x: 96, y: 57, w: 60, h: 14, ramp: 'stone', label: 'Work it', disabled: !can || st.working >= 0, onPress: () => work(st, ui) }),
+    button({ id: 'rework.work', x: 94, y: 43, w: 60, h: 14, ramp: 'stone', label: 'Work it', disabled: !can || st.working >= 0, onPress: () => work(st, ui) }),
     ...packBlock(b, 'stone', 73, 84, { sort: false }),
   ];
   const win = place(ui, 176, 166);
