@@ -1751,7 +1751,7 @@ The field is a well whose floor is laid with boards and pans under its frame: a 
 | Open (can be taken now) | `stone.lt` | `stone.sh` | `stone.pit` | full |
 | Earned | `salt` | `clay.face` | `clay.pit` | full |
 
-A node with more than one rank shows them as pips on its frame's bottom edge, not as figures: one pip 3 by 3 for each rank, in boxes of `root.0` that share their walls (so 3 ranks are 13 by 5), centred, the boxes' bottom on the frame's bottom outline (row 25 for square and cut, row 22 inside the spiked body). A rank taken is lit, `salt` along its top and left over `clay.lt`; one not taken is a pit, `root.1` along its top and left over `root.2`. The figures are in the tooltip ("Rank 2 of 3"). A chip of figures under every node is the counter of another mod's tree and clutters the field. The chosen node has the hotbar's selector round it (5.16), 30 by 30.
+A node with more than one rank shows them as figures in the small face, "2/3", `salt` with its shadow, or `root.4` while none is taken, on a scrap of `root.0` one unit larger than the figures all round (13 by 7 for "2/3"), centred, hanging from the frame's bottom outline (row 25 for square and cut, row 22 inside the spiked body) so that the figures stand one unit under it. The tooltip says "Rank 2 of 3". Pips were tried first: three lit squares on the bottom outline read as a row of teeth and turned every earned node into a skull. The chosen node has the hotbar's selector round it (5.16), 30 by 30.
 
 **Links** run only along rows and columns, with square elbows at the midpoint. A link is 3 units wide: `root.0` either side of a core one unit wide. The core is `root.3` to a locked node, `root.4` to an open one, `salt` between two earned ones. Links are drawn under nodes.
 

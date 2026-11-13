@@ -109,5 +109,5 @@ export const NODE_FRAMES = {
 };
 export type NodeShape = keyof typeof NODE_FRAMES;
 
-/** The row of a frame's bottom outline, on which the pips of its ranks stand. */
+/** The row of a frame's bottom outline, from which the scrap carrying its ranks hangs. */
 export const NODE_FOOT: Record<NodeShape, number> = { square: 25, cut: 25, spiked: 22 };

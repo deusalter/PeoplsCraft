@@ -1,5 +1,7 @@
 import { PLANKS } from '../art/ground';
 import { NODE_FOOT, NODE_FRAMES, type NodeShape, type NodeState } from '../art/tree';
+import { SMALL } from '../font/face';
+import { measure } from '../font/measure';
 import type { Live, Node, Tip, Ui } from '../node';
 import type { Colour } from '../palette';
 import type { Surface } from '../surface';
@@ -53,19 +55,15 @@ function run(s: Surface, pts: [number, number][], grow: number, c: Colour): void
 }
 
 /**
- * The ranks of a node (5.20): a pip 3 by 3 for each, in boxes of root.0 that share their walls, standing on the frame's
- * bottom outline. A rank taken is lit, salt along its top and left; one not yet taken is a pit of root.1 and root.2.
+ * The ranks of a node (5.20) as "2/3" in the small face, salt with its shadow, or root.4 while none is taken, on a scrap
+ * of root.0 one unit larger than the figures all round that hangs from the frame's bottom outline. A row of lit squares
+ * on the outline read as teeth and made an earned node a skull.
  */
-function paintPips(s: Surface, shape: NodeShape, have: number, of: number): void {
-  const w = of * 4 + 1, x0 = Math.floor((NODE - w) / 2), y0 = NODE_FOOT[shape] - 4;
-  s.fill(x0, y0, w, 5, 'root.0');
-  for (let i = 0; i < of; i++) {
-    const x = x0 + 1 + i * 4, y = y0 + 1;
-    const lit = i < have;
-    s.fill(x, y, 3, 3, lit ? 'clay.lt' : 'root.2');
-    s.fill(x, y, 3, 1, lit ? 'salt' : 'root.1');
-    s.fill(x, y + 1, 1, 2, lit ? 'salt' : 'root.1');
-  }
+function paintRanks(s: Surface, shape: NodeShape, have: number, of: number): void {
+  const t = `${have}/${of}`, w = measure(t, SMALL);
+  const x = Math.floor((NODE - w) / 2), y = NODE_FOOT[shape] + 1;
+  s.fill(x - 1, y - 1, w + 2, SMALL.height + 1, 'root.0');
+  s.text(t, x, y, have > 0 ? 'salt' : 'root.4', true, SMALL);
 }
 
 /**
@@ -93,7 +91,7 @@ export function tree(o: TreeOpts): Node {
       if (n.state === 'locked') s.icon(n.icon, 5, 5, 'flat', 'root.3');
       else s.icon(n.icon, 5, 5);
       if (n.id === o.chosen || l.focus) paintSelector(s, -2, -2, 30);
-      if (n.ranks) paintPips(s, n.shape, n.ranks[0], n.ranks[1]);
+      if (n.ranks) paintRanks(s, n.shape, n.ranks[0], n.ranks[1]);
     },
   }));
   const field: Node = {
