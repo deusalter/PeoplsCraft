@@ -60,6 +60,8 @@ export interface GameConfig {
   det?: boolean;
 }
 const DIGITS = ['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6', 'Digit7', 'Digit8', 'Digit9'];
+/** How long after a script's last frame a hidden tab still counts as driven (it then stands still again). */
+const DRIVEN_MS = 500;
 // Interaction prompts, built once so the per-tick prompt check allocates nothing.
 const IS_NPC = (m: MobView): boolean => m.def.ai === 'npc';
 const SUMMON_USE: string[] = [], ALTAR_OFFER: string[] = [], ALTAR_NEED: string[] = [], TRADE_PROMPT = new Map<string, string>();
@@ -89,6 +91,8 @@ export class Game {
   private heldMs = 0; private pausedAt = 0;
   /** A host on its own clock in this browser (the solo worker) was told to stand still. */
   private hostPaused = false;
+  /** When a script last ran a frame, and the timer that looks, once it has stopped, whether a hidden tab should stand still. */
+  private drivenAt = -Infinity; private driveT: ReturnType<typeof setTimeout> | null = null;
   private env: Env = { time: 0, dim: 0, fogTint: [1, 1, 1], haze: 0, cave: 0, underwater: false, moonTint: null, moonPhase: 0, darkness: 0 };
   private loading: HTMLElement | null = null; private loadMsg = 'Raising the land';
   private swing = 0; private equip = 0; private handKey = '?'; private hand: THREE.Mesh; private handLight = new THREE.Vector4(1, 0, 0, 0);
@@ -207,7 +211,8 @@ export class Game {
       // something done since the last save would be lost; never in an automated run
       if (!cfg.quick && ((this.ready && this.input.locked && !this.stats.dead) || s.unsaved)) { e.preventDefault(); e.returnValue = ''; }
     });
-    document.addEventListener('visibilitychange', () => { if (document.hidden) void this.save(); this.syncPause(); });
+    // hiding stands the world still at once, even in the middle of a script; the script's next frame starts it again
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { this.drivenAt = -Infinity; void this.save(); } this.syncPause(); });
 
     if (s.local) s.clock = this.ents.clock = () => (this.pausedAt || performance.now()) - this.heldMs;
     s.mover = () => this.moveState();
@@ -327,10 +332,11 @@ export class Game {
   toast(text: string, color?: string): void { if (text) this.hud.toast(text, color); }
   respawn(): void { this.session.send({ t: 'respawn' }); }
   /** A solo host on its own clock stands still while the game is paused or the tab is hidden, as a world stepped by this
-   *  page's frames does; the clock the entity store reads stands still with it. */
+   *  page's frames does; the clock the entity store reads stands still with it. A hidden tab whose frames a script runs is
+   *  driven as a world this page steps would be, and goes on. */
   private syncPause(): void {
     if (this.cfg.step || !this.session.local) return;
-    const on = this.paused || document.hidden;
+    const on = this.paused || (document.hidden && performance.now() - this.drivenAt > DRIVEN_MS);
     if (on === this.hostPaused) return;
     const now = performance.now();
     this.hostPaused = on;
@@ -481,9 +487,16 @@ export class Game {
   /** A frame a script runs (`T.frame`, `T.run`, `T.loaded`). It waits out a display frame still awaiting its step instead
    *  of standing in for it, so its own `dt` is always counted. */
   async scriptFrame(dt: number): Promise<void> {
+    this.drivenAt = performance.now();
+    if (!this.driveT) this.driveT = setTimeout(this.driveEnd, DRIVEN_MS + 1);
     while (this.busy) await this.busy;
     await this.runFrame(dt);
   }
+  private driveEnd = (): void => {
+    const left = DRIVEN_MS - (performance.now() - this.drivenAt);
+    this.driveT = left >= 0 ? setTimeout(this.driveEnd, left + 1) : null;
+    if (!this.driveT) this.syncPause();
+  };
   /** One frame. Where this client drives the host's clock and a step has to wait (for storage, or for another thread), the
    *  frame ends when the step has: the promise returned says when, and a frame that starts meanwhile does nothing. */
   runFrame(dt: number): Promise<void> | void {
@@ -505,7 +518,8 @@ export class Game {
     if (!this.cfg.step) this.syncPause();
     else if (this.paused) { if (!this.pausedAt) this.pausedAt = t1; }
     else if (this.pausedAt) { this.heldMs += t1 - this.pausedAt; this.pausedAt = 0; }
-    if (!this.paused) {
+    // a host told to stand still hears nothing of ticks run meanwhile, and would take their moves all in one step
+    if (!this.paused && !this.hostPaused) {
       this.acc += dt;
       const wait = this.runTicks();
       if (wait) return (this.busy = wait.then(() => { this.busy = null; this.endFrame(dt, t0, t1); }, (e) => { this.busy = null; console.error('a step failed', e); }));

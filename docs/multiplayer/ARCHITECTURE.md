@@ -3665,6 +3665,17 @@ its own, so `T.step(n)` ran a number of the script's steps the wall clock chose.
 `T.loaded`, `Game.pump`) now go through `Game.scriptFrame`, which waits out a frame still awaiting its step and then runs
 its own; a display frame that starts meanwhile still does nothing, as 10.1 says, so the display can lose time but a
 script cannot. Smoke `frames`, part 1: each of two `T.step(300)` runs 300 ticks of its own, in the page and in the worker.
+(f) A world on the worker's own clock was told `pause` whenever the tab was hidden, but the client went on ticking: the
+harness's `T.run`, `T.until` and `T.cmd`, which drive a background tab, walked the body 13 blocks in 3 s while
+`sim.tick` stood, `T.cmd` waited 10 s for a reply the paused host could not give and then threw, and on showing the tab
+the host took the whole backlog of moves in one step, failed them on speed and put the player back. Both halves of D37
+(e) now hold. The client runs no tick while it has told the host to stand still (presses are dropped, as when paused).
+And a hidden tab whose frames a script runs is driven, as a world this page stepped was in stage 2: `Game.scriptFrame`
+marks the time, and the hidden tab counts as still only 500 ms (`DRIVEN_MS`) after a script's last frame, when a timer
+sends `pause` again. Hiding the tab sends `pause` at once, even in the middle of a script, so the save at hiding and
+the commit of a tab being closed are as before. Smoke `frames`, part 2: in a hidden tab with W held, 1.5 s with nothing
+driving moves neither the world nor the body; `T.run(3000)` moves both (about 180 steps), `T.cmd('simhash')` is
+answered, and once shown the host has the body where the client does.
 
 ---
 
