@@ -3428,57 +3428,53 @@ Size 248 by 206, with tabs standing 21 above. Material: clay. Anchor: centre of 
 
 ### Controls
 
-Size 248 by 206. Material: clay. Anchor: as Settings.
+Size: as its rows need, 216 by 198 for the game's keys (at least 216 wide, so that "Done" stands 8 in from each side). Material: clay. Anchor: centre of the screen, over the ground tile from the title or over the dimmed world from the pause.
 
 ```
-#==================================================================================#
-#  "Y1"                                                                            #
-#                                                                                  #
-#  +-----------------------------------+   +-----------------------------------+   #
-#  | Y2 rows                           |   | Y3 rows                           |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  |                                   |   |                                   |   #
-#  +-----------------------------------+   +-----------------------------------+   #
-#                                                                                  #
-#                        +-------------------------------+                         #
-#                        | Y4 button                     |                         #
-#                        +-------------------------------+                         #
-#==================================================================================#
+#============================================================================#
+#  "Y1"                                         "Y5"                         #
+#                                                                            #
+#  +--------------------------------+   +-----------------------------+      #
+#  | Y2 rows                        |   | Y3 rows                     |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  |                                |   |                             |      #
+#  +--------------------------------+   +-----------------------------+      #
+#    +----------------------------------------------------------------+      #
+#    | Y4 button                                                      |      #
+#    +----------------------------------------------------------------+      #
+#                                                                            #
+#============================================================================#
 ```
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Y0 | slab | 0 | 0 | 248 | 206 | clay slab |
-| Y1 | text | 8 | 6 | 100 | 10 | "Controls" |
-| Y2 | rows | 8 | 20 | 112 | 160 | left column, rows 16 tall: a key cap (the mouse 1 lower), then what it does in ink at x 48 and the cap's text height |
-| Y3 | rows | 128 | 20 | 112 | 160 | right column, the same |
-| Y4 | button | 74 | 184 | 100 | 16 | "Done" |
+| Y0 | slab | 0 | 0 | 216 | 198 | clay slab, as wide as its two columns with 8 at each side and 12 between, as tall as its rows, the button and 8 under it |
+| Y1 | text | 8 | 6 | 60 | 10 | "Controls" |
+| Y2 | rows | 8 | 20 | | 144 | left column, rows 16 tall: the key caps from the row's left (the mouse 2 lower), then what it does in ink, 6 after the widest run of caps in the column, at the cap's text height |
+| Y3 | rows | | 20 | | 144 | right column, the same, starting 12 after the left column's longest line |
+| Y4 | button | 8 | 170 | 200 | 20 | "Done", the menus' stone button, centred, 6 under the last row and 8 above the slab's foot |
+| Y5 | text | | 6 | | 10 | right-aligned to the slab's width less 8, in `ink.faded`: "Press a row to change its key", or while a row waits, "Press a key for Sneak" |
 
+- **The mouse** is drawn 9 by 13 in the key cap's stone: two buttons over the palm, a seam of `root.0` between them holding the wheel, the palm under a row of `root.0`. The button meant is pressed: filled in `ember` with its lit edge `ember.lt` and its shaded edge `ember.dk`; for the middle button the wheel is `ember`. A 2-unit patch on a 6 by 9 mouse was the only thing that told left from right.
+- **A row is a button.** Hovered, its floor (2 units round the caps and the words) turns `clay.lt`; with keyboard focus it has a ring of `salt`. Pressed (or Enter), it waits: the floor `clay.lt` with a ring of `ink`, the cap waited for reads "?", and the next key, or a mouse button pressed on the row, takes its place; a row of several caps (Move) then waits for its next cap. Esc leaves it as it was. A key that two rows share turns both rows' words `blood.dk`, and the tooltip of each says "Shares a key with Pack" in `blood.lt`. The number row and Esc cannot be changed: their words are `ink.faded`, they take no hover, and their tooltip says "This key cannot be changed".
 - **Shows.** The keys as drawn caps: move, jump, sneak, sprint, the three mouse buttons, pack, journal, map, chat, roster, ping, drop, salve, hotbar, hide the interface, pause.
-- **Clickable.** "Done".
-- **Keys.** Esc or Enter.
+- **Clickable.** Each row but the two fixed ones; "Done". A change takes effect at once and is saved at once.
+- **Keys.** Tab walks the rows and "Done"; Enter on a row makes it wait; Esc while a row waits leaves it, else it is "Done".
 - **First.** Focus on "Done".
 
 ### The screen at a fall
