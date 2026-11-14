@@ -49,12 +49,15 @@ export const FORM = {
   /** The first label; a field stands 10 under its label. */
   top: 40,
   fieldH: 20,
-  /** From one label to the next: the label, the field, the 12 under it for its answer, and 12 clear. */
-  pitch: 54,
+  /**
+   * From one label to the next: the label (10), the field (20) and 12 between the groups, in which a field's answer is
+   * written straight under it only when there is one. A further 12 kept clear for the answer read as a missing row.
+   */
+  pitch: 42,
 } as const;
 
-/** Where the buttons of a form of n rows start: 4 under the 12 kept for the last field's answer. */
-export function formButtonsY(rows: number): number { return FORM.top + FORM.pitch * (rows - 1) + 10 + FORM.fieldH + 12 + 4; }
+/** Where the buttons of a form of n rows start: the same 12 under the last field as between the groups. */
+export function formButtonsY(rows: number): number { return FORM.top + FORM.pitch * (rows - 1) + 10 + FORM.fieldH + 12; }
 
 /** The screen's title over a form: centred on the column, salt with its shadow. */
 export function formTitle(text: string): Node {

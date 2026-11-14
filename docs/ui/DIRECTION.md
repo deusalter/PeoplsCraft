@@ -3250,10 +3250,10 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | N1 | text | 113 | 20 | 200 | 10 | "New world", centred on the column, salt with shadow: the screen's head |
 | N2 | text | 113 | 40 | 60 | 10 | "Name", salt with shadow, 10 over its field |
 | N3 | field | 113 | 50 | 200 | 20 | at most 28 characters; holds "New world", selected |
-| N4 | text | 113 | 94 | 60 | 10 | "Seed", salt with shadow; rows of a form stand 54 apart: label, field, 12 kept for an answer, 12 clear |
-| N5 | field | 113 | 104 | 200 | 20 | at most 32 characters; placeholder "Left empty, one is drawn" |
-| N6 | button | 113 | 140 | 200 | 20 | "Create", 4 under the 12 kept under the last field |
-| N7 | button | 113 | 164 | 200 | 20 | "Back", 24 under "Create" |
+| N4 | text | 113 | 82 | 60 | 10 | "Seed", salt with shadow; rows of a form stand 42 apart: label 10, field 20, then 12 between the groups, in which an answer is written straight under its field only when there is one. With 12 more kept clear for an answer that is seldom there, the gap read as a missing row |
+| N5 | field | 113 | 92 | 200 | 20 | at most 32 characters; placeholder "Left empty, one is drawn" |
+| N6 | button | 113 | 124 | 200 | 20 | "Create", 12 under the last field, as between the groups |
+| N7 | button | 113 | 148 | 200 | 20 | "Back", 24 under "Create" |
 
 - **Shows.** Two fields.
 - **Clickable.** Fields and buttons.
@@ -3315,13 +3315,13 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | O1 | text | 113 | 20 | 200 | 10 | "Join a server", centred on the column, salt with shadow: the screen's head, not a label |
 | O2 | text | 113 | 40 | 60 | 10 | "Address", salt with shadow, 10 over its field: a label on the ground is text on dark |
 | O3 | field | 113 | 50 | 200 | 20 | host and port; filled in when the page was served by a game server. Fields stand on the darkened ground with no slab under them |
-| O4 | text | 113 | 94 | 60 | 10 | "Name", salt with shadow; rows stand 54 apart |
-| O5 | field | 113 | 104 | 200 | 20 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
-| O6 | text | 113 | 148 | 200 | 10 | "Password, if it has one", salt with shadow |
-| O7 | field | 113 | 158 | 200 | 20 | drawn as one 3 by 3 dot to a character |
-| O8 | text | 113 | 71 | 200 | 12 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b): bare text with its shadow on the ground as a label is, its cell 1 under the field so its letters stand 2 under it, cut with `…` at 200, with no box. Sunk in a strip of its own it read as a second field, a disabled one. A refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 7 of 8 here" in root.4, "The server is full" in blood.lt) under the address. While the name is empty and the server has said nothing about it, the line under Name says why Join stands disabled: "Type a name to join" in root.4. Every field keeps its 12 whether a line stands in them or not, so nothing moves when an answer comes or goes; the rows keep their pitch of 54 |
-| O9 | button | 113 | 194 | 200 | 20 | "Join"; disabled until address and name are valid. After "The server is full" it reads "Try again in 5 s" and stands disabled, counting each second down, then "Try again" |
-| O10 | button | 113 | 218 | 200 | 20 | "Back" |
+| O4 | text | 113 | 82 | 60 | 10 | "Name", salt with shadow; rows stand 42 apart, as on New world |
+| O5 | field | 113 | 92 | 200 | 20 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
+| O6 | text | 113 | 124 | 200 | 10 | "Password, if it has one", salt with shadow |
+| O7 | field | 113 | 134 | 200 | 20 | drawn as one 3 by 3 dot to a character |
+| O8 | text | 113 | 71 | 200 | 12 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b): bare text with its shadow on the ground as a label is, its cell 1 under the field so its letters stand 2 under it, cut with `…` at 200, with no box. Sunk in a strip of its own it read as a second field, a disabled one. A refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 7 of 8 here" in root.4, "The server is full" in blood.lt) under the address. While the name is empty and the server has said nothing about it, the line under Name says why Join stands disabled: "Type a name to join" in root.4. Every field keeps its 12 whether a line stands in them or not, so nothing moves when an answer comes or goes; they are the 12 between the groups, so the rows keep their pitch of 42 |
+| O9 | button | 113 | 166 | 200 | 20 | "Join"; disabled until address and name are valid. After "The server is full" it reads "Try again in 5 s" and stands disabled, counting each second down, then "Try again" |
+| O10 | button | 113 | 190 | 200 | 20 | "Back" |
 
 - **Shows.** Address, name, password. The refusals are said plainly: "That name is taken", "Wrong password", "The server is full", "This server runs another version", "No answer".
 - **Clickable.** Fields and buttons.
