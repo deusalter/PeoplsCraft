@@ -111,14 +111,22 @@ function specimen(dark: boolean, w: number): Node[] {
   return out;
 }
 
-/** Every colour's name in that colour, flowing in lines. */
-function swatches(dark: boolean, width: number): { nodes: Node[]; h: number } {
+/** The tones parts are built from; the rest of the palette carries a meaning or a grade. */
+const BUILT = /^(root|salt|clay|timber|stone|ink|grit)/;
+
+/**
+ * Colours as chips of 9 by 9 framed in one unit, each followed by its name in the ground's plain text, flowing in lines.
+ * Names written in their own colour vanished where the colour was the ground's (root.0 on a dark plate, salt on clay).
+ */
+function swatches(dark: boolean, width: number, colours: readonly Colour[]): { nodes: Node[]; h: number } {
   const nodes: Node[] = [];
+  const frame: Colour = dark ? 'salt' : 'root.0', ink: Colour = dark ? 'salt' : 'ink';
   let x = 0, y = 0;
-  for (const c of COLOURS) {
-    const w = measure(c);
+  for (const c of colours) {
+    const w = 11 + measure(c);
     if (x > 0 && x + w > width) { x = 0; y += 10; }
-    nodes.push(label(x, y, c, c, dark));
+    nodes.push({ x, y, w: 9, h: 9, paint: (s) => { s.fill(0, 0, 9, 9, frame); s.fill(1, 1, 7, 7, c); } });
+    nodes.push(label(x + 11, y, c, ink, dark));
     x += w + 5;
   }
   return { nodes, h: y + 10 };
@@ -129,11 +137,13 @@ const typeScreen: DemoScreen = {
   world: true,
   build(ui) {
     const colW = 236, topH = 138;
-    const sw = swatches(false, colW - 16);
-    const botH = 18 + sw.h + 4;
+    // The palette in two halves, one to a ground: shown twice, each chip said the same thing on both and the sheet ran off
+    // the screen.
+    const lightSw = swatches(false, colW - 16, COLOURS.filter((c) => BUILT.test(c)));
+    const darkSw = swatches(true, colW - 16, COLOURS.filter((c) => !BUILT.test(c)));
+    const botH = 18 + Math.max(lightSw.h, darkSw.h) + 4;
     const W = colW * 2 + 2, H = topH + 2 + botH;
     const at = centred(ui.w, ui.h, W, H);
-    const lightSw = swatches(false, colW - 16), darkSw = swatches(true, colW - 16);
     return {
       x: 0, y: 0, w: ui.w, h: ui.h,
       paint: (s) => s.wash(0, 0, ui.w, ui.h, 'root.0', 2),
@@ -142,8 +152,8 @@ const typeScreen: DemoScreen = {
         kids: [
           slab(0, 0, colW, topH, 'clay', specimen(false, colW)),
           plate(colW + 2, 0, colW, topH, specimen(true, colW)),
-          slab(0, topH + 2, colW, botH, 'clay', [label(8, 6, 'Every colour', 'ink'), { x: 8, y: 18, w: colW - 16, h: sw.h, kids: lightSw.nodes }]),
-          plate(colW + 2, topH + 2, colW, botH, [label(8, 6, 'Every colour', 'salt', true), { x: 8, y: 18, w: colW - 16, h: sw.h, kids: darkSw.nodes }]),
+          slab(0, topH + 2, colW, botH, 'clay', [label(8, 6, 'Colours parts are built of', 'ink'), { x: 8, y: 18, w: colW - 16, h: lightSw.h, kids: lightSw.nodes }]),
+          plate(colW + 2, topH + 2, colW, botH, [label(8, 6, 'Colours of meanings and grades', 'salt', true), { x: 8, y: 18, w: colW - 16, h: darkSw.h, kids: darkSw.nodes }]),
         ],
       }],
     };
