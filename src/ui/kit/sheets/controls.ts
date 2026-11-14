@@ -17,12 +17,12 @@ const TABS = [
 ];
 
 const ROWS: RowSpec[] = [
-  { id: 'row.0', icon: 'ingot', name: 'Bar of lees-iron', num: 12 },
-  { id: 'row.1', icon: 'crystal', name: 'Shard of the Hollow', colour: 'violet.lt', num: 3, force: { hover: true } },
-  { id: 'row.2', icon: 'pendant', name: 'Amāvassa’s lamp', colour: 'ember.hi', num: 1 },
-  { id: 'row.3', icon: 'tonic', name: 'Red tonic', num: 1240, numColour: 'blood.lt', disabled: true },
-  { id: 'row.4', icon: 'loaf', name: 'Loaf', num: 7 },
-  { id: 'row.5', icon: 'key', name: 'Key to the kiln', num: 1 },
+  { id: 'row.0', icon: 'ingot', name: 'Iron Bar', num: 12 },
+  { id: 'row.1', icon: 'crystal', name: 'Violet Crystal', colour: 'violet.lt', num: 3, force: { hover: true } },
+  { id: 'row.2', icon: 'pendant', name: 'Cairn Lamp', colour: 'ember.hi', num: 1 },
+  { id: 'row.3', icon: 'tonic', name: 'Tonic', num: 1240, numColour: 'blood.lt', disabled: true },
+  { id: 'row.4', icon: 'loaf', name: 'Roast Fish', num: 7 },
+  { id: 'row.5', icon: 'key', name: 'Cairn Key', num: 1 },
 ];
 
 export const controlsSheet: Sheet = {
@@ -72,7 +72,7 @@ export const controlsSheet: Sheet = {
         field({ id: 'f.empty', x: 8, y: 18, w: 90, value: '', placeholder: 'Name', host: 'timber', ui }),
         field({ id: 'f.full', x: 104, y: 18, w: 90, value: 'Hearth on the Yavas', host: 'timber', ui }),
         field({ id: 'f.focus', x: 8, y: 36, w: 90, value: 'Kiln row', host: 'timber', show: { focus: true }, ui }),
-        field({ id: 'f.sel', x: 104, y: 36, w: 90, value: 'Īshū kilns', host: 'timber', show: { focus: true, select: [0, 4] }, ui }),
+        field({ id: 'f.sel', x: 104, y: 36, w: 90, value: 'Yavas kilns', host: 'timber', show: { focus: true, select: [0, 5] }, ui }),
         field({ id: 'f.ref', x: 8, y: 54, w: 90, value: 'No ~ here', host: 'timber', show: { refused: true }, ui }),
         field({ id: 'f.pw', x: 104, y: 54, w: 90, value: 'secret', password: true, host: 'timber', ui }),
         checkbox({ id: 'c.off', x: 8, y: 74, on: false, label: 'Off', host: 'timber' }),

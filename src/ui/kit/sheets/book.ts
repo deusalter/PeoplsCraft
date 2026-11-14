@@ -9,7 +9,7 @@ import { tree } from '../parts/tree';
 import { whereLine } from '../screens/books-common';
 import { type Sheet, ink, page, salt } from './common';
 
-const TEXT_L = 'The kilns of Īshū stand in a row along the low field. Each is fed from the left and drawn from the right, and the jars come out the colour of the ground they were dug from.';
+const TEXT_L = 'The kilns on the Yavas stand in a row along the low field. Each is fed from the left and drawn from the right, and the jars come out the colour of the ground they were dug from.';
 
 function para(x: number, y: number, text: string, lines: number): Node {
   const b = box(text, 126, lines);

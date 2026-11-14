@@ -80,7 +80,7 @@ const CHARSET = [
 const SMALL_LABEL = 'Counts with no room:';
 const SMALL_SET = '128   999   1k   12k   0:08   12';
 const PARAGRAPH = 'Salt-fired clay, pale and warm, holds the pack. What is written on it is written in lees. ' +
-  'The old road to Amāvassa runs past the kilns of Īshū, where the jars are counted at 1,240 {lees} a cart.\n' +
+  'On the night of Amāvassa the hearths on the Yavas burn till first light, and the jars are counted at 1,240 {lees} a cart.\n' +
   'A line too long for its box is cut.';
 const NUMBERS = [7, 64, 1240, 12000];
 
