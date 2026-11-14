@@ -2,6 +2,8 @@
 // world and whether it is saved under it in grey, and a column of stone buttons, as the tradition's game menu stands.
 // A clay slab behind stone buttons set two materials against each other and boxed a column that needed no box.
 import type { Node, Screen } from '../node';
+import { measure } from '../font/measure';
+import { cut } from '../font/wrap';
 import { button } from '../parts/button';
 import { COLUMN_W, line, washedMenu } from '../parts/menu';
 import { firstFocus, go } from './books-common';
@@ -34,11 +36,23 @@ export const pauseScreen: Screen<PauseView> = (v, ui) => {
   firstFocus(ui, 'pause', 'pause.back');
   const kids: Node[] = [line({ x: X, y: TITLE_Y, w: COLUMN_W, text: 'Paused', c: 'salt', shadow: true, centre: true })];
   let y = TITLE_Y + 12;
-  const say = (text: string, c: 'root.4' | 'blood.lt') => { kids.push(line({ x: X, y, w: COLUMN_W, text, c, shadow: true, centre: true })); y += 10; };
+  // The lines under the title on one strip of the chat wash, 2 wider than the longest on each side: grey bare on the
+  // dimmed sky was barely there at the 960 size.
+  const said: { t: string; c: 'root.4' | 'blood.lt' }[] = [];
+  const say = (text: string, c: 'root.4' | 'blood.lt') => { said.push({ t: cut(text, COLUMN_W - 5), c }); };
   if (v.server) say('The world runs on', 'blood.lt');
   say(v.world, 'root.4');
   if (v.crew) say(`${v.crew.address}, ${v.crew.here} of ${v.crew.seats} here`, 'root.4');
   if (v.saved) say(v.saved.text, v.saved.ok ? 'root.4' : 'blood.lt');
+  const sw = Math.max(...said.map((l) => measure(l.t))) + 5, sh = said.length * 10;
+  kids.push({
+    x: X + Math.floor((COLUMN_W - sw) / 2), y, w: sw, h: sh,
+    paint: (s) => {
+      s.wash(0, 0, sw, sh, 'root.0', 3);
+      said.forEach((l, i) => s.text(l.t, Math.floor((sw - measure(l.t)) / 2), i * 10, l.c, true));
+    },
+  });
+  y += sh;
   // A failed save must not be promised again by the last door: it is offered once more above a door that says so.
   const failed = !v.server && v.saved !== undefined && !v.saved.ok;
   const doors: { id: string; label: string; onPress?: () => void; warn?: boolean }[] = [

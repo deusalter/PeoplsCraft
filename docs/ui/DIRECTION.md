@@ -146,7 +146,7 @@ Upper on dark is the mid green `growth`, not `growth.lt`: with the light green i
 | --- | --- | --- |
 | The dim behind a window | `root.0` at a half | `root.1`, opaque |
 | The dim behind the pause | `root.0` at a half, as behind any window | `root.1`, opaque |
-| The strip under a chat line, a name tag, the prompt, the Guide's step, the name of the thing in hand and a pickup on the HUD | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
+| The strip under a chat line, a name tag, the prompt, the lines under "Paused", the Guide's step, the name of the thing in hand and a pickup on the HUD | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
 | The fall | `blood.pit` at a quarter, a half, then three quarters held. Over the noon sky `blood.dk` at a half read as a lilac wash, which is the violet glow this interface refuses | `blood.pit`, opaque |
@@ -3399,7 +3399,7 @@ Drawn on a server, where every row is present. Alone, Z2, Z4 and Z8 are left out
 | Z9 | button | 113 | 186 | 200 | 20 | "Save and leave"; on a server "Leave" |
 | | | | | | | When the last save failed, the last button is "Try to save again" and another stands 24 under it: "Leave without saving", its label `blood.lt` when hovered or pressed in place of `ember.hi`. A door must never promise the save the line above says cannot happen |
 
-- **Shows.** The title, the world and whether it is saved, in salt and grey over the dimmed world, and the stone buttons in a column under them: no slab. A clay slab behind the stone buttons set two materials against each other and boxed a column that needed no box, which read as a web dialog.
+- **Shows.** The title, the world and whether it is saved, in salt and grey over the dimmed world, the lines under the title (Z2 to Z4) on one strip of the chat wash 2 wider than the longest of them on each side, since `root.4` bare on the half-dimmed sky was barely legible at the 960 size; and the stone buttons in a column under them: no slab. A clay slab behind the stone buttons set two materials against each other and boxed a column that needed no box, which read as a web dialog.
 - **Clickable.** The buttons.
 - **Keys.** Esc goes back to the game. Up, Down, Enter.
 - **First.** Focus on "Back to the game", not drawn until a key moves it: a frame on open reads as a hovered button.
