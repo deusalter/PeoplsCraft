@@ -11,15 +11,17 @@ import { SimHost } from '../../src/net/host';
 import { loopback } from '../../src/net/loopback';
 import type { S2C, S2COf } from '../../src/net/protocol';
 import type { Fx } from '../../src/sim/fx';
-import { MV_GROUND } from '../../src/net/protocol';
+import { MV_GROUND, MV_UI } from '../../src/net/protocol';
+import { onOp, talk } from '../../src/sim/actions';
 import type { Transport } from '../../src/net/transport';
 import type { ChunkSource, GenResult } from '../../src/sim/chunksource';
 import { STEP } from '../../src/sim/clock';
-import { gateStand } from '../../src/sim/gates';
+import { buildGate, collapseGate, gateClear, gateStand } from '../../src/sim/gates';
 import { hashBlocks } from '../../src/sim/genjob';
 import { playerIdOf } from '../../src/sim/identity';
 import { LINGER, STALL_AFTER, active, hurtPlayer, type SimPlayer, useBed } from '../../src/sim/player';
 import type { Batch } from '../../src/sim/storage';
+import { arrive, goHome } from '../../src/sim/travel';
 import { MemStorage, StorageError } from '../../src/sim/storage';
 
 const GROUND = 64;
@@ -49,6 +51,8 @@ async function rig(o: { solo?: boolean; cheats?: boolean; storage?: MemStorage }
 
 interface Client {
   s: Session; t: Transport; got: S2C[]; closed: string[]; tp: number; pos: [number, number, number]; token: string; name: string; p: SimPlayer;
+  /** The move flags this client sends. */
+  flags: number;
   of<T extends S2C['t']>(t: T): S2COf<T>[];
   /** Every toast and banner text this client was sent in `fx`. */
   texts(): string[];
@@ -63,14 +67,14 @@ function client(host: SimHost, name: string, local = false): Client {
   vox.attach(s);
   const token = (++tokens).toString(16).padStart(32, '0');
   const c: Client = {
-    s, t: transport, got, closed, tp: 0, pos: [0, 0, 0], token, name, p: null as unknown as SimPlayer,
+    s, t: transport, got, closed, tp: 0, pos: [0, 0, 0], token, name, p: null as unknown as SimPlayer, flags: MV_GROUND,
     of: (t) => got.filter((m) => m.t === t) as never,
     texts: () => c.of('fx').flatMap((m) => m.l).filter((e: Fx) => e[0] === 't' || e[0] === 'n').map((e) => String(e[1])),
   };
   for (const t of TYPES) s.on(t, (m) => { got.push(m); });
   s.on('welcome', (m) => { c.tp = m.tp; c.pos = [m.pos[0], m.pos[1], m.pos[2]]; });
   s.on('tp', (m) => { c.tp = m.id; c.pos = [m.x, m.y, m.z]; });
-  s.mover = () => ({ tp: c.tp, x: c.pos[0], y: c.pos[1], z: c.pos[2], vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, flags: MV_GROUND });
+  s.mover = () => ({ tp: c.tp, x: c.pos[0], y: c.pos[1], z: c.pos[2], vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0, flags: c.flags });
   return c;
 }
 /** `n` steps, every client pumped after each; the clients in `live` send a move before each step, as a frame does. */
@@ -93,6 +97,24 @@ async function land(r: Rig, c: Client, all: Client[]): Promise<void> {
   const n = c.of('tp').length;
   c.s.send({ t: 'ready', tp: c.tp });
   await until(r, () => c.of('tp').slice(n).some((m) => !m.load), 300, all, all.filter((q) => q !== c));
+}
+/** Say `ready` for every loading teleport, a second one included, until the host has put the player in play. */
+async function settle(r: Rig, c: Client, all: Client[]): Promise<void> {
+  await run(r, 1, all);
+  const n = c.of('tp').length;
+  let said = -1;
+  await until(r, () => {
+    const last = c.of('tp').slice(n).at(-1);
+    if (last && !last.load) return true;
+    if (c.tp !== said) { said = c.tp; c.s.send({ t: 'ready', tp: c.tp }); }
+    return false;
+  }, 600, all, all.filter((q) => q !== c));
+}
+/** A player is moved by command and steps on until the chunks round it are ready. */
+async function tpTo(r: Rig, c: Client, x: number, y: number, z: number, all: Client[]): Promise<void> {
+  r.host.sim.handle(c.p, { t: 'cmd', id: 7, text: `tp ${x} ${y} ${z}` });
+  const w = r.host.sim.realms[c.p.dim];
+  await until(r, () => w.store.areaReady(x, z, 3), 600, all, all);
 }
 /** A player comes in: hello, welcome, ready, in play. */
 async function join(r: Rig, all: Client[], name: string, local = false, again?: Client): Promise<Client> {
@@ -535,4 +557,224 @@ test('commands run on a server only under --cheats; a local connection always ha
   assert.deepEqual(l.of('cmdr').map((m) => m.text), ['event raid|moon|ashen', 'flag <name>', 'time set']);
   assert.equal(s.host.sim.shared.events.a, null);
   assert.ok(s.host.sim.isNight());
+});
+
+test('a raid holds at most 8 + difficulty + 3 per extra player; each wave gathers round one active Overworld player drawn at random', async () => {
+  const r = await rig(), sim = r.host.sim, w = sim.realms[0], all: Client[] = [];
+  const a = await join(r, all, 'Ada'), b = await join(r, all, 'Bram'), c = await join(r, all, 'Cyd'), d = await join(r, all, 'Dov');
+  quiet(r);
+  await cross(r, c, 1, all);
+  const ax = Math.floor(a.p.body.x), az = Math.floor(a.p.body.z);
+  await tpTo(r, b, ax + 300, GROUND, az, all);
+  await tpTo(r, d, ax, GROUND, az + 300, all);
+  d.t.close();
+  await run(r, 1, all, [a, b, c]);
+  assert.ok(active(a.p) && active(b.p) && !active(d.p) && d.p.dim === 0 && !d.p.parked);
+  sim.events.start('raid');
+  const ev = sim.events as unknown as { spawnT: number; tick(dt: number): void };
+  const cap = 8 + sim.difficulty() + 3 * (2 - 1);
+  const evMobs = () => w.mobs.list.filter((m) => m.active && m.event);
+  const clear = (): void => { for (const m of evMobs()) w.mobs.remove(m); };
+  const fill = (n: number): void => { for (let i = 0; i < n; i++) { const m = w.mobs.spawn('gloomshade', ax + 5.5, GROUND, az + 0.5)!; m.event = true; } };
+  // one under the cap: a wave comes
+  fill(cap - 1); ev.spawnT = 0; ev.tick(STEP);
+  assert.ok(evMobs().length > cap - 1, 'a wave under the cap');
+  // at the cap: none
+  clear(); fill(cap); ev.spawnT = 0; ev.tick(STEP);
+  assert.equal(evMobs().length, cap, 'no wave at the cap');
+  clear();
+  const near = { a: 0, b: 0 };
+  for (let i = 0; i < 40; i++) {
+    ev.spawnT = 0; ev.tick(STEP);
+    const got = evMobs();
+    assert.ok(got.length >= 2, 'every wave lands on loaded ground');
+    for (const who of ['a', 'b'] as const) {
+      const p = (who === 'a' ? a : b).p.body;
+      if (got.every((m) => { const r2 = Math.hypot(m.x - p.x, m.z - p.z); return r2 >= 17 && r2 <= 29.5; })) near[who]++;
+    }
+    clear();
+  }
+  assert.equal(near.a + near.b, 40, 'each wave round one of the active Overworld players, never the lingering one');
+  assert.ok(near.a >= 5 && near.b >= 5, `both are drawn: ${near.a} and ${near.b}`);
+});
+
+test('the portal charge waits while any window is open, and crosses once it is shut', async () => {
+  const r = await rig(), sim = r.host.sim, all: Client[] = [];
+  const a = await join(r, all, 'Ada'), b = await join(r, all, 'Bram'), w = sim.realms[0];
+  quiet(r);
+  await run(r, 2, all, all);
+  const q = a.p.body;
+  w.setBlock(Math.floor(q.x), Math.floor(q.y + 0.5), Math.floor(q.z), B.hollow_portal);
+  a.flags = MV_GROUND | MV_UI;
+  await run(r, 240, all, all);
+  assert.ok(a.p.uiOpen);
+  assert.equal(a.p.dim, 0, 'four seconds in the sheet with a window open');
+  assert.equal(a.p.portalT, 0);
+  a.flags = MV_GROUND;
+  const n = await until(r, () => a.p.dim === 1, 200, all);
+  assert.ok(n >= 90, `crossed after ${n} steps`);
+});
+
+test('a bed at night refuses rest with a hostile within 14 blocks or an event running; morning and leaving end sleep', async () => {
+  const r = await rig(), sim = r.host.sim, all: Client[] = [], w = sim.realms[0];
+  const a = await join(r, all, 'Ada'), b = await join(r, all, 'Bram');
+  quiet(r);
+  const x = Math.floor(a.p.body.x) + 2, z = Math.floor(a.p.body.z);
+  w.setBlock(x, GROUND, z, B.bedroll);
+  sim.shared.clock = Math.floor(sim.shared.clock) + 0.6;
+  const q = a.p.body, at = (dx: number) => w.mobs.spawn('thornling', q.x + dx, q.y, q.z)!;
+  let m = at(13);
+  assert.ok(m.def.hostile);
+  useBed(sim, a.p, x, GROUND, z);
+  assert.ok(!a.p.sleeping, 'a hostile 13 blocks off');
+  assert.deepEqual(a.p.bed, [x, GROUND, z], 'the spawn point is still set');
+  w.mobs.remove(m);
+  m = at(15);
+  useBed(sim, a.p, x, GROUND, z);
+  assert.ok(a.p.sleeping, 'a hostile 15 blocks off');
+  w.mobs.remove(m);
+  await run(r, 1, all);
+  assert.ok(a.texts().includes('You cannot rest with enemies near.'));
+  a.p.sleeping = false;
+  sim.events.start('moon');
+  useBed(sim, a.p, x, GROUND, z);
+  assert.ok(!a.p.sleeping, 'an event is running');
+  sim.events.end(false);
+  // morning that comes by itself wakes the sleeper, with no dawn rest
+  sim.shared.clock = Math.floor(sim.shared.clock) + 0.9795;
+  useBed(sim, a.p, x, GROUND, z);
+  assert.ok(a.p.sleeping && sim.isNight());
+  await until(r, () => !a.p.sleeping, 200, all, all);
+  assert.ok(!sim.isNight() && !a.p.stats.buffs.has('dawn'));
+  // a sleeper whose connection goes is awake, lingering
+  sim.shared.clock = Math.floor(sim.shared.clock) + 1.6;
+  useBed(sim, a.p, x, GROUND, z);
+  assert.ok(a.p.sleeping);
+  a.t.close();
+  await run(r, 1, all, [b]);
+  assert.ok(!a.p.online && !a.p.parked && !a.p.sleeping);
+  assert.ok(sim.isNight(), 'Bram is awake');
+});
+
+test('an arrival gate is never raised over another body', async () => {
+  const r = await rig(), sim = r.host.sim, all: Client[] = [], h = sim.realms[1];
+  const b = await join(r, all, 'Bram'), c = await join(r, all, 'Cyd');
+  quiet(r);
+  await cross(r, c, 1, all);
+  const X = Math.floor(c.p.body.x) + 100, Z = Math.floor(c.p.body.z);
+  await tpTo(r, c, X + 0.5, GROUND, Z + 0.5, all);
+  await tpTo(r, b, X + 0.5, GROUND, Z + 0.5, all);
+  assert.equal(Math.floor(b.p.body.x), X);
+  const gates = sim.shared.gates.length;
+  await cross(r, b, 1, all);
+  assert.equal(sim.shared.gates.length, gates + 1, 'a gate of its own');
+  const g = sim.shared.gates.at(-1)!;
+  assert.ok(gateClear(h, g, null), 'no gate cell over Cyd');
+  for (let a = -1; a <= 2; a++) assert.ok(Math.abs(g.x + a + 0.5 - c.p.body.x) >= 0.8 || Math.abs(g.z + 1.5 - c.p.body.z) >= 0.8, 'no sill under Cyd');
+  assert.equal(h.getBlock(X, GROUND, Z), 0); assert.equal(h.getBlock(X, GROUND + 1, Z), 0);
+  assert.equal(c.p.embedded, null);
+});
+
+test('with no land in reach the Skyrift platform moves along x, 6 blocks at a time, until it lies under nobody', async () => {
+  const r = await rig(), sim = r.host.sim, all: Client[] = [], s = sim.realms[2];
+  const b = await join(r, all, 'Bram'), c = await join(r, all, 'Cyd');
+  quiet(r);
+  await cross(r, c, 2, all);
+  const X = Math.floor(c.p.body.x) + 100, Z = Math.floor(c.p.body.z);
+  await tpTo(r, c, X + 3.5, GROUND, Z + 0.5, all);
+  for (const [dx, dz] of [[-46, -46], [46, -46], [-46, 46], [46, 46]]) assert.ok(s.ready(X + dx, Z + dz), 'the search area is loaded');
+  // every column the search looks at is topped with cloud
+  for (let dz = -44; dz <= 44; dz += 2) for (let dx = -44; dx <= 44; dx += 2) s.setBlock(X + dx, GROUND - 1, Z + dz, B.cloud);
+  for (let y = GROUND; y < 129; y++) s.setBlock(X, y, Z, B.stone);
+  s.setBlock(X, 129, Z, B.cloud);
+  sim.handle(c.p, { t: 'cmd', id: 8, text: `tp ${X + 0.5} 130 ${Z + 0.5}` });
+  await run(r, 3, all, all);
+  await tpTo(r, b, X + 0.5, GROUND, Z + 0.5, all);
+  await cross(r, b, 2, all);
+  assert.ok(b.texts().includes('No land within reach. Build outward from the gate.'));
+  assert.equal(Math.floor(b.p.body.x), X + 6, 'one step along x');
+  assert.equal(Math.floor(b.p.body.y), 130);
+  assert.equal(s.getBlock(X, 129, Z), B.cloud, 'Cyd still stands on his cloud');
+  for (let y = 130; y < 134; y++) assert.equal(s.getBlock(X, y, Z), 0);
+  assert.equal(s.getBlock(X + 4, 129, Z - 2), B.riftstone, 'the platform\'s near corner');
+  assert.equal(s.getBlock(X + 3, 129, Z - 2), 0, 'and nothing nearer');
+  assert.ok(Math.abs(c.p.body.y - 130) < 0.2);
+});
+
+test('the way home: a bed in reach, a bed seen from another realm, a bed gone only found out on arrival', async () => {
+  const r = await rig(), sim = r.host.sim, all: Client[] = [], w = sim.realms[0], ws = sim.shared.worldSpawn;
+  const a = await join(r, all, 'Ada'), b = await join(r, all, 'Bram');
+  quiet(r);
+  const x = Math.floor(a.p.body.x) + 6, z = Math.floor(a.p.body.z) + 6;
+  w.setBlock(x, GROUND, z, B.bedroll);
+  a.p.bed = [x, GROUND, z];
+  a.pos = [a.pos[0] + 20, a.pos[1], a.pos[2]]; await run(r, 2, all, all);
+  const tps = a.of('tp').length;
+  goHome(sim, a.p);
+  await run(r, 1, all, all);
+  assert.ok(a.of('tp').slice(tps).every((m) => !m.load), 'no load for a bed in reach');
+  assert.ok(Math.abs(a.p.body.x - x - 0.5) <= 1.01 && Math.abs(a.p.body.z - z - 0.5) <= 1.01, 'beside the bed');
+  // from the Hollows
+  await cross(r, a, 1, all);
+  goHome(sim, a.p);
+  assert.equal(a.p.dim, 0); assert.ok(a.p.pendingBed);
+  await settle(r, a, all);
+  assert.ok(Math.abs(a.p.body.x - x - 0.5) <= 1.01 && Math.abs(a.p.body.z - z - 0.5) <= 1.01, 'beside the bed, from another realm');
+  assert.deepEqual(a.p.bed, [x, GROUND, z]);
+  // a bed in a chunk nobody holds, whose block is not a bed: found out once there
+  a.p.bed = [5000, GROUND, 5000];
+  goHome(sim, a.p);
+  assert.ok(a.p.pendingBed);
+  await settle(r, a, all);
+  assert.equal(a.p.bed, null);
+  assert.ok(a.texts().includes('Your bedroll is gone. Returned to the world spawn.'));
+  assert.ok(Math.abs(a.p.body.x - ws[0]) < 48 && Math.abs(a.p.body.z - ws[1]) < 48, 'at the world spawn');
+  assert.ok(active(a.p));
+  // the arrival itself looks, before the once-a-second sweep can: the bed's chunk ready, its block gone
+  w.setBlock(x, GROUND, z, 0);
+  a.p.bed = [x, GROUND, z]; a.p.pendingBed = true; a.p.loading = true; a.p.clientReady = true;
+  a.p.body.teleport(x + 0.5, GROUND + 0.6, z + 0.5);
+  arrive(sim, a.p);
+  assert.equal(a.p.bed, null); assert.equal(a.p.arriving, 0); assert.ok(a.p.loading);
+  assert.ok(Math.abs(a.p.body.x - ws[0] - 0.5) < 1 && Math.abs(a.p.body.z - ws[1] - 0.5) < 1, 'sent to the world spawn');
+  assert.equal(a.p.arriveMsg, 'Your bedroll is gone. Returned to the world spawn.');
+  await settle(r, a, all);
+  assert.ok(active(a.p));
+});
+
+test('each player at a shop has a sold list of its own', async () => {
+  const r = await rig(), sim = r.host.sim, all: Client[] = [], w = sim.realms[0];
+  const a = await join(r, all, 'Ada'), b = await join(r, all, 'Bram');
+  quiet(r);
+  const m = w.mobs.spawn('n_provisioner', a.p.body.x + 2, a.p.body.y, a.p.body.z)!;
+  assert.ok(talk(sim, a.p, m.id) && talk(sim, b.p, m.id));
+  a.p.inv.slots[30] = { k: 'cobble', n: 5 }; b.p.inv.slots[30] = { k: 'flint', n: 3 };
+  assert.ok(onOp(sim, a.p, { t: 'op', seq: 501, o: 'quick', v: [0, 30], e: 'cobble' }).ok);
+  assert.ok(onOp(sim, b.p, { t: 'op', seq: 502, o: 'quick', v: [0, 30], e: 'flint' }).ok);
+  assert.deepEqual(a.p.window!.sold.map((x) => x.it.k), ['cobble']);
+  assert.deepEqual(b.p.window!.sold.map((x) => x.it.k), ['flint']);
+  assert.ok(!onOp(sim, a.p, { t: 'op', seq: 503, o: 'buyBack', id: 502 }).ok, 'not another player\'s sale');
+  assert.ok(onOp(sim, b.p, { t: 'op', seq: 504, o: 'buyBack', id: 502 }).ok);
+  assert.equal(b.p.inv.count('flint'), 3);
+});
+
+test('a gate that goes dark clears the way back to it for every player in memory, parked ones too', async () => {
+  const r = await rig(), sim = r.host.sim, all: Client[] = [], w = sim.realms[0];
+  const a = await join(r, all, 'Ada'), b = await join(r, all, 'Bram'), c = await join(r, all, 'Cyd');
+  quiet(r);
+  const gx = Math.floor(a.p.body.x) + 4, gz = Math.floor(a.p.body.z) + 4;
+  buildGate(w, 1, gx, GROUND, gz, true);
+  const spot: [number, number, number] = [gx, GROUND + 1, gz];
+  for (const q of [a, b, c]) q.p.portalReturn[0] = [...spot];
+  b.p.portalReturn[0] = [gx + 1, GROUND + 2, gz];
+  c.s.send({ t: 'bye' }); await run(r, 1, all);
+  assert.ok(c.p.parked && sim.players.has(c.p.id));
+  const far: [number, number, number] = [gx + 40, GROUND + 1, gz];
+  const d = await join(r, all, 'Dov');
+  d.p.portalReturn[0] = far;
+  w.setBlock(gx - 1, GROUND + 2, gz, 0);
+  collapseGate(w, a.p, gx - 1, GROUND + 2, gz, 1);
+  assert.equal(w.getBlock(gx, GROUND + 1, gz), 0, 'the sheet is gone');
+  for (const q of [a, b, c]) assert.equal(q.p.portalReturn[0], undefined, q.name);
+  assert.deepEqual(d.p.portalReturn[0], far, 'a way back to somewhere else stays');
 });
