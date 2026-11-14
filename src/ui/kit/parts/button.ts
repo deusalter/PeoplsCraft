@@ -16,7 +16,10 @@ export interface ButtonOpts {
   /** The ramp of the slab a small button stands on; left out, the button is dressed stone, as on menus. */
   ramp?: Ramp;
   disabled?: boolean;
-  /** A door that loses something (leaving unsaved): hovered or pressed, the label turns blood.lt, not ember.hi. */
+  /**
+   * A door that loses something (leaving unsaved, deleting a world): on stone, hovered or pressed, the label turns
+   * blood.lt, not ember.hi; on a slab its ink label is blood.dk.
+   */
   warn?: boolean;
   force?: Force;
   onPress?: () => void;
@@ -69,9 +72,10 @@ function dashedOutline(s: Surface, w: number, h: number): void {
 /**
  * A small button inside a window, in the ramp of the slab it stands on (5.6): a raised piece of that slab, `hi` on its
  * first row and column, `sh` and `dk` on its last, the label in ink. Hovered, its face lightens to `lt`; pressed, the
- * bevel turns over; disabled, it is a flat `sh` with the label faded.
+ * bevel turns over; disabled, it is a flat `sh` with the label faded. A door that loses something has its label in
+ * blood.dk, the refusal's tone on a light face.
  */
-function paintSlabButton(s: Surface, w: number, h: number, label: string, live: Live, disabled: boolean, ramp: Ramp): void {
+function paintSlabButton(s: Surface, w: number, h: number, label: string, live: Live, disabled: boolean, ramp: Ramp, warn = false): void {
   const pressed = !disabled && live.down && live.hover;
   if (!disabled && live.focus && !live.hover) dashedOutline(s, w, h);
   else outline(s, 0, 0, w, h, 'root.0');
@@ -85,7 +89,7 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
     bevel(s, w, h, tone(ramp, 'hi'), null, tone(ramp, live.hover ? 'lt' : 'face'), tone(ramp, 'sh'), tone(ramp, 'dk'));
   }
   const t = cut(label, w - 4);
-  if (t) s.text(t, centreX(t, 0, w) + drop, Math.floor((h - 9) / 2) + drop, disabled ? 'ink.faded' : 'ink');
+  if (t) s.text(t, centreX(t, 0, w) + drop, Math.floor((h - 9) / 2) + drop, disabled ? 'ink.faded' : warn ? 'blood.dk' : 'ink');
 }
 
 /**
@@ -93,7 +97,7 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
  * stands on, a small button of that slab.
  */
 export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, ramp?: Ramp, warn = false): void {
-  if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp); return; }
+  if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp, warn); return; }
   const pressed = !disabled && live.down && live.hover;
   // Hovered, the outline is solid ember.hi, the colour of the hovered label; with the keys on it and not the pointer,
   // dashed in salt; pressed into the slab, root.0.
