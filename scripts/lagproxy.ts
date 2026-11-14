@@ -29,19 +29,34 @@ export function startLagProxy(o: LagOptions): Promise<LagProxy> {
   const oneWay = (o.rtt ?? 150) / 2, jit = (o.jitter ?? 40) / 2, share = o.stallShare ?? 0.02, sMin = o.stallMin ?? 250, sMax = o.stallMax ?? 400;
   const stats = { segments: 0, stalls: 0, bytes: 0 };
   const open = new Set<Socket>();
-  /** Copy `from` to `to` late. A segment is never written before the one in front of it. */
+  /** Copy `from` to `to` late. A segment is never written before the one in front of it: one queue per direction and one
+   *  timer for its head, since timers of different lengths that fall due in the same millisecond fire in any order. */
   const pipe = (from: Socket, to: Socket): void => {
-    let last = 0;
-    from.on('data', (d) => {
+    const q: { at: number; d: Buffer | 'end' | 'close' }[] = [];
+    let last = 0, timer: ReturnType<typeof setTimeout> | null = null;
+    const pump = (): void => {
+      timer = null;
+      const now = performance.now();
+      while (q.length && q[0].at <= now) {
+        const { d } = q.shift()!;
+        if (d === 'end') to.end(); else if (d === 'close') to.destroy(); else if (!to.destroyed) to.write(d);
+      }
+      if (q.length) timer = setTimeout(pump, Math.max(0, q[0].at - now));
+    };
+    const later = (at: number, d: Buffer | 'end' | 'close'): void => {
+      at = Math.max(at, last); last = at;
+      q.push({ at, d });
+      if (!timer) timer = setTimeout(pump, Math.max(0, q[0].at - performance.now()));
+    };
+    from.on('data', (d: Buffer) => {
       stats.segments++; stats.bytes += d.length;
       let at = performance.now() + oneWay + (Math.random() * 2 - 1) * jit;
       if (Math.random() < share) { stats.stalls++; at += sMin + Math.random() * (sMax - sMin); }
-      at = Math.max(at, last); last = at;
-      setTimeout(() => { if (!to.destroyed) to.write(d); }, Math.max(0, at - performance.now()));
+      later(at, d);
     });
-    // the end goes through after the data in front of it
-    from.on('end', () => setTimeout(() => to.end(), Math.max(0, last - performance.now()) + 1));
-    from.on('close', () => setTimeout(() => to.destroy(), Math.max(0, last - performance.now()) + 2));
+    // the end and the close go through after the data in front of them
+    from.on('end', () => later(performance.now(), 'end'));
+    from.on('close', () => later(performance.now(), 'close'));
     from.on('error', () => {});
   };
   const server = createServer((client) => {

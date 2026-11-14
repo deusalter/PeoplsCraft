@@ -10,7 +10,7 @@ const BUILD = 'oak_planks';
 const PLACED: [number, number][] = [[0, 0], [-1, 0], [3, -2], [0, 2]];
 
 /** A flat patch the bot can walk to: ground at one height under every cell the scenario uses (x - 1 to x + 3, z - 2
- *  to z + 2), soft enough to dig by hand, open sky over (x, z) for the pillar, and nothing but air or a replaceable
+ *  to z + 2), soft enough to dig by hand and dropping something when it is (sandstone wants a pick), open sky over (x, z) for the pillar, and nothing but air or a replaceable
  *  plant in the cells at g + 1 that get a block (a flower is neither, and placing into it is refused). Nearest by
  *  walking first. */
 function findSite(bot: Bot): { x: number; z: number; g: number } | null {
@@ -21,7 +21,7 @@ function findSite(bot: Bot): { x: number; z: number; g: number } | null {
     let flat = true;
     for (let i = -1; i <= 3 && flat; i++) for (let j = -2; j <= 2 && flat; j++) {
       const id = v.getBlock(x + i, g, z + j);
-      flat = feet.get(`${x + i},${z + j}`) === g + 1 && BLOCKS[id].hard >= 0 && BLOCKS[id].hard <= 1 && !T_REPLACE[v.getBlock(x + i, g - 1, z + j)];
+      flat = feet.get(`${x + i},${z + j}`) === g + 1 && BLOCKS[id].hard >= 0 && BLOCKS[id].hard <= 1 && BLOCKS[id].power === 0 && !T_REPLACE[v.getBlock(x + i, g - 1, z + j)];
     }
     if (!flat) continue;
     if (!PLACED.every(([i, j]) => { const id = v.getBlock(x + i, g + 1, z + j); return id === 0 || T_REPLACE[id]; })) continue;

@@ -4009,6 +4009,19 @@ emptied realm goes through `suspendRealm`, whose `realm.suspend` removes a boss 
 in another realm still ticked go to `mail` within a tick (lane A's `DropSim`). The host's own mailing of parked players'
 drops is gone.
 
+D49. Stage 5, integration: the corrections scenario `basic` saw through the lag proxy (10.2, the Stage 6 lag row).
+(a) On some seeds `basic --lag` ended with one or two corrections on Ada, always a `space` refusal while she mined her
+pillar from under her feet. The host's log showed a falling `move` judged before the `edit` that broke the block under
+her, in the same step, and the bot's trace showed it sending them the other way round. `scripts/lagproxy.ts` had put
+each segment on a timer of its own; it kept each due time behind the one before it, but Node fires timers of different
+lengths that fall due in the same millisecond in any order, so two frames a fraction of a millisecond apart could swap
+(11 swaps in 2,000 segments in a check by itself). TCP never reorders a stream, so the proxy was at fault, not the host
+or the bot. Each direction now has one queue and one timer for its head, and the end and the close queue behind the
+data. On the seed that showed it (`39377506`), 4 runs after the change had no correction where 3 of 4 before had one or two.
+(b) The same seed's site was sandstone, which wants a pick to drop anything (`canHarvest`), so a bot digging it by hand
+picked nothing up and "Ada picked up the sandstone her block dropped" failed on every run. `findSite` now also wants
+ground of `power` 0, as its "soft enough to dig by hand" meant; on that seed it levels the usual pad.
+
 ---
 
 ## 14. Review log
