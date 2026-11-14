@@ -2,27 +2,44 @@ import { type Colour } from '../palette';
 import { pixmap } from '../pixmap';
 
 // The ground tile (5.21): a wall of dressed stone sunk to about a quarter of its light, so that it recedes behind the
-// buttons and the white words on it. Two tones and the joint only: faces `root.2` with a lip of `stone.pit` along their
-// top row and left column, joints `root.0` one unit wide, in a bond of blocks 16 by 8 whose courses are set 8 apart.
-// The brightest unit of the wall is darker than the face of any button, and nothing on a block is a speck.
+// buttons and the white words on it. Faces `root.2` with a lip of `stone.pit` along their top row and left column,
+// joints `root.0` one unit wide. The tile is 32 by 32: four courses of blocks 8 tall, two blocks to a course, faces 13,
+// 15 and 17 long so that no joint stands over the one two courses down. Two blocks are a tone darker (`root.1` faces),
+// one has a chip knocked off its bottom right corner and one a crack of three units, so that the wall reads as laid
+// stone and not as one block printed over and over. The brightest unit is still darker than any button's face.
 
-const W = 16, H = 16, BW = 16, BH = 8;
+const W = 32, H = 32, BH = 8;
+
+type Mark = 'plain' | 'dark' | 'chip' | 'crack';
+/** Each course: where its first block starts, and its two blocks as [length with the joint, mark]. */
+const COURSES: [start: number, blocks: [number, Mark][]][] = [
+  [0, [[14, 'dark'], [18, 'plain']]],
+  [7, [[16, 'plain'], [16, 'chip']]],
+  [1, [[18, 'plain'], [14, 'dark']]],
+  [11, [[16, 'plain'], [16, 'crack']]],
+];
 
 function build(): string[] {
-  const rows: string[] = [];
-  for (let y = 0; y < H; y++) {
-    const course = Math.floor(y / BH), v = y % BH, off = course % 2 ? BW / 2 : 0;
-    let row = '';
-    for (let x = 0; x < W; x++) {
-      const u = (x + off) % BW;
-      row += v === BH - 1 || u === BW - 1 ? 'K' : v === 0 || u === 0 ? 'z' : 'j';
+  const g: string[][] = Array.from({ length: H }, () => Array<string>(W).fill('j'));
+  const at = (x: number, y: number, c: string) => { g[y][((x % W) + W) % W] = c; };
+  COURSES.forEach(([start, blocks], ci) => {
+    let x0 = start;
+    for (const [len, mark] of blocks) {
+      for (let v = 0; v < BH; v++) for (let u = 0; u < len; u++) {
+        const y = ci * BH + v;
+        at(x0 + u, y, v === BH - 1 || u === len - 1 ? 'K' : v === 0 || u === 0 ? 'z' : mark === 'dark' ? 'k' : 'j');
+      }
+      const y0 = ci * BH;
+      if (mark === 'chip') for (let v = 5; v <= 6; v++) for (let u = len - 3; u <= len - 2; u++) at(x0 + u, y0 + v, 'k');
+      // The crack runs down from the lip, so it reads as split from the edge and not as a speck on the face.
+      if (mark === 'crack') { at(x0 + 5, y0 + 1, 'K'); at(x0 + 5, y0 + 2, 'K'); at(x0 + 6, y0 + 3, 'K'); }
+      x0 += len;
     }
-    rows.push(row);
-  }
-  return rows;
+  });
+  return g.map((r) => r.join(''));
 }
 
-export const GROUND = pixmap({ rows: build(), key: { K: 'root.0', z: 'stone.pit', j: 'root.2' } }, 'ground');
+export const GROUND = pixmap({ rows: build(), key: { K: 'root.0', z: 'stone.pit', j: 'root.2', k: 'root.1' } }, 'ground');
 
 /** The tile's period, for parts that scroll it. */
 export const GROUND_W = W;

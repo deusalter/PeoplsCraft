@@ -1770,29 +1770,45 @@ A node with more than one rank shows them as cells 3 by 3, one unit apart, in a 
 
 ### 5.21 Ground tile
 
-16 by 16: a wall of dressed stone sunk to about a quarter of its light, as the tradition darkens the block behind a menu, so that it recedes behind the buttons and the words on it. Blocks are 16 by 8 in a running bond, each course set 8 along from the one above. A block's face is `root.2` with a lip of `stone.pit` along its top row and left column; the joint is `root.0`, one unit, along its bottom row and right column. Two tones and the joint and nothing else: no block is lighter or darker than another and no block carries a speck or a worn patch, which at this size read as noise. The brightest unit of the wall is darker than any button's face. It fills the screen behind the title, the world list, new world, join and loading, and it is the floor of a store's map. The tree has a floor of its own (5.20). Under a list on a full-screen menu it shows above and below the well. Text on it is text on dark: `salt` with its shadow, and no strip under it. Two courses:
+32 by 32: a wall of dressed stone sunk to about a quarter of its light, as the tradition darkens the block behind a menu, so that it recedes behind the buttons and the words on it. Blocks are 8 tall in four courses of two, their faces 13, 15 and 17 long (14, 16 and 18 with the joint) and each course set along from the last so that no joint stands over the joint below it. A block's face is `root.2` with a lip of `stone.pit` along its top row and left column; the joint is `root.0`, one unit, along its bottom row and right column. Two blocks of the eight have faces a tone darker, `root.1`; one has a chip 2 by 2 of `root.1` knocked off the bottom right corner of its face; one has a crack of three units of `root.0` running down from its lip. Nothing else marks a block: no single specks, which at this size read as noise. Every block alike, repeated every 16, read as a printed wallpaper and not as a wall that was laid. The brightest unit of the wall is darker than any button's face. It fills the screen behind the title, the world list, new world, join and loading, and it is the floor of a store's map. The tree has a floor of its own (5.20). Under a list on a full-screen menu it shows above and below the well. Text on it is text on dark: `salt` with its shadow, and no strip under it. The whole tile:
 
 ```
-     0         1         2         3
+     0         1         2         3 
      01234567890123456789012345678901
-  0  zzzzzzzzzzzzzzzKzzzzzzzzzzzzzzzK
-  1  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
-  2  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
-  3  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
-  4  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
-  5  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
-  6  zjjjjjjjjjjjjjjKzjjjjjjjjjjjjjjK
+  0  zzzzzzzzzzzzzKzzzzzzzzzzzzzzzzzK
+  1  zkkkkkkkkkkkkKzjjjjjjjjjjjjjjjjK
+  2  zkkkkkkkkkkkkKzjjjjjjjjjjjjjjjjK
+  3  zkkkkkkkkkkkkKzjjjjjjjjjjjjjjjjK
+  4  zkkkkkkkkkkkkKzjjjjjjjjjjjjjjjjK
+  5  zkkkkkkkkkkkkKzjjjjjjjjjjjjjjjjK
+  6  zkkkkkkkkkkkkKzjjjjjjjjjjjjjjjjK
   7  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
-  8  zzzzzzzKzzzzzzzzzzzzzzzKzzzzzzzz
-  9  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
- 10  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
- 11  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
- 12  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
- 13  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
- 14  jjjjjjjKzjjjjjjjjjjjjjjKzjjjjjjj
+  8  zzzzzzKzzzzzzzzzzzzzzzKzzzzzzzzz
+  9  jjjjjjKzjjjjjjjjjjjjjjKzjjjjjjjj
+ 10  jjjjjjKzjjjjjjjjjjjjjjKzjjjjjjjj
+ 11  jjjjjjKzjjjjjjjjjjjjjjKzjjjjjjjj
+ 12  jjjjjjKzjjjjjjjjjjjjjjKzjjjjjjjj
+ 13  jjjjkkKzjjjjjjjjjjjjjjKzjjjjjjjj
+ 14  jjjjkkKzjjjjjjjjjjjjjjKzjjjjjjjj
  15  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 16  KzzzzzzzzzzzzzzzzzKzzzzzzzzzzzzz
+ 17  KzjjjjjjjjjjjjjjjjKzkkkkkkkkkkkk
+ 18  KzjjjjjjjjjjjjjjjjKzkkkkkkkkkkkk
+ 19  KzjjjjjjjjjjjjjjjjKzkkkkkkkkkkkk
+ 20  KzjjjjjjjjjjjjjjjjKzkkkkkkkkkkkk
+ 21  KzjjjjjjjjjjjjjjjjKzkkkkkkkkkkkk
+ 22  KzjjjjjjjjjjjjjjjjKzkkkkkkkkkkkk
+ 23  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 24  zzzzzzzzzzKzzzzzzzzzzzzzzzKzzzzz
+ 25  KjjjjjjjjjKzjjjjjjjjjjjjjjKzjjjj
+ 26  KjjjjjjjjjKzjjjjjjjjjjjjjjKzjjjj
+ 27  jKjjjjjjjjKzjjjjjjjjjjjjjjKzjjjj
+ 28  jjjjjjjjjjKzjjjjjjjjjjjjjjKzjjjj
+ 29  jjjjjjjjjjKzjjjjjjjjjjjjjjKzjjjj
+ 30  jjjjjjjjjjKzjjjjjjjjjjjjjjKzjjjj
+ 31  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
 ```
-`j root.2  K root.0  z stone.pit`
+`j root.2  k root.1  K root.0  z stone.pit`
 
 ### 5.22 Pointer and held stack
 
