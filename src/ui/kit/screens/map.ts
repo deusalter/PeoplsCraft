@@ -80,6 +80,13 @@ function nearWay(x: number, z: number): boolean {
  * carries its kind's marks on a grid fixed to the world (grass tufts, grains of sand, crowns of trees, ripples), so that
  * a fill reads as ground. Where parchment meets the known a rule of one unit of root.0 runs along it.
  */
+/** A fixed hash of a lattice point, for the marks of the ground. */
+function latticeHash(gx: number, gy: number, seed: number): number {
+  let h = (Math.imul(gx, 374761393) + Math.imul(gy, 668265263) + Math.imul(seed, 2246822519)) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
 const CELL = 2;
 function paintGround(s: Surface, v: MapView): void {
   const z = v.zoom * CELL, cx = v.centre.x, cz = v.centre.z;
@@ -105,16 +112,28 @@ function paintGround(s: Surface, v: MapView): void {
         const up = at(u, row - 1), left = at(u - 1, row), down = at(u, row + 1), right = at(u + 1, row);
         if (k === 'unknown') c = MAP_TONES.unknown[0];
         else if (k === 'water') c = [up, left, down, right].some(land) ? MAP_SHALLOWS : MAP_TONES.water[0];
-        else if (lower(up, k) || lower(left, k)) c = MAP_LIT[k];
-        else if (lower(down, k) || lower(right, k)) c = MAP_TONES[k][1];
         else c = MAP_TONES[k][0];
-        if (k !== 'unknown' && c === MAP_TONES[k][0]) plain[row * nw + u] = 1;
+        if (k !== 'unknown' && c === MAP_TONES[k][0] && (k === 'water' || ![up, left, down, right].some((n) => lower(n, k)))) plain[row * nw + u] = 1;
       }
       if (c !== runC) {
         if (runC) s.fill((u - run) * CELL, row * CELL, run * CELL, CELL, runC);
         runC = c; run = 0;
       }
       run++;
+    }
+  }
+  // A rise is lit by one unit of its kind's lit tone along a side whose neighbour above or to the left stands lower, and
+  // shaded by one unit of its edge tone along a side whose neighbour below or to the right stands lower. Whole cells of
+  // edge tone made a band two deep round every rise.
+  for (let row = 0; row < nh; row++) {
+    for (let u = 0; u < nw; u++) {
+      const k = at(u, row);
+      if (k === 'unknown' || k === 'water') continue;
+      const x = u * CELL, y = row * CELL;
+      if (lower(at(u, row + 1), k)) s.fill(x, y + CELL - 1, CELL, 1, MAP_TONES[k][1]);
+      if (lower(at(u + 1, row), k)) s.fill(x + CELL - 1, y, 1, CELL, MAP_TONES[k][1]);
+      if (lower(at(u, row - 1), k)) s.fill(x, y, CELL, 1, MAP_LIT[k]);
+      if (lower(at(u - 1, row), k)) s.fill(x, y, 1, CELL, MAP_LIT[k]);
     }
   }
   // The marks, on a grid of the world's units so that they move with the ground as it pans.
@@ -130,9 +149,15 @@ function paintGround(s: Surface, v: MapView): void {
       const shift = ((gy % 2) + 2) % 2 ? Math.floor(t.px / 2) : 0;
       const gx0 = Math.floor((ox - shift) / t.px) - 1, gx1 = Math.ceil((ox + CW - shift) / t.px);
       for (let gx = gx0; gx <= gx1; gx++) {
-        const x = gx * t.px + shift - ox, y = gy * t.py - oy;
-        if (!t.mark.every(([dx, dy]) => fits(k, x + dx, y + dy))) continue;
-        for (const [dx, dy, c] of t.mark) s.fill(x + dx, y + dy, 1, 1, c);
+        // A kind with several marks picks one, moves it off the lattice and leaves some points bare by a hash of the
+        // point, so that the same ground always carries the same marks.
+        const h = latticeHash(gx, gy, k.length);
+        if (t.bare && h % t.bare === 0) continue;
+        const mark = t.marks ? t.marks[(h >>> 3) % t.marks.length] : t.mark;
+        const j = t.jitter ?? 0;
+        const x = gx * t.px + shift - ox + (j ? (h >>> 6) % (j + 1) : 0), y = gy * t.py - oy + (j ? (h >>> 9) % (j + 1) : 0);
+        if (!mark.every(([dx, dy]) => fits(k, x + dx, y + dy))) continue;
+        for (const [dx, dy, c] of mark) s.fill(x + dx, y + dy, 1, 1, c);
       }
     }
   }
@@ -337,7 +362,10 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
   if (here === v.places.length) group(0, here, 'Crew', 'Places');
   else { group(0, here, null, null); header('Elsewhere'); group(here, v.places.length, null, null); }
   const cooling = place?.cooling !== undefined;
-  const builtOpen = cooling && v.cooling(ui.t) <= 0;
+  // The wait is written in the disabled button itself, so the reason Travel is shut stands where the eye goes; the
+  // screen is built again each time the shown second changes.
+  const builtLeft = cooling ? Math.max(0, Math.ceil(v.cooling(ui.t))) : 0;
+  const builtOpen = cooling && builtLeft <= 0;
   const kids: Node[] = [
     frameWell({ x: 8, y: 18, w: CW + 2, h: CH + 2, host: 'stone', kids: [chart] }),
     {
@@ -362,17 +390,17 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
         if (i < here) v.onPan(v.places[i].x, v.places[i].z);
       },
     }),
-    button({ id: 'map.travel', x: LIST_X, y: 152, w: LIST_W, h: 16, ramp: 'stone', label: 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
+    button({ id: 'map.travel', x: LIST_X, y: 152, w: LIST_W, h: 16, ramp: 'stone', label: builtLeft > 0 ? `Travel in ${clock(builtLeft)}` : 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
     {
       x: LIST_X, y: 172, w: LIST_W, h: 30, anim: cooling,
       paint: (s) => {
         if (!place) return;
-        const left = Math.ceil(v.cooling(ui.t));
-        if (cooling && (left <= 0) !== builtOpen) ui.invalidate();
+        const left = Math.max(0, Math.ceil(v.cooling(ui.t)));
+        if (cooling && left !== builtLeft) ui.invalidate();
         // A place in the store is told by the chart beside it; how far and which way is said of the living ground only.
         const local = v.here !== undefined && v.chosen < v.here;
-        const t = !cooling ? (local || place.kind === 'self' ? `${place.crossing}.` : `${place.crossing}. ${way(place)}`) : left > 0 ? `${place.crossing}, cooling ${clock(left)}` : `${place.crossing}, ready`;
-        for (const l of box(t, LIST_W, 3).lines) s.text(l.text, 0, l.y, cooling && left <= 0 ? 'growth.dk' : 'ink');
+        const t = !cooling ? (local || place.kind === 'self' ? `${place.crossing}.` : `${place.crossing}. ${way(place)}`) : left > 0 ? `${place.crossing} cooling` : `${place.crossing}, ready`;
+        for (const l of box(t, LIST_W, 3).lines) s.text(l.text, 0, l.y, !cooling ? 'ink' : left <= 0 ? 'growth.dk' : 'ink.faded');
       },
     },
     {

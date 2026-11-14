@@ -90,13 +90,20 @@ export const MOUTH_MARK = coded([
 /**
  * The marks a kind of ground carries on its face, so that a fill reads as a material and not as a flat colour: one
  * mark at each point of a grid fixed to the world, every other row moved half a pitch along, each unit a tone. A mark is
- * drawn only where the whole of it falls on that kind's face, never over a shore, an edge or another kind.
+ * drawn only where the whole of it falls on that kind's face, never over a shore, an edge or another kind. A kind may
+ * have several `marks` to pick among, a `jitter` of up to that many units right and down from the point, and leave one
+ * point in `bare` empty, each by a fixed hash of the point; one mark on an exact lattice read as a machine's fill.
  */
-export interface Texture { px: number; py: number; mark: readonly (readonly [x: number, y: number, c: Colour])[] }
+type Mark = readonly (readonly [x: number, y: number, c: Colour])[];
+export interface Texture { px: number; py: number; mark: Mark; marks?: readonly Mark[]; jitter?: number; bare?: number }
+
+const TUFT: Mark = [[0, 0, 'growth.dk'], [2, 0, 'growth.dk'], [1, 1, 'growth.dk']];
+const HOOK: Mark = [[0, 0, 'growth.dk'], [1, 0, 'growth.dk'], [1, 1, 'growth.dk']];
+const BLADE: Mark = [[0, 0, 'growth.dk'], [0, 1, 'growth.dk']];
 
 export const MAP_TEXTURE: Partial<Record<MapKind, Texture>> = {
-  // A tuft: a v of growth.dk, 3 wide and 2 tall.
-  grass: { px: 8, py: 6, mark: [[0, 0, 'growth.dk'], [2, 0, 'growth.dk'], [1, 1, 'growth.dk']] },
+  // A tuft 3 by 2, a hook 2 by 2 or a blade 1 by 2, in growth.dk, up to 3 off the point; a third of the points bare.
+  grass: { px: 8, py: 6, mark: TUFT, marks: [TUFT, HOOK, BLADE], jitter: 3, bare: 3 },
   // A grain of darker sand.
   sand: { px: 6, py: 6, mark: [[0, 0, 'clay.sh']] },
   // A crown 5 by 4 seen from above: growth, its top left unit lit, its foot and right side in the shade of root.1.
