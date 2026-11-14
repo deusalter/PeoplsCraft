@@ -150,5 +150,5 @@ export const STORE = {
 export const STORE_PLACES: Place[] = [
   { id: 'store.friend.4', kind: 'friend', name: CREW[3].name, icon: 'head:4', seat: 4, x: STORE.at.x, z: STORE.at.z, crossing: 'No crossing to a friend' },
   { id: 'store.door', kind: 'door', name: 'Locked door', icon: 'key', x: 168, z: 24, crossing: 'It wants a key' },
-  { id: 'store.stair', kind: 'stair', name: 'Stair up', icon: 'codex:map_mouth', x: 24, z: 20, crossing: 'The way out, to Pabbat' },
+  { id: 'store.stair', kind: 'stair', name: 'Stair up', icon: 'codex:map_stair', x: 24, z: 20, crossing: 'The way out, to Pabbat' },
 ];
