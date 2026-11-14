@@ -400,14 +400,17 @@ The keys are the constants `CODEX`, `SITES_BUILT`, `SITES_NEW` and `MATERIAL_BOR
 - `read`: `seen` is open and the evidence in the table has been met.
 - `born`: `seen` is open and the householder named in the table is housed (`npc:<key>`). With none named, any householder.
 - `sand`: `seen` is open and `npc:deserter` is set.
+- A subject with no `seen` (only `people:peopls`) says in its row what opens each of its steps in place of these rules.
+- **A second place.** Where a row's evidence is the site seen in a second place, `read` opens when the event that opens its `seen` fires again, for any player, at an origin whose region differs from the one in the flag `cx:site:<key>.at:<rx>,<rz>` (D.2). The region is worked out as for that flag. A restart between the two changes nothing, since the first region is kept in the flag.
+- **Words of the table.** *In a pack*: in a player's pack, hot bar or worn slots. *Broken*: a player breaks the block (`src/sim/actions.ts`, where a broken block spawns its drops), whatever it drops. *Digs to `bedrock`*: a player's pick strikes a `bedrock` cell, which does not break. *The sight event*: the player comes within the distance the row gives of the site's sight point (A.1).
 
 | Subject | Steps | `seen` opens when | Evidence for `read`; who gives `born` |
 | --- | --- | --- | --- |
-| `place:0` the living ground | seen, read, born | The first join | A block is set in the air and stays; Desik |
+| `place:0` the living ground | seen, read, born | The first join | A block is set on `dim:0` with air in the cell under it; Desik |
 | `place:1` the hollow | seen, read, born | `dim:1` | A player digs to `bedrock` in the hollow; any householder (they say Under, 3.6) |
 | `place:2` the islands | seen, read | `dim:2` | A player is put back on the last footing after a fall. No householder has a word for the place |
-| `country:<key>`, all eighteen | seen, read | A player stands in the country for 10 seconds; `country.enter` shows then | The country's trace of A has been seen, or, where it has none: `forest` and `palewood`, a `village` under trees; `swamp`, a `bog_pearl`; `taiga`, a `village` of pine; `ocean`, a `crossing`; `hollows_crystal`, `crystal_violet` mined; `rift`, `skyfruit` in hand; `bloomvale`, `dim:2` |
-| `site:village` | seen, read, born | Within 12 strides of the well | A `bedroll` found in a house; Desik |
+| `country:<key>`, all eighteen | seen, read | A player stands in the country for 10 seconds; `country.enter` shows then | One event for each country. Eleven have a trace in A, and their `read` opens when that site's `seen` is open: `ocean`, `crossing`; `beach`, `pan`; `plains`, `fold`; `bloomvale`, `lone_tree`, or `dim:2` set, whichever is first; `tundra`, `prints`; `desert`, `fire_ring`; `savanna`, `burned_hearths`; `jungle`, `tree_floor`; `crags`, `quarry`; `peaks`, `column`; `hollows`, `lamp_row`; `rift_shards`, `stump`. The six with none: `forest`, `palewood` and `taiga`, the sight event of `site:village` at a village whose origin is in that country (a village under oaks, under pale trees, of pine); `swamp`, a `bog_pearl` in a pack; `hollows_crystal`, a `crystal_violet` broken; `rift`, a `skyfruit` in a pack |
+| `site:village` | seen, read, born | Within 12 strides of the well | A house of the village has `bed` true by `villageHouses` (A.5), and a `bedroll` is broken at its furnishing cell (the last column of A.5's table, or `(hx - sx, hy + 1, hz - sz)` with `sx`, `sz` of `house()`, where a village made before step 4 has it), or a player's feet are inside that house (`\|fx - hx\| < hw`, `\|fz - hz\| < hd`, `hy < fy <= hy + 3`); Desik |
 | `site:ruin` | seen, read, born, sand | Within 12 strides | Its chest is opened; Desik |
 | `site:dungeon` | seen, read, born, sand | A player's feet are in a room of one, by `dungeonRooms` (below) | A made bait or a `recall_stone` comes out of its chest; Kammār |
 | `site:cache1`, `site:cache2` | seen, read | Within 8 strides | Its chest is opened |
@@ -416,25 +419,35 @@ The keys are the constants `CODEX`, `SITES_BUILT`, `SITES_NEW` and `MATERIAL_BOR
 | `site:arena7` | seen, read, born | Within 16 strides of the stone | The stone's first kill; Desik |
 | `site:burned_hearths` | seen, born, sand | A player's feet are inside a house of a burned village, by `villageHouses` (below) | Desik. It has no `read`: nothing in the houses settles it (2.8) |
 | `site:fire_ring` | seen, read, born, sand | Within 16 strides of the fire | An `ash_token` is broken out of the floor; Vāhak |
-| `site:hearth` | seen, read, born | A player breaks a hearthstone, or stands on one, by `villageHouses` (below) | A `ward_core` is found; Rehakār |
-| the other sites of A | seen, read | Within 12 strides | The found thing is taken, or, where there is none, the site is seen a second time in another place |
+| `site:hearth` | seen, read, born | A player breaks a hearthstone, or stands on one, by `villageHouses` (below) | A `ward_core` is in a pack; Rehakār |
+| `site:crossing` | seen, read | Within 12 strides | The site seen in a second place |
+| `site:pan` | seen, read | Within 12 strides | A `salt_crust` is broken. It drops nothing, and only a clean pan has it |
+| `site:fold` | seen, read | Within 12 strides | The site seen in a second place |
+| `site:lone_tree` | seen, read | Within 12 strides | A `star_leaves` is broken on `dim:0`. On the living ground only a `lone_tree` has it, and leaves drop no leaves (`src/data/blocks.ts:31-34`) |
+| `site:prints` | seen, read | Within 12 strides | The site seen in a second place |
+| `site:tree_floor` | seen, read | Within 12 strides | The `lantern` at `(x - 2, F + 1, z - 2)` or the `bedroll` at `(x + 1, F + 1, z + 1)` is broken, with `F = heightAt(x, z) + f` the height of the floor and `f` drawn from the row's `r` as the build draws it (A.3). The `crate` does not count: it drops nothing (`src/data/blocks.ts:198`) |
+| `site:quarry` | seen, read | Within 12 strides | The `rough_block` at `a = 1`, `b = 0`, height `y + 1` is broken |
+| `site:column` | seen, read | Within 12 strides | The `bedroll` at `(x + 1, heightAt(x + 1, z) + 1, z)`, with `(x, z)` the moved origin, is broken |
+| `site:lamp_row` | seen, read | Within 12 strides | The site seen in a second place. Its region is that of the `cache1` it runs from (D.2) |
+| `site:stump` | seen, read | Within 12 strides | The site seen in a second place |
+| `site:shaft` | seen, read | Within 12 strides | Its chest, on the floor of the column `(x, z)`, is opened |
 | `material:<key>`, the ten hardnesses | seen, read; born for `lumenite`, `cinder`, `umbrite` | A piece of it is first in a player's pack | A pick of it first breaks the next rock; Kammār, and for `lumenite` Rehakār |
 | `matter:gold` | seen, read | `gold_bar` in a pack | `boss:2` |
 | `matter:lees` | seen, read, born, sand | The first coin paid at a kill | An animal is killed and pays none; Vāhak |
 | `matter:crystal` | seen, read, born, sand | `mana_crystal` in a pack | A `pot_crystal` is found, or standing crystal is mined; Rehakār |
-| `matter:salt` | seen, read | A clean `pan` is seen | A `brood_nest` is broken |
-| `matter:remains` | seen, read, born, sand | Any raw remains in a pack | A totem is first used; Posak |
+| `matter:salt` | seen, read | The sight event of `site:pan` at a clean pan (A.3) | A `brood_nest` is broken |
+| `matter:remains` | seen, read, born, sand | One of the raw remains in a pack: `shade_essence`, `spore_sac`, `moth_dust`, `shard`, `rift_scale`, `moon_sliver`, `thorn`, `gel`, `chitin`, `frost_fang` or `rust_core`. These are the drops of feeders that are a feeder's own body (6.3, 7.3). The other drops of feeders are not: `bone` is what is left in the pot, `fiber` and `hide` come off animals too, `ember_dust` is a fuel with coal, `bog_pearl` is set lees, and ore, bars, arrows, `glowshroom` and `mana_crystal` are what a feeder carried | A totem is first used; Posak |
 | `matter:great_remains` | seen, read, born, sand | `boss:1` | A forge of remains is first lit; Vejja |
 | `people:householders` | seen, read, sand | `npc:wayfinder` | Two householders are housed |
 | `people:sand` | seen, read, born | The first `ashen` or the first `fire_ring` | An `ash_token` is in a pack; Desik |
-| `people:peopls` | read, born, sand | (it has no `seen`) | `read`: a second player joins, or the first fall; any householder |
+| `people:peopls` | read, born, sand | (it has no `seen`) | `read` opens on its evidence alone: a second player joins, or the first fall. `born` opens once `read` is open and any householder is housed. `sand` opens once `read` is open and `npc:deserter` is set |
 | `old:cutter_saw`, `old:ward_core`, `old:pot_crystal` | seen, read | The thing is in a pack | For the saw, a tree is felled with it. For the core, it is set down within 3 strides of `bedrock`. For the jar, it is broken into crystal |
-| `old:made_bait` | seen, read, born, sand | A bait is taken from an old chest | A second kind of bait is found; Desik |
-| `old:old_bed` | seen, read, born | A `bedroll` is taken from an old house or its chest | A player rests on one; any householder |
+| `old:made_bait` | seen, read, born, sand | A bait is taken from an old chest | A second kind of bait is taken from an old chest; Desik |
+| `old:old_bed` | seen, read, born | A `bedroll` is broken at a cell where a build set one: a village house's furnishing cell (as for `site:village`), a `tree_floor` or a `column` (as for those sites) | A player rests on one; any householder |
 | `old:recall_stone` | seen, read, born | A `recall_stone` is in a pack | It is used; Rehakār |
 | `old:token` | seen, read, sand | An `ash_token` is in a pack | One is spent with the Deserter |
-| `ground:floor` | seen, read | A player's pick stops on `bedrock` | A `ward_core` or the bottom of a `shaft` has been seen |
-| `ground:set` | seen, read | A block is set with nothing under it | A tree is cut at the foot and the rest hangs |
+| `ground:floor` | seen, read | A player digs to `bedrock` | A `ward_core` is in a pack, or a player's feet are in one of the four columns of a `shaft` (A.5), in the cell over the first `bedrock` from the top of that column |
+| `ground:set` | seen, read | A block is set with air in the cell under it | A tree is cut at the foot and the rest hangs |
 | `ground:way` | seen, read, born, sand | The first fall | A `recall_stone` is used; any householder |
 | `ground:light` | seen, read | The first `torch` is set | A hostile creature walks into block light near a player |
 | `ground:moon` | seen, read, born | The first night | The first `moon` ends; Desik |
