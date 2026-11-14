@@ -4,6 +4,7 @@ import { TEXT } from '../../font/face';
 import { count, measure, rightX } from '../../font/measure';
 import type { Node, Ui } from '../../node';
 import { type Colour, GRADES } from '../../palette';
+import { CARRIED_MARKS } from '../../art/hud';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
 import { CHAT_WRAP, CREW_HEADS_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
@@ -220,19 +221,30 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     // The grade's colour with its shadow on a strip of the chat wash, over the row of defence and lees.
     out.push(washedLine(L(cx - Math.floor(measure(name) / 2)) - 2, H - 66, name, c));
   }
-  const carried = first ? '{shield} 0   {lees} 0' : `{shield} 9   {lees} ${count(1240)}`;
-  out.push({ x: L(cx - 91), y: H - 54, w: measure(carried) + 1, h: 11, paint: (s) => { s.text(carried, 0, 0, 'salt', true); } });
+  // Each figure stands 2 right of its mark, its digits centred on the mark's 9 rows.
+  const defence = first ? '0' : '9', lees = first ? '0' : count(1240);
+  const leesX = 9 + 2 + measure(defence) + 8;
+  out.push({
+    x: L(cx - 91), y: H - 53, w: leesX + 11 + measure(lees) + 1, h: 10,
+    paint: (s) => {
+      s.map(CARRIED_MARKS.defence, 0, 0);
+      s.text(defence, 11, 0, 'salt', true);
+      s.map(CARRIED_MARKS.lees, leesX, 0);
+      s.text(lees, leesX + 11, 0, 'salt', true);
+    },
+  });
   const life = first ? [100, 100] : [84, 100], hunger = first ? [20, 20] : [9, 20], arm = first ? [60, 60] : [38, 60];
   out.push(pips({ x: L(cx + 10), y: H - 53, kind: 'arm', now: arm[0], max: arm[1], fromRight: true }));
   out.push(pips({ x: L(cx - 91), y: H - 42, kind: 'life', now: life[0], max: life[1], mending: !first && !STILL }));
   const practice = first ? 0 : 320 / 900;
   const level = first ? '1' : '14';
-  // The level sits on the practice strip as the tradition sets it: its figures end 2 above the strip, level with the
-  // feet of the pips, and each is ringed in root.0 so that it reads as the strip's number and not as a count beside them.
+  // The level sits on the practice strip as the tradition sets it: its figures end 1 above the strip, under the feet of
+  // the pips, and each is ringed in root.0, whose lowest ring row lies on the strip's top, so that it reads as the
+  // strip's number. Ending level with the pips' feet it read as a count of life or hunger wedged between the rows.
   // While the strip is empty no level is written: a lone 1 beside an empty strip read as a stray figure.
   const lw = measure(level);
   if (practice > 0) out.push({
-    x: L(cx - Math.floor(lw / 2)) - 1, y: H - 42, w: lw + 2, h: 10,
+    x: L(cx - Math.floor(lw / 2)) - 1, y: H - 40, w: lw + 2, h: 10,
     paint: (s) => {
       for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) s.text(level, dx, dy, 'root.0');
       s.text(level, 1, 1, 'growth.lt');

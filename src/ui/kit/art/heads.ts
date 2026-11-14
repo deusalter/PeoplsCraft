@@ -2,10 +2,12 @@ import { type Colour, SEATS } from '../palette';
 import { type PixelMap, pixmap } from '../pixmap';
 
 // The heads of the eight seats. Each is a person of its own, 8 by 8 and lit from the top left: their own hair or
-// cloth, their own skin, eyes of one unit under a brow, a mouth or a beard. The seat's colour is only the frame of
-// one unit round the face, so that a head is read as somebody and its frame says which seat they hold.
+// cloth, their own skin, eyes of two units under a brow, a mouth or a beard. The seat's colour is only the frame of
+// one unit round the face, so that a head is read as somebody and its frame says which seat they hold. The eyes are
+// two units, a white beside a dark, on row 4: an eye of one dark unit was lost at scale 2 and the face read as a blob.
 //
-// Letters: H h d hair (light, mid, dark); L s t skin (lit, mid, shade) and m its darkest, for the mouth; e the eye;
+// Letters: H h d hair (light, mid, dark); L s t skin (lit, mid, shade) and m its darkest, for the mouth; e the eye's
+// dark and w its white;
 // c C x cloth (light, mid, dark); `.` the dark behind the face, seen where hair or a pate leaves the square.
 
 type Skin = readonly [lit: Colour, mid: Colour, shade: Colour, mouth: Colour];
@@ -31,7 +33,7 @@ const FACES: readonly Face[] = [
     'hHhLshhd',
     'hLLsssdd',
     'hddssddd',
-    'hLessetd',
+    'hwessewd',
     'hLsstsdd',
     'hhLmmtdd',
     'hhLsstdd',
@@ -42,7 +44,7 @@ const FACES: readonly Face[] = [
     'Hhhhhhhd',
     'hLLssstd',
     'Lddssddt',
-    'Lsessest',
+    'Lwessewt',
     'LLsstsst',
     'Ltsmmstt',
     'Lttttttt',
@@ -53,7 +55,7 @@ const FACES: readonly Face[] = [
     'HHhhhhdd',
     'hLssssdd',
     'Lddssddt',
-    'Lsessest',
+    'Lwessewt',
     'hLsstsdd',
     'hhhmmhdd',
     'dhhhhhdd',
@@ -64,7 +66,7 @@ const FACES: readonly Face[] = [
     'hHHhhhhd',
     'hLLssstd',
     'hddssddd',
-    'hLessetd',
+    'hwessewd',
     'LLsstsst',
     'LLsmmstt',
     'tLsssstt',
@@ -75,7 +77,7 @@ const FACES: readonly Face[] = [
     'cCCCCCxx',
     'CxLsssxx',
     'CLdssdtx',
-    'CLessetx',
+    'Cwessewx',
     'cCCCCCCx',
     'CCCxCCxx',
     'CCxxxxxx',
@@ -86,7 +88,7 @@ const FACES: readonly Face[] = [
     'hHHhhhhd',
     'hHhLsshd',
     'Lddssddt',
-    'Lsessest',
+    'Lwessewt',
     'Ltssttst',
     'LLsmmsst',
     'tLsssstt',
@@ -97,18 +99,19 @@ const FACES: readonly Face[] = [
     'cCCCCCCx',
     'hLLsssdd',
     'hddssddd',
-    'hLessetd',
+    'hwessewd',
     'hLsstsdd',
     'hhLmmtdd',
     'hdLsstdd',
   ] },
-  // 8: a bare pate, a grey fringe, heavy brows and a grey beard.
-  { skin: BROWN, hair: ASH, rows: [
-    '.LLssst.',
-    'LLsssstt',
+  // 8: a knitted cap of rust pulled low, heavy grey brows and a grey beard. Bare, his pate over dark brows and a pale
+  // beard read as a skull, a status mark among the faces.
+  { skin: BROWN, hair: ASH, cloth: ['ember.lt', 'ember', 'ember.dk'], rows: [
+    'cCCCCCCx',
+    'xCxCxCxx',
     'hLsssstd',
     'hhhsshhd',
-    'hLessetd',
+    'hwessewd',
     'HhLtsthd',
     'Hhhmmhhd',
     '.hhhhdd.',
@@ -130,7 +133,7 @@ function widened(rows: readonly string[]): string[] {
 
 function faceMap(f: Face, rows: string[], seat: number, name: string): PixelMap {
   const [L, s, t, m] = f.skin, [H, h, d] = f.hair;
-  const key: Record<string, Colour> = { L, s, t, m, H, h, d, e: 'root.0', k: 'root.1', K: 'root.0', F: SEATS[seat - 1] };
+  const key: Record<string, Colour> = { L, s, t, m, H, h, d, e: 'root.0', w: 'salt', k: 'root.1', K: 'root.0', F: SEATS[seat - 1] };
   if (f.cloth) [key.c, key.C, key.x] = f.cloth;
   return pixmap({ rows, key }, name);
 }
@@ -142,7 +145,7 @@ function faceMap(f: Face, rows: string[], seat: number, name: string): PixelMap 
 export function seatFace(seat: number, wide = false): { rows: (Colour | null)[][]; skin: readonly [Colour, Colour, Colour] } {
   const f = FACES[(seat - 1) % FACES.length];
   const [L, s, t, m] = f.skin, [H, h, d] = f.hair;
-  const key: Record<string, Colour> = { L, s, t, m, H, h, d, e: 'root.0' };
+  const key: Record<string, Colour> = { L, s, t, m, H, h, d, e: 'root.0', w: 'salt' };
   if (f.cloth) [key.c, key.C, key.x] = f.cloth;
   const rows = (wide ? widened(f.rows) : [...f.rows]).map((r) => [...r].map((ch) => (ch === '.' ? null : key[ch])));
   return { rows, skin: [L, s, t] };
@@ -159,7 +162,7 @@ export const HEADS: readonly PixelMap[] = FACES.map((f, i) => faceMap(f, framed(
 export const AWAY_HEADS: readonly PixelMap[] = FACES.map((f, i) => {
   const key: Record<string, Colour> = {
     L: 'root.4', H: 'root.4', c: 'root.4', s: 'root.3', h: 'root.3', C: 'root.3', t: 'root.2', d: 'root.2', x: 'root.2',
-    m: 'root.1', e: 'root.1', k: 'root.1', K: 'root.0', F: 'clay.dk',
+    m: 'root.1', e: 'root.1', w: 'root.4', k: 'root.1', K: 'root.0', F: 'clay.dk',
   };
   return pixmap({ rows: framed(f.rows), key }, `head.away.${i + 1}`);
 });

@@ -82,3 +82,33 @@ export const CROSSHAIR = coded([
   '...KWK...',
   '...KKK...',
 ], 'crosshair');
+
+/**
+ * The marks before defence and lees on the HUD's second row, 9 by 9 like the pips beside them and lit from the top
+ * left: a shield of stone, its rim `stone.hi` on the top and left, its right half `stone.dk`; a pouch of clay tied at a
+ * neck 3 by 2. As one-unit glyphs of the text face in salt they read as letters of a font beside sprites.
+ */
+export const CARRIED_MARKS = {
+  defence: coded([
+    '.KKKKKKK.',
+    'KAAAAAAMK',
+    'KAGGGMMMK',
+    'KAGGGMMMK',
+    'KAGGGMMMK',
+    '.KAGGMMK.',
+    '..KAGMK..',
+    '...KMK...',
+    '....K....',
+  ], 'mark.defence'),
+  lees: coded([
+    '..KK.KK..',
+    '.KLFKFSK.',
+    '..KDDDK..',
+    '..KDDDK..',
+    '.KLLFFSK.',
+    'KLWFFFFSK',
+    'KLFFFFSSK',
+    'KFFFFSSDK',
+    '.KKKKKKK.',
+  ], 'mark.lees'),
+};
