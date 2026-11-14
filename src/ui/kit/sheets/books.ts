@@ -5,7 +5,6 @@ import { ALTAR_MARK, GATE_MARK, MOUTH_MARK, OWN_ARROW } from '../art/chart';
 import { GROUND } from '../art/ground';
 import { SLOT } from '../art/slot';
 import type { Node } from '../node';
-import { measure } from '../font/measure';
 import { SEATS } from '../palette';
 import { plate, slab } from '../parts/slab';
 import { slot } from '../parts/slot';
@@ -44,7 +43,7 @@ export const booksSheet: Sheet = {
     }));
     // Rows written on a page: chosen, hovered, focused and plain, with a player's flag; entry slots sunk in a page.
     const rows: Node[] = [
-      pageRow({ id: 'pr.0', x: 8, y: 18, w: 126, h: 10, chosen: true, under: { x: 10, y: 9, w: measure('Smelt iron') }, onChoose: () => {}, paint: (s) => { s.text('{step}', 3, 0, 'ink'); s.text('Smelt iron', 10, 0, 'ink'); } }),
+      pageRow({ id: 'pr.0', x: 8, y: 18, w: 126, h: 10, chosen: true, onChoose: () => {}, paint: (s) => { s.text('{step}', 3, 0, 'ink'); s.text('Smelt iron', 10, 0, 'ink'); } }),
       { ...pageRow({ id: 'pr.1', x: 8, y: 28, w: 126, h: 10, chosen: false, onChoose: () => {}, paint: (s) => { s.text('{check}', 1, 0, 'ink.faded'); s.text('Build a furnace', 10, 0, 'ink.faded'); } }) },
       pageRow({ id: 'pr.2', x: 8, y: 38, w: 126, h: 10, chosen: false, onChoose: () => {}, paint: (s) => s.text('Bait Vanahar', 10, 0, 'ink.faded') }),
       { x: 8, y: 52, w: 126, h: 10, paint: (s) => { flag(s, 3, 0, 1); s.text('tamsin', 5, 0, 'ink'); flag(s, 1, 44, 1); s.text('Rook', 49, 0, 'ink'); } },

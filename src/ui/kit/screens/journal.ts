@@ -62,7 +62,7 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
     const title = inkCut(st.title, PW - 11);
     const chosen = i === v.step;
     left.push(pageRow({
-      id: `jr.step.${i}`, x: 0, y: 14 + i * 10, w: PW, h: 10, chosen, under: { x: 10, y: 9, w: measureInk(title) }, onChoose: () => v.onChoose(i),
+      id: `jr.step.${i}`, x: 0, y: 14 + i * 10, w: PW, h: 10, chosen, onChoose: () => v.onChoose(i),
       paint: (g) => {
         // Done, now, next and later differ by a mark and a tone together, never by the tone alone.
         if (s === 'done') g.text('{check}', 1, 0, 'growth.dk');
@@ -112,7 +112,7 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
     const task = inkCut(b.task, PW - 22);
     const chosen = i === v.bounty;
     left.push(pageRow({
-      id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen, under: { x: 21, y: 9, w: measureInk(task) }, onChoose: () => v.onChoose(i),
+      id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen, onChoose: () => v.onChoose(i),
       paint: (g, live) => {
         g.text(task, 21, 0, 'ink');
         g.text(inkCut(bountyState(b, v.seat), PW - 22), 21, 10, 'ink.faded');
@@ -193,7 +193,7 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
     const right = self ? 'you' : m.online ? String(m.level) : 'away';
     const name = inkCut(m.name, PW - 14 - measureInk(right) - 4);
     left.push(pageRow({
-      id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, under: { x: 13, y: 10, w: measureInk(name) }, onChoose: () => v.onChoose(i),
+      id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, onChoose: () => v.onChoose(i),
       paint: (g) => {
         if (m.online) g.map(HEADS[m.seat - 1], 1, 1); else g.draw(HEADS[m.seat - 1], 1, 1, { flat: 'clay.sh' });
         g.text(right, PW - 2 - measureInk(right), 1, m.online && !self ? 'ink' : 'ink.faded');

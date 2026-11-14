@@ -144,17 +144,18 @@ export function pageHeading(o: { x: number; y: number; w: number; text: string }
 }
 
 /**
- * A row of a list written on a page: hovered, its floor is `clay.face`; chosen, a rule of `clay.dk` one unit thick
- * under its words (`under`, in the row's coordinates), as a reader marks a line, and no floor. It is chosen on the
- * press, and Up and Down move the choice when it has the focus.
+ * A row of a list written on a page: chosen, a band of `clay.face` the row's full width and height behind its words;
+ * hovered, a band of `salt`, the page lifted as the tradition lifts a hovered slot. A rule under the words read as a
+ * link, which on a page is kept for what can be pressed. It is chosen on the press, and Up and Down move the choice
+ * when it has the focus.
  */
-export function pageRow(o: { id: string; x: number; y: number; w: number; h: number; chosen: boolean; under?: { x: number; y: number; w: number }; onChoose: () => void; paint: (s: Surface, live: Live) => void }): Node {
+export function pageRow(o: { id: string; x: number; y: number; w: number; h: number; chosen: boolean; onChoose: () => void; paint: (s: Surface, live: Live) => void }): Node {
   return {
     id: o.id, x: o.x, y: o.y, w: o.w, h: o.h, takes: true, focus: true,
     on: { down: o.onChoose },
     paint: (s, live) => {
-      if (live.hover && !o.chosen) s.fill(0, 0, o.w, o.h, 'clay.face');
-      if (o.chosen && o.under) s.fill(o.under.x, o.under.y, o.under.w, 1, 'clay.dk');
+      if (o.chosen) s.fill(0, 0, o.w, o.h, 'clay.face');
+      else if (live.hover) s.fill(0, 0, o.w, o.h, 'salt');
       if (live.focus) ring(s, 0, 0, o.w, o.h, 'salt');
       o.paint(s, live);
     },
