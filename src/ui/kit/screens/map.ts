@@ -1,7 +1,6 @@
 // The world map (section 6, World map): a stone slab with a tab for each place the crew can chart, the chart in a well
 // that pans and zooms by whole steps, the known places in a list, and Travel where the world allows a crossing.
 import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_LIT, MAP_SHALLOWS, MAP_SHORE, MAP_TEXTURE, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW, type Texture } from '../art/chart';
-import { GROUND, GROUND_H, GROUND_W } from '../art/ground';
 import { HEADS } from '../art/heads';
 import { COMPASS_MARKS, PING } from '../art/marks';
 import { SILHOUETTES } from '../art/silhouettes';
@@ -208,17 +207,19 @@ function paintMarks(s: Surface, v: MapView): void {
 }
 
 /**
- * The sealed store, as it has been entered, on the ground tile: rooms and the passages between them laid out as floor
- * on a grid of units, then walled from that grid, so that a doorway is only where a passage's floor meets a room's.
- * Floor is stone.face with grout of stone.sh on a 4-unit grid fixed to the store; a wall is `t` units deep, stone.lt
- * where the floor lies below or right of it and stone.dk where it lies above or left, with a root.0 outline. A passage
- * is 3 wide. A locked door is a leaf of ember across its doorway, with the key beside it.
+ * The sealed store, as it has been entered, on flat root.1 for ground not entered: rooms and the passages between them
+ * laid out as floor on a grid of units, then walled from that grid, so that a doorway is only where a passage's floor
+ * meets a room's. Each room is a hollow, as a slot is: flagstones of stone.sh with seams of stone.pit, 8 units to the
+ * stone (4 at the farther zooms) and every other course moved half a stone along, fixed to the store; a wall is `t`
+ * units deep, stone.dk where the floor lies below or right of it and stone.lt where it lies above or left, with a
+ * root.0 outline. A passage is 3 wide. A locked door is a leaf of ember across its doorway, with the key beside it.
  */
 function paintStore(s: Surface, v: MapView): void {
   const z = v.zoom;
   const [ox, oy] = unitOf(v, 0, 0);
-  s.tile(GROUND, 0, 0, CW, CH, ((-ox % GROUND_W) + GROUND_W) % GROUND_W, ((-oy % GROUND_H) + GROUND_H) % GROUND_H);
-  const t = z <= 2 ? 2 : 1;
+  // Not the ground tile: the menus behind stand on it, and a chart drawn on it could not be told from them.
+  s.fill(0, 0, CW, CH, 'root.1');
+  const t = z <= 2 ? 2 : 1, P = t === 2 ? 8 : 4;
   // A margin round the chart so that a wall just outside it still shades what is inside.
   const M = t + 2, gw = CW + 2 * M, gh = CH + 2 * M;
   const floor = new Uint8Array(gw * gh);
@@ -244,8 +245,9 @@ function paintStore(s: Surface, v: MapView): void {
   for (let y = 0; y < CH; y++) {
     for (let x = 0; x < CW; x++) {
       if (isFloor(x, y)) {
-        const grout = ((x - ox) % 4 + 4) % 4 === 0 || ((y - oy) % 4 + 4) % 4 === 0;
-        s.fill(x, y, 1, 1, grout ? 'stone.sh' : 'stone.face');
+        const fy = y - oy, course = Math.floor(fy / P), fx = x - ox + (course % 2 ? P / 2 : 0);
+        const seam = ((fy % P) + P) % P === 0 || ((fx % P) + P) % P === 0;
+        s.fill(x, y, 1, 1, seam ? 'stone.pit' : 'stone.sh');
         continue;
       }
       let near = 99, sx = 0, sy = 0;
@@ -256,8 +258,9 @@ function paintStore(s: Surface, v: MapView): void {
       }
       if (near > t + 1) continue;
       if (near === t + 1) { s.fill(x, y, 1, 1, 'root.0'); continue; }
-      const lit = sx + sy > 0 || (sx + sy === 0 && sy > 0);
-      s.fill(x, y, 1, 1, lit ? 'stone.lt' : 'stone.dk');
+      // The room is sunk: the wall above or left of its floor is in shade, the one below or right of it in the light.
+      const shade = sx + sy > 0 || (sx + sy === 0 && sy > 0);
+      s.fill(x, y, 1, 1, shade ? 'stone.dk' : 'stone.lt');
     }
   }
   for (const l of leaves) {
