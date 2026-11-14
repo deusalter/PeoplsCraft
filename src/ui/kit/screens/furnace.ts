@@ -200,7 +200,8 @@ function build(ui: Ui, id: string): Node {
   const burning = f.burn[0] > 0 && !!work;
   const progress = STILL ? f.still : st.started >= 0 && work ? (ui.t - st.started) / work.time : 0;
   const heat = burning || STILL ? (f.burn[1] ? (8 * f.burn[0]) / f.burn[1] : 0) : 0;
-  // Nothing runs while there is work and room but no fire and no fuel, so the slab says why under the arrow.
+  // Nothing runs while there is work and room but no fire and no fuel, so the slab says why under the arrow, as a
+  // refusal: in faded ink it read as a hint.
   const unfed = !!work && f.burn[0] <= 0 && !h.stores.fuel[0];
   const main: Node[] = [
     bed(10, 29, f.stones, heat),
@@ -210,7 +211,7 @@ function build(ui: Ui, id: string): Node {
     stackSlot(b, { store: 'fuel', i: 0 }, { x: 70, y: 55, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
     { ...progressArrow({ x: 96, y: 38, f: burning || STILL ? progress : 0, ramp: 'stone' }), anim: burning && !STILL },
     stackSlot(b, { store: 'out', i: 0 }, { x: 128, y: 33, ramp: 'stone', large: true }),
-    ...(unfed ? [ink(92, 60, 'Needs fuel', 'ink.faded')] : []),
+    ...(unfed ? [ink(92, 60, '{cross} Needs fuel', 'blood.dk')] : []),
     ...packBlock(b, 'stone', 73, 84),
   ];
   const works = worksOf(f);
@@ -227,6 +228,8 @@ function build(ui: Ui, id: string): Node {
       lines: [
         ...stackTip({ key: w.out, n: 1 }, 'none').lines.slice(0, 2), { text: `From ${thing(w.from).name}`, c: 'salt' }, { text: `${w.time} s to a piece`, c: 'root.4' },
         ...(own(w) && f.remains ? [{ text: `Only a bed of ${thing(f.remains).name} works it`, c: 'root.4' as Colour }] : []),
+        // A row drawn as one that cannot be used says why; with no ore held it is always the ore.
+        ...(!held.has(w.from) ? [{ text: `{cross} No ${thing(w.from).name} in the pack`, c: 'blood.lt' as Colour }] : []),
       ],
     }),
   }));
