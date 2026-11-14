@@ -3,7 +3,8 @@
 // is held.
 import type { Node, Ui } from '../node';
 import { roster } from '../parts/plates';
-import { PLAYERS, SERVER, hud } from './play/hud';
+import { CREW, strides } from '../sample/crew';
+import { SERVER, hud } from './play/hud';
 import type { NamedScreen } from './index';
 
 function build(ui: Ui): Node {
@@ -12,8 +13,15 @@ function build(ui: Ui): Node {
     x: 0, y: 0, w: ui.w, h: ui.h,
     kids: [
       ...hud(ui, { crew: false, prompt: false, notices: false }),
-      // A friend inside a Sealed Store is in another place, so the roster cannot say how far.
-      roster({ cx: st.x + Math.floor(st.w / 2), y: 30, server: SERVER, members: PLAYERS.map((m) => (m.place.startsWith('a Sealed') ? { ...m, metres: undefined } : m)) }),
+      // Every seat has a row, the away last. A friend inside a Sealed Store is in another place, so the roster cannot
+      // say how far.
+      roster({
+        cx: st.x + Math.floor(st.w / 2), y: 30, server: SERVER,
+        members: CREW.map((m) => ({
+          seat: m.seat, name: m.name, life: m.life, place: m.place, level: m.level, bars: m.bars,
+          metres: m.place.startsWith('a Sealed') ? undefined : strides(m), self: m.seat === 1, away: !m.online,
+        })),
+      }),
     ],
   };
 }
