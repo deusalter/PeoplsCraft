@@ -381,14 +381,14 @@
    "voice": "label",
    "limit": 40,
    "assign": "system",
-   "entries": 9
+   "entries": 18
   },
   "win": {
    "about": "Titles, buttons and hints in the windows",
    "voice": "label",
    "limit": 150,
    "assign": "system",
-   "entries": 58
+   "entries": 65
   },
   "tip": {
    "about": "Lines the tooltip writes from numbers",
@@ -423,14 +423,14 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 68
+   "entries": 69
   },
   "key": {
    "about": "What a control does, in the list of controls",
    "voice": "label",
    "limit": 28,
    "assign": "system",
-   "entries": 19
+   "entries": 38
   },
   "error": {
    "about": "What a player is told when a connection, a save or a world fails",
@@ -482,6 +482,92 @@
    "entries": 18
   }
  },
+ "never_shown": [
+  {
+   "file": "src/game.ts",
+   "line": 636,
+   "text": "chunks  ${c.meshed} meshed",
+   "why": "the F3 overlay (game.ts debugLines: chunks, draw, cpu, pos, world, ents, view, with facing words such as \"north (-z)\"): a developer readout of counts, timings and positions, not game text"
+  },
+  {
+   "file": "src/game.ts",
+   "line": 633,
+   "text": "'north (-z)', 'west (-x)', 'south (+z)', 'east (+x)'",
+   "why": "the facing words of the F3 overlay's pos line: part of the same developer readout"
+  },
+  {
+   "file": "src/ui/debug.ts",
+   "line": 25,
+   "text": "${this.fps.toFixed(0)} fps",
+   "why": "the frame-time line at the head of the F3 overlay: a developer readout"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 48,
+   "text": "give <item> [count]",
+   "why": "the usage line of a developer command, given only to someone typing commands where they are on; its words are argument names"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 54,
+   "text": "tp <x> <y> <z>",
+   "why": "a developer command's usage line"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 81,
+   "text": "fill x0 y0 z0 x1 y1 z1 <block>",
+   "why": "a developer command's usage line"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 100,
+   "text": "spawnat <creature> <x> <y> <z> [yaw]",
+   "why": "a developer command's usage line"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 89,
+   "text": "hash cx0 cz0 cx1 cz1",
+   "why": "a developer command's usage line"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 86,
+   "text": "simhash ${fnv(simState(sim)).toString(16)} tick ${sim.tick}",
+   "why": "a hash of the simulation's state, for comparing two runs: a developer readout"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 93,
+   "text": "out.push(`${cx},${cz}:",
+   "why": "the reply of the hash command, one hash of blocks for each chunk: a developer readout"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 57,
+   "text": "'fly ' + b.flying",
+   "why": "a developer toggle answering with its own name and true or false"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 58,
+   "text": "'creative ' + p.modes.creative",
+   "why": "a developer toggle answering with its own name and true or false"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 59,
+   "text": "'god ' + p.modes.god",
+   "why": "a developer toggle answering with its own name and true or false"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 78,
+   "text": "'freeze ' + on",
+   "why": "a developer toggle answering with its own name and true or false"
+  }
+ ],
  "entries": {
   "attr.desc:agi": {
    "surface": "attr.desc",
@@ -14790,6 +14876,121 @@
     "{n}"
    ]
   },
+  "hud:compass.e": {
+   "surface": "hud",
+   "key": "compass.e",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "E",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:compass.n": {
+   "surface": "hud",
+   "key": "compass.n",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "N",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:compass.ne": {
+   "surface": "hud",
+   "key": "compass.ne",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "NE",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:compass.nw": {
+   "surface": "hud",
+   "key": "compass.nw",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "NW",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:compass.s": {
+   "surface": "hud",
+   "key": "compass.s",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "S",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:compass.se": {
+   "surface": "hud",
+   "key": "compass.se",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "SE",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:compass.sw": {
+   "surface": "hud",
+   "key": "compass.sw",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "SW",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:compass.w": {
+   "surface": "hud",
+   "key": "compass.w",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 28,
+   "now": "W",
+   "voice": "label",
+   "limit": 3,
+   "assign": "system",
+   "note": "a point of the compass strip at the top of the screen; one to three letters"
+  },
+  "hud:coords": {
+   "surface": "hud",
+   "key": "coords",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 217,
+   "now": "X {x}  Y {y}  Z {z}  ·  {h}:{mm}",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "slots": [
+    "{x}",
+    "{y}",
+    "{z}",
+    "{h}",
+    "{mm}"
+   ],
+   "note": "the line of position and time of day under the compass; {h} is the hour and {mm} the minutes in two digits. The font has no middle dot: the code writes the line as the text gives it"
+  },
   "hud:dodged": {
    "surface": "hud",
    "key": "dodged",
@@ -16357,6 +16558,234 @@
    "assign": "system",
    "note": "for Middle mouse"
   },
+  "key:press.command_line": {
+   "surface": "key",
+   "key": "press.command_line",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 35,
+   "now": "T",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:command_line, in the left column of the list of controls"
+  },
+  "key:press.debug_overlay": {
+   "surface": "key",
+   "key": "press.debug_overlay",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "F3",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:debug_overlay, in the left column of the list of controls"
+  },
+  "key:press.drop_item": {
+   "surface": "key",
+   "key": "press.drop_item",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "Q",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:drop_item, in the left column of the list of controls"
+  },
+  "key:press.drop_stack": {
+   "surface": "key",
+   "key": "press.drop_stack",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "Ctrl+Q",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:drop_stack, in the left column of the list of controls"
+  },
+  "key:press.guide": {
+   "surface": "key",
+   "key": "press.guide",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "G",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:guide, in the left column of the list of controls"
+  },
+  "key:press.hide_hud": {
+   "surface": "key",
+   "key": "press.hide_hud",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "F1",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:hide_hud, in the left column of the list of controls"
+  },
+  "key:press.hotbar": {
+   "surface": "key",
+   "key": "press.hotbar",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "1-9, wheel",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:hotbar, in the left column of the list of controls"
+  },
+  "key:press.inventory_and_crafting": {
+   "surface": "key",
+   "key": "press.inventory_and_crafting",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "E",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:inventory_and_crafting, in the left column of the list of controls"
+  },
+  "key:press.jump_swim_up": {
+   "surface": "key",
+   "key": "press.jump_swim_up",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "Space",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:jump_swim_up, in the left column of the list of controls"
+  },
+  "key:press.mine_attack": {
+   "surface": "key",
+   "key": "press.mine_attack",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "Left mouse",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:mine_attack, in the left column of the list of controls"
+  },
+  "key:press.move": {
+   "surface": "key",
+   "key": "press.move",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "W A S D",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:move, in the left column of the list of controls"
+  },
+  "key:press.pause": {
+   "surface": "key",
+   "key": "press.pause",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 35,
+   "now": "Esc",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:pause, in the left column of the list of controls"
+  },
+  "key:press.pick_block": {
+   "surface": "key",
+   "key": "press.pick_block",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "Middle mouse",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:pick_block, in the left column of the list of controls"
+  },
+  "key:press.quick_move": {
+   "surface": "key",
+   "key": "press.quick_move",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "Shift-click",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:quick_move, in the left column of the list of controls"
+  },
+  "key:press.sneak": {
+   "surface": "key",
+   "key": "press.sneak",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "Shift",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:sneak, in the left column of the list of controls"
+  },
+  "key:press.split_stack": {
+   "surface": "key",
+   "key": "press.split_stack",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "Right-click",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:split_stack, in the left column of the list of controls"
+  },
+  "key:press.sprint": {
+   "surface": "key",
+   "key": "press.sprint",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "R, Ctrl or double-tap W",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:sprint, in the left column of the list of controls"
+  },
+  "key:press.use_best_salve": {
+   "surface": "key",
+   "key": "press.use_best_salve",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 34,
+   "now": "H",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:use_best_salve, in the left column of the list of controls"
+  },
+  "key:press.use_place": {
+   "surface": "key",
+   "key": "press.use_place",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 33,
+   "now": "Right mouse",
+   "voice": "label",
+   "limit": 28,
+   "assign": "system",
+   "note": "the key or button for key:use_place, in the left column of the list of controls"
+  },
   "key:quick_move": {
    "surface": "key",
    "key": "quick_move",
@@ -17263,6 +17692,21 @@
    "voice": "label",
    "limit": 40,
    "assign": "system"
+  },
+  "menu:ui_auto": {
+   "surface": "menu",
+   "key": "ui_auto",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 82,
+   "now": "Auto ({n}%)",
+   "voice": "label",
+   "limit": 20,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the value of the menu:ui_scale slider at its leftmost stop: the size is chosen from the window, and {n} is that size in hundredths"
   },
   "menu:ui_scale": {
    "surface": "menu",
@@ -21926,6 +22370,18 @@
    "limit": 24,
    "assign": "system"
   },
+  "win:forge": {
+   "surface": "win",
+   "key": "forge",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 243,
+   "now": "'Forge'",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the title of the furnace window when the block under it has no name; with a name the title is that name"
+  },
   "win:forge.heat": {
    "surface": "win",
    "key": "forge.heat",
@@ -22059,6 +22515,22 @@
    "limit": 150,
    "assign": "system"
   },
+  "win:shop.tokens": {
+   "surface": "win",
+   "key": "shop.tokens",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 407,
+   "now": "{item}: {n}",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "slots": [
+    "{item}",
+    "{n}"
+   ],
+   "note": "follows the name of a townsperson who sells for tokens, in the shop heading: the token and how many the pack holds. Today the code joins it with a middle dot; the loader joins it with a comma and a space"
+  },
   "win:slot.body": {
    "surface": "win",
    "key": "slot.body",
@@ -22074,6 +22546,18 @@
     "src/ui/windows.ts:177",
     "src/ui/windows.ts:542"
    ]
+  },
+  "win:slot.fuel": {
+   "surface": "win",
+   "key": "slot.fuel",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 248,
+   "now": "'Fuel'",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the label under the furnace slot that takes fuel"
   },
   "win:slot.head": {
    "surface": "win",
@@ -22107,6 +22591,18 @@
     "src/ui/windows.ts:542"
    ]
   },
+  "win:slot.ore": {
+   "surface": "win",
+   "key": "slot.ore",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 246,
+   "now": "'Ore'",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the label under the furnace slot that takes what is smelted"
+  },
   "win:slot.trinket": {
    "surface": "win",
    "key": "slot.trinket",
@@ -22129,6 +22625,34 @@
    "voice": "label",
    "limit": 24,
    "assign": "system"
+  },
+  "win:sort": {
+   "surface": "win",
+   "key": "sort",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 238,
+   "now": "'Sort'",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the button in the chest and in the pack whose tooltips are win:chest.sort_tip and win:pack.sort_tip",
+   "at": [
+    "src/ui/windows.ts:238",
+    "src/ui/windows.ts:275"
+   ]
+  },
+  "win:stash": {
+   "surface": "win",
+   "key": "stash",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 237,
+   "now": "'Stash'",
+   "voice": "label",
+   "limit": 10,
+   "assign": "system",
+   "note": "the chest button whose tooltip is win:chest.stack_tip"
   },
   "win:stats.attributes": {
    "surface": "win",
@@ -22200,6 +22724,21 @@
    "voice": "label",
    "limit": 16,
    "assign": "system"
+  },
+  "win:stats.to_spend": {
+   "surface": "win",
+   "key": "stats.to_spend",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 397,
+   "now": "{n} to spend",
+   "voice": "label",
+   "limit": 20,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "follows win:stats.attributes in the same heading while points are unspent; today the code joins the two with a middle dot, and the loader joins them with a comma and a space"
   },
   "win:take_all": {
    "surface": "win",

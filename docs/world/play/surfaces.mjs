@@ -665,6 +665,11 @@ L('hud', 'saved', HUD, "'Saved'", { now: 'Saved' });
 L('hud', 'coins', HUD, '${inv.coins} coins', { now: '{n} coins' });
 L('hud', 'level', HUD, 'Lv ${st.level}', { now: 'Lv {n}' });
 L('hud', 'dodged', PLY, "'Dodged'", { now: 'Dodged', note: 'a word that floats up over a player when a blow does no harm' });
+L('hud', 'coords', HUD, 'X ${x}  Y ${y}  Z ${z}  ·  ${Math.floor(min / 60)}', { now: 'X {x}  Y {y}  Z {z}  ·  {h}:{mm}', voice: 'label',
+  note: 'the line of position and time of day under the compass; {h} is the hour and {mm} the minutes in two digits. The font has no middle dot: the code writes the line as the text gives it' });
+// the eight points of the compass strip, in the order of COMPASS_NAMES (every other one is drawn small)
+for (const [k, now] of [['n', 'N'], ['ne', 'NE'], ['e', 'E'], ['se', 'SE'], ['s', 'S'], ['sw', 'SW'], ['w', 'W'], ['nw', 'NW']])
+  L('hud', 'compass.' + k, HUD, "['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']", { now, limit: 3, note: 'a point of the compass strip at the top of the screen; one to three letters' });
 // ---- windows ----
 for (const [k, text] of [['equipment', 'Equipment'], ['book', 'Recipe book'], ['guide', 'Guide'], ['can_make', 'Can make'], ['none_match', 'Nothing here matches'], ['chest', 'Chest'], ['smelting', 'Smelting'],
   ['inventory', 'Inventory'], ['buy_back', 'Buy back'], ['for_sale', 'For sale'], ['buy', 'Buy'], ['take_all', 'Take all'], ['back_crafting', 'Back to crafting']]) L('win', k, WIN, `'${text}'`, { now: text, limit: 24 });
@@ -699,6 +704,15 @@ L('win', 'back_to', WIN, "'Back to '", { now: 'Back to {window}', limit: 30 });
 L('win', 'stats.level', WIN, 'Level ${st.level} · ${st.xp}/${st.xpNeeded()} xp', { now: 'Level {n} · {xp}/{need} xp', limit: 40 });
 for (const [k, text] of [['defense', 'Defense'], ['critical', 'Critical'], ['speed', 'Speed'], ['minions', 'Minions']]) L('win', 'stats.' + k, WIN, `>${text}<`, { now: text, limit: 16 });
 L('win', 'stats.attributes', WIN, '>Attributes$', { now: 'Attributes', limit: 16 });
+L('win', 'stats.to_spend', WIN, '${st.points} to spend', { now: '{n} to spend', limit: 20, note: 'follows win:stats.attributes in the same heading while points are unspent; today the code joins the two with a middle dot, and the loader joins them with a comma and a space' });
+L('win', 'shop.tokens', WIN, '${esc(item(tok).name)}: <b>${inv.count(tok)}</b>', { now: '{item}: {n}', slots: ['{item}', '{n}'], limit: 40,
+  note: 'follows the name of a townsperson who sells for tokens, in the shop heading: the token and how many the pack holds. Today the code joins it with a middle dot; the loader joins it with a comma and a space' });
+// buttons and slot labels written once each in the windows
+L('win', 'stash', WIN, "'Stash'", { limit: 10, note: 'the chest button whose tooltip is win:chest.stack_tip' });
+L('win', 'sort', WIN, "'Sort'", { limit: 10, note: 'the button in the chest and in the pack whose tooltips are win:chest.sort_tip and win:pack.sort_tip' });
+L('win', 'slot.ore', WIN, "'Ore'", { limit: 10, note: 'the label under the furnace slot that takes what is smelted' });
+L('win', 'slot.fuel', WIN, "'Fuel'", { limit: 10, note: 'the label under the furnace slot that takes fuel' });
+L('win', 'forge', WIN, "'Forge'", { limit: 24, note: 'the title of the furnace window when the block under it has no name; with a name the title is that name' });
 // plan D: the codex window. Its title is a name and comes from names.json; these are its headings and its empty state.
 for (const [k, why] of [['codex.none', 'shown in the codex before anything is known'], ['codex.sight', 'heading of a bestiary step: first sight'], ['codex.kill', 'heading: first kill'],
   ['codex.habit', 'heading: many kills'], ['codex.once', 'heading: one thing seen once'], ['codex.loss', 'heading: after the first kill of one of the eight'], ['codex.said', 'heading: what householders say one of the eight is'],
@@ -761,6 +775,7 @@ for (const [k, text] of [['paused', 'PAUSED'], ['controls', 'CONTROLS'], ['setti
   ['shadows', 'Sun shadows'], ['tonemap', 'Tone mapping'], ['vignette', 'Vignette'], ['msaa', 'Anti-aliasing (MSAA)'], ['fxaa', 'Edge smoothing (FXAA)'], ['clouds', 'Clouds'], ['sway', 'Swaying foliage and waves'],
   ['adapt', 'Eye adaptation'], ['ui_scale', 'UI scale'], ['sensitivity', 'Mouse sensitivity'], ['sfx', 'Effects volume'], ['music', 'Music volume'], ['bob', 'View bobbing'], ['shake', 'Screen shake'],
   ['auto_jump', 'Auto-jump up single blocks'], ['auto_tool', 'Switch tools automatically'], ['fly_toggle', 'Double-tap Space to fly (creative)'], ['raw_mouse', 'Raw mouse input (no acceleration)']]) L('menu', k, MENU, `'${text}'`, { now: text, limit: 40 });
+L('menu', 'ui_auto', MENU, 'Auto (${Math.round(autoUiScale() * 100)}%)', { now: 'Auto ({n}%)', limit: 20, note: 'the value of the menu:ui_scale slider at its leftmost stop: the size is chosen from the window, and {n} is that size in hundredths' });
 L('menu', 'world.line', MENU, 'seed ${w.seedText} · ${new Date(w.played).toLocaleDateString()} · level ${w.level}', { now: 'seed {seed} · {date} · level {n}', limit: 60 });
 L('menu', 'quick_world', MAIN, 'Quick world', { limit: 28 });
 L('menu', 'player_default', MAIN, "'Player'", { now: 'Player', limit: 16, alsoIn: ['src/net/host.ts', 'src/sim/migrate.ts'],
@@ -782,7 +797,12 @@ LM('menu', 'back_title', MAIN, 'Back to the title', { limit: 28, note: 'the butt
   // the list of controls: the second word of each pair in KEYS
   const t = src(MENU), a = /const KEYS: \[string, string\]\[\] = \[([\s\S]*?)\]\];/.exec(t);
   if (!a) fail(`${MENU}: KEYS was not found`);
-  else for (const m of (a[1] + ']').matchAll(/\['([^']+)', '([^']+)'\]/g)) add('key', m[2].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), { file: MENU, line: lineAt(t, a.index + m.index), now: m[2], note: 'for ' + m[1] });
+  else for (const m of (a[1] + ']').matchAll(/\['([^']+)', '([^']+)'\]/g)) {
+    const k = m[2].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), line = lineAt(t, a.index + m.index);
+    add('key', k, { file: MENU, line, now: m[2], note: 'for ' + m[1] });
+    // the first word of the pair: the key or button, in the left column of the list
+    add('key', 'press.' + k, { file: MENU, line, now: m[1], note: 'the key or button for key:' + k + ', in the left column of the list of controls' });
+  }
 }
 // ---- errors ----
 for (const [k, file, text] of [
@@ -815,6 +835,30 @@ for (const [k, needle, now] of [['help', 'commands: give time tp fly creative go
   ['spawned', "'spawned'", 'spawned'], ['failed', "'failed'", 'failed'], ['flag', "'flag set'", 'flag set'], ['event', "'event started'", 'event started'], ['travelling', "'travelling'", 'travelling'],
   ['caps', "'caps set'", 'caps set'], ['filled', "'filled'", 'filled']]) L('cmd', k, CH, needle, { now: now ?? needle });
 L('cmd', 'off', SIM, 'Commands are off on this server.', { note: 'the answer to the command line on a server that allows no commands' });
+
+// ---- literals that are never shown to a player in play ----
+// Each stays in the source and is checked to be there, so the list follows the source. None is a surface: the loader leaves them as they are.
+const NEVER_SHOWN_TEXT = [
+  ['src/game.ts', 'chunks  ${c.meshed} meshed', 'the F3 overlay (game.ts debugLines: chunks, draw, cpu, pos, world, ents, view, with facing words such as "north (-z)"): a developer readout of counts, timings and positions, not game text'],
+  ['src/game.ts', "'north (-z)', 'west (-x)', 'south (+z)', 'east (+x)'", 'the facing words of the F3 overlay\'s pos line: part of the same developer readout'],
+  ['src/ui/debug.ts', '${this.fps.toFixed(0)} fps', 'the frame-time line at the head of the F3 overlay: a developer readout'],
+  [CH, 'give <item> [count]', 'the usage line of a developer command, given only to someone typing commands where they are on; its words are argument names'],
+  [CH, 'tp <x> <y> <z>', 'a developer command\'s usage line'],
+  [CH, 'fill x0 y0 z0 x1 y1 z1 <block>', 'a developer command\'s usage line'],
+  [CH, 'spawnat <creature> <x> <y> <z> [yaw]', 'a developer command\'s usage line'],
+  [CH, 'hash cx0 cz0 cx1 cz1', 'a developer command\'s usage line'],
+  [CH, 'simhash ${fnv(simState(sim)).toString(16)} tick ${sim.tick}', 'a hash of the simulation\'s state, for comparing two runs: a developer readout'],
+  [CH, "out.push(`${cx},${cz}:", 'the reply of the hash command, one hash of blocks for each chunk: a developer readout'],
+  [CH, "'fly ' + b.flying", 'a developer toggle answering with its own name and true or false'],
+  [CH, "'creative ' + p.modes.creative", 'a developer toggle answering with its own name and true or false'],
+  [CH, "'god ' + p.modes.god", 'a developer toggle answering with its own name and true or false'],
+  [CH, "'freeze ' + on", 'a developer toggle answering with its own name and true or false'],
+];
+const neverShown = NEVER_SHOWN_TEXT.map(([file, needle, why]) => {
+  const t = src(file), i = t.indexOf(needle);
+  if (i < 0) fail(`${file}: the text "${needle}", listed as never shown, is no longer there`);
+  return { file, line: i < 0 ? null : lineAt(t, i), text: needle, why };
+});
 
 // ====================================================================================================
 // Every key of src/data must be needed by some entry
@@ -862,6 +906,7 @@ const out = {
   voices: ['label', 'sight', 'note', 'born', 'sand'],
   assignments: ASSIGN,
   surfaces: Object.fromEntries(Object.entries(SURFACES).map(([id, s]) => [id, { about: s.about, voice: s.voice, limit: s.limit, ...(s.lines ? { lines: s.lines } : {}), assign: s.assign, entries: counts[id]?.entries ?? 0 }])),
+  never_shown: neverShown,
   entries: Object.fromEntries([...entries].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)).map(([id, e]) => [id, e])),
 };
 for (const [id, s] of Object.entries(out.surfaces)) if (!s.entries) { console.error(`surfaces.mjs: the surface '${id}' has no entry`); process.exit(1); }

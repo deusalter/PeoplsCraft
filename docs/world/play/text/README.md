@@ -19,6 +19,8 @@ One file for each assignment, named `<assignment>.json`. The file is one flat ob
 }
 ```
 
+`_surfaces.json` also lists, under `never_shown`, the literals of the source that no writer supplies: the F3 overlay and the developer commands' usage lines and readouts. Each has its place and the reason. They are not game text and nobody writes them.
+
 Each entry of `_surfaces.json` gives:
 
 | Field | What it is |
@@ -98,7 +100,7 @@ The eight are animals (rule 19). The sand-country fighters are people: their ent
 
 Chapter 5 gives each townsperson's trade, belief and manner, with lines as a guide. Seven are `born`. Every entry of the Deserter is `sand`, whatever its surface. All eight say peopl to the face.
 
-### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (544 entries)
+### `system.json`: journal, banners, toasts, falls, places and countries, menus, hints, errors (580 entries)
 
 | Surface | Key | What it is |
 | --- | --- | --- |
@@ -110,8 +112,8 @@ Chapter 5 gives each townsperson's trade, belief and manner, with lines as a gui
 | `fall` | fixed keys | The lines at a fall |
 | `realm` | fixed keys | Crossing, loading and the compass |
 | `country.enter` | country key | One line the first time the crew stands in a kind of country |
-| `prompt`, `hud`, `win`, `tip`, `stat`, `attr.desc`, `state.desc` | fixed keys | Prompts, HUD words, window titles, slot labels, the recipe book's categories and hints, tooltip lines made from numbers, the kind of a thing and where it comes from (`tip:src.*`), names of bonuses |
-| `menu`, `key` | fixed keys | Title screen, pause, settings, controls, the join screen, and the name a player has before typing one |
+| `prompt`, `hud`, `win`, `tip`, `stat`, `attr.desc`, `state.desc` | fixed keys | Prompts, HUD words, the eight points of the compass (`hud:compass.*`), the line of position and time (`hud:coords`), window titles, buttons, slot labels, the furnace window's title when its block has no name (`win:forge`), the pieces the code adds to a heading (`win:stats.to_spend`, `win:shop.tokens`), the recipe book's categories and hints, tooltip lines made from numbers, the kind of a thing and where it comes from (`tip:src.*`), names of bonuses |
+| `menu`, `key` | fixed keys | Title screen, pause, settings and the value of a slider (`menu:ui_auto`), the join screen, and the name a player has before typing one. The list of controls has two columns: `key:<action>` is what a control does, and `key:press.<action>` is the key or button for it |
 | `error`, `cmd` | fixed keys | Failures a player is told of, the reasons the host gives for closing a connection, and the command line's answers |
 
 The blue bar is the arm (1.6). The word for it in every label is arm: "Uses {n} arm", "+{n} arm". What forms on a totem is a small feeder. Plan H gives the other fixed words of the labels.
