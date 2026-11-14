@@ -4053,6 +4053,35 @@ on him for a projectile he was sent a `ps` of; no `ps` may reach him from beyond
 (h) No scenario of this step failed for a defect in the server or the shared code. Each passed three runs in a row, one at
 a time, at 1-minute load averages between 7 and 31.
 
+D51. Stage 5, lane D: the block scenarios `sameblock`, `chest2`, `chestbreak`, `embed`, `travel2` and `gatecut` (5.2, 6.1, 9,
+10.2, 11).
+(a) Two more read-only answers under `--harness` beside those of D50 (a) (404 otherwise, as the server test checks): `/drops?dim`
+gives every item lying in a realm (id, key, count, position, owner), and `/shared` also gives `shared.gates`, the registry of 9.
+A scenario's item totals are the packs, armour and `mail` of `/players`, the drops of `/drops` and the container's slots from
+`/ent`. `/players` leaves out the cursor and the crafting grid, so a scenario adds a bot's cursor from the bot, or counts after
+the window has closed and the cursor has gone back to the pack.
+(b) `sameblock` digs each of 8 blocks with both bots and lets both break it in one turn of the event loop, so that both edits
+leave before either client can have heard of the other's. They reach the host in one step, and `drainInboxes` takes
+connections in join order (6.1): "the first `edit`" of 9 is the first one the host processes, which here is always the bot that
+joined first, whichever let go first.
+(c) `chest2` reads "200 racing ops each" as 200 ops per bot, one every 30 ms (under the 60 a second of the `seq` bucket of 4.1),
+sent without waiting for an answer and drawn from what that bot's own view shows: shift-clicks both ways, stacks taken onto the
+cursor and put down, `sort`, `stash`, `takeAll`, `gather`. That they raced is shown by an `st.box` arriving while the bot still had
+ops in flight, at least 20 times in all. Both views and the host then agree slot by slot, and the totals are those before.
+(d) `chestbreak` holds Ada's link for 150 ms (`silence`) from the moment Bram's breaking edit leaves, so that the shift-clicks she
+sends before she hears of it all reach the host after the chest is gone; the `ack` of the `st {box: null}` that closes her window
+names the last op the host applied before the break, which counts them.
+(e) `embed` reads "logged off" as `bye` (parked, out of the realm's bodies). Before that, with her socket merely closed, it checks
+that a placement into the cell of the lingering body is refused (9: lingering bodies count). "At most one `tp`" counts, for the
+player who joins again, every `tp` after the welcome (the activation `tp`, which carries the spot `freeSpot` chose); for the one in
+the doorway, every `tp` from the door's closing until he is out and walking.
+(f) `travel2` and `gatecut` walk the bots into the sheet with W held. The sheet of a gate in its own realm cannot be broken
+(`hard` -1), so `gatecut` reads "mined out" as its 14 frame blocks and the 4 blocks of the sill in front of it; the sheet hangs on.
+The next traveller's `land()` then finds no entry and no footing in those columns, and raises a new gate wherever its search finds
+footing.
+(g) No scenario of this step failed for a defect in the server or the shared code. Each passed three runs in a row, one at a time,
+at 1-minute load averages between 10 and 20.
+
 ---
 
 ## 14. Review log

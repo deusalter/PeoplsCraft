@@ -12,11 +12,17 @@ import { type LagProxy, startLagProxy } from '../lagproxy';
 import abuse from '../scenarios/abuse';
 import basic from '../scenarios/basic';
 import boss from '../scenarios/boss';
+import chest2 from '../scenarios/chest2';
+import chestbreak from '../scenarios/chestbreak';
 import crew from '../scenarios/crew';
+import embed from '../scenarios/embed';
+import gatecut from '../scenarios/gatecut';
 import lateloot from '../scenarios/lateloot';
 import projjoin from '../scenarios/projjoin';
 import rejoin from '../scenarios/rejoin';
+import sameblock from '../scenarios/sameblock';
 import stall from '../scenarios/stall';
+import travel2 from '../scenarios/travel2';
 import type { Bot } from './bot';
 
 export interface Stats {
@@ -32,7 +38,11 @@ export interface HostPlayer {
 export interface HostShared {
   summons: { n: number; item: string; by: string; dim: number; altar: [number, number, number] }[];
   owed: Record<string, { xp: number; coins: number; items: { k: string; n: number }[] }>;
+  /** The gate registry of 9: every gate `land()` raised, by the cell `buildGate` was called with. */
+  gates: { kind: 1 | 2; dim: number; x: number; y: number; z: number; alongX: boolean }[];
 }
+/** An item lying in a realm, as `/drops` gives it. */
+export interface HostDrop { id: number; k: string; n: number; x: number; y: number; z: number; owner: string | null }
 /** An active creature of a realm, as `/mobs` gives it. */
 export interface HostMob { id: number; key: string; x: number; y: number; z: number; h: number; hp: number; boss: boolean }
 /** What a scenario is given. */
@@ -50,6 +60,9 @@ export interface Ctx {
   players(): Promise<HostPlayer[]>;
   shared(): Promise<HostShared>;
   mobs(dim?: number): Promise<HostMob[]>;
+  drops(dim?: number): Promise<HostDrop[]>;
+  /** The block entity at a cell (a chest's `data.s`), or null. */
+  ent(dim: number, x: number, y: number, z: number): Promise<{ kind: string; data: any } | null>;
   /** A check: recorded, and the run fails when one does not hold. */
   check(ok: boolean, what: string): void;
   log(line: string): void;
@@ -61,7 +74,7 @@ export interface Ctx {
   alive(): boolean;
 }
 type Scenario = (ctx: Ctx) => Promise<void>;
-const SCENARIOS: Record<string, Scenario> = { basic, abuse, crew, boss, rejoin, stall, lateloot, projjoin };
+const SCENARIOS: Record<string, Scenario> = { basic, abuse, crew, boss, rejoin, stall, lateloot, projjoin, sameblock, chest2, chestbreak, embed, travel2, gatecut };
 
 const root = resolve('.'), out = resolve('out/scenario'), pad = resolve('.claude/mp-work/pad/scenarios');
 
@@ -119,6 +132,8 @@ async function runOnce(name: string, scenario: Scenario, lag: boolean, keep: boo
     players: () => get<HostPlayer[]>('/players'),
     shared: () => get<HostShared>('/shared'),
     mobs: (dim = 0) => get<HostMob[]>(`/mobs?dim=${dim}`),
+    drops: (dim = 0) => get<HostDrop[]>(`/drops?dim=${dim}`),
+    ent: async (dim, x, y, z) => (await get<{ ent: { kind: string; data: any } | null }>(`/ent?dim=${dim}&x=${x}&y=${y}&z=${z}`)).ent,
     check: (ok, what) => { checks.push([ok, what]); say(`${ok ? 'ok  ' : 'FAIL'} ${what}`); },
     log: say,
     restart: async () => {

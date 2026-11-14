@@ -89,10 +89,11 @@ function harness(h: SimHost, path: string, q: URLSearchParams): unknown {
     return out;
   }
   // what golden reads where the simulation runs (10.1's T.ask questions), as fixed read-only questions
-  if (path === '/ent' || path === '/mobs') {
+  if (path === '/ent' || path === '/mobs' || path === '/drops') {
     const n = ['dim', 'x', 'y', 'z'].map((k) => Number(q.get(k))), realm = h.sim.realms[n[0]];
     if (!Number.isInteger(n[0]) || !realm) return { error: `${path}?dim${path === '/ent' ? '&x&y&z' : ''}` };
     if (path === '/mobs') return realm.mobs.list.filter((m) => m.active).map((m) => ({ id: m.id, key: m.def.key, x: m.x, y: m.y, z: m.z, h: m.h, hp: m.hp, boss: !!m.boss }));
+    if (path === '/drops') return realm.drops.list.filter((d) => d.active).map((d) => ({ id: d.id, k: d.it.k, n: d.it.n, x: d.x, y: d.y, z: d.z, owner: d.owner }));
     if (n.some((v) => !Number.isInteger(v))) return { error: '/ent?dim&x&y&z' };
     const e = realm.getEnt(n[1], n[2], n[3]);
     return { ent: e ? { kind: e.kind, data: e.data } : null };
@@ -107,7 +108,7 @@ function harness(h: SimHost, path: string, q: URLSearchParams): unknown {
       hp: p.stats.hp, dead: p.stats.dead, level: p.stats.level, xp: p.stats.xp, coins: p.inv.coins, items, mail: p.mail.map((it) => ({ k: it.k, n: it.n })),
     };
   });
-  if (path === '/shared') return { summons: h.sim.shared.summons, owed: h.sim.shared.owed };
+  if (path === '/shared') return { summons: h.sim.shared.summons, owed: h.sim.shared.owed, gates: h.sim.shared.gates };
   if (path === '/stats') {
     const t = h.stats.tickMs, steps = h.stepCount, last = Math.min(steps, t.length, Math.max(1, Number(q.get('last')) || t.length));
     const a: number[] = [];
