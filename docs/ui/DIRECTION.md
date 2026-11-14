@@ -394,12 +394,12 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 
 muda     back     cairn    bed      skull
 .......  .......  .......  .......  .......
-#######  ..#....  ...##..  ..###..  .#####.
-#.....#  .##....  ..###..  .#...#.  #######
-#.###.#  #######  .......  #.....#  ##.#.##
-#.#.#.#  .##...#  .#####.  #..#..#  ##.#.##
-#.###.#  ..#...#  .......  #.###.#  #######
-#.....#  ......#  #######  #.###.#  .#####.
+#######  ..#....  ...##..  ...#...  .#####.
+#.....#  .##....  ..###..  ..##...  #######
+#.###.#  #######  .......  ..###..  ##.#.##
+#.#.#.#  .##...#  .#####.  .#####.  ##.#.##
+#.###.#  ..#...#  .......  #######  #######
+#.....#  ......#  #######  #.#.#.#  .#####.
 #######  ..#####  #######  #######  .#.#.#.
 .......  .......  .......  .......  .......
 .......  .......  .......  .......  .......
@@ -428,7 +428,7 @@ muda     back     cairn    bed      skull
 | `{bed}` | 7 |
 | `{skull}` | 7 |
 
-`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a square of glass with a square seal struck in it, written after a number as `{lees}` is. A ring with a cross in it was a disc beside the jar and read at a glance as the same coin. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{bed}` is a fire under an arch: in a furnace's list of works it stands at the right of each work that only that furnace's bed can do. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence. `{skull}` stands before the name of a creature that attacks, on the readout (5.27), in that name's `blood.lt`.
+`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a square of glass with a square seal struck in it, written after a number as `{lees}` is. A ring with a cross in it was a disc beside the jar and read at a glance as the same coin. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{bed}` is a flame on a hearth of bricks, as wide as the cell at its foot: drawn as a fire under an arch it was a padlock's shackle over its body, and a work only this bed can do read as a locked one. It is never at a slot's corner, where the lock stands: in a furnace's list of works it stands at the right of each work that only that furnace's bed can do. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence. `{skull}` stands before the name of a creature that attacks, on the readout (5.27), in that name's `blood.lt`.
 
 **Shadow.** Text on a dark plate, on the ground tile, on a button or on the world has a shadow: the same glyphs one unit right and one unit down in `root.0`, drawn first. Text on a light face (a slab, a page, a key cap) has none. The shadow is always `root.0` and never a darker copy of the text's colour, so that the palette stays closed.
 
@@ -949,21 +949,21 @@ Small buttons in stone, 12, 14 and 16 tall, and the 12 by 12 "+" (on a column of
 ```
 `. nothing  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
 
-**The small button of a slab.** Inside the outline: the first row and column `hi`, the face `face`, the last row and column `dk` with a row and a column of `sh` inside them; the two units where light meets dark are face. The label is `ink` with no shadow, centred, its cell at `y = floor((h - 9) / 2)`. Hovered, the face turns `lt`. Pressed, the bevel turns over: the first row and column `dk` with `sh` inside them, the face `sh`, the last row and column `face`, and the label moves one unit down and one right. Disabled: a flat face of `sh`, the label `ink.faded`. A door that loses something ("Delete" in the question of the world list) has its label in `blood.dk`, the refusal's tone on a light face. Keyboard focus, with the pointer elsewhere, dashes the outline in `salt` as on a menu button. No grain. On the Anvil, the furnaces and the map the ramp is stone, with the same roles. A clay "Sort", 30 by 12, normal and hovered:
+**The small button of a slab.** Inside the outline: the first row and column `hi`, the face `face`, the last row and column `dk` (`pit` on timber, whose `dk` is too near its face to read as an edge); the two units where light meets dark are face. The label is `ink` with no shadow, centred, its cell at `y = floor((h - 9) / 2)`. A small button with words is 14 tall (16 where a row has room); 12 is kept for a label with no descender and for the square "+". On a button 12 tall with `sh` and `dk` under the face, the descender of the "p" of "Sort pack" lay on the button's edge and outline; at 14 with one dark row it ends on the face, on row 11. Hovered, the face turns `lt`. Pressed, the bevel turns over: the first row and column `dk` with `sh` inside them, the face `sh`, the last row and column `face`, and the label moves one unit down and one right. Disabled: a flat face of `sh`, the label `ink.faded`. A door that loses something ("Delete" in the question of the world list) has its label in `blood.dk`, the refusal's tone on a light face. Keyboard focus, with the pointer elsewhere, dashes the outline in `salt` as on a menu button. No grain. On the Anvil, the furnaces and the map the ramp is stone, with the same roles. A clay "Sort", 30 by 12, normal and hovered:
 
 ```
      0         1         2         3         4         5         6     
      0123456789012345678901234567890123456789012345678901234567890123
   0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKKK.
   1  KWWWWWWWWWWWWWWWWWWWWWWWWWWWFK...KWWWWWWWWWWWWWWWWWWWWWWWWWWWLK
-  2  KWFFFFIIIIFFFFFFFFFFFFFFFFFSDK...KWLLLLIIIILLLLLLLLLLLLLLLLLSDK
-  3  KWFFFIFFFFFFFFFFFFFFFFIFFFFSDK...KWLLLILLLLLLLLLLLLLLLLILLLLSDK
-  4  KWFFFIFFFFFIIIIFFIIIFIIIIFFSDK...KWLLLILLLLLIIIILLIIILIIIILLSDK
-  5  KWFFFFIIIFFIFFFIFIFFFFIFFFFSDK...KWLLLLIIILLILLLILILLLLILLLLSDK
-  6  KWFFFFFFFIFIFFFIFIFFFFIFFFFSDK...KWLLLLLLLILILLLILILLLLILLLLSDK
-  7  KWFFFFFFFIFIFFFIFIFFFFIFFFFSDK...KWLLLLLLLILILLLILILLLLILLLLSDK
-  8  KWFFFIIIIFFFIIIIFIFFFFFIIFFSDK...KWLLLIIIILLLIIIILILLLLLIILLSDK
-  9  KWSSSSSSSSSSSSSSSSSSSSSSSSSSDK...KWSSSSSSSSSSSSSSSSSSSSSSSSSSDK
+  2  KWFFFFIIIIFFFFFFFFFFFFFFFFFFDK...KWLLLLIIIILLLLLLLLLLLLLLLLLLDK
+  3  KWFFFIFFFFFFFFFFFFFFFFIFFFFFDK...KWLLLILLLLLLLLLLLLLLLLILLLLLDK
+  4  KWFFFIFFFFFIIIIFFIIIFIIIIFFFDK...KWLLLILLLLLIIIILLIIILIIIILLLDK
+  5  KWFFFFIIIFFIFFFIFIFFFFIFFFFFDK...KWLLLLIIILLILLLILILLLLILLLLLDK
+  6  KWFFFFFFFIFIFFFIFIFFFFIFFFFFDK...KWLLLLLLLILILLLILILLLLILLLLLDK
+  7  KWFFFFFFFIFIFFFIFIFFFFIFFFFFDK...KWLLLLLLLILILLLILILLLLILLLLLDK
+  8  KWFFFIIIIFFFIIIIFIFFFFFIIFFFDK...KWLLLIIIILLLIIIILILLLLLIILLLDK
+  9  KWFFFFFFFFFFFFFFFFFFFFFFFFFFDK...KWLLLLLLLLLLLLLLLLLLLLLLLLLLDK
  10  KFDDDDDDDDDDDDDDDDDDDDDDDDDDDK...KLDDDDDDDDDDDDDDDDDDDDDDDDDDDK
  11  .KKKKKKKKKKKKKKKKKKKKKKKKKKKK.....KKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
@@ -2374,7 +2374,7 @@ The pack is the main slab, 176 by 182, with one row of tabs standing 21 above it
 | S7 | rows | 8 | 92 | 120 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 116 with the attributes' figures: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
 | M0 | slab | 135 | 0 | 176 | 182 | main slab |
 | M1 | text | 143 | 6 | 40 | 10 | "Pack" |
-| M2 | button | 273 | 3 | 30 | 12 | "Sort": merges and orders the pack, leaves the hotbar |
+| M2 | button | 273 | 3 | 30 | 14 | "Sort": merges and orders the pack, leaves the hotbar |
 | M3 | slots | 143 | 16 | 18 | 54 | head, body, legs, each with its silhouette |
 | M4 | well | 163 | 16 | 50 | 54 | figure well: the body as worn (5.29), standing on one course of the ground tile 8 tall along the well's floor |
 | M5 | slots | 219 | 25 | 36 | 36 | the two by two grid |
@@ -2448,10 +2448,10 @@ Size 229 by 172: the slab 176 by 172 and a panel 54 by 40 fastened to its right 
 | P0 | panel | 175 | 0 | 54 | 40 | a timber panel fastened to the slab's right side, its top on the slab's top, sharing its outline column. Hung 17 down, beside nothing in particular, it was fastened to neither the slab's top nor a row |
 | C2 | button | 179 | 4 | 46 | 14 | "Take all", a small timber button with its word on it; its tooltip adds "Into the pack, then the hotbar". Two bare arrows did not say which one emptied the chest and which filled it |
 | C3 | button | 179 | 22 | 46 | 14 | "Stash", 4 under C2: moves out of the pack every kind the chest already holds, as its tooltip says. It is not "Store all": a chest that takes only what it already holds keeps the pack's tools out of it |
-| C4 | button | 107 | 3 | 61 | 12 | "Sort chest", the only button in the title row, its right edge 8 in. Two buttons both called "Sort", 70 apart, were told apart only by where they stood |
+| C4 | button | 107 | 3 | 61 | 14 | "Sort chest", the only button in the title row, its right edge 8 in. Two buttons both called "Sort", 70 apart, were told apart only by where they stood |
 | C5 | slots | 8 | 18 | 162 | 54 | the chest, nine by three |
 | C6 | text | 8 | 76 | 40 | 10 | "Pack" |
-| C7 | button | 112 | 73 | 56 | 12 | "Sort pack", its right edge 8 in; every station that shows the pack under its own slots names this button the same way |
+| C7 | button | 112 | 72 | 56 | 14 | "Sort pack", its right edge 8 in; every station that shows the pack under its own slots names this button the same way |
 | C8 | slots | 8 | 88 | 162 | 54 | the pack, nine by three |
 | C9 | slots | 8 | 146 | 162 | 18 | the hotbar row, four units below the pack |
 
@@ -2507,7 +2507,7 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | B3 | arrow | 91 | 36 | 22 | 15 | progress arrow |
 | B4 | bigslot | 122 | 31 | 26 | 26 | the result, in the large slot (icon at 127, 36) |
 | B5 | text | 8 | 73 | 40 | 10 | "Pack" |
-| B6 | button | 112 | 70 | 56 | 12 | "Sort pack" |
+| B6 | button | 112 | 69 | 56 | 14 | "Sort pack" |
 | B7 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | B8 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | R0 | slab | 175 | 0 | 116 | 166 | recipe panel, fastened to the right side and sharing the outline column |
@@ -2574,7 +2574,7 @@ Size 176 by 166. Material: timber. Anchor: centre of the screen.
 | J8 | bigslot | 136 | 31 | 26 | 26 | the joined piece |
 | J8a | text | 26 | 57 | 136 | 10 | "Lit: the two pieces join" in faded ink: the key to the cut lines, which are `ember` over `ember.dk` while the two pieces make something and a dark groove (`pit` over `hi`) while they do not |
 | J9 | text | 8 | 73 | 40 | 10 | "Pack" |
-| J10 | button | 112 | 70 | 56 | 12 | "Sort pack" |
+| J10 | button | 112 | 69 | 56 | 14 | "Sort pack" |
 | J11 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | J12 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 
@@ -2631,7 +2631,7 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | F6b | text | 92 | 60 | 70 | 10 | "{cross} Needs fuel" in `blood.dk`, the refusal's tone on a light face, 4 right of the fuel slot and under the arrow, while there is ore to work and room for it but no fire and no fuel; nothing else on the slab says why nothing happens. In `ink.faded` it read as a hint and not as the reason the furnace stands still |
 | F7 | bigslot | 128 | 33 | 26 | 26 | what comes out |
 | F8 | text | 8 | 73 | 40 | 10 | "Pack" |
-| F9 | button | 112 | 70 | 56 | 12 | "Sort pack" |
+| F9 | button | 112 | 3 | 56 | 14 | "Sort pack", on the title row at its right, as the chest's "Sort chest": on the pack row its top stood a unit under F6b |
 | F10 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | F11 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | L0 | slab | 175 | 0 | 116 | 166 | side panel, fastened right |
@@ -2757,7 +2757,7 @@ Size 176 by 227, with two tabs standing 21 out of its left edge. Material: clay.
 | H4 | well | 8 | 18 | 160 | 92 | dark well of five list rows 18 tall, scroll track at its right: icon, name in the colour of its grade, then how many one press brings in root.4 when more than one ("Barbed Arrow ×8", the price being for the lot), price right-aligned with the same mark as H2. Under Sell each row is a thing sold this visit at what was paid for it, its price led by `{back}`; with nothing sold the well says "Nothing sold yet. Shift {lmb} a thing in the pack to sell it." in root.4. A grey heading row among the goods read as a thing that could not be bought |
 | H3 | text | 8 | 113 | 160 | 10 | what a press does, in ink.faded with the mouse marks: under Buy "{lmb} buy one   Shift {lmb} buy ten", under Sell "Shift {lmb} in the pack sells". With no line and no button, pressing a row was an affordance nothing told of |
 | H5 | text | 8 | 132 | 40 | 10 | "Pack" |
-| H6 | button | 112 | 129 | 56 | 12 | "Sort pack" |
+| H6 | button | 112 | 128 | 56 | 14 | "Sort pack" |
 | H7 | slots | 8 | 143 | 162 | 54 | the pack, nine by three |
 | H8 | slots | 8 | 201 | 162 | 18 | the hotbar row, four units below the pack |
 

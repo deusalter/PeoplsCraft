@@ -1,14 +1,14 @@
 // The five furnaces (section 6): one stone layout. A firebox holds the remains built in, beside
 // the ore, the flame of the fuel left and the fuel, the arrow and what comes out; a side panel lists what the bed works.
 // A furnace goes on working with the window shut, so the mock's furnaces keep their own clock.
-import { clock } from '../font/measure';
+import { clock, measure } from '../font/measure';
 import type { Node, Ui } from '../node';
 import type { Colour } from '../palette';
 import { burnGauge, progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
 import { type RowSpec, well } from '../parts/well';
 import { type Stack, gradeColour, stackTip, thing } from '../sample/play-items';
-import { Bench, STILL, ink, overWorld, packBlock, place, stackSlot } from './play/common';
+import { Bench, STILL, ink, overWorld, packBlock, place, small, stackSlot } from './play/common';
 import { Hand, type Place, store } from './play/hand';
 import type { NamedScreen } from './index';
 
@@ -190,6 +190,8 @@ export function bed(x: number, y: number, stones: Stones, heat: number): Node {
   };
 }
 
+const SORT_W = measure('Sort pack') + 10;
+
 function build(ui: Ui, id: string): Node {
   const st = open(id);
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
@@ -212,7 +214,10 @@ function build(ui: Ui, id: string): Node {
     { ...progressArrow({ x: 96, y: 38, f: burning || STILL ? progress : 0, ramp: 'stone' }), anim: burning && !STILL },
     stackSlot(b, { store: 'out', i: 0 }, { x: 128, y: 33, ramp: 'stone', large: true }),
     ...(unfed ? [ink(92, 60, '{cross} Needs fuel', 'blood.dk')] : []),
-    ...packBlock(b, 'stone', 73, 84),
+    // Sort pack stands on the title row, as the chest's Sort chest does: on the pack row it ended a unit under the
+    // refusal, which has the band between the fire and the pack to itself.
+    small('pack.sort', 168 - SORT_W, 3, SORT_W, 'Sort pack', () => { h.sort('pack'); b.after(); }, 'stone'),
+    ...packBlock(b, 'stone', 73, 84, { sort: false }),
   ];
   const works = worksOf(f);
   // A work can be done now when what it is made from is in the ore slot, the pack or the hotbar.
@@ -238,7 +243,7 @@ function build(ui: Ui, id: string): Node {
   const side: Node[] = [well({ id: `${id}.works`, x: 8, y: 18, w: 100, h: 128, host: 'stone', rows, chosen: active, ui })];
   const win = place(ui, 291, 166);
   return overWorld(ui, win, [
-    slab({ x: 0, y: 0, w: 176, h: 166, ramp: 'stone', title: f.name, kids: main }),
+    slab({ x: 0, y: 0, w: 176, h: 166, ramp: 'stone', title: f.name, titleRoom: SORT_W + 4, kids: main }),
     slab({ x: 175, y: 0, w: 116, h: 166, ramp: 'stone', title: 'Works', kids: side }),
   ], { outside: () => { h.dropHeld(); b.after(); } });
 }
