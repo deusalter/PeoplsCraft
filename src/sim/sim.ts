@@ -11,11 +11,11 @@ import { EventSim } from './events';
 import type { Sink } from './fx';
 import { checkStall, handleMove, tickEmbedded } from './movement';
 import { NpcSim } from './npcs';
-import { LINGER, active, newPlayer, respawn, type SimPlayer, tickPlayer, toRecord } from './player';
+import { LINGER, active, mailDrops, newPlayer, respawn, type SimPlayer, tickPlayer, tickSleep, toRecord } from './player';
 import { QuestSim } from './quests';
 import { Realm, type RealmStore } from './realm';
 import type { Batch, PlayerRecord, WorldRecord } from './storage';
-import { arrive, tickPortal } from './travel';
+import { arrive, suspendRealm, tickPortal } from './travel';
 import { type EditMaps, SimChunks, pumpChunks } from './voxels';
 
 export interface SimDeps {
@@ -149,7 +149,8 @@ export class Sim {
     }
     const owed = this.shared.owed[id];
     if (owed) {
-      p.stats.addXp(owed.xp); p.inv.coins += owed.coins; p.inv.touch();
+      if (p.stats.addXp(owed.xp)) p.stats.hp = p.stats.maxHp;
+      p.inv.coins += owed.coins; p.inv.touch();
       for (const it of owed.items) p.mail.push(it);
       delete this.shared.owed[id];
     }
@@ -186,8 +187,9 @@ export class Sim {
     if (i >= 0) {
       // a world event does not outlive the last player in the Overworld
       if (realm.dim === 0 && realm.players.length === 1 && this.events.active) this.events.end(false);
+      mailDrops(this, realm, p.id);
       realm.players.splice(i, 1);
-      if (!realm.players.length) realm.suspend();
+      if (!realm.players.length) suspendRealm(this, realm);
     }
     this.sink.broadcast({ t: 'pl', del: [p.slot] });
     p.parked = true; p.online = false; p.lingerT = 0; p.slot = 0; p.unsaved = true;
@@ -272,6 +274,7 @@ export class Sim {
     for (const r of live) r.fluids.tick(dt);
     this.events.tick(dt); this.npcs.tick(dt); this.quests.tick(dt);
     s.clock += dt / DAY_LENGTH;
+    if (this.tick % 60 === 0) tickSleep(this);
     this.replicate(dt);
   }
   online(): number { let n = 0; for (const p of this.players.values()) if (p.online) n++; return n; }

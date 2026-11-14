@@ -4,7 +4,7 @@
 import { T_LIQUID, T_SOLID } from '../data/blocks';
 import { dropItem } from './actions';
 import type { Mob } from './mobs';
-import { active, gainXp, type SimPlayer, tickSleep } from './player';
+import { active, gainXp, type SimPlayer } from './player';
 import type { Sim } from './sim';
 
 /** The goal of a raid or a march for one player. */
@@ -57,7 +57,6 @@ export class EventSim {
 
   tick(dt: number): void {
     const sim = this.sim, ev = sim.shared.events, realm = sim.realms[0], mobs = realm.mobs, rnd = sim.rnd, t = sim.shared.clock % 1, day = Math.floor(sim.shared.clock);
-    if (sim.tick % 60 === 0) tickSleep(sim);
     if (!realm.players.some((p) => p.online)) { if (ev.a) this.end(false); this.lastPhase = t < 0.5 ? 0 : 1; return; }
     const phase = t < 0.5 ? 0 : 1;
     if (this.lastPhase >= 0 && phase !== this.lastPhase && !mobs.boss()) {

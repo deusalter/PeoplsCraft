@@ -11,7 +11,8 @@ import type { ChunkSource } from '../sim/chunksource';
 import { STEP } from '../sim/clock';
 import { cleanName, playerIdOf } from '../sim/identity';
 import { LOCAL_ID } from '../sim/migrate';
-import { mailDrops, type SimPlayer } from '../sim/player';
+import { partLeft, refundSummons } from '../sim/boss';
+import type { SimPlayer } from '../sim/player';
 import { findSpawn } from '../sim/rules';
 import { Sim, playerInfo } from '../sim/sim';
 import type { Storage, WorldRecord } from '../sim/storage';
@@ -91,7 +92,6 @@ export class SimHost {
   private changeTimer: unknown = null; private seenRev = new WeakMap<SimPlayer, number>(); private seenFlags = -1; private seenQuest = -1;
   private saveFailed = false;
   /** Parked players whose owned drops have been taken off the ground for them. */
-  private mailed = new WeakSet<SimPlayer>();
 
   /** `start` made a new world: until a save, the storage holds nothing of it, not even its seed. */
   madeWorld = false;
@@ -112,6 +112,8 @@ export class SimHost {
     this.chunks = new ChunkService(this.sim, this.edits, o.viewMax);
     this.saveEnd = env.now(); this.savedTick = this.sim.tick;
     this.changed();
+    // 7.9: an offering spent on a boss that did not outlive the last run goes back to its summoner, in one commit
+    if (this.sim.shared.summons.length) { refundSummons(this.sim.shared); await this.save(); }
     if (o.clock === 'real') { this.due = env.now() + STEP_MS; this.wake(); }
   }
   private newWorld(): WorldRecord {
@@ -332,7 +334,7 @@ export class SimHost {
     switch (m.t) {
       case 'chunks': this.chunks.onChunks(c, p, m); break;
       case 'cmd': if (m.text.trim() === 'tickstats' && (c.local || this.opt.cheats)) sim.sink.send(p.slot, { t: 'cmdr', id: m.id, text: this.tickStats() }); else sim.handle(p, m); break;
-      case 'bye': this.park(p); this.requestSave(); this.drop(l, 'bye'); break;
+      case 'bye': partLeft(sim, p); this.park(p); this.requestSave(); this.drop(l, 'bye'); break;
       // a remote client has no say over the host's clock or its saves
       case 'step': case 'pause': case 'save': break;
       default: sim.handle(p, m);
@@ -390,7 +392,6 @@ export class SimHost {
       this.stats.stepErrors++;
       env.log('error', `step ${sim.tick} failed: ${e instanceof Error ? e.stack ?? e.message : String(e)}`);
     }
-    this.mailParked();
     try { this.flush(); } catch (e) {
       this.stats.stepErrors++;
       env.log('error', `flush after step ${sim.tick} failed: ${e instanceof Error ? e.stack ?? e.message : String(e)}`);
@@ -404,24 +405,10 @@ export class SimHost {
     if (o.saveEvery > 0 && sim.tick !== this.savedTick && env.now() - this.saveEnd >= o.saveEvery * 1000) this.saveWanted = true;
     if (this.saveWanted) this.saveSoon();
   }
-  /** The player's connection ends for good: it is parked at once. Its drops are held for it first, while its realm still
-   *  holds them: a realm the parking empties is cleared. */
+  /** The player's connection ends for good: it is parked at once (`Sim.park` holds its drops in its `mail`). */
   private park(p: SimPlayer): void {
-    const sim = this.sim;
     this.bound.delete(p);
-    for (const r of sim.realms) mailDrops(sim, r, p.id);
-    sim.leave(p, 'bye');
-  }
-  /** A player parked in this step leaves nothing of its own on the ground (7.9): its drops wait in its `mail`. Before the
-   *  save that the parking asked for takes its record. */
-  private mailParked(): void {
-    const sim = this.sim;
-    for (const p of sim.players.values()) {
-      if (!p.parked) { this.mailed.delete(p); continue; }
-      if (this.mailed.has(p)) continue;
-      this.mailed.add(p);
-      for (const r of sim.realms) mailDrops(sim, r, p.id);
-    }
+    this.sim.leave(p, 'bye');
   }
   /** Something a save must not lose has changed since the last look: an inventory (a container is a block entity), an edit
    *  map, a flag, the guide. Position, clock and vitals alone are not; the 30 s save carries them. */

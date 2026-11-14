@@ -10,12 +10,13 @@ import { BOSSES } from '../data/mobs';
 import { chestWire, forgeWire, invWire, shopWire } from '../net/invsync';
 import { type BoxWire, type C2SOf, DIG_R, type S2COf } from '../net/protocol';
 import { BURST } from './fx';
+import { bossSummoned } from './boss';
 import { collapseGate, placeGate } from './gates';
 import { type InvOp, type OpResult, type OpState, applyOp } from './invops';
 import { mobDist } from './mobhit';
 import { defIndex } from './mobs';
 import { npcOf } from './npcs';
-import { type SimPlayer, active, recall } from './player';
+import { type SimPlayer, active, recall, useBed } from './player';
 import type { Realm } from './realm';
 import * as rules from './rules';
 import type { Sim } from './sim';
@@ -246,15 +247,7 @@ export function useBlock(sim: Sim, p: SimPlayer, hit: BlockHit, use: string): bo
     return true;
   }
   if (use === 'crate') { breakBlock(sim, p, x, y, z, hit.id); return true; }
-  if (use === 'bed') {
-    if (p.dim !== 0) { tell(sim, p, 'A bedroll marks your place only on the living ground.', '#ff9a8a'); return true; }
-    p.bed = [x, y, z];
-    if (sim.isNight() && p.dim === 0) {
-      if (w.mobs.nearestHostile(b.x, b.y, b.z, 14) || sim.events.active) tell(sim, p, 'You cannot rest with enemies near.', '#ff9a8a');
-      else { sim.shared.clock = Math.floor(sim.shared.clock) + 1.02; p.stats.buffs.set('dawn', 180); p.stats.recompute(p.inv); sim.sink.emit(own, ['n', 'Morning', 'You wake rested', '#ffe9a8']); }
-    } else tell(sim, p, 'Spawn point set.', '#b8f070');
-    return true;
-  }
+  if (use === 'bed') { useBed(sim, p, x, y, z); return true; }
   if (use === 'guestbed') { tell(sim, p, sim.npcs.status(x, y, z, p.dim), '#8fd0ff'); return true; }
   if (use === 'door') {
     const swap: Record<string, string> = { door_x: 'door_x_open', door_x_open: 'door_x', door_z: 'door_z_open', door_z_open: 'door_z' }, to = B[swap[BLOCKS[hit.id].key]];
@@ -277,10 +270,12 @@ export function trySummon(sim: Sim, p: SimPlayer, n: number, x: number, y: numbe
   if (!it || item(it.k).use !== 'summon' + n) { const need = [...ITEMS.values()].find((q) => q.use === 'summon' + n); const name = need?.name ?? 'summoning item'; tell(sim, p, `The altar waits for ${article(name)} ${name}.`, '#ffd9a0'); return; }
   if (n === 7 && !sim.isNight()) { tell(sim, p, 'Kuranga comes up only at night.', '#ffd9a0'); return; }
   if (sim.events.active) sim.events.end(false);
+  const offering = it.k;
   p.inv.consumeHeld();
   const m = w.mobs.spawn(boss.key, x + 0.5, y + (boss.boss!.move === 'walk' ? 1.2 : 5), z + 6.5);
   if (!m) return;
   m.boss!.altar = [x, y, z];
+  bossSummoned(w, m, p, offering);
   sim.sink.emit(all, ['n', boss.name, boss.boss!.intro, '#ffb86a']);
   sim.sink.emit(all, ['s', 'roar', 1, boss.voice ?? 0.3]); sim.sink.emit(all, ['s', 'bell', 0.7, 1]); sim.sink.emit(all, ['k', 0.5]);
   w.burst(BURST.bossSummon, x + 0.5, y + 1.2, z + 0.5, defIndex(boss));

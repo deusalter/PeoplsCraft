@@ -150,8 +150,6 @@ export class EntityStore implements Bodies, Ghosts {
 
   constructor(private g: EntityHost, models: ItemModels) {
     this.mobRender = new MobRender(g); this.dropRender = new DropRender(models); this.playerRender = new PlayerRender(models);
-    // the game puts the drops' group in the scene; held items ride in it so that they need no place of their own there
-    this.dropRender.group.add(this.playerRender.group);
   }
   /** The view of the player in `slot`, while one is in view. */
   player(slot: number): PlayerView | null { const tr = this.net?.players.get(slot); return tr ? tr.v : null; }

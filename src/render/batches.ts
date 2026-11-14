@@ -99,7 +99,7 @@ export class BoxBatch {
   private aCol: THREE.InstancedBufferAttribute; private aFx: THREE.InstancedBufferAttribute; private aSize: THREE.InstancedBufferAttribute;
   private depthMat = new THREE.ShaderMaterial({ vertexShader: BOX_DEPTH_VERT, fragmentShader: BOX_DEPTH_FRAG, colorWrite: false, polygonOffset: true, polygonOffsetFactor: 1.5, polygonOffsetUnits: 4 });
   count = 0;
-  constructor(readonly cap = 4096) {
+  constructor(readonly cap = 8192) {
     const geo = new THREE.BoxGeometry(1, 1, 1);
     this.col = new Float32Array(cap * 4); this.fx = new Float32Array(cap * 4); this.size = new Float32Array(cap * 3);
     this.aCol = new THREE.InstancedBufferAttribute(this.col, 4); this.aFx = new THREE.InstancedBufferAttribute(this.fx, 4); this.aSize = new THREE.InstancedBufferAttribute(this.size, 3);

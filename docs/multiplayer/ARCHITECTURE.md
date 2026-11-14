@@ -3911,6 +3911,91 @@ The step times of 6.6 item 3 therefore no longer hold the system calls of those 
 same thread. Before the change this tree failed one run in three at load averages of 8 to 10, as the check had; after
 it `abuse` passed 12 of 12 runs (step p99 1.4 to 7.2 ms) at load averages from 5 to 11. A machine loaded enough can still hold the tick thread off the CPU for longer than a step; the server cannot prevent that.
 
+D45. Stage 5, lane A (7.1, 7.4, 7.9). Where the fighting rules are not what the sections say.
+(a) 7.9 refund rule, "at that moment a participant is stalled or lingering, or `b.lost` is set". `Sim.park` takes a player
+out of `realm.players` and suspends an emptied realm before it sets `parked`, and `leave` clears `stalled` first. So when
+the last participant of a realm, one the boss was waiting for, is parked (the `idle` close or the end of the grace), the
+boss is removed with the realm in that same call, before any hold could see the park and set `b.lost`. The rule therefore
+also counts as interrupted a fight in which a participant the boss was waiting for at its last hold is now parked, absent
+or being parked; and a participant counts as lingering only while it is still in the realm's list. Without this the
+offering of a solo fighter whose link dies would never come back, which is the `stall` scenario.
+(b) 7.1, minions "idle in place while the owner is stalled or lingering": a loading owner's minions still follow it (the
+rule names only those two states). Drops and mail are taken by a player who is online, not stalled and alive (loading
+included); the document names no state for "first player in reach with room".
+(c) 7.4, `mail` "36 stacks at most": an item that fits in no stack of the 36 is lost. Stacks of the same item are filled
+first.
+(d) 7.4, `onMobKilled(realm, m)` takes no killer: who is paid is `eligible(realm, m)`, the keys of `hitBy` and then, for a
+boss, its participants and every active player within 64 blocks (horizontal) of the boss or its altar.
+(e) 7.9 and 7.2, the distances to the altar and the boss (the 32 of a summon, the 64 of scaling and loot, the 80 of a
+valid target) and the 48 of `near` are horizontal, so a fighter on a ledge above the arena counts; the distances of 7.1,
+the 110 of the spawn caps and the 20 of the spawn cell are in three dimensions.
+
+D46. Stage 5, lane B (7.5, 7.6, 7.7, 7.9, 7.10, 9). Where the world rules are not what the sections say.
+(a) 7.10, `SimPlayer.sleepAt: [number, number, number] | null` (3.3). "Sleeping ends when the player moves 0.3 blocks"
+needs where the sleeper lay, and `SimPlayer` had no field for it. `useBed` sets it to the body's position when the player
+lies down; `tickPlayer` ends sleep when the stored body is more than `SLEEP_MOVE` (0.3) blocks from it, in three
+dimensions. It is read only while `sleeping` and is not saved (sleep does not outlive a connection: `leave` ends it).
+(b) 7.10, the night check runs once a second from `Sim.step`, after the clock moves (6.1 step 6), and on bed use from
+`useBed`.
+(c) 7.10, "Breaking a bed block clears `bed` for every player in memory whose bed it was and toasts those online": the
+once-a-second sleep check also looks at every bed of every player in memory whose chunk is a ready sim chunk of the
+Overworld and forgets one whose block no longer has `use === 'bed'`, toasting "Your bedroll is gone." to its owner when
+online. This holds for a bed gone by any path (a `fill`, an explosion) and lags the break by up to a second. `goHome`'s
+re-check stays, for beds in chunks nobody holds.
+(d) 9, `retCheck` in the Overworld. "A portal block of that gate's kind must be within 2 blocks of the spot": `retCheck`
+is a boolean (3.3) and the realm the player came from is not kept, so in the Overworld a sheet of either kind passes; in
+the Hollows and the Skyrift the realm's own kind is required. A Rift sheet within 2 blocks of a Hollow gate's return spot
+is the only case that reads differently.
+(e) 7.5, the `n` of a running event is held by `EventSim` and not saved. At construction it is read back from the goal
+(`round((g / base - 1) / 0.5 + 1)`, `base` the one-player goal at the current difficulty), which gives the `n` it was
+started with unless a boss fell during the event.
+(f) 7.5, "runs while the Overworld has an online player; when it empties, a running event ends as lost" is read as: an
+event ends lost when the Overworld holds no online player, lingering ones not counting. A wave waits while no Overworld
+player is active (stalled ones count as online but give no centre).
+(g) 7.6, the experience of a completed step is today's `15 + 6 x` the index after the step (`s.quest` once incremented),
+which is what the code paid before; "15 + index x 6" read as the index before would pay 6 less per step.
+(h) 7.10, "While only some sleep, a toast names who rests and the count": sent to the Overworld when the set of sleepers
+or the size of S changes, not every second: "Ada is resting (1/3)", "Ada and Bram are resting (2/3)".
+(i) 7.7, residents' bodies are looked at once a second (spawned when the home's chunk is ready, removed with `md 0` when
+it is not); move-ins stay on today's 5 s cadence.
+(j) 7.9 and 7.4, `mail` is handed over by `tickPlayer` to an active player as room allows, oldest first, each with the
+pickup line `u`. No section said where the hand-over runs.
+(k) 9, "Every gate and platform that `land()` writes is tested against the bodies of `realm.players` first": the search
+skips a spot whose gate cells or sill would close over another body. The fallback platform (no land within reach) moves 6
+blocks along x at a time, up to 8 times, until neither it nor its gate lies on anybody.
+(l) 7.10 cheats: `kill` acts on the world's hostiles in every realm, with the caller credited only in its own realm;
+`event` takes only `raid`, `moon` or `ashen` and otherwise answers `event raid|moon|ashen`; `flag` with no name answers
+`flag <name>` (D36 (k)). Before, `event foo` set the running event to `foo`.
+
+D47. Stage 5, lane C (2.2, 2.4, 2.5, 4.3, 4.6, 7.10). Where the social view is not what the sections say.
+(a) 2.5, `render/mobView.ts` does not export `drawBoxes(batch, parts, pose)`. `render/playerView.ts` has its own box pass
+over the same `Part` format, the same placement order (`Base * [parent joint] * T(p) * Ranim * T(o) * R(r) * S`), the
+same `rigOf` parent links and `BoxBatch.add`; its pose is the player's (walk, swing, dig, use, sneak, sleep, death, away),
+not the creatures' tag table.
+(b) 2.5, held items: a pool of 8 meshes in `PlayerRender.group`, which the game adds to the scene beside the drops.
+(c) 2.5, name tags: players get a pool of 8 tags of their own in `ui/hud.ts` (same `float tag` class, a name line and a
+40 px health bar under it) beside the 10 townsfolk tags, rather than sharing those 10; the occlusion test is one
+`raycast` (solid blocks only) from the camera per tag per 0.25 s, as 2.5 says.
+(d) 7.10 and 2.3, keys: Enter, T and / open the chat line and Tab shows the player list from a capture-phase `window`
+listener in `Hud`, not from `Game.onKey`. The listener does nothing while a window, the menu, the death screen or a text
+field has the keys. V pings (4.3: "ping key (default V)"). The old command console of `Game` is gone; a window blur while
+the chat line is open (or within 250 ms of its closing) pauses a solo world as the console's did.
+(e) 4.3 `cmd`: a command typed in chat goes through `Game.cmd` (the same id counter as `T.cmd`), and its `cmdr` text is
+shown in the chat log as a reply line instead of a toast.
+(f) 2.2, the headless player-view scenario is `scripts/playerview.mjs`, run with `node scripts/headless.mjs --query
+"quick=pview&fresh" --run scripts/playerview.mjs --out <folder>`. It takes screenshots for a person and fails only when
+the second player never appears, so it is not one of smoke's scenarios (whose runner gives no `shot`).
+(g) 2.4 and 4.6, other players' dig particles, cracks and splash are derived in `client/entities.ts` and drawn by
+`render/playerView.ts`: the `dg` target is kept per slot (`Net.digs`, since the event can arrive before the body), chips
+and a positional dig sound every `CHIP_T` = 0.22 s (the cadence of the local `Interact` dig tick), the crack stage from the
+snapshot's dig byte (`crackStage`, the local overlay's `floor(progress * 8)`), up to 8 crack meshes in `PlayerRender.group`
+with the crack shader of `player/interact.ts` copied (it is not exported there). A splash plays on the rising edge of
+`PF_WATER` when the body came in faster than 3 blocks per second (the local rule), with the speed taken from the sample
+before the one that sets the bit; the local head-crossing splash has no replicated input and is not drawn for others.
+(h) 2.5 tests: the view rules are tested in `scripts/tests/social.test.ts` through the real `EntityStore` fed snapshots,
+and through pure helpers exported from `ui/hud.ts` (`tagSight`, `tagText`, `tagFill`, `hudKey`, `screenAt`, `pingAt`,
+`TAG_R`, `TAG_LOOK`) that `Hud` itself calls.
+
 ---
 
 ## 14. Review log

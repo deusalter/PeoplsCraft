@@ -100,9 +100,9 @@ export class Game {
   private swayX = 0; private swayY = 0; private fallY = 0; private lastYaw = 0; private lastPitch = 0;   // held-item inertia
   private stepN = 0; private wasWet = false; private wasUnder = false; private wasLava = false; private splashCd = 0;
   private portalT = 0; private portalArmed = true; private portalA = 0; private portalGold = false;
-  private console: HTMLInputElement; private v = new THREE.Vector3();
+  private v = new THREE.Vector3();
   private hudOn = true;
-  private npcPromptT = 0; private npcPrompt: string | null = null; private conClosed = 0;
+  private npcPromptT = 0; private npcPrompt: string | null = null;
   /** Date.now() of the last successful save (0 = not yet). */
   lastSave = 0; private saveFailT = -1e9; private noSaveWarned = false;
   private saveWaiters: (() => void)[] = [];
@@ -154,7 +154,7 @@ export class Game {
     this.input = new Input(canvas);
     this.interact = new Interact(this.gfx.scene, this.world, this.player);
     this.ents = new EntityStore(this, this.models); this.ents.connect(s);
-    this.gfx.scene.add(this.ents.mobRender.shadows.mesh, this.ents.dropRender.group);
+    this.gfx.scene.add(this.ents.mobRender.shadows.mesh, this.ents.dropRender.group, this.ents.playerRender.group);
     this.hud = new Hud(ui, this); this.win = new Windows(ui, this); this.win.channel = this.invc; this.menu = new GameMenu(ui, this);
     this.debug = new DebugOverlay(ui);
     this.quests = new QuestView(this);
@@ -179,27 +179,18 @@ export class Game {
 
     this.loading = el('div', '#loading', ui);
     this.loading.innerHTML = '<h1>PEOPLS CRAFT</h1><div class="bar"><i></i></div><div class="msg"></div>';
-    this.console = el('input', '', ui); this.console.type = 'text';
-    this.console.style.cssText = 'position:absolute;left:12px;bottom:150px;width:420px;display:none;pointer-events:auto;background:rgba(8,10,14,.85);color:#e9e4d6;border:1px solid #3b4254;padding:6px 8px;font:13px ui-monospace,monospace;outline:none;z-index:25';
-    this.console.onkeydown = (e) => {
-      e.stopPropagation();
-      if (e.key === 'Enter') { const c = this.console.value.trim(); this.closeConsole(); if (c) void this.cmd(c.replace(/^\//, '')).then((r) => this.toast(r, '#8fd0ff')); }
-      else if (e.key === 'Escape') this.closeConsole();
-    };
-    // clicking or tabbing away must not leave the console open with the game ignoring input
-    this.console.onblur = () => { if (this.console.style.display !== 'none') { this.closeConsole(); this.conClosed = performance.now(); } };
 
     this.input.onKey = (code, e) => this.onKey(code, e);
     this.input.onLockChange = (locked) => {
       if (locked) { this.audio.unlock(); if (this.paused && !this.menu.open) { this.paused = false; this.hud.setPrompt(null); } }
       else if (!this.input.uiMode && this.ready && !this.stats.dead) this.menu.pause();
     };
-    // alt-tabbing away with a window or the console open would otherwise leave the world running
+    // alt-tabbing away with a window or the chat line open would otherwise leave the world running
     window.addEventListener('blur', () => {
       if (!this.ready || this.stats.dead || this.menu.open) return;
-      const con = this.console.style.display !== 'none' || performance.now() - this.conClosed < 250;
+      const con = this.hud.chat.isOpen || performance.now() - this.hud.chat.closedAt < 250;
       if (!this.win.open && !con) return;
-      if (con) this.closeConsole();
+      if (con) this.hud.chat.close();
       this.win.close(true); this.menu.pause();
     });
     // a click on the world resumes after a refused re-lock (Input requests the lock on the same click)
@@ -344,7 +335,7 @@ export class Game {
     if (on) this.pausedAt = now; else { this.heldMs += now - this.pausedAt; this.pausedAt = 0; }
     this.session.send({ t: 'pause', on });
   }
-  /** A command line for the host (the T console, and the test harness). Settles with the host's reply. */
+  /** A command line for the host (the chat line, and the test harness). Settles with the host's reply. */
   cmd(text: string): Promise<string> {
     const id = ++this.cmdId;
     return new Promise((res) => { this.cmds.set(id, res); this.session.send({ t: 'cmd', id, text }); });
@@ -388,16 +379,14 @@ export class Game {
   private onKey(code: string, e: KeyboardEvent): boolean {
     if (!this.ready || this.menu.dead) return false;
     if (code === 'Escape') { if (this.win.open) this.win.close(); else if (this.menu.open) this.menu.escape(); else this.menu.pause(); return true; }
-    if (this.menu.open || document.activeElement === this.console) return false;
+    if (this.menu.open) return false;
     if (this.win.open && this.win.key(code, e)) return true;
     if (code === 'KeyE') { if (this.win.open) this.win.close(); else this.win.show('inv'); return true; }
     if (code === 'KeyG') { this.win.toggleGuide(); return true; }
     if (code === 'F3') { this.debug.toggle(); return true; }
     if (code === 'F1') { this.hudOn = !this.hudOn; this.hud.setVisible(this.hudOn); return true; }
-    if ((code === 'KeyT' || code === 'Slash') && !this.win.open) { this.console.style.display = 'block'; this.console.value = ''; this.input.uiMode = true; this.input.unlock(); setTimeout(() => this.console.focus(), 0); return true; }
     return false;
   }
-  private closeConsole(): void { if (this.console.style.display === 'none') return; this.console.style.display = 'none'; this.console.blur(); this.input.uiMode = false; this.input.lock(); }
 
   // ---- the fixed step ----------------------------------------------------------------------------------
   /** The client's half of a tick: keys, the body, what the hands do, and the movement message that tells the host of it. */
