@@ -317,17 +317,25 @@ const indexScreen: DemoScreen = {
   title: 'Index',
   world: false,
   build(ui) {
-    // A full-screen menu of the kit: the ground tile, the heading on it in salt, and the screens as rows in dark wells
-    // side by side, each row its family's mark and the name `?screen=` takes; a well that cannot hold its share scrolls.
+    // A full-screen menu of the kit: the ground tile, the heading on it in salt with the count at its right, and the
+    // screens as rows in dark wells side by side, 8 in from the screen's edges and 4 apart, each row its family's mark
+    // and the name `?screen=` takes; a well that cannot hold its share scrolls. A hovered row takes the well's lighter
+    // floor (5.8).
     const names = Object.keys(SCREENS).filter((n) => n !== 'index');
-    const WW = 150, GAP = 4;
-    const cols = Math.max(1, Math.min(4, Math.floor((ui.w - 8 + GAP) / (WW + GAP))));
+    const M = 8, GAP = 4, MIN_W = 140;
+    const cols = Math.max(1, Math.min(4, Math.floor((ui.w - 2 * M + GAP) / (MIN_W + GAP))));
+    const WW = Math.floor((ui.w - 2 * M - (cols - 1) * GAP) / cols);
     const per = Math.ceil(names.length / cols);
-    const visible = Math.max(1, Math.floor((ui.h - 22 - 6) / 18));
+    const y0 = M + 14;
+    const visible = Math.max(1, Math.floor((ui.h - M - y0 - 2) / 18));
     const wh = Math.min(per, visible) * 18 + 2;
-    const total = cols * WW + (cols - 1) * GAP;
-    const x0 = Math.floor((ui.w - total) / 2), y0 = Math.floor((ui.h - 16 - wh) / 2) + 16;
-    const kids: Node[] = [label(x0, y0 - 14, 'Screens of the kit', 'salt', true)];
+    const x0 = M;
+    const right = x0 + cols * WW + (cols - 1) * GAP - 1;
+    const tally = `${names.length} screens`;
+    const kids: Node[] = [
+      label(x0, M, 'Screens of the kit', 'salt', true),
+      label(rightX(tally, right), M, tally, 'root.4', true),
+    ];
     for (let c = 0; c < cols; c++) {
       const part = names.slice(c * per, (c + 1) * per);
       kids.push(well({
