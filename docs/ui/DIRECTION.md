@@ -31,7 +31,7 @@ Three rules follow and are used everywhere below.
 | `root.2` | `#2a2d3c` | `j` | raised or hovered row on a dark plate; empty gauge and pip; face of a block of the ground tile |
 | `root.3` | `#454a5e` | `h` | light edge of a dark plate; dividers on dark; disabled text on dark |
 | `root.4` | `#8b92a8` | `g` | grey text on dark: the less important lines |
-| `salt` | `#f7f2e3` | `W` | white: text on dark and on the world; hottest edge of a clay slab; selector; outline of a hovered button; core of an earned link |
+| `salt` | `#f7f2e3` | `W` | white: text on dark and on the world; hottest edge of a clay slab; selector; the dashes of a focused button; lit line of an earned link |
 | `clay.lt` | `#e3d7ba` | `L` | light edge of a clay slab; face of a page |
 | `clay.face` | `#c9b896` | `F` | face of a clay slab |
 | `clay.sh` | `#a68d6e` | `S` | inner dark edge of a clay slab; slot floor in clay; rules on a page |
@@ -47,14 +47,14 @@ Three rules follow and are used everywhere below.
 | `stone.lt` | `#c3cab9` | `G` | light edge of a stone slab; top row of a button; face of a key cap |
 | `stone.face` | `#9da695` | `H` | face of a stone slab |
 | `stone.sh` | `#6f7a76` | `J` | button face; inner dark edge in stone; slot floor in stone |
-| `stone.dk` | `#4e585d` | `M` | silhouettes in an empty stone slot; lower edge of a button and of a key cap |
+| `stone.dk` | `#4e585d` | `M` | silhouettes in an empty stone slot; lower edge of a button and of a key cap; the joints of a menu button's face; shade of an open node's link |
 | `stone.pit` | `#323844` | `z` | dark edge in stone; disabled button face; the lip of a block of the ground tile |
 | `ink` | `#2b1f2e` | `I` | text on any light face |
 | `ink.faded` | `#5c4c56` | `i` | secondary and disabled text on a light face |
 | `blood.lt` | `#f2785c` | `r` | worse-than lines and refusals on dark; lit top of the life fill |
 | `blood` | `#c9372f` | `R` | life; boss strip; harm; refusal frame |
 | `blood.dk` | `#7c1c2b` | `q` | shade of the life fill; refusal text on a light face |
-| `ember.hi` | `#ffe08a` | `y` | label of a hovered button; grade Old on dark; tip of a flame |
+| `ember.hi` | `#ffe08a` | `y` | label and outline of a hovered button; grade Old on dark; tip of a flame |
 | `ember.lt` | `#f7b54a` | `o` | hunger pip light; flame; trail on a draining strip |
 | `ember` | `#dd7a26` | `O` | hunger; heat; a working that is running |
 | `ember.dk` | `#8a3a1a` | `u` | shade of hunger and flame; grade Island on a light face |
@@ -874,33 +874,33 @@ A bar, a key, a piece to rework:
 
 A button 20 tall is dressed stone, on any slab and on the ground tile: these are the buttons of the menus. The classic button is 200 by 20; half is 98 by 20 (two with a gap of 4); the worlds screen uses 136 by 20. Inside windows a small button is 12, 14 or 16 tall and as wide as its label plus 10, and it is a raised piece of the slab it stands on, in that slab's ramp (below), so that a grey stone button is never pasted on clay or timber.
 
-Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall is grained: one tile of dressed stone 16 by 16 is repeated across the whole face inside the bevel, the label's ground included, from the face's top left. It is drawn in three tones only, `stone.sh` and the two grits a few levels either side of it (`grit.lt`, `grit.dk`, section 2): four pebbles of 2 by 1 or 2 by 2, each lit from the top left, and one crack of three units. Pressed, the grain drops a unit with the label. Smaller buttons are plain. A course of cuts in `stone.dk` kept clear of the label was tried first: at palette contrast its cuts read as specks, and leaving the middle bare bunched them at the two ends. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
+Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall is a course of dressed blocks, the label cut into a block of its own: a joint is one unit of `stone.dk` down the whole face, 7 left of the label and 6 right of it, and from there every 40 units outward while the block left at the end is 16 or longer. Each block carries pebbles in the two grits a few levels either side of `stone.sh` (`grit.lt`, `grit.dk`, section 2), placed by a hash of the button's label and width so that no two buttons match: 5 to 7 to every 40 units of face, of three shapes, 1 by 1, 2 by 1 (`grit.lt` then `grit.dk`) and 2 by 2 (`grit.lt` on its top left unit and `grit.dk` on its bottom right), no two within 5 units, none within 3 of the label or 2 of a joint; and one crack of three units of `grit.dk`, somewhere else on each button. Pressed, joints, pebbles and crack drop a unit down and right with the label. Smaller buttons are plain. A tile of pebbles 16 by 16 repeated over the face put the same specks at the same places on every button: it read as a perforated sheet, and as the grey speckled button of the game this tradition comes from. A groove with a lit far wall every 25 read as a fence of bright posts. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
 
-Normal and hovered. Hovered: the outline turns `salt`, the light row and column `stone.hi`, the label `ember.hi`. A door that loses something (leaving a world that is not saved) hovers its label in `blood.lt` instead, the warning colour on dark. A button with keyboard focus and not the pointer has its outline dashed, runs of two units of `salt` and two of `root.0` counted from each corner, and keeps its `salt` label, so that focus is never read as hover. (The diagram below shows the solid outline of hover.)
+Normal and hovered. Hovered: the outline turns `ember.hi`, the light row and column `stone.hi`, the label `ember.hi`, so that the frame and the words light together. A door that loses something (leaving a world that is not saved) hovers its outline and label in `blood.lt` instead, the warning colour on dark. A button with keyboard focus and not the pointer has its outline dashed, runs of two units of `salt` and two of `root.0` counted from each corner, and keeps its `salt` label, so that focus is never read as hover. (The diagram below shows the solid outline of hover, and two of the joints; the label's own joints and the pebbles stand where the rules above put them.)
 
 ```
      0         1         2         3         4         5         6         7         8         9        
      012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678
-  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.....WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW.
-  1  KGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGJK...WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJW
-  2  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzW
-  3  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzW
-  4  KGJJJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMMMJMzK...WAJJJMMMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMMMJMzW
-  5  KGJJJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGJMzK...WAJJJJJGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJGJMzW
-  6  KGJJJJJJJJJJJJWWWWJJWJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJyyyyJJyJJJJJJJJJJJJJJJJJJJJJJJJMzW
-  7  KGJJJJJJJJJJJJWKKKWJWKJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKKKyJyKJJJJJJJJJJJJJJJJJJJJJJJMzW
-  8  KGJJJJJJJJJJJJWKJJWKWKJWWWWJJWJJJWJJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKJJyKyKJyyyyJJyJJJyJJJJJJJJJJJMzW
-  9  KGJJJJJJJJJJJJWWWWJKWKJJKKKWJWKJJWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyyyyJKyKJJKKKyJyKJJyKJJJJJJJJJJMzW
- 10  KGJJJJJJJJJJJJWKKKKJWKJJWWWWKWKJJWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKKKKJyKJJyyyyKyKJJyKJJJJJJJJJJMzW
- 11  KGJJJJJJJJJJJJWKJJJJWKJWJKKWKWKJJWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKJJJJyKJyJKKyKyKJJyKJJJJJJJJJJMzW
- 12  KGJJJJJJJJJJJJWKJJJJWWJJWWWWKJWWWWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJyKJJJJyyJJyyyyKJyyyyKJJJJJJJJJJMzW
- 13  KGJJJJJJJJJJJJJKJJJJJKKJJKKKKJJKKWKJJJJJJJJJJMzK...WAJJJJJJJJJJJJJKJJJJJKKJJKKKKJJKKyKJJJJJJJJJJMzW
- 14  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJWWWWJKJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJyyyyJKJJJJJJJJJJMzW
- 15  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJJJJJMzW
- 16  KGJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzK...WAJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMzW
- 17  KGMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMzK...WAMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMzW
- 18  KJzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK...WJzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzW
- 19  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.....WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW.
+  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.....yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy.
+  1  KGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGJK...yAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJy
+  2  KGJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzK...yAJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzy
+  3  KGJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzK...yAJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzy
+  4  KGJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzK...yAJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzy
+  5  KGJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzK...yAJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzy
+  6  KGJJJJJMJJJJJJWWWWJJWJJJJJJJJJJJJJJJJJJJJMJJJMzK...yAJJJJJMJJJJJJyyyyJJyJJJJJJJJJJJJJJJJJJJJMJJJMzy
+  7  KGJJJJJMJJJJJJWKKKWJWKJJJJJJJJJJJJJJJJJJJMJJJMzK...yAJJJJJMJJJJJJyKKKyJyKJJJJJJJJJJJJJJJJJJJMJJJMzy
+  8  KGJJJJJMJJJJJJWKJJWKWKJWWWWJJWJJJWJJJJJJJMJJJMzK...yAJJJJJMJJJJJJyKJJyKyKJyyyyJJyJJJyJJJJJJJMJJJMzy
+  9  KGJJJJJMJJJJJJWWWWJKWKJJKKKWJWKJJWKJJJJJJMJJJMzK...yAJJJJJMJJJJJJyyyyJKyKJJKKKyJyKJJyKJJJJJJMJJJMzy
+ 10  KGJJJJJMJJJJJJWKKKKJWKJJWWWWKWKJJWKJJJJJJMJJJMzK...yAJJJJJMJJJJJJyKKKKJyKJJyyyyKyKJJyKJJJJJJMJJJMzy
+ 11  KGJJJJJMJJJJJJWKJJJJWKJWJKKWKWKJJWKJJJJJJMJJJMzK...yAJJJJJMJJJJJJyKJJJJyKJyJKKyKyKJJyKJJJJJJMJJJMzy
+ 12  KGJJJJJMJJJJJJWKJJJJWWJJWWWWKJWWWWKJJJJJJMJJJMzK...yAJJJJJMJJJJJJyKJJJJyyJJyyyyKJyyyyKJJJJJJMJJJMzy
+ 13  KGJJJJJMJJJJJJJKJJJJJKKJJKKKKJJKKWKJJJJJJMJJJMzK...yAJJJJJMJJJJJJJKJJJJJKKJJKKKKJJKKyKJJJJJJMJJJMzy
+ 14  KGJJJJJMJJJJJJJJJJJJJJJJJJJJJWWWWJKJJJJJJMJJJMzK...yAJJJJJMJJJJJJJJJJJJJJJJJJJJJyyyyJKJJJJJJMJJJMzy
+ 15  KGJJJJJMJJJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJMJJJMzK...yAJJJJJMJJJJJJJJJJJJJJJJJJJJJJKKKKJJJJJJJMJJJMzy
+ 16  KGJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzK...yAJJJJJMJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJJMJJJMzy
+ 17  KGMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMzK...yAMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMzy
+ 18  KJzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzK...yJzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzy
+ 19  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.....yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy.
 ```
 `. nothing  A stone.hi  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  y ember.hi  z stone.pit`
 

@@ -1,5 +1,5 @@
-import { BUTTON_FACE } from '../art/button';
-import { centreX } from '../font/measure';
+import { ashlar, seedOf } from '../art/button';
+import { centreX, measure } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Live, Node, Tip } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
@@ -24,12 +24,14 @@ export interface ButtonOpts {
 }
 
 /**
- * The grain of a face 20 tall or more: the stone tile laid over the whole face inside the bevel, the label's ground
- * included. Pressed, the face starts a unit further in and the grain drops a unit with the label.
+ * The stone of a face 20 tall or more (art/button): its joints, pebbles and crack. Pressed, they drop a unit down and
+ * right with the label, and what would fall on the far bevel is left off.
  */
-function grain(s: Surface, w: number, h: number, pressed: boolean): void {
-  if (pressed) s.tile(BUTTON_FACE, 3, 3, w - 5, h - 5, 1, 0);
-  else s.tile(BUTTON_FACE, 2, 2, w - 5, h - 5);
+function grain(s: Surface, w: number, h: number, label: string, tx: number, ty: number, pressed: boolean): void {
+  const d = pressed ? 1 : 0;
+  for (const [x, y, c] of ashlar(w, h, tx, ty, label ? measure(label) : 0, seedOf(label, w))) {
+    if (x + d <= w - 4 && y + d <= h - 4) s.fill(x + d, y + d, 1, 1, c);
+  }
 }
 
 /**
@@ -93,8 +95,9 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
 export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, ramp?: Ramp, warn = false): void {
   if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp); return; }
   const pressed = !disabled && live.down && live.hover;
-  // Hovered, the outline is solid salt; with the keys on it and not the pointer, dashed; pressed into the slab, root.0.
-  if (!disabled && !pressed && live.hover) outline(s, 0, 0, w, h, 'salt');
+  // Hovered, the outline is solid ember.hi, the colour of the hovered label; with the keys on it and not the pointer,
+  // dashed in salt; pressed into the slab, root.0.
+  if (!disabled && !pressed && live.hover) outline(s, 0, 0, w, h, warn ? 'blood.lt' : 'ember.hi');
   else if (!disabled && !pressed && live.focus) dashedOutline(s, w, h);
   else outline(s, 0, 0, w, h, 'root.0');
   const tall = h >= 20;
@@ -113,9 +116,9 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
     bevel(s, w, h, live.hover ? 'stone.hi' : 'stone.lt', null, 'stone.sh', 'stone.dk', 'stone.pit');
     if (live.hover) text = warn ? 'blood.lt' : 'ember.hi';
   }
-  if (tall && !disabled) grain(s, w, h, pressed);
   const t = cut(label, w - 4);
   const tx = centreX(t, 0, w), ty = Math.floor((h - 9) / 2);
+  if (tall && !disabled) grain(s, w, h, t, tx, ty, pressed);
   s.text(t, tx + drop, ty + drop, text, shadow);
 }
 
