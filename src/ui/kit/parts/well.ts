@@ -63,6 +63,8 @@ export interface WellOpts {
   empty?: string;
   /** A second line under `empty`, grey: what to do about it. */
   emptyHint?: string;
+  /** Where the empty lines start from the floor's left, when the rows' text stands further in than 6 (the worlds). */
+  emptyX?: number;
   ui: Ui;
 }
 
@@ -106,13 +108,14 @@ export function well(o: WellOpts): Node {
   if (!o.rows.length && o.empty) {
     // Said where the first row's text would stand, at the left in grey, as one more row of the list: centred words
     // in the middle of an empty dark box are a web page's empty state, not a list's.
-    const t = cut(o.empty, fw - 12), hint = o.emptyHint ? cut(o.emptyHint, fw - 12) : null;
+    const t = cut(o.empty, fw - 6 - (o.emptyX ?? 6)), hint = o.emptyHint ? cut(o.emptyHint, fw - 6 - (o.emptyX ?? 6)) : null;
     const ty = RH >= 30 ? 7 : 4;
     kids.push({
       x: 1, y: 1, w: fw, h: fh,
       paint: (s) => {
-        s.text(t, 6, ty, 'root.4', true);
-        if (hint) s.text(hint, 6, ty + (RH >= 30 ? 12 : RH), 'root.4', true);
+        const ex = o.emptyX ?? 6;
+        s.text(t, ex, ty, 'root.4', true);
+        if (hint) s.text(hint, ex, ty + (RH >= 30 ? 12 : RH), 'root.4', true);
       },
     });
   }

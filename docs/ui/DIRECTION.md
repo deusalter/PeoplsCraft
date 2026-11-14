@@ -188,7 +188,7 @@ Three rules follow and are used everywhere below.
 | Family | Anchor |
 | --- | --- |
 | Container windows (pack, chest, stations, shop), book screens, tree, map, settings | Centred on the screen: `x = floor((Vw - w) / 2)`, `y = floor((Vh - h) / 2)`. Tabs above or to the left are not counted in `w` and `h`. The world behind is dimmed |
-| Title, worlds, new world, join, loading | The ground tile over the whole screen; content in a column 200 wide centred on x; y measured from the top of a block 240 tall that is centred on the screen |
+| Title, worlds, new world, join, loading | The ground tile over the whole screen; content in a column 200 wide centred on x; y measured from the top of a block 240 tall that is centred on the screen. The world list alone runs its well by the screen's edges and its buttons from the bottom (World list) |
 | Pause | A clay slab 216 by 146 centred over the dimmed world, its buttons in the same column |
 | The fall | The same column over the washed world |
 | HUD, bottom centre | Hotbar, practice strip, pips, level, name of the thing in hand: centred on the stage, measured up from its bottom edge |
@@ -3189,17 +3189,20 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| V1 | text | 73 | 8 | 100 | 10 | "Worlds", salt with shadow |
-| V2 | well | 73 | 22 | 280 | 146 | dark well, the ground tile showing above and below it: rows 36 tall. At 2, 2 of each row the world's picture, 32 by 32 in a frame of root.0: the game's picture of the world's spawn once it has one, until then a cut through the ground the seed raises (meadow, snow or dunes; a flat sky in `arm`, the sun at the top left, turf lit where it faces up or left, two layers, a seam of `stone.pit`, `stone.dk` under it, a few trees). From x 38, line one the world's name in salt at y 7; line two in root.4 at y 19: "level 14, 12 November, seed 4471", the level first, since a long seed cut the level off when it came last. A list of words with no picture is a file list, not a list of worlds |
-| V3 | button | 73 | 176 | 136 | 20 | "Play"; disabled with no row chosen |
-| V4 | button | 217 | 176 | 136 | 20 | "New world" |
-| V5 | button | 73 | 200 | 136 | 20 | "Delete"; pressed once it reads "Delete for good"; if the world is open in another tab it reads "Open in another tab" and is disabled |
-| V6 | button | 217 | 200 | 136 | 20 | "Back" |
+| V1 | text | C | 12 | 100 | 10 | "Worlds", salt with shadow, on the ground tile above the well, at the left of the rows' column C (below) |
+| V2 | well | 8 | 32 | Vw - 16 | Vh - 84 | dark well across the screen's width less 8 on each side, from 32 under the top to 52 over the bottom, the ground tile showing above it and below it as the tradition's lists stand: its top edge and left edge `root.0`, its bottom and right edge the ground's light tone. A box 280 wide floating mid-screen with only its light edges showing read as a web panel. Rows 36 tall run the well's width, so the chosen row's lighter floor is a band across it; what a row holds stands in a column 280 wide centred in the well, whose left is C, the column of the buttons. At C + 2, 2 of each row the world's picture, 32 by 32 (V7). From C + 38, line one the world's name in salt at y 7; line two in root.4 at y 19: "level 14, 12 November, seed 4471", the level first, since a long seed cut the level off when it came last. A list of words with no picture is a file list, not a list of worlds |
+| V7 | picture | | | 32 | 32 | the game's picture of the world's spawn once it has one; until then a side cut of the spawn the seed raises, built of blocks 4 by 4 as the world is: a frame of root.0 with a light edge of root.3 along its top and left inside it; rows 1 to 12 a sky of two flat bands, `arm` over `arm.lt`, no sun; then each column of blocks, one cell to 4 units of the heightmap, at its own height (a walk of a block up, down or level, within three blocks of the sky); the top block turf, 1 unit of `growth.lt` over 1 of `growth` (snow: `salt` over `stone.lt`; dunes: `clay.lt` over `clay.face`), then earth in `timber.sh` (dunes `clay.face`) with one speck of `timber.dk` (`clay.sh`) to the block, then from the third block down stone in `stone.sh` with one speck of `stone.dk` to the block. The first picture, a flat sky with a sun dot over one wavy band, was the same clip-art composition on every row |
+| V3 | button | C | Vh - 48 | 136 | 20 | "Play"; disabled with no row chosen |
+| V4 | button | C + 144 | Vh - 48 | 136 | 20 | "New world" |
+| V5 | button | C | Vh - 24 | 136 | 20 | "Delete"; pressed once it reads "Delete for good"; if the world is open in another tab it reads "Open in another tab" and is disabled |
+| V6 | button | C + 144 | Vh - 24 | 136 | 20 | "Back" |
+
+These coordinates are in screen units, not the menu block's: C is `9 + floor((Vw - 18 - 280) / 2)`.
 
 - **Shows.** The worlds saved in this browser, newest first.
 - **Clickable.** A row chooses it, a second click plays it. The four buttons.
 - **Keys.** Up and Down choose, Enter plays, N makes a new one, Delete asks, Esc goes back.
-- **First.** The newest world is chosen and "Play" has focus. With no worlds the well is three rows deep (110 tall) and the ground tile shows under it down to the buttons, which do not move; its first row says at the left, where a world's name would stand, "No world yet" and under it "Press New world to start one.", both in root.4, and "New world" has focus. A large dark box with two centred lines in it was a web page's empty state. Any other empty list says its line the same way, at the left of its first row.
+- **First.** The newest world is chosen and "Play" has focus. With no worlds the well is three rows deep (110 tall), still from 32 under the top and across the screen's width, and the ground tile shows under it down to the buttons, which do not move; its first row says at C + 38, where a world's name would stand, "No world yet" and under it "Press New world to start one.", both in root.4, and "New world" has focus. A large dark box with two centred lines in it was a web page's empty state. Any other empty list says its line the same way, at the left of its first row.
 
 ### New world
 

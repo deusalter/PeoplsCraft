@@ -1,9 +1,9 @@
 // The world list (section 6, World list): the worlds saved in this browser in a well on the ground tile, four doors.
 import { worldPreview } from '../art/preview';
 import { cut } from '../font/wrap';
-import type { Screen } from '../node';
+import type { Screen, Ui } from '../node';
 import { button } from '../parts/button';
-import { groundMenu, line } from '../parts/menu';
+import { groundMenu, line, menuOrigin } from '../parts/menu';
 import { type RowSpec, well } from '../parts/well';
 import { WORLDS, type WorldRow } from '../sample/menus';
 import { firstFocus, go } from './books-common';
@@ -23,15 +23,30 @@ export interface WorldsView {
 }
 
 const ROW_H = 36;
+/** The column the rows' pictures and words stand in, as wide as the four buttons under the well. */
+const COL_W = 280;
 
-function row(w: WorldRow, i: number): RowSpec {
+/**
+ * The well runs the screen's width less 8 on each side, from 32 under the top to 52 over the bottom, with the ground
+ * tile showing above it (the title) and below it (the buttons), as the tradition's lists stand. Each row's picture and
+ * words stand in the column of the buttons, so the eye does not travel to the screen's edge to read a name.
+ */
+function frame(ui: Ui, any: boolean) {
+  const x = 8, y = 32, w = ui.w - 16;
+  const h = any ? ui.h - 52 - y : ROW_H * 3 + 2;
+  const inset = Math.max(0, Math.floor((w - 2 - COL_W) / 2));
+  return { x, y, w, h, inset, colX: x + 1 + inset };
+}
+
+function row(w: WorldRow, i: number, inset: number): RowSpec {
   return {
     id: `worlds.row.${i}`, name: w.name,
     body: (s, rw) => {
-      s.map(worldPreview(w.seed), 2, 2);
-      s.text(cut(w.name, rw - 44), 38, 7, 'salt', true);
+      const tw = Math.min(rw, inset + COL_W) - inset - 44;
+      s.map(worldPreview(w.seed), inset + 2, 2);
+      s.text(cut(w.name, tw), inset + 38, 7, 'salt', true);
       // The level first, since it is what tells one world from another and must not be the part a cut takes.
-      s.text(cut(`level ${w.level}, ${w.played}, seed ${w.seed}`, rw - 44), 38, 19, 'root.4', true);
+      s.text(cut(`level ${w.level}, ${w.played}, seed ${w.seed}`, tw), inset + 38, 19, 'root.4', true);
     },
   };
 }
@@ -41,18 +56,24 @@ export const worldsScreen: Screen<WorldsView> = (v, ui) => {
   firstFocus(ui, 'worlds', any ? 'worlds.play' : 'worlds.new');
   const w = v.worlds[v.chosen];
   const del = !w ? 'Delete' : w.openElsewhere ? 'Open in another tab' : v.asking ? 'Delete for good' : 'Delete';
+  const f = frame(ui, any);
+  const { dx, dy } = menuOrigin(ui);
+  // The table's parts stand in the menu's block; the well and the buttons stand by the screen's edges, so they are
+  // placed in screen units and handed to the block less its origin.
+  const by = ui.h - 48 - dy, bx = f.colX - dx;
   return groundMenu(ui, 'worlds', [
-    line({ x: 73, y: 8, w: 100, text: 'Worlds', c: 'salt', shadow: true }),
+    line({ x: f.colX - dx, y: 12 - dy, w: 100, text: 'Worlds', c: 'salt', shadow: true }),
     well({
       // With no world the well is three rows deep, and the ground shows under it down to the buttons, which stay put.
-      id: 'worlds.list', x: 73, y: 22, w: 280, h: any ? 146 : ROW_H * 3 + 2, host: 'ground', ui, rowH: ROW_H,
-      rows: v.worlds.map(row), chosen: any ? v.chosen : undefined, empty: 'No world yet', emptyHint: 'Press New world to start one.',
+      id: 'worlds.list', x: f.x - dx, y: f.y - dy, w: f.w, h: f.h, host: 'ground', ui, rowH: ROW_H,
+      rows: v.worlds.map((r, i) => row(r, i, f.inset)), chosen: any ? v.chosen : undefined,
+      empty: 'No world yet', emptyHint: 'Press New world to start one.', emptyX: f.inset + 38,
       onChoose: v.onChoose, onUse: v.onPlay,
     }),
-    button({ id: 'worlds.play', x: 73, y: 176, w: 136, label: 'Play', disabled: !w, onPress: () => v.onPlay(v.chosen) }),
-    button({ id: 'worlds.new', x: 217, y: 176, w: 136, label: 'New world', onPress: v.onNew }),
-    button({ id: 'worlds.delete', x: 73, y: 200, w: 136, label: del, disabled: !w || !!w.openElsewhere, onPress: () => v.onDelete(v.chosen) }),
-    button({ id: 'worlds.back', x: 217, y: 200, w: 136, label: 'Back', onPress: v.onBack }),
+    button({ id: 'worlds.play', x: bx, y: by, w: 136, label: 'Play', disabled: !w, onPress: () => v.onPlay(v.chosen) }),
+    button({ id: 'worlds.new', x: bx + 144, y: by, w: 136, label: 'New world', onPress: v.onNew }),
+    button({ id: 'worlds.delete', x: bx, y: by + 24, w: 136, label: del, disabled: !w || !!w.openElsewhere, onPress: () => v.onDelete(v.chosen) }),
+    button({ id: 'worlds.back', x: bx + 144, y: by + 24, w: 136, label: 'Back', onPress: v.onBack }),
   ], {
     on: {
       key: (e) => {
