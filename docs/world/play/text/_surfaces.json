@@ -360,7 +360,7 @@
    "voice": "sight",
    "limit": 60,
    "assign": "system",
-   "entries": 9
+   "entries": 20
   },
   "country.enter": {
    "about": "One line the first time the crew stands in a kind of country, under its name",
@@ -381,7 +381,7 @@
    "voice": "label",
    "limit": 40,
    "assign": "system",
-   "entries": 29
+   "entries": 31
   },
   "win": {
    "about": "Titles, buttons and hints in the windows",
@@ -423,7 +423,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 69
+   "entries": 75
   },
   "key": {
    "about": "What a control does, in the list of controls",
@@ -15147,6 +15147,36 @@
    ],
    "note": "the line of position and time of day under the compass; {h} is the hour and {mm} the minutes in two digits. The font has no middle dot: the code writes the line as the text gives it"
   },
+  "hud:dist.km": {
+   "surface": "hud",
+   "key": "dist.km",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 230,
+   "now": "{n} km",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the distance under the compass marker from 1000 on; {n} is the distance in thousands, with one decimal"
+  },
+  "hud:dist.m": {
+   "surface": "hud",
+   "key": "dist.m",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 230,
+   "now": "{n} m",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the distance under the compass marker, below 1000; {n} is a whole number"
+  },
   "hud:dodged": {
    "surface": "hud",
    "key": "dodged",
@@ -17603,6 +17633,42 @@
    "limit": 40,
    "assign": "system"
   },
+  "menu:preset.high": {
+   "surface": "menu",
+   "key": "preset.high",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 56,
+   "now": "high",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a button of the graphics preset, under menu:preset"
+  },
+  "menu:preset.low": {
+   "surface": "menu",
+   "key": "preset.low",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 56,
+   "now": "low",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a button of the graphics preset, under menu:preset"
+  },
+  "menu:preset.medium": {
+   "surface": "menu",
+   "key": "preset.medium",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 56,
+   "now": "medium",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "a button of the graphics preset, under menu:preset"
+  },
   "menu:quick_world": {
    "surface": "menu",
    "key": "quick_world",
@@ -17874,6 +17940,58 @@
    "voice": "label",
    "limit": 40,
    "assign": "system"
+  },
+  "menu:unit.chunks": {
+   "surface": "menu",
+   "key": "unit.chunks",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 69,
+   "now": "{n} chunks",
+   "voice": "label",
+   "limit": 20,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the value of the menu:render_distance slider; {n} is the distance in chunks"
+  },
+  "menu:unit.percent": {
+   "surface": "menu",
+   "key": "unit.percent",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 71,
+   "now": "{n}%",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the value of a slider given in hundredths: resolution scale, UI scale, the two volumes and screen shake",
+   "at": [
+    "src/ui/menus.ts:71",
+    "src/ui/menus.ts:82",
+    "src/ui/menus.ts:85",
+    "src/ui/menus.ts:86",
+    "src/ui/menus.ts:89"
+   ]
+  },
+  "menu:unit.times": {
+   "surface": "menu",
+   "key": "unit.times",
+   "needs": [],
+   "file": "src/ui/menus.ts",
+   "line": 72,
+   "now": "{n}x",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the value of the menu:filtering slider when it is on; {n} is 2, 4, 8 or 16. At 0 the slider shows menu:off"
   },
   "menu:vignette": {
    "surface": "menu",
@@ -18401,6 +18519,102 @@
     "{place}"
    ]
   },
+  "realm:dir.e": {
+   "surface": "realm",
+   "key": "dir.e",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "east",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
+  "realm:dir.n": {
+   "surface": "realm",
+   "key": "dir.n",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "north",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
+  "realm:dir.ne": {
+   "surface": "realm",
+   "key": "dir.ne",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "north-east",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
+  "realm:dir.nw": {
+   "surface": "realm",
+   "key": "dir.nw",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "north-west",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
+  "realm:dir.s": {
+   "surface": "realm",
+   "key": "dir.s",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "south",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
+  "realm:dir.se": {
+   "surface": "realm",
+   "key": "dir.se",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "south-east",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
+  "realm:dir.sw": {
+   "surface": "realm",
+   "key": "dir.sw",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "south-west",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
+  "realm:dir.w": {
+   "surface": "realm",
+   "key": "dir.w",
+   "needs": [],
+   "file": "src/ui/questView.ts",
+   "line": 43,
+   "now": "west",
+   "voice": "label",
+   "limit": 12,
+   "assign": "system",
+   "note": "the direction of the nearest stone, put into {direction} of realm:compass.altar"
+  },
   "realm:enter.1": {
    "surface": "realm",
    "key": "enter.1",
@@ -18426,6 +18640,48 @@
    "voice": "sight",
    "limit": 60,
    "assign": "system"
+  },
+  "realm:place.0": {
+   "surface": "realm",
+   "key": "place.0",
+   "needs": [
+    "dim:0"
+   ],
+   "file": "src/core/constants.ts",
+   "line": 22,
+   "now": "the living ground",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the name of the place from names.json, with its article in lower case, as it stands inside a sentence; it fills {place} of realm:compass.in (src/ui/questView.ts) and realm:cross.out (src/sim/travel.ts)"
+  },
+  "realm:place.1": {
+   "surface": "realm",
+   "key": "place.1",
+   "needs": [
+    "dim:1"
+   ],
+   "file": "src/core/constants.ts",
+   "line": 22,
+   "now": "the hollow",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the name of the place from names.json, with its article in lower case, as it stands inside a sentence; it fills {place} of realm:compass.in (src/ui/questView.ts) and realm:cross.out (src/sim/travel.ts)"
+  },
+  "realm:place.2": {
+   "surface": "realm",
+   "key": "place.2",
+   "needs": [
+    "dim:2"
+   ],
+   "file": "src/core/constants.ts",
+   "line": 22,
+   "now": "the islands",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the name of the place from names.json, with its article in lower case, as it stands inside a sentence; it fills {place} of realm:compass.in (src/ui/questView.ts) and realm:cross.out (src/sim/travel.ts)"
   },
   "realm:raising": {
    "surface": "realm",

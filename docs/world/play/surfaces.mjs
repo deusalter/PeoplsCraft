@@ -647,6 +647,13 @@ L('realm', 'raising', G, 'Raising the land');
 L('realm', 'compass.in', QV, 'In ${DIM_NAMES[dim]}', { now: 'In {place}', voice: 'label' });
 L('realm', 'compass.here', QV, 'You are here', { voice: 'label' });
 L('realm', 'compass.altar', QV, 'Nearest altar: ${Math.round(d)} m ${dir}', { now: 'Nearest altar: {n} m {direction}  ({x}, {z})', voice: 'label' });
+// the eight directions that fill {direction} of realm:compass.altar, in the order of the list in questView.ts
+for (const [k, now] of [['e', 'east'], ['se', 'south-east'], ['s', 'south'], ['sw', 'south-west'], ['w', 'west'], ['nw', 'north-west'], ['n', 'north'], ['ne', 'north-east']])
+  L('realm', 'dir.' + k, QV, "['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east']", { now, voice: 'label', limit: 12, note: 'the direction of the nearest stone, put into {direction} of realm:compass.altar' });
+// the three places as they stand inside a sentence: DIM_NAMES, which fills {place} of realm:compass.in and realm:cross.out
+for (const [n, now] of [[0, 'the living ground'], [1, 'the hollow'], [2, 'the islands']])
+  L('realm', 'place.' + n, 'src/core/constants.ts', "['the living ground', 'the hollow', 'the islands']", { now, needs: ['dim:' + n], voice: 'label', limit: 24,
+    note: 'the name of the place from names.json, with its article in lower case, as it stands inside a sentence; it fills {place} of realm:compass.in (src/ui/questView.ts) and realm:cross.out (src/sim/travel.ts)' });
 // ---- prompts ----
 L('prompt', 'offer', G, 'Right-click: offer the ${it.name}', { now: 'Right-click: offer the {item}' });
 L('prompt', 'needs_bait', G, 'Needs ${article(it.name)} ${it.name}', { now: 'Needs {a} {item}' });
@@ -668,6 +675,8 @@ L('hud', 'level', HUD, 'Lv ${st.level}', { now: 'Lv {n}' });
 L('hud', 'dodged', PLY, "'Dodged'", { now: 'Dodged', note: 'a word that floats up over a player when a blow does no harm' });
 L('hud', 'coords', HUD, 'X ${x}  Y ${y}  Z ${z}  ·  ${Math.floor(min / 60)}', { now: 'X {x}  Y {y}  Z {z}  ·  {h}:{mm}', voice: 'label',
   note: 'the line of position and time of day under the compass; {h} is the hour and {mm} the minutes in two digits. The font has no middle dot: the code writes the line as the text gives it' });
+L('hud', 'dist.m', HUD, "' m'", { now: '{n} m', limit: 16, note: 'the distance under the compass marker, below 1000; {n} is a whole number' });
+L('hud', 'dist.km', HUD, "' km'", { now: '{n} km', limit: 24, note: 'the distance under the compass marker from 1000 on; {n} is the distance in thousands, with one decimal' });
 // the eight points of the compass strip, in the order of COMPASS_NAMES (every other one is drawn small)
 for (const [k, now] of [['n', 'N'], ['ne', 'NE'], ['e', 'E'], ['se', 'SE'], ['s', 'S'], ['sw', 'SW'], ['w', 'W'], ['nw', 'NW']])
   L('hud', 'compass.' + k, HUD, "['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']", { now, limit: 3, note: 'a point of the compass strip at the top of the screen; one to three letters' });
@@ -784,6 +793,10 @@ for (const [k, text] of [['paused', 'PAUSED'], ['controls', 'CONTROLS'], ['setti
   ['shadows', 'Sun shadows'], ['tonemap', 'Tone mapping'], ['vignette', 'Vignette'], ['msaa', 'Anti-aliasing (MSAA)'], ['fxaa', 'Edge smoothing (FXAA)'], ['clouds', 'Clouds'], ['sway', 'Swaying foliage and waves'],
   ['adapt', 'Eye adaptation'], ['ui_scale', 'UI scale'], ['sensitivity', 'Mouse sensitivity'], ['sfx', 'Effects volume'], ['music', 'Music volume'], ['bob', 'View bobbing'], ['shake', 'Screen shake'],
   ['auto_jump', 'Auto-jump up single blocks'], ['auto_tool', 'Switch tools automatically'], ['fly_toggle', 'Double-tap Space to fly (creative)'], ['raw_mouse', 'Raw mouse input (no acceleration)']]) L('menu', k, MENU, `'${text}'`, { now: text, limit: 40 });
+for (const p of ['low', 'medium', 'high']) L('menu', 'preset.' + p, MENU, "['low', 'medium', 'high']", { now: p, limit: 12, note: 'a button of the graphics preset, under menu:preset' });
+L('menu', 'unit.chunks', MENU, "' chunks'", { now: '{n} chunks', limit: 20, note: 'the value of the menu:render_distance slider; {n} is the distance in chunks' });
+L('menu', 'unit.percent', MENU, "'%'", { now: '{n}%', limit: 12, note: 'the value of a slider given in hundredths: resolution scale, UI scale, the two volumes and screen shake' });
+L('menu', 'unit.times', MENU, "'x'", { now: '{n}x', limit: 12, note: 'the value of the menu:filtering slider when it is on; {n} is 2, 4, 8 or 16. At 0 the slider shows menu:off' });
 L('menu', 'ui_auto', MENU, 'Auto (${Math.round(autoUiScale() * 100)}%)', { now: 'Auto ({n}%)', limit: 20, note: 'the value of the menu:ui_scale slider at its leftmost stop: the size is chosen from the window, and {n} is that size in hundredths' });
 L('menu', 'world.line', MENU, 'seed ${w.seedText} · ${new Date(w.played).toLocaleDateString()} · level ${w.level}', { now: 'seed {seed} · {date} · level {n}', limit: 60 });
 L('menu', 'quick_world', MAIN, 'Quick world', { limit: 28 });
