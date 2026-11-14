@@ -11,6 +11,7 @@ import { slot } from '../parts/slot';
 import { well } from '../parts/well';
 import { ICONS as PICTURES } from '../sample/codex-icons';
 import { flag, pageRow } from '../parts/book';
+import { CREW } from '../sample/crew';
 import { type Sheet, ink, page, salt } from './common';
 
 export const booksSheet: Sheet = {
@@ -25,21 +26,29 @@ export const booksSheet: Sheet = {
       x: 0, y: 0, w: 304, h: 18 + Math.ceil(keys.length / perRow) * 18 + 6, ramp: 'clay', title: 'Pictures of the codex and the map',
       kids: keys.map((k, i) => slot({ id: `pic.${k}`, x: 8 + (i % perRow) * 18, y: 18 + Math.floor(i / perRow) * 18, ramp: 'clay', stack: { icon: k, n: 1 } })),
     }));
-    // The chart's marks: one's own arrow turned four ways in the seats' colours, an altar, a gate, the mouth.
+    // The chart's marks, one to a row with its name: one's own arrow turned four ways in the seats' colours, an altar, a
+    // gate, the mouth.
+    const markRow = (y: number, label: string, marks: Node[]): Node[] => [...marks, ink(marks.length > 1 ? 56 : 20, y, label)];
     kids.push(slab({
-      x: 307, y: 0, w: 167, h: 56, ramp: 'stone', title: 'Marks on the chart',
+      x: 307, y: 0, w: 167, h: 96, ramp: 'stone', title: 'Marks on the chart',
       kids: [
-        ...OWN_ARROW.map((m, i): Node => ({ x: 8 + i * 12, y: 20, w: 7, h: 7, paint: (s) => s.draw(m, 0, 0, { tint: SEATS[i] }) })),
-        { x: 60, y: 20, w: 7, h: 7, paint: (s) => s.map(ALTAR_MARK, 0, 0) },
-        { x: 72, y: 20, w: 7, h: 7, paint: (s) => s.map(GATE_MARK, 0, 0) },
-        { x: 84, y: 20, w: 7, h: 7, paint: (s) => s.map(MOUTH_MARK, 0, 0) },
-        ink(8, 34, 'Arrow, altar, gate, mouth', 'ink.faded'),
+        ...markRow(20, 'Arrows, by seat', OWN_ARROW.map((m, i): Node => ({ x: 8 + i * 12, y: 21, w: 7, h: 7, paint: (s) => s.draw(m, 0, 0, { tint: SEATS[i] }) }))),
+        ...markRow(34, 'Altar', [{ x: 8, y: 35, w: 7, h: 7, paint: (s) => s.map(ALTAR_MARK, 0, 0) }]),
+        ...markRow(48, 'Gate', [{ x: 8, y: 49, w: 7, h: 7, paint: (s) => s.map(GATE_MARK, 0, 0) }]),
+        ...markRow(62, 'Mouth', [{ x: 8, y: 63, w: 7, h: 7, paint: (s) => s.map(MOUTH_MARK, 0, 0) }]),
       ],
     }));
-    // The heads of the eight seats, for the tree's side tabs, in dark slots.
+    // The heads of the eight seats in dark slots, each with its player's handle in the seat's colour, from the one
+    // sample crew, so that a face can be checked against the player it stands for.
     kids.push(plate({
-      x: 307, y: 59, w: 167, h: 40,
-      kids: [salt(5, 3, 'Heads of the eight seats'), ...SEATS.map((_, i) => slot({ id: `head.${i}`, x: 5 + i * 18, y: 17, ramp: 'dark', stack: { icon: `head:${i + 1}`, n: 1 } }))],
+      x: 0, y: 208, w: 474, h: 54,
+      kids: [
+        salt(5, 3, 'Heads of the eight seats'),
+        ...CREW.flatMap((m, i): Node[] => {
+          const x = 5 + (i % 4) * 117, y = 15 + Math.floor(i / 4) * 18;
+          return [slot({ id: `head.${i}`, x, y, ramp: 'dark', stack: { icon: `head:${m.seat}`, n: 1 } }), salt(x + 22, y + 5, m.name, SEATS[m.seat - 1])];
+        }),
+      ],
     }));
     // Rows written on a page: chosen, hovered, focused and plain, with a player's flag; entry slots sunk in a page.
     const rows: Node[] = [
