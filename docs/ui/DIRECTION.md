@@ -3211,7 +3211,7 @@ These coordinates are in screen units, not the menu block's: C is `9 + floor((Vw
 - **Shows.** The worlds saved in this browser, newest first.
 - **Clickable.** A row chooses it, a second click plays it. The four buttons.
 - **Keys.** Up and Down choose, Enter plays, N makes a new one, Delete asks, Esc goes back.
-- **First.** The newest world is chosen and "Play" has focus. With no worlds the well is three rows deep (110 tall), still from 32 under the top and across the screen's width, and the ground tile shows under it down to the buttons, which do not move; its first row says at C + 38, where a world's name would stand, "No world yet" and under it "Press New world to start one.", both in root.4, and "New world" has focus. A large dark box with two centred lines in it was a web page's empty state. Any other empty list says its line the same way, at the left of its first row.
+- **First.** The newest world is chosen and "Play" has focus. With no worlds the well is one row deep (38 tall), still from 32 under the top and across the screen's width, and the ground tile shows under it down to the buttons, which do not move; three rows deep it was a dark box with two grey lines in its top corner. Its one row says at C + 38, where a world's name would stand, "No world yet" and under it "Press New world to start one.", both in root.4, and "New world" has focus. A large dark box with two centred lines in it was a web page's empty state. Any other empty list says its line the same way, at the left of its first row.
 
 ### New world
 

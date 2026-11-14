@@ -33,7 +33,9 @@ const COL_W = 280;
  */
 function frame(ui: Ui, any: boolean) {
   const x = 8, y = 32, w = ui.w - 16;
-  const h = any ? ui.h - 52 - y : ROW_H * 3 + 2;
+  // With no world the well is one row deep, the row that says so: three rows deep it was a dark box with two grey lines
+  // in its top corner.
+  const h = any ? ui.h - 52 - y : ROW_H + 2;
   const inset = Math.max(0, Math.floor((w - 2 - COL_W) / 2));
   return { x, y, w, h, inset, colX: x + 1 + inset };
 }
@@ -64,7 +66,7 @@ export const worldsScreen: Screen<WorldsView> = (v, ui) => {
   return groundMenu(ui, 'worlds', [
     line({ x: f.colX - dx, y: 12 - dy, w: 100, text: 'Worlds', c: 'salt', shadow: true }),
     well({
-      // With no world the well is three rows deep, and the ground shows under it down to the buttons, which stay put.
+      // With no world the ground shows under the one row down to the buttons, which stay put.
       id: 'worlds.list', x: f.x - dx, y: f.y - dy, w: f.w, h: f.h, host: 'ground', ui, rowH: ROW_H,
       rows: v.worlds.map((r, i) => row(r, i, f.inset)), chosen: any ? v.chosen : undefined,
       empty: 'No world yet', emptyHint: 'Press New world to start one.', emptyX: f.inset + 38,
