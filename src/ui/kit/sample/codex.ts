@@ -24,6 +24,8 @@ export interface Entry {
   uses?: boolean;
   /** For a creature, the four steps; for anything else, the paragraphs known of it. */
   steps: Steps | string[];
+  /** Not yet met, but seen by someone in the crew: one line of where, said on its page. */
+  hint?: string;
 }
 
 /** A spread of the codex: its heading, two lines said under its grid, and its entries. */
@@ -55,7 +57,7 @@ const KINDS: Entry[] = [
   c('mycelid_knight', 'Asikavak', hearth('sword mushroom'), undefined, []),
   c('glowmaw', 'Sagāl', hearth('a jackal'), undefined, []),
   c('umbral_moth', 'Salaha', hearth('a moth'), undefined, []),
-  c('rift_ray', 'Vihanga', hearth('a bird; sky-going'), undefined, []),
+  { ...c('rift_ray', 'Vihanga', hearth('a bird; sky-going'), undefined, []), hint: 'Found: under island rims' },
   c('aether_wisp', 'Kajjot', hearth('a firefly'), undefined, []),
   c('crag_bat', 'Jatu', hearth('a bat'), ['Pabbat', 'at night', 'Feather'], ['It hangs under an overhang.', 'Feather and hide.', 'It drops when a body passes beneath.']),
   c('shardling', 'Sakal', hearth('a chip, splinter'), undefined, []),

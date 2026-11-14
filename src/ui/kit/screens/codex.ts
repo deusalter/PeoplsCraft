@@ -55,21 +55,30 @@ function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolea
   else s.silhouette(e.icon, 1, 1, 'clay.dk', 'clay.dk');
 }
 
-/** The four steps (X9): a paragraph for each one known, one rule of `clay.sh` for each one not, cut at the page's foot. */
+const COUNT_WORDS = ['', 'One', 'Two', 'Three', 'Four'];
+
+/**
+ * The four steps (X9): a paragraph for each one known, cut at the page's foot, then, when any is not known, one line in
+ * faded ink that says how many are left to learn. A rule for each step not known stood for nothing written: empty
+ * lines on a form, ornament under the paragraphs.
+ */
 function steps(e: Entry, creature: boolean, top: number): Node {
   const H = PAGE_BOTTOM - PAGE_TEXT.top - top;
   return {
     x: 0, y: top, w: PW, h: H,
     paint: (s) => {
       let y = 0;
-      const n = creature ? 4 : Math.max(1, e.steps.length);
-      for (let i = 0; i < n && y + 10 <= H; i++) {
+      const n = creature ? 4 : e.steps.length;
+      let left = 0;
+      for (let i = 0; i < n; i++) {
         const t = e.steps[i];
-        if (!t) { s.fill(0, y + 5, PW, 1, 'clay.sh'); y += 10; continue; }
+        if (!t) { left++; continue; }
+        if (y + 10 > H) continue;
         const b = box(t, PW, Math.floor((H - y) / 10));
         for (const l of b.lines) s.text(l.text, 0, y + l.y, 'ink');
         y += b.h;
       }
+      if (left && y + 4 + 10 <= H) s.text(cut(`${COUNT_WORDS[left]} more to learn`, PW), 0, y + (y ? 4 : 0), 'ink.faded');
     },
   };
 }
@@ -138,6 +147,9 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
     }
   }
   y += Math.max(WELL, fy) + 4;
+  // A kind not yet met keeps its picture as the silhouette and its page bare, but for one line from the world once
+  // someone in the crew has seen it, so that the page says where to look.
+  if (!known && e.hint) kids.push(inkLine(0, y, PW, e.hint, 'ink.faded'));
   if (known && e.uses) {
     const u = uses(e.key);
     const row = (title: string, keys: string[]) => {
@@ -149,7 +161,6 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
     row('Made from', u.from);
   }
   if (known) kids.push(steps(e, creature, y));
-  else if (creature) kids.push(steps({ ...e, steps: [] }, true, y));
   return kids;
 }
 
