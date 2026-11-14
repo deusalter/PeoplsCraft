@@ -546,17 +546,18 @@ A slab 24 by 14:
 ```
 `. nothing  1 hi  2 lt  3 face  4 sh  6 pit  K root.0   (digits are tones of the host slab's ramp; shown in timber)`
 
-It is drawn as nine slices with corners 3 by 3. The face of clay and timber is flat: no grain, no speckle, no second tone. Stone is dressed, as the stance says, and so not the grey of a plain slab: its face carries a few **chisel marks**, lit from the top left. A mark is a pit: its walls that face down or right, turned from the light, are `sh`, and the lip it throws up on its far side is `lt`. There are two shapes, a chip 2 by 2 and a cut 3 by 1 with its lip under it:
+It is drawn as nine slices with corners 3 by 3. The face of clay and timber is flat: no grain, no speckle, no second tone. Stone is dressed, as the stance says, and so not the grey of a plain slab: its face has a few **pebbles** set in it, lit from the top left. A pebble stands proud of the face: `hi` at its top left corner, `lt` over the rest of its top, `sh` along its bottom and right where it throws its shade. There are two shapes, a round one 3 by 3 and a long one 4 by 3:
 
 ```
-     0     
-     01234 
-  0  44.444
-  1  42..22
+     0        
+     012345678
+  0  12...122.
+  1  224..2224
+  2  .44...444
 ```
-`. the face  2 lt  4 sh   (the chip at 0, 0; the cut at 3, 0)`
+`. the face  1 hi  2 lt  4 sh   (the round pebble at 0, 0; the long one at 5, 0)`
 
-The face from (3, 3) is cut into cells of 14 by 14. Each cell holds one mark or none (a little over half hold one), a cut in about a third of them and a chip in the rest, at a place within the cell fixed by a hash of the cell's column and row, so the marks have no row, column or rhythm and the same slab looks the same on every paint. A mark is drawn only where the whole of it stands 2 units clear of every part on the slab (slot, well, gauge, button, picture) and of every line of text, the title included, and 1 unit clear of the slab's edges. A mark never crosses a letter or touches a slot. An earlier tooling of light dashes in staggered courses was dropped: it read as wallpaper, and its dashes struck through the words they crossed.
+The face from (3, 3) is cut into cells of 24 by 24. Each cell holds one pebble or none (a little over half hold one), a long one in about a third of them and a round one in the rest, at a place within the cell fixed by a hash of the cell's column and row, so the pebbles have no row, column or rhythm and the same slab looks the same on every paint. A pebble is set only where the whole of it stands 3 units clear of every part on the slab (slot, well, gauge, button, picture), of every line of text, and of the slab's edges; the title's row is kept bare across the whole slab. A pebble never touches a letter or a slot. Chips of 2 by 2 and cuts of 3 by 1 in cells of 14, 2 units clear, came before: single specks fell beside the titles and between the slots and read as noise laid on for texture. An earlier tooling of light dashes in staggered courses was dropped too: it read as wallpaper, and its dashes struck through the words they crossed.
 
 | Slab | Ramp | Used for |
 | --- | --- | --- |
@@ -1447,7 +1448,7 @@ Life at a quarter or less: each pip moves one unit up or down, changing every fo
 
 ### 5.16 Hotbar and selector
 
-One sprite 182 by 22, not a dark plate with slots dropped in it. An outline of `root.0`, then nine raised cells of 20 at x 1 + 20i, y 1, each lit from the top left: a rim one unit deep of `stone.face` along its top and left and `stone.dk` along its bottom and right (the unit where they meet at the bottom left `stone.sh`), a frame of `root.0` one unit deep inside it, and a well of `stone.pit` 16 square at x 3 + 20i, y 3 that holds the icon, its count at the well's bottom right as in a slot. The selector is 24 by 24 at x -1 + 20i, y -1, over the chosen cell: a frame two deep, an outer ring of `root.0` with its four corner units left out and an inner ring of `salt`, open in the middle so the cell shows through; it overhangs the strip by one unit all round. The first three cells, the first chosen (the diagram's column `.` is x -1):
+One sprite 182 by 22, not a dark plate with slots dropped in it. An outline of `root.0`, then nine raised cells of 20 at x 1 + 20i, y 1, each lit from the top left: a rim one unit deep of `stone.face` along its top and left and `stone.dk` along its bottom and right (the unit where they meet at the bottom left `stone.sh`), a frame of `root.0` one unit deep inside it, and a well of `stone.pit` 16 square at x 3 + 20i, y 3 that holds the icon, sunk: a row and a column of `root.1` along its top and left where the rim shades it, and a row and a column of `stone.dk` along its bottom and right, its far walls lit (empty and flat, nine bare boxes read as a placeholder layout); its count at the well's bottom right as in a slot. The selector is 24 by 24 at x -1 + 20i, y -1, over the chosen cell: a frame two deep, an outer ring of `root.0` with its four corner units left out and an inner ring of `salt`, open in the middle so the cell shows through; it overhangs the strip by one unit all round. The first three cells, the first chosen (the diagram's column `.` is x -1):
 
 ```
       0         1         2         3         4         5         6     
@@ -1456,28 +1457,28 @@ One sprite 182 by 22, not a dark plate with slots dropped in it. An outline of `
   0  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
   1  KWHHHHHHHHHHHHHHHHHHHMWKHHHHHHHHHHHHHHHHHMHHHHHHHHHHHHHHHHHHHMHHHHH
   2  KWHKKKKKKKKKKKKKKKKKKMWKKKKKKKKKKKKKKKKKKMHKKKKKKKKKKKKKKKKKKMHKKKK
-  3  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
-  4  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
-  5  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
-  6  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
-  7  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
-  8  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
-  9  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 10  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 11  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 12  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 13  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 14  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 15  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 16  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 17  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
- 18  KWHKzzzzzzzzzzzzzzzzKMWKzzzzzzzzzzzzzzzzKMHKzzzzzzzzzzzzzzzzKMHKzzz
+  3  KWHKkkkkkkkkkkkkkkkkKMWKkkkkkkkkkkkkkkkkKMHKkkkkkkkkkkkkkkkkKMHKzzz
+  4  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+  5  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+  6  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+  7  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+  8  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+  9  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 10  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 11  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 12  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 13  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 14  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 15  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 16  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 17  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
+ 18  KWHKkMMMMMMMMMMMMMMMKMWKkMMMMMMMMMMMMMMMKMHKkMMMMMMMMMMMMMMMKMHKzzz
  19  KWHKKKKKKKKKKKKKKKKKKMWKKKKKKKKKKKKKKKKKKMHKKKKKKKKKKKKKKKKKKMHKKKK
  20  KWJMMMMMMMMMMMMMMMMMMMWKMMMMMMMMMMMMMMMMMMJMMMMMMMMMMMMMMMMMMMJMMMM
  21  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
  22  .KKKKKKKKKKKKKKKKKKKKKK............................................
 ```
-`. nothing  H stone.face  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
+`. nothing  H stone.face  J stone.sh  k root.1  K root.0  M stone.dk  W salt  z stone.pit`
 
 A thing that is cooling (a salve, the Recall Stone) has the cooling wash over its icon from the top down, a sixteenth of the time to the row.
 
@@ -1818,7 +1819,7 @@ A held stack is its icon centred on the pointer's place (at -8, -8) with its cou
 
 ### 5.23 Chat
 
-Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its wash ends left of the hotbar's column (x `cx - 91`, 1 unit clear), the newest line's bottom is 48 above the stage's bottom, level with the top of the hotbar's measures; where it reaches over that column it is 68 above, clear of the name of the thing in hand and the row of defence and lees. Under the lines lies one strip of the chat wash as wide as the column (the wrap plus 3), the same for every line whatever its length, so that chat reads as one plate and not as highlighted text (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, one space, the text in `salt`: the text starts 5 units after the colon's right edge (the face's gap and a space of 4). At 3 units the name, the colon and the first word ran together. A line from the server or the world (a bell rung, a thing that comes up, the answer to a command) has no name and no colon: the `{cairn}` mark, 2 units, then the text, all in `root.4`, so that it is never read as a player's line gone wrong. A line of the world about a great feeder ("Kankāl turns, throwing pale matter in spirals.") keeps the `{cairn}` and 2 units, then leads with the feeder's name in `blood.lt`, the boss strip's colour, a space, and the rest in `violet.lt`: in grey with only the cairn it read as a crew line with no name. The setting Chat width gives the column: Narrow 160, Middle 240, Wide 320, and text wraps at that less 3, or at half the stage less 64 when that is less, so that chat never reaches the prompt under the crosshair (Middle is therefore 179 wide on a stage 480 wide, x 4 to 183). At 144 a crew line wrapped into five rows and six lines filled half the screen's height while two thirds of its width stood empty; the tradition's own default is 320. A line that wraps continues 8 units in, two spaces' width, so that a wrapped row is not read as a new speaker (at 4, one space, it read as a stray space and not as a continuation). Only whole lines show: when the oldest line will not fit, all of it is left out. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, from 4 in to 100 short of the stage's right edge, over the hotbar, as the tradition puts it, and clear of the pickups' column and "Saved", which keep their place (lifted 14 over an entry of the stage's width less 8, the corner moved as chat opened; a cap at 320 was weighed and left: on a stage of 480 it still covers the hotbar, and a narrower entry cuts what is typed): 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
+Lines are 10 tall, newest lowest, at the left of the stage. Where chat with its wash ends 4 units left of the hotbar's column (x `cx - 91`), the newest line's bottom is 48 above the stage's bottom, level with the top of the hotbar's measures; where it would come closer or reach over that column it is 68 above (at 1 unit clear the chat's wash seemed to run into the pips and the hotbar), clear of the name of the thing in hand and the row of defence and lees. Under the lines lies one strip of the chat wash as wide as the column (the wrap plus 3), the same for every line whatever its length, so that chat reads as one plate and not as highlighted text (drawn opaque here); the text starts 1 in. A line from a player: their name in their colour, a colon in `root.4`, one space, the text in `salt`: the text starts 5 units after the colon's right edge (the face's gap and a space of 4). At 3 units the name, the colon and the first word ran together. A line from the server or the world (a bell rung, a thing that comes up, the answer to a command) has no name and no colon: the `{cairn}` mark, 2 units, then the text, all in `root.4`, so that it is never read as a player's line gone wrong. A line of the world about a great feeder ("Kankāl turns, throwing pale matter in spirals.") keeps the `{cairn}` and 2 units, then leads with the feeder's name in `blood.lt`, the boss strip's colour, a space, and the rest in `violet.lt`: in grey with only the cairn it read as a crew line with no name. The setting Chat width gives the column: Narrow 160, Middle 240, Wide 320, and text wraps at that less 3, or at half the stage less 64 when that is less, so that chat never reaches the prompt under the crosshair (Middle is therefore 179 wide on a stage 480 wide, x 4 to 183). At 144 a crew line wrapped into five rows and six lines filled half the screen's height while two thirds of its width stood empty; the tradition's own default is 320. A line that wraps continues 8 units in, two spaces' width, so that a wrapped row is not read as a new speaker (at 4, one space, it read as a stray space and not as a continuation). Only whole lines show: when the oldest line will not fit, all of it is left out. Closed, the last 8 lines show, fewer when the crew list stands above, and each leaves 8 s after it came. Open, 12 lines show in the same place and the wheel scrolls back; the entry stands along the bottom of the stage, 4 in and 2 above the bottom edge, from 4 in to 100 short of the stage's right edge, over the hotbar, as the tradition puts it, and clear of the pickups' column and "Saved", which keep their place (lifted 14 over an entry of the stage's width less 8, the corner moved as chat opened; a cap at 320 was weighed and left: on a stage of 480 it still covers the hotbar, and a narrower entry cuts what is typed): 14 tall, floor `root.0`, a frame of `root.3`, the text's cell at 4, 2, the caret as in a field. The diagram shows two lines and, under them, the entry's left end.
 
 ```
      0         1         2         3         4         5         6         7         8         9         0
@@ -1984,7 +1985,7 @@ Held open with Tab. A plain dark plate 288 wide, centred on the stage at y 30. I
 ```
 `. nothing  g root.4  h root.3  k root.1  K root.0  n growth.lt  W salt`
 
-The crew at the top left of the HUD is folded to heads: a column 12 wide, rows 15 tall, with no plate and no names: the head (5.25) at 1, +0 and under it a life strip 12 by 4 at 0, +10. The names are on the roster, held open with Tab. A HUD that wrote seven names, places and strips down the left took a fifth of the screen from the world. A friend who has fallen and not yet risen keeps the frame of their seat, but their face gives way to a skull of bone 7 by 7 on `root.1` inside it (`salt` at its top left, `clay.lt`, `clay.sh` at its bottom and right, sockets and nose of `root.0`), over an empty strip; the roster draws the same head. An empty strip alone told the fall only by the absence of red. A wider strip of ten cells with a number was weighed and left: the column is 12 wide so that the crew takes no width from the world, and the roster gives the rest.
+The crew at the top left of the HUD is folded to heads: a column 12 wide, rows 18 tall, with no plate and no names: the head (5.25) at 1, +1 inside an outline of `root.0` one unit round that follows its cut corners (12 by 12 with its own corners left out), and a life strip 12 by 4 at 0, +13, one clear unit under the outline. With the seat's ring straight against the sky, the pale rings of `cyan.lt` and `salt` vanished on a noon sky and the faces looked pasted on. The names are on the roster, held open with Tab. A HUD that wrote seven names, places and strips down the left took a fifth of the screen from the world. A friend who has fallen and not yet risen keeps the frame of their seat, but their face gives way to a skull of bone 7 by 7 on `root.1` inside it (`salt` at its top left, `clay.lt`, `clay.sh` at its bottom and right, sockets and nose of `root.0`), over an empty strip; the roster draws the same head. An empty strip alone told the fall only by the absence of red. A wider strip of ten cells with a number was weighed and left: the column is 12 wide so that the crew takes no width from the world, and the roster gives the rest.
 
 ### 5.25 Name tag, ping, compass marks
 
@@ -2043,7 +2044,7 @@ The crew at the top left of the HUD is folded to heads: a column 12 wide, rows 1
 
 ### 5.26 Compass strip
 
-A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3, a friend's head at y 1, lying over the plate's inner edges; one that lies outside the strip's span waits at that end. Under the plate, the text's cell at y 13, in the text face with shadow and in sentence case: "Night 3 of 8" at the right and, only while the setting Coordinates is on, the place as "x -104  y 64  z 2210" at the left, cut short of the night. Left half:
+A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units either side of the middle. N, E, S, W are letters in `salt` with no shadow. The four points halfway between them are ticks of `root.4` 6 tall at y 3, and the eight points between those are ticks 2 tall at y 5. Two marks of `salt`, 2 by 2, at x 90 on y 1 and y 9, show the heading. Marks ride on the strip at y 3, a friend's head at y 1, lying over the plate's inner edges; one that lies outside the strip's span waits at that end. A mark that would come within 3 units of a wind's letter stands aside from it, 3 clear, on the side its bearing lies: a friend's head drawn hard against the N merged with it. Under the plate, the text's cell at y 13, in the text face with shadow and in sentence case: "Night 3 of 8" at the right and, only while the setting Coordinates is on, the place as "x -104  y 64  z 2210" at the left, cut short of the night. Left half:
 
 ```
      0         1         2         3         4         5         6         7         8         9
@@ -2077,35 +2078,35 @@ A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units eith
 
 ### 5.27 Readout of what is looked at
 
-A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the top of the stage under the compass. A dark slot at 3, 3 with the icon of the block or creature; the name's cell at 24, 2; the second line at 24, 12. For a block the second line is worked out from the tool in hand: when it will break the block, its name and "will do" in `root.4` ("Iron pick will do"); only when it is too weak, what is needed in `blood.lt` ("Needs a Hīrak pick") with the 16 by 16 icon of the needed tool at 2 past the line's end, y 4, the plate widened to hold it. A townsperson's second line is their work in `root.4`. For a creature the second line is a thin strip of its life, 5 tall, as wide as the name. An icon drawn on this plate stands at least two ramp steps above `root.1`: a dark creature is drawn in `root.2` to `root.4`, never `root.1` to `root.3`.
+A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the top of the stage under the compass. A dark slot at 3, 3 with the icon of the block or creature; the name's cell at 24, 2; the second line at 24, 12. For a block the second line is worked out from the tool in hand: when it will break the block, a `{check}` in `growth.lt`, a space, then its name and "will do" in `salt` ("Iron pick will do", or "Breaks by hand"); when it is too weak, a `{cross}`, a space and what is needed, all in `blood.lt` ("Needs a Hīrak pick"), so that the yes and the no differ by their glyph as well as by their colour. In grey the yes read as a line that did not matter, the most useful line on the plate. A second icon of the needed tool after the line was dropped: it did not line up with the slot's icon and made the plate 18 wider than its words. A townsperson's second line is their work in `root.4`. For a creature the second line is a thin strip of its life, 5 tall, as wide as the name. An icon drawn on this plate stands at least two ramp steps above `root.1`: a dark creature is drawn in `root.2` to `root.4`, never `root.1` to `root.3`.
 
 ```
-     0         1         2         3         4         5         6         7         8         9         0         1     
-     01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345
-  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
-  1  KhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhK
-  2  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
-  3  KhkKKKKKKKKKKKKKKKKKkkkkWkkkWkWWWkkkkkkkkkkkWkkkkkkkkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
-  4  KhkKKKKKKKKKKKKKKKKKhkkkWKkkWKkKKKkkkkkkkkkkWKkkkkkkkWKKKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
-  5  KhkKKKKKKKKKKKKKKKKKhkkkWKkkWKkWkkWWWkWWWWkkWKkWkkkkkWKkkWKWWWkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
-  6  KhkKKKKKKKKKKKKKKKKKhkkkWWWWWKkWKkWKKKkKKKWkWKWkKkkkkWKkkWKWKKKWKKKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
-  7  KhkKKKKKKKKKKKKKKKKKhkkkWKKKWKkWKkWKkkkWWWWKWWkKkkkkkWKkkWKWKkkWWWWWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
-  8  KhkKKKKKKKKKKKKKKKKKhkkkWKkkWKkWKkWKkkWkKKWKWKWkkkkkkWKkkWKWKkkWKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
-  9  KhkKKKKKKKKKKKKKKKKKhkkkWKkkWKkWKkWKkkkWWWWKWKkWkkkkkkWWWWKWKkkkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 10  KhkKKKKKKKKKKKKKKKKKhkkkkKkkkKkkKkkKkkkkKKKKkKkkKkkkkkkKKKKkKkkkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 11  KhkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 12  KhkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
- 13  KhkKKKKKKKKKKKKKKKKKhkkkrkkkrkkkkkkkkkkkkkkkkkrkkkkkkkkkkkkkkkkkkkkkkkkkkrkkkkkkkkkkkkkkkkkkkkkkkkkkkrkkkkkkrkkkkkkK
- 14  KhkKKKKKKKKKKKKKKKKKhkkkrrkkrKkkkkkkkkkkkkkkkkrKkkkkkkkkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkkkkkkkkkkKkkkkkrKkkkkkK
- 15  KhkKKKKKKKKKKKKKKKKKhkkkrKrkrKrrrrkkrrrrkkrrrrrKkrrrkkkkkrrrrkkrrrrkkkkkkrkrrrkrrrrkkrrrrkkkkkkrrrrkkrkrrrrkrKkrkkkK
- 16  KhkKKKKKKKKKKKKKKKKKhkkkrKrKrKrKKKrkrKKKrkrKKKrKrkKKKkkkkkKKKrkrKKKrkkkkkrKrKKKrKKKrkrKKKrkkkkkrKKKrkrKrKKKKrKrkKkkK
- 17  KhkKKKKKKKKKKKKKKKKKhkkkrKkrrKrrrrrKrrrrrKrKkkrKkrrkkkkkkkrrrrKrKkkrKkkkkrKrKkkrKkkrKrKkkrKkkkkrKkkrKrKrKkkkrrkKkkkK
- 18  KhkKKKKKKKKKKKKKKKKKhkkkrKkkrKrKKKKKrKKKKKrKkkrKkkKrkkkkkrkKKrKrKkkrKkkkkrKrKkkrKkkrKrKkkrKkkkkrKkkrKrKrKkkkrKrkkkkK
- 19  KhkKKKKKKKKKKKKKKKKKhkkkrKkkrKkrrrrkkrrrrkkrrrrKrrrkKkkkkkrrrrKrKkkrKkkkkrKrKkkkrrrrKrKkkrKkkkkrrrrrKrKkrrrkrKkrkkkK
- 20  KhkkhhhhhhhhhhhhhhhhhkkkkKkkkKkkKKKKkkKKKKkkKKKKkKKKkkkkkkkKKKKkKkkkKkkkkkKkKkkkkKKKKkKkkkKkkkkrKKKKKkKkkKKKkKkkKkkK
- 21  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkrKkkkkkkkkkkkkkkkkkkK
- 22  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkK
- 23  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+     0         1         2         3         4         5         6         7         8         9         0         1         2
+     0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456
+  0  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+  1  KhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhK
+  2  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+  3  KhkKKKKKKKKKKKKKKKKKkkkkkkkWkkkkkkkWkkWkkkkkkkkkkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+  4  KhkKKKKKKKKKKKKKKKKKhkkkkkkWKkkkkkkWKkkKkWkkkkkkkWKKKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+  5  KhkKKKKKKKKKKKKKKKKKhkkkkkkWKWWWWkkWKkWkWWWWkkkkkWKkkWKWWWkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+  6  KhkKKKKKKKKKKKKKKKKKhkkkkkkWKkKKKWkWKkWKkWKKKkkkkWKkkWKWKKKWKKKWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+  7  KhkKKKKKKKKKKKKKKKKKhkkkkkkWKkWWWWKWKkWKkWKkkkkkkWKkkWKWKkkWWWWWKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+  8  KhkKKKKKKKKKKKKKKKKKhkkkWkkWKWkKKWKWKkWKkWKkkkkkkWKkkWKWKkkWKKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+  9  KhkKKKKKKKKKKKKKKKKKhkkkkWWWKkWWWWKWWkWKkkWWkkkkkkWWWWKWKkkkWWWWkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 10  KhkKKKKKKKKKKKKKKKKKhkkkkkKKKkkKKKKkKKkKkkkKKkkkkkkKKKKkKkkkkKKKKkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 11  KhkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 12  KhkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkK
+ 13  KhkKKKKKKKKKKKKKKKKKhkkkkkkkkkkkkkrkkkrkkkkkkkkkkkkkkkkkrkkkkkkkkkkkkkkkkkkkkrkkkrkrrrkkkkkkkkkkkrkkkkkkkkkkkkkkrkkkkkkrkkkkkkK
+ 14  KhkKKKKKKKKKKKKKKKKKhkkkrkkkrkkkkkrrkkrKkkkkkkkkkkkkkkkkrKkkkkkkkkkkkkkkkkkkkrKkkrKkKKKkkkkkkkkkkrKkkkkkkkkkkkkkkKkkkkkrKkkkkkK
+ 15  KhkKKKKKKKKKKKKKKKKKhkkkkrkrkKkkkkrKrkrKrrrrkkrrrrkkrrrrrKkrrrkkkkkrrrrkkkkkkrKkkrKkrkkrrrkrrrrkkrKkrkkkkkrrrrkkrkrrrrkrKkrkkkK
+ 16  KhkKKKKKKKKKKKKKKKKKhkkkkkrkKkkkkkrKrKrKrKKKrkrKKKrkrKKKrKrkKKKkkkkkKKKrkkkkkrrrrrKkrKkrKKKkKKKrkrKrkKkkkkrKKKrkrKrKKKKrKrkKkkK
+ 17  KhkKKKKKKKKKKKKKKKKKhkkkkrkrkkkkkkrKkrrKrrrrrKrrrrrKrKkkrKkrrkkkkkkkrrrrKkkkkrKKKrKkrKkrKkkkrrrrKrrkKkkkkkrKkkrKrKrKkkkrrkKkkkK
+ 18  KhkKKKKKKKKKKKKKKKKKhkkkrkKkrkkkkkrKkkrKrKKKKKrKKKKKrKkkrKkkKrkkkkkrkKKrKkkkkrKkkrKkrKkrKkkrkKKrKrKrkkkkkkrKkkrKrKrKkkkrKrkkkkK
+ 19  KhkKKKKKKKKKKKKKKKKKhkkkkKkkkKkkkkrKkkrKkrrrrkkrrrrkkrrrrKrrrkKkkkkkrrrrKkkkkrKkkrKkrKkrKkkkrrrrKrKkrkkkkkrrrrrKrKkrrrkrKkrkkkK
+ 20  KhkkhhhhhhhhhhhhhhhhhkkkkkkkkkkkkkkKkkkKkkKKKKkkKKKKkkKKKKkKKKkkkkkkkKKKKkkkkkKkkkKkkKkkKkkkkKKKKkKkkKkkkkrKKKKKkKkkKKKkKkkKkkK
+ 21  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkrKkkkkkkkkkkkkkkkkkkK
+ 22  KhkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkKkkkkkkkkkkkkkkkkkkK
+ 23  .KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
 `. nothing  h root.3  k root.1  K root.0  r blood.lt  W salt`
 
@@ -2261,7 +2262,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | H2 | text | 122 | 15 | 182 | 10 | under it, text face with shadow: "Night 3 of 8" at the right; the place as "x -104  y 64  z 2210" at the left only while the setting Coordinates is on (it is off at first) |
 | H3 | boss | 122 | 26 | 182 | 20 | boss bar: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it 12 below the first strip, at y 58. Two at most |
 | H4 | readout | 150 | 26 | 126 | 24 | what you look at; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
-| H5 | party | 4 | 4 | 12 | 105 | the crew folded to heads (5.24): one row 15 tall to each friend online, up to seven: the head 10 by 10, a life strip 12 by 4 under it; no names |
+| H5 | party | 4 | 4 | 12 | 125 | the crew folded to heads (5.24): one row 18 tall to each friend online, up to seven: the head 10 by 10 in its outline of `root.0`, a life strip 12 by 4 one clear unit under it; no names |
 | H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 20, from the right edge leftward, the time left under each in the small face |
 | H7 | toast | 263 | 82 | 160 | 32 | one toast, a clay slab 160 by 32 (42 when the second line wraps), sliding in from the right for 5 s. On this stage it would reach under the strips, so while a boss bar is up it starts 4 under the second strip, at y 82; otherwise 4 under the Guide's step, at y 48 |
 | H8 | tracker | 323 | 32 | 100 | 12 | the present step of the Guide folded to one line under the status frames, right-aligned: the step mark and the step in salt, the count in root.4 ("Smelt iron  2 of 3"), on one strip of the chat wash a unit wider than the text all round, no frame; the chapter and where to go are in the journal |
@@ -2274,7 +2275,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | H15 | text | 122 | 186 | 70 | 10 | second row, left: shield mark and defence, then the jar mark and lees carried |
 | H16 | pips | 223 | 187 | 81 | 9 | second row, right: ten arm pips, filling from the right |
 | H17 | pips | 122 | 198 | 81 | 9 | first row, left: ten life pips. No number stands beside them: the pips already say it, and the life's number is in the pack's body panel |
-| H18 | text | 205 | 197 | 17 | 10 | level, centred on x 213, growth.lt with shadow |
+| H18 | text | 205 | 198 | 17 | 10 | level, centred on x 213 in `growth.lt`, sitting on the practice strip as the tradition sets it: its figures end 2 above the strip, level with the feet of the pips, and each figure is ringed in `root.0` one unit round (the text drawn at the four steps left, right, up and down, then over them) and has no shadow. With a shadow, floating midway between the two pip rows, it read as a count of something and not as a level |
 | H19 | pips | 223 | 198 | 81 | 9 | first row, right: ten hunger pips, filling from the right |
 | H20 | strip | 122 | 209 | 182 | 5 | practice strip, thin, eighteen segments |
 | H21 | hotbar | 122 | 216 | 182 | 22 | hotbar; the selector overhangs it by one unit all round |

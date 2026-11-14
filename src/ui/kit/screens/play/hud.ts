@@ -7,7 +7,7 @@ import { type Colour, GRADES } from '../../palette';
 import { keycap } from '../../parts/keycap';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
-import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
+import { CHAT_WRAP, CREW_HEADS_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
 import { BODY_STATES } from '../../sample/states';
 import { CREW, SERVER, seat, strides } from '../../sample/crew';
@@ -17,14 +17,17 @@ import { type Stack, stackGrade, stackName, thing } from '../../sample/play-item
 const ORE_NEEDS: Record<string, string> = { iron_ore: 'stone_pickaxe', gold_ore: 'iron_pickaxe', lumenite_ore: 'iron_pickaxe', cindrite_ore: 'lumenite_pickaxe' };
 const PICKS = ['wood_pickaxe', 'stone_pickaxe', 'iron_pickaxe', 'lumenite_pickaxe'];
 
-/** The readout's second line for a block: the held pick's word when it will do, else the pick it needs in blood. */
-function oreLine(ore: string, held: string | null): { line: string; refusal: boolean; needs?: string } {
+/**
+ * The readout's second line for a block: the held pick's word when it will do, after a check, else the pick it needs
+ * in blood after a cross.
+ */
+function oreLine(ore: string, held: string | null): { line: string; refusal: boolean; able: boolean } {
   const need = ORE_NEEDS[ore];
-  if (!need) return { line: 'Breaks by hand', refusal: false };
+  if (!need) return { line: 'Breaks by hand', refusal: false, able: true };
   const have = held ? PICKS.indexOf(held) : -1;
   const name = (k: string) => thing(k).name.replace(/ Pick$/, ' pick');
-  if (have >= PICKS.indexOf(need)) return { line: `${name(held!)} will do`, refusal: false };
-  return { line: `Needs ${/^[AEIOUĀĪŪ]/.test(name(need)) ? 'an' : 'a'} ${name(need)}`, refusal: true, needs: thing(need).icon };
+  if (have >= PICKS.indexOf(need)) return { line: `${name(held!)} will do`, refusal: false, able: true };
+  return { line: `Needs ${/^[AEIOUĀĪŪ]/.test(name(need)) ? 'an' : 'a'} ${name(need)}`, refusal: true, able: false };
 }
 import { STILL } from './common';
 
@@ -108,12 +111,13 @@ export function tracker(right: number, y: number, step: string, have: string): N
 export function chatWrap(stageW: number): number { return Math.min(CHAT_WRAP, Math.floor(stageW / 2) - 64); }
 
 /**
- * The bottom of the newest chat line. When chat with its wash ends left of the hotbar's column, it comes down to 48
+ * The bottom of the newest chat line. When chat with its wash ends 4 left of the hotbar's column, it comes down to 48
  * above the stage's bottom, level with the top of the hotbar's measures; when it reaches over that column it stands
  * 68 above, clear of the name of the thing in hand.
  */
 export function chatBottom(stageW: number, stageH: number): number {
-  const clear = 4 + chatWrap(stageW) + 3 <= Math.floor(stageW / 2) - 91 - 1;
+  // 4 clear of the hotbar's column: at 1 the chat's wash seemed to run into the pips and the hotbar.
+  const clear = 4 + chatWrap(stageW) + 3 <= Math.floor(stageW / 2) - 91 - 4;
   return stageH - (clear ? 48 : 68);
 }
 
@@ -190,7 +194,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   }
 
   if (o.chat === true && !first) {
-    const top = showCrew ? lowY + friends.length * CREW_ROW + 2 : 4;
+    const top = showCrew ? lowY + friends.length * CREW_HEADS_ROW + 1 : 4;
     out.push(chat({ x: L(4), bottom: chatBottom(W, H), lines: CHAT, wrap: chatWrap(W), most: Math.floor((chatBottom(W, H) - top) / 10) }));
   }
 
@@ -208,7 +212,16 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   out.push(pips({ x: L(cx + 10), y: H - 53, kind: 'arm', now: arm[0], max: arm[1], fromRight: true }));
   out.push(pips({ x: L(cx - 91), y: H - 42, kind: 'life', now: life[0], max: life[1], mending: !first && !STILL }));
   const level = first ? '1' : '14';
-  out.push({ x: L(cx - Math.floor(measure(level) / 2)), y: H - 43, w: measure(level) + 1, h: 11, paint: (s) => { s.text(level, 0, 0, 'growth.lt', true); } });
+  // The level sits on the practice strip as the tradition sets it: its figures end 2 above the strip, level with the
+  // feet of the pips, and each is ringed in root.0 so that it reads as the strip's number and not as a count beside them.
+  const lw = measure(level);
+  out.push({
+    x: L(cx - Math.floor(lw / 2)) - 1, y: H - 42, w: lw + 2, h: 10,
+    paint: (s) => {
+      for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) s.text(level, dx, dy, 'root.0');
+      s.text(level, 1, 1, 'growth.lt');
+    },
+  });
   out.push(pips({ x: L(cx + 10), y: H - 42, kind: 'hunger', now: hunger[0], max: hunger[1], fromRight: true }));
   out.push(strip({ x: L(cx - 91), y: H - 31, w: 182, f: first ? 0 : 320 / 900, tones: ['growth.lt', 'growth', 'growth.dk'], segments: 18, thin: true }));
   out.push(hotbar({
