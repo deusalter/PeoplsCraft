@@ -31,13 +31,13 @@ export const bookSheet: Sheet = {
       ],
       prev: () => {}, next: () => {},
       force: { next: { hover: true } },
-      left: [pageHeading({ x: 0, y: 0, w: 126, text: 'The kiln row' }), para(0, 16, TEXT_L, 8), whereLine(0, 108, 126, 'The kiln row: 40 m west')],
+      left: [pageHeading({ x: 0, y: 0, w: 126, text: 'Kilns on the Yavas' }), para(0, 16, TEXT_L, 8), whereLine(0, 108, 126, "Kammār's anvil: 40 m west")],
       right: [
         pageHeading({ x: 0, y: 0, w: 126, text: 'Bounties' }),
         slot({ id: 'b.0', x: 0, y: 16, ramp: 'clay', stack: { icon: 'ore', n: 20 } }),
-        ink(22, 21, 'Twenty of ore'),
-        slot({ id: 'b.1', x: 0, y: 36, ramp: 'clay', stack: { icon: 'haunch', n: 4 } }),
-        ink(22, 41, 'Four haunches', 'ink'),
+        ink(22, 21, 'Twenty iron ore'),
+        slot({ id: 'b.1', x: 0, y: 36, ramp: 'clay', stack: { icon: 'haunch', n: 8 } }),
+        ink(22, 41, 'Eight raw meat', 'ink'),
         slot({ id: 'b.2', x: 0, y: 56, ramp: 'clay', missing: 'crystal' }),
         ink(22, 61, 'Not yet seen', 'ink.faded'),
         ink(0, 82, 'Can be paid', 'growth.dk'),
@@ -60,7 +60,7 @@ export const bookSheet: Sheet = {
     }));
     kids.push(salt(296, 196, 'Square, cut and spiked:'));
     kids.push(salt(296, 208, 'locked, open, earned'));
-    kids.push(titleMark({ cx: 113, y: 206 }));
+    kids.push(titleMark({ cx: 113, y: 214 }));
     kids.push(salt(4, 252, 'The title mark'));
     kids.push({ x: 232, y: 228, w: 64, h: 32, paint: (s) => s.tile(GROUND, 0, 0, 64, 32) });
     kids.push(salt(300, 236, 'Ground tile'));
