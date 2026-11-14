@@ -80,7 +80,7 @@ function focusWedge(s: Surface, x: number, y: number, c: Colour, shadow: boolean
  * A small button inside a window, in the ramp of the slab it stands on (5.6): a raised piece of that slab, `hi` on its
  * first row and column, `dk` (`pit` on timber) on its last, the label in ink. One dark unit and not two, so that the
  * descenders of a 14-tall button end on face and not on its edge. Hovered, its face lightens to `lt`; pressed, the
- * bevel turns over; disabled, it is a flat `sh` with the label faded. A door that loses something has its label in
+ * bevel turns over; disabled, it is a flat `sh` with the label faded on clay and salt on stone and timber. A door that loses something has its label in
  * blood.dk, the refusal's tone on a light face.
  */
 function paintSlabButton(s: Surface, w: number, h: number, label: string, live: Live, disabled: boolean, ramp: Ramp, warn = false): void {
@@ -97,7 +97,10 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
     bevel(s, w, h, tone(ramp, 'hi'), null, tone(ramp, live.hover ? 'lt' : 'face'), tone(ramp, ramp === 'timber' ? 'pit' : 'dk'), null);
   }
   const t = cut(label, w - 4);
-  if (t) s.text(t, centreX(t, 0, w) + drop, Math.floor((h - 9) / 2) + drop, disabled ? 'ink.faded' : warn ? 'blood.dk' : 'ink');
+  // Disabled on stone or timber the label is salt on the flat dark face, as the tradition writes a disabled button:
+  // faded ink on `stone.sh` stood at 1.8 to 1 and could not be read. On clay faded ink still reads.
+  const off: Colour = ramp === 'clay' ? 'ink.faded' : 'salt';
+  if (t) s.text(t, centreX(t, 0, w) + drop, Math.floor((h - 9) / 2) + drop, disabled ? off : warn ? 'blood.dk' : 'ink');
 }
 
 /**

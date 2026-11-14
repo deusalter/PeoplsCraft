@@ -283,6 +283,12 @@ function paintStore(s: Surface, v: MapView): void {
   s.map(HEADS[STORE.at.seat - 1], u - 5, w - 5);
 }
 
+/** The disabled Travel's words while the way cools: the crossing, that it cools, and the time, cut to the crossing alone when long. */
+function waitLabel(crossing: string, left: number): string {
+  const full = `${crossing} cooling, ${clock(left)}`;
+  return measure(full) <= LIST_W - 4 ? full : `Cooling, ${clock(left)}`;
+}
+
 /** A zoom button's tooltip, which says why it stands grey when the chart can go no closer or no farther. */
 const zoomTip = (text: string) => (live: { hover: boolean }): Tip | null => (live.hover ? { lines: [{ text, c: 'salt' }], delay: 0.4 } : null);
 
@@ -365,8 +371,8 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
   if (here === v.places.length) group(0, here, 'Crew', 'Places');
   else { group(0, here, null, null); header('Elsewhere'); group(here, v.places.length, null, null); }
   const cooling = place?.cooling !== undefined;
-  // The wait is written in the disabled button itself, so the reason Travel is shut stands where the eye goes; the
-  // screen is built again each time the shown second changes.
+  // The wait and its reason are written once, in the disabled button itself, where the eye goes; the screen is built
+  // again each time the shown second changes.
   const builtLeft = cooling ? Math.max(0, Math.ceil(v.cooling(ui.t))) : 0;
   const builtOpen = cooling && builtLeft <= 0;
   const kids: Node[] = [
@@ -393,17 +399,21 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
         if (i < here) v.onPan(v.places[i].x, v.places[i].z);
       },
     }),
-    button({ id: 'map.travel', x: LIST_X, y: 152, w: LIST_W, h: 16, ramp: 'stone', label: builtLeft > 0 ? `Travel in ${clock(builtLeft)}` : 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
+    button({ id: 'map.travel', x: LIST_X, y: 152, w: LIST_W, h: 16, ramp: 'stone', label: builtLeft > 0 ? waitLabel(place!.crossing, builtLeft) : 'Travel', disabled: !builtOpen, onPress: () => place && v.onTravel(place) }),
     {
       x: LIST_X, y: 172, w: LIST_W, h: 30, anim: cooling,
       paint: (s) => {
         if (!place) return;
         const left = Math.max(0, Math.ceil(v.cooling(ui.t)));
         if (cooling && left !== builtLeft) ui.invalidate();
-        // A place in the store is told by the chart beside it; how far and which way is said of the living ground only.
+        // Under Travel, where it would take one; the wait is said once, in the button. A place in the store is told by
+        // the chart beside it; how far and which way is said of the living ground only.
         const local = v.here !== undefined && v.chosen < v.here;
-        const t = !cooling ? (local || place.kind === 'self' ? `${place.crossing}.` : `${place.crossing}. ${way(place)}`) : left > 0 ? `${place.crossing} cooling` : `${place.crossing}, ready`;
-        for (const l of box(t, LIST_W, 3).lines) s.text(l.text, 0, l.y, !cooling ? 'ink' : left <= 0 ? 'growth.dk' : 'ink.faded');
+        const to = cooling ? `${place.crossing} to ${place.name}` : place.crossing;
+        // How far stands on a line of its own, so that a wrap never parts a count from its "m".
+        const b = box(local || place.kind === 'self' ? `${to}.` : to, LIST_W, 2);
+        for (const l of b.lines) s.text(l.text, 0, l.y, 'ink');
+        if (!local && place.kind !== 'self') s.text(cut(way(place), LIST_W), 0, b.lines.length * 10, 'ink');
       },
     },
     {
