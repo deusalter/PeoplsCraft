@@ -7,6 +7,8 @@ import { titleMark } from '../parts/keycap';
 import { groundMenu, line } from '../parts/menu';
 import { LOADING_STEPS } from '../sample/menus';
 import { HERE } from '../sample/crew';
+import { measure } from '../font/measure';
+import { cut } from '../font/wrap';
 import { go } from './books-common';
 import type { NamedScreen } from './index';
 
@@ -15,6 +17,8 @@ export interface LoadingView {
   done(t: number): number;
   /** What is being done. */
   doing(t: number): string;
+  /** Which stage that is, from 1, and how many there are, so that a long stall reads as a stage that is slow. */
+  stage(t: number): [n: number, of: number];
   /** On a server, how many are there. */
   here?: string;
   onGiveUp(): void;
@@ -42,12 +46,19 @@ export const loadingScreen: Screen<LoadingView> = (v, ui) => {
       },
     },
     {
+      // The stage in salt and its count after it in grey, centred as one line.
       x: 113, y: LINE_Y, w: 201, h: 11, anim: true,
       paint: (s, live) => {
-        const said = v.here ? `${v.doing(live.t)}, ${v.here}` : v.doing(live.t);
-        line({ x: 0, y: 0, w: 200, text: said, c: 'salt', shadow: true, centre: true }).paint!(s, live);
+        const [n, of] = v.stage(live.t);
+        const count = `  ${n} of ${of}`;
+        const doing = cut(v.doing(live.t), 200 - measure(count));
+        const x = Math.floor((200 - measure(doing) - measure(count)) / 2);
+        s.text(doing, x, 0, 'salt', true);
+        s.text(count, x + measure(doing), 0, 'root.4', true);
       },
     },
+    // On a server, how many are there: a fact of its own, on its own line 12 under the stage.
+    ...(v.here ? [line({ x: 113, y: LINE_Y + 12, w: 200, text: v.here, c: 'root.4', shadow: true, centre: true })] : []),
   ], { on: { key: (e) => { if (e.key === 'Escape') { v.onGiveUp(); return true; } } } });
 };
 
@@ -58,6 +69,7 @@ const stepAt = (t: number) => Math.min(LOADING_STEPS.length - 1, Math.floor(samp
 const view = (here?: string): LoadingView => ({
   done: sampleDone,
   doing: (t) => LOADING_STEPS[stepAt(t)],
+  stage: (t) => [stepAt(t) + 1, LOADING_STEPS.length],
   here,
   onGiveUp: () => go('title'),
 });

@@ -3619,9 +3619,10 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | I1 | logo | 103 | 60 | 221 | 32 | the title mark |
 | I2 | gauge | 119 | 109 | 188 | 11 | a dark well sunk in the tile (5.8) with, 3 in, the HUD's thin strip (5.15), 182 by 5, 20 under the mark: eighteen segments, each root.2 when empty and, as it fills unit by unit, ember with a top row of ember.lt and a bottom row of ember.dk; it never runs back |
-| I3 | text | 113 | 123 | 200 | 10 | one line, centred, 6 under the strip, salt with its shadow: what is being done ("Laying the ground", "Coming up") |
+| I3 | text | 113 | 123 | 200 | 10 | one line, centred, 6 under the strip, with its shadow: what is being done in salt ("Laying the ground", "Coming up"), then two spaces and which stage it is of how many in `root.4`, the less important line on dark ("2 of 4"), so that a long stall reads as one slow stage and not a hang. `grit.lt` was asked for and is kept for the pebbles of a button |
+| I4 | text | 113 | 135 | 200 | 10 | on a server only, how many are there ("7 of 8 here"), centred in `root.4` with its shadow, 12 under the stage. Written after the stage on one line, it joined two facts that have nothing to do with each other |
 
-- **Shows.** The mark, a strip and one line. On a server the line also says how many are there. A picture of what was being raised once stood alone between the mark and the strip, tied to neither, and was dropped.
+- **Shows.** The mark, a strip and one line. On a server a second line says how many are there. A picture of what was being raised once stood alone between the mark and the strip, tied to neither, and was dropped.
 - **Clickable.** Nothing.
 - **Keys.** Esc gives up a join and goes back to the title.
 - **First.** Nothing has focus.
