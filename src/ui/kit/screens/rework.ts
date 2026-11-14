@@ -120,7 +120,7 @@ function build(ui: Ui): Node {
         };
       },
     }),
-    button({ id: 'rework.work', x: 94, y: 43, w: 60, h: 14, ramp: 'stone', label: 'Work it', disabled: !can || st.working >= 0, onPress: () => work(st, ui) }),
+    button({ id: 'rework.work', x: 128, y: 43, w: 40, h: 14, ramp: 'stone', label: 'Work it', disabled: !can || st.working >= 0, onPress: () => work(st, ui) }),
     // What a working takes and what it gives, written under the button so that it is weighed before it is pressed.
     ...[
       { text: cost(h), c: 'ink' as const, y: 59 },

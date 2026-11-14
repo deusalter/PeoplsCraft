@@ -3018,8 +3018,8 @@ Size 176 by 166. Material: stone. Anchor: centre of the screen.
 #      |Q4  |==|Q2  |==|Q5  |     ==Q8=>        | Q9    |  #
 #      '----'  '----'  '----'                   |       |  #
 #               +--+                            '-------'  #
-#               |Q6|                +------------------+   #
-#               +--+                +-Q10 button-------+   #
+#               |Q6|                            +---------+#
+#               +--+                            +-Q10-----+#
 #              .----.                                      #
 #              |Q7  |                                      #
 #              '----'                                      #
@@ -3055,7 +3055,7 @@ Size 176 by 166. Material: stone. Anchor: centre of the screen.
 | Q7 | slots | 21 | 53 | 18 | 18 | fuel |
 | Q8 | arrow | 97 | 19 | 22 | 15 | progress arrow, on the row it reads from |
 | Q9 | bigslot | 128 | 13 | 26 | 26 | the piece as it comes out |
-| Q10 | button | 94 | 43 | 60 | 14 | "Work it", right-aligned with the result; disabled until piece, bar and fuel are in |
+| Q10 | button | 128 | 43 | 40 | 14 | "Work it", 4 under the result and left-aligned with it, its right edge on the title margin at 168; disabled until piece, bar and fuel are in. Wider and right-aligned with the result, its left edge stood under nothing |
 | Q15 | text | 47 | 59 | | 20 | what a working takes and gives, under the remains, so that it is weighed before "Work it" is pressed: "Costs 1 Iron Bar, 1 Coal" (the bar the piece's metal asks for, the fuel laid in) in ink, and 10 under it "Rolls a new modifier" in ink.faded |
 | Q11 | text | 8 | 73 | 40 | 10 | "Pack" |
 | Q12 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
