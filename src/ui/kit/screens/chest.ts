@@ -1,5 +1,6 @@
 // The chest (section 6): twenty-seven slots of timber over the pack, and the buttons that move whole kinds at once.
 import type { Node, Ui } from '../node';
+import { measure } from '../font/measure';
 import { button } from '../parts/button';
 import { slab } from '../parts/slab';
 import { Bench, overWorld, packBlock, place, small, stackGrid } from './play/common';
@@ -33,6 +34,7 @@ function sample(): Hand {
 
 /** The side panel: two small buttons 46 by 14, 4 in from its edges and 2 apart, so each says what it does in words. */
 const PANEL_W = 54, PANEL_H = 38;
+const SORT_W = measure('Sort chest') + 10;
 
 let hand: Hand | null = null;
 let bench: Bench | null = null;
@@ -54,7 +56,7 @@ function build(ui: Ui, title: string): Node {
   const b = bench, h = hand;
   const win = place(ui, 176 + PANEL_W - 1, 172);
   const kids: Node[] = [
-    small('chest.sort', 138, 3, 30, 'Sort', () => { h.sort('chest'); b.after(); }, 'timber'),
+    small('chest.sort', 168 - SORT_W, 3, SORT_W, 'Sort chest', () => { h.sort('chest'); b.after(); }, 'timber'),
     stackGrid(b, { store: 'chest', x: 8, y: 18, cols: 9, rows: 3, ramp: 'timber' }),
     ...packBlock(b, 'timber', 76, 88),
   ];
@@ -68,7 +70,7 @@ function build(ui: Ui, title: string): Node {
       button({ id: 'chest.stash', x: 4, y: 20, w: 46, h: 14, ramp: 'timber', label: 'Stash', tip: says('Stash', 'Every kind the chest already holds'), onPress: () => { stash(h); b.after(); } }),
     ],
   });
-  return overWorld(ui, win, [slab({ x: 0, y: 0, w: 176, h: 172, ramp: 'timber', title, titleRoom: 40, kids }), panel], {
+  return overWorld(ui, win, [slab({ x: 0, y: 0, w: 176, h: 172, ramp: 'timber', title, titleRoom: SORT_W + 4, kids }), panel], {
     outside: () => { h.dropHeld(); b.after(); },
   });
 }

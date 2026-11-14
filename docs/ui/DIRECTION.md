@@ -2450,10 +2450,10 @@ Size 229 by 172: the slab 176 by 172 and a panel 54 by 38 fastened to its right 
 | P0 | panel | 175 | 17 | 54 | 38 | a timber panel fastened to the slab's right side beside the chest's slots, sharing its outline column |
 | C2 | button | 179 | 21 | 46 | 14 | "Take all", a small timber button with its word on it; its tooltip adds "Into the pack, then the hotbar". Two bare arrows did not say which one emptied the chest and which filled it |
 | C3 | button | 179 | 37 | 46 | 14 | "Stash", 2 under C2: moves out of the pack every kind the chest already holds, as its tooltip says. It is not "Store all": a chest that takes only what it already holds keeps the pack's tools out of it |
-| C4 | button | 138 | 3 | 30 | 12 | "Sort" the chest, the only button in the title row, its right edge 8 in |
+| C4 | button | 107 | 3 | 61 | 12 | "Sort chest", the only button in the title row, its right edge 8 in. Two buttons both called "Sort", 70 apart, were told apart only by where they stood |
 | C5 | slots | 8 | 18 | 162 | 54 | the chest, nine by three |
 | C6 | text | 8 | 76 | 40 | 10 | "Pack" |
-| C7 | button | 138 | 73 | 30 | 12 | "Sort" the pack |
+| C7 | button | 112 | 73 | 56 | 12 | "Sort pack", its right edge 8 in; every station that shows the pack under its own slots names this button the same way |
 | C8 | slots | 8 | 88 | 162 | 54 | the pack, nine by three |
 | C9 | slots | 8 | 146 | 162 | 18 | the hotbar row, four units below the pack |
 
@@ -2509,7 +2509,7 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | B3 | arrow | 91 | 36 | 22 | 15 | progress arrow |
 | B4 | bigslot | 122 | 31 | 26 | 26 | the result, in the large slot (icon at 127, 36) |
 | B5 | text | 8 | 73 | 40 | 10 | "Pack" |
-| B6 | button | 138 | 70 | 30 | 12 | "Sort" |
+| B6 | button | 112 | 70 | 56 | 12 | "Sort pack" |
 | B7 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | B8 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | R0 | slab | 175 | 0 | 116 | 166 | recipe panel, fastened to the right side and sharing the outline column |
@@ -2575,7 +2575,7 @@ Size 176 by 166. Material: timber. Anchor: centre of the screen.
 | J7 | arrow | 108 | 37 | 22 | 15 | progress arrow |
 | J8 | bigslot | 136 | 31 | 26 | 26 | the joined piece |
 | J9 | text | 8 | 73 | 40 | 10 | "Pack" |
-| J10 | button | 138 | 70 | 30 | 12 | "Sort" |
+| J10 | button | 112 | 70 | 56 | 12 | "Sort pack" |
 | J11 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | J12 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 
@@ -2632,7 +2632,7 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | F6b | text | 92 | 60 | 60 | 10 | "Needs fuel" in `ink.faded`, beside the fuel slot and under the arrow, while there is ore to work and room for it but no fire and no fuel; nothing else on the slab says why nothing happens |
 | F7 | bigslot | 128 | 33 | 26 | 26 | what comes out |
 | F8 | text | 8 | 73 | 40 | 10 | "Pack" |
-| F9 | button | 138 | 70 | 30 | 12 | "Sort" |
+| F9 | button | 112 | 70 | 56 | 12 | "Sort pack" |
 | F10 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | F11 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | L0 | slab | 175 | 0 | 116 | 166 | side panel, fastened right |
@@ -2759,7 +2759,7 @@ Size 176 by 227, with two tabs standing 21 out of its left edge. Material: clay.
 | H4 | well | 8 | 18 | 160 | 92 | dark well of five list rows 18 tall, scroll track at its right: icon, name in the colour of its grade, then how many one press brings in root.4 when more than one ("Barbed Arrow ×8", the price being for the lot), price right-aligned with the same mark as H2. Under Sell each row is a thing sold this visit at what was paid for it, its price led by `{back}`; with nothing sold the well says "Nothing sold yet. Shift {lmb} a thing in the pack to sell it." in root.4. A grey heading row among the goods read as a thing that could not be bought |
 | H3 | text | 8 | 113 | 160 | 10 | what a press does, in ink.faded with the mouse marks: under Buy "{lmb} buy one   Shift {lmb} buy ten", under Sell "Shift {lmb} in the pack sells". With no line and no button, pressing a row was an affordance nothing told of |
 | H5 | text | 8 | 132 | 40 | 10 | "Pack" |
-| H6 | button | 138 | 129 | 30 | 12 | "Sort" |
+| H6 | button | 112 | 129 | 56 | 12 | "Sort pack" |
 | H7 | slots | 8 | 143 | 162 | 54 | the pack, nine by three |
 | H8 | slots | 8 | 201 | 162 | 18 | the hotbar row, four units below the pack |
 

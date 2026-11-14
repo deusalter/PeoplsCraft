@@ -209,12 +209,14 @@ export function small(id: string, x: number, y: number, w: number, label: string
 }
 
 /**
- * The pack under a container's own slots: "Pack" at 8, `labelY`, its "Sort" button at 138, `labelY - 3`, the nine by
- * three at 8, `slotsY` and the hotbar row four units below it.
+ * The pack under a container's own slots: "Pack" at 8, `labelY`, its "Sort pack" button ending at 168, `labelY - 3`, the
+ * nine by three at 8, `slotsY` and the hotbar row four units below it. The button names its grid: over a chest two
+ * buttons both called "Sort" were told apart only by where they stood.
  */
 export function packBlock(b: Bench, ramp: Ramp, labelY: number, slotsY: number, o: { sort?: boolean; each?: (store: string, i: number) => Partial<StackSlotOpts> } = {}): Node[] {
   const out: Node[] = [ink(8, labelY, 'Pack')];
-  if (o.sort !== false) out.push(small('pack.sort', 138, labelY - 3, 30, 'Sort', () => { b.hand.sort('pack'); b.after(); }, ramp));
+  const sortW = measure('Sort pack') + 10;
+  if (o.sort !== false) out.push(small('pack.sort', 168 - sortW, labelY - 3, sortW, 'Sort pack', () => { b.hand.sort('pack'); b.after(); }, ramp));
   out.push(stackGrid(b, { store: 'pack', x: 8, y: slotsY, cols: 9, rows: 3, ramp, each: o.each ? (i) => o.each!('pack', i) : undefined }));
   out.push(stackGrid(b, { store: 'bar', x: 8, y: slotsY + 58, cols: 9, rows: 1, ramp, each: o.each ? (i) => o.each!('bar', i) : undefined }));
   return out;
