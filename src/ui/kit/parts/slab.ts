@@ -17,7 +17,7 @@ export interface SlabOpts {
 }
 
 /** How far a tool mark stands from every part and every line of text. */
-const CLEAR = 3;
+const CLEAR = 4;
 /** One tool mark to so many units along the top and bottom bands. */
 const MARK_PITCH = 24;
 
