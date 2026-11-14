@@ -84,7 +84,10 @@ export class Social {
   /** The flags of a player as the newest snapshot showed them (-1: not in view). */
   setFlags(slot: number, flags: number): void {
     const m = this.members.get(slot);
-    if (m && m.flags !== flags) { m.flags = flags; this.rosterRev++; }
+    if (!m || m.flags === flags) return;
+    // the swing counter and the like change all the time; the list only says the state
+    if (stateOf(m.flags) !== stateOf(flags)) this.rosterRev++;
+    m.flags = flags;
   }
 
   onWelcome(m: S2COf<'welcome'>): void {

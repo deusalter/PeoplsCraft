@@ -7,7 +7,7 @@ import { HOTBAR } from '../sim/inventory';
 import { eventLabel, eventProgress } from '../client/invclient';
 import { BUFFS } from '../sim/stats';
 import { Social, bearing, stateOf } from '../client/social';
-import { PING_REACH } from '../net/protocol';
+import { PF_DEAD, PF_LOADING, PF_SLEEP, PING_REACH, SELF_DEAD, SELF_LOADING, SELF_SLEEPING } from '../net/protocol';
 import { newRayHit, raycast } from '../sim/physics';
 import { ChatView, SEAT } from './chat';
 import { RosterView } from './roster';
@@ -45,7 +45,7 @@ const HURT_FX: Keyframe[] = [{ opacity: 0.8 }, { opacity: 0 }];
 const HURT_T: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }, DIR_T: KeyframeAnimationOptions = { duration: 1000, easing: 'ease-in' };
 interface Floater { el: HTMLElement; x: number; y: number; z: number; life: number; max: number; vy: number }
 /** A compass pip made on demand: a friend (a round mark in the seat's colour, the name under it) or a ping (a diamond, its distance). */
-interface Pip { el: HTMLElement; i: HTMLElement; d: HTMLElement; px: number; on: boolean; edge: boolean; text: string; kind: string }
+interface Pip { el: HTMLElement; i: HTMLElement; d: HTMLElement; px: number; on: boolean; edge: boolean; slot: number; name: string; m: number }
 /** A name tag over another player: name and state, a thin health bar; whether terrain hides it, looked at every 0.25 s. */
 interface Tag { el: HTMLElement; name: HTMLElement; bar: HTMLElement; slot: number; text: string; hp: number; seen: boolean; look: number; on: boolean }
 /** A ping in the world: a marker with the pinger's name and the distance. */
@@ -282,16 +282,19 @@ export class Hud {
     this.pip(0, home, sp ? sp[0] + 0.5 : g.worldSpawn[0] + 0.5, sp ? sp[2] + 0.5 : g.worldSpawn[1] + 0.5, p.x, p.z, yaw);
     this.pip(1, !!da && da[0] === g.dim, da ? da[1] + 0.5 : 0, da ? da[3] + 0.5 : 0, p.x, p.z, yaw);
     this.pip(2, !!tg, tg ? tg[0] + 0.5 : 0, tg ? tg[1] + 0.5 : 0, p.x, p.z, yaw);
+    // friends where the snapshots show them, else where the last `where` put them; then the pings
     let n = 0;
-    for (const f of this.social.friends()) {
+    const so = this.social;
+    for (const f of so.members.values()) {
+      if (f.self || f.dim !== so.dim || !f.placed) continue;
       const v = g.ents.player(f.slot), fx = v ? v.x : f.x, fz = v ? v.z : f.z;
       if (Math.abs(fx - p.x) < 3 && Math.abs(fz - p.z) < 3) continue;
-      this.morePip(n++, 'f' + f.slot, SEAT[f.slot % SEAT.length], f.name, bearing(p.x, p.z, yaw, fx, fz));
+      this.morePip(n++, f.slot, f.name, -1, bearing(p.x, p.z, yaw, fx, fz));
     }
-    for (const q of this.social.pings) {
+    for (const q of so.pings) {
       const m = Math.round(Math.hypot(q.x - p.x, q.z - p.z));
       if (m < 3) continue;
-      this.morePip(n++, 'p', PING_COLOR, m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km', bearing(p.x, p.z, yaw, q.x, q.z));
+      this.morePip(n++, -1, '', m, bearing(p.x, p.z, yaw, q.x, q.z));
     }
     for (; n < this.more.length; n++) { const q = this.more[n]; if (q.on) { q.on = false; q.el.style.display = 'none'; } }
     const x = Math.floor(p.x), y = Math.floor(p.y), z = Math.floor(p.z), tod = ((g.clock % 1) * 24 + 6) % 24, min = Math.floor(tod * 60);
@@ -313,23 +316,26 @@ export class Hud {
     if (m !== q.m) { q.m = m; q.d.textContent = m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km'; }
   }
 
-  private morePip(i: number, kind: string, color: string, text: string, rel: number): void {
+  /** Extra pip `i`: a friend in `slot` labelled `name`, or (slot -1) a ping `m` metres away. */
+  private morePip(i: number, slot: number, name: string, m: number, rel: number): void {
     let q = this.more[i];
     if (!q) {
       const e = el('div', 'pip', this.pipL), ic = el('i', '', e);
-      q = this.more[i] = { el: e, i: ic, d: el('b', '', e), px: 1e9, on: true, edge: false, text: '', kind: '' };
+      q = this.more[i] = { el: e, i: ic, d: el('b', '', e), px: 1e9, on: true, edge: false, slot: -2, name: '', m: -1 };
     }
     if (!q.on) { q.on = true; q.el.style.display = ''; }
-    if (kind !== q.kind) {
-      q.kind = kind;
+    if (slot !== q.slot) {
+      q.slot = slot; q.name = ''; q.m = -1;
+      const color = slot < 0 ? PING_COLOR : SEAT[slot % SEAT.length];
       q.i.style.background = color; q.d.style.color = color;
       // friends are round, pings keep the stylesheet's diamond
-      q.i.style.borderRadius = kind === 'p' ? '' : '50%'; q.i.style.transform = kind === 'p' ? '' : 'none';
+      q.i.style.borderRadius = slot < 0 ? '' : '50%'; q.i.style.transform = slot < 0 ? '' : 'none';
     }
     const edge = Math.abs(rel) > CSPAN, px = Math.round((Math.max(-CSPAN, Math.min(CSPAN, rel)) / CSPAN) * CW);
     if (px !== q.px) { q.px = px; q.el.style.transform = `translateX(${px}px)`; }
     if (edge !== q.edge) { q.edge = edge; q.el.classList.toggle('edge', edge); }
-    if (text !== q.text) { q.text = text; q.d.textContent = text; }
+    if (slot >= 0 && name !== q.name) { q.name = name; q.d.textContent = name; }
+    else if (slot < 0 && m !== q.m) { q.m = m; q.d.textContent = m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km'; }
   }
 
   /** Name tags over other players within TAG_R that terrain does not hide, and the pings in the world. */
@@ -337,10 +343,15 @@ export class Hud {
     const g = this.g, cam = g.gfx.camera, v = this.v, w = this.vw, h = this.vh, so = this.social;
     let ti = 0;
     const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
+    // what each player is doing, for the list: from the snapshots, this client's own from their header
+    const hd = g.ents.head, hf = hd ? hd.flags : 0;
+    for (const m of so.members.values()) {
+      if (m.self) { so.setFlags(m.slot, (hf & SELF_DEAD ? PF_DEAD : 0) | (hf & SELF_LOADING ? PF_LOADING : 0) | (hf & SELF_SLEEPING ? PF_SLEEP : 0)); continue; }
+      const pv = g.ents.player(m.slot);
+      so.setFlags(m.slot, pv && pv.active ? pv.flags : -1);
+    }
     for (const pv of g.ents.players) {
-      if (!pv.active) continue;
-      so.setFlags(pv.slot, pv.flags);
-      if (ti >= this.ptags.length || pv.deadT >= 0.6) continue;
+      if (!pv.active || ti >= this.ptags.length || pv.deadT >= 0.6) continue;
       const m = so.member(pv.slot), lie = pv.lie > 0.5;
       const tx = pv.x, ty = pv.y + (lie ? 0.9 : pv.h + 0.5 - pv.crouch * 0.2), tz = pv.z, dx = tx - cx, dy = ty - cy, dz = tz - cz, dist = Math.hypot(dx, dy, dz);
       if (!m || dist > TAG_R) continue;
