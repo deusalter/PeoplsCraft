@@ -2556,11 +2556,12 @@ Size 176 by 166. Material: timber. Anchor: centre of the screen.
 | J1 | text | 8 | 6 | 80 | 10 | "Joining Bench" |
 | J2 | slots | 26 | 35 | 18 | 18 | first piece, ring silhouette |
 | J3 | rule | 44 | 43 | 12 | 2 | cut line from the first piece to the remains |
-| J4 | slots | 56 | 35 | 18 | 18 | the remains built into the bench: a locked slot showing Vanahar Remains |
+| J4 | slots | 56 | 35 | 18 | 18 | the remains built into the bench: a locked slot showing Vanahar Remains, its floor `face` and no lock on it. The remains are the middle of the join, not a thing barred, and the 7 by 7 lock over them read as "cannot be used" |
 | J5 | rule | 74 | 43 | 12 | 2 | cut line from the second piece |
 | J6 | slots | 86 | 35 | 18 | 18 | second piece, ring silhouette |
 | J7 | arrow | 108 | 37 | 22 | 15 | progress arrow |
 | J8 | bigslot | 136 | 31 | 26 | 26 | the joined piece |
+| J8a | text | 26 | 57 | 136 | 10 | "Lit: the two pieces join" in faded ink: the key to the cut lines, which are `ember` over `ember.dk` while the two pieces make something and a dark groove (`pit` over `hi`) while they do not |
 | J9 | text | 8 | 73 | 40 | 10 | "Pack" |
 | J10 | button | 112 | 70 | 56 | 12 | "Sort pack" |
 | J11 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |

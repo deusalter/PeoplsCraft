@@ -17,7 +17,7 @@ import { SALT } from './play/art';
 import { BARE, figure, floor } from './play/figure';
 import { tracker } from './play/hud';
 import { BED_SLOT, bed } from './furnace';
-import { line } from './joining';
+import { cutLine } from './joining';
 import type { NamedScreen } from './index';
 
 const REST = { hover: false, down: false, focus: false, t: 0 };
@@ -76,9 +76,9 @@ function build(ui: Ui): Node {
 
   const join = (y: number, lit: boolean): Node[] => [
     { x: 8, y, w: 18, h: 18, paint: (s) => paintSlot(s, { ramp: 'timber', stack: { icon: 'boots', n: 1 } }, REST) },
-    line(26, y + 8, 12, lit),
-    { x: 38, y, w: 18, h: 18, paint: (s) => paintSlot(s, { ramp: 'timber', mark: 'locked', stack: { icon: 'heartroot', n: 1 } }, REST) },
-    line(56, y + 8, 12, lit),
+    cutLine(26, y + 8, 12, lit),
+    { x: 38, y, w: 18, h: 18, paint: (s) => paintSlot(s, { ramp: 'timber', mark: 'locked', noLock: true, stack: { icon: 'heartroot', n: 1 } }, REST) },
+    cutLine(56, y + 8, 12, lit),
     { x: 68, y, w: 18, h: 18, paint: (s) => paintSlot(s, { ramp: 'timber', stack: lit ? { icon: 'spring_anklet', n: 1 } : null, silhouette: 'trinket' }, REST) },
   ];
   kids.push(slab({

@@ -29,6 +29,8 @@ export interface SlotOpts {
   missing?: string;
   /** The large slot of a station's result, 26 by 26. */
   large?: boolean;
+  /** A locked place drawn without its lock: one that is a part of the work, as the remains a joining runs through. */
+  noLock?: boolean;
   force?: Force;
   tip?: (live: Live) => Tip | null;
   on?: Partial<Handlers>;
@@ -106,7 +108,7 @@ export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live):
   else if (o.silhouette) s.draw(SILHOUETTES[o.silhouette], at, at, { flat: sil });
   if (o.mark === 'refused') s.map(CROSS, size - 8, 1);
   else if (o.mark === 'accepts') s.map(CHECK, size - 8, 1);
-  else if (o.mark === 'locked') s.map(LOCK, size - 8, size - 8);
+  else if (o.mark === 'locked' && !o.noLock) s.map(LOCK, size - 8, size - 8);
 }
 
 /** A slot (5.4): 18 by 18 holding a 16 by 16 icon at 1, 1, sunk in its slab or on a dark plate. */

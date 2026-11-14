@@ -2,6 +2,7 @@
 // lines into one piece. The recipe panel of the bench screens fastens to the right with the patterns of joining.
 import type { Node, Ui } from '../node';
 import { progressArrow } from '../parts/gauges';
+import { line } from '../parts/menu';
 import { slab } from '../parts/slab';
 import { PATTERNS } from '../sample/play-patterns';
 import { type Stack, thing } from '../sample/play-items';
@@ -38,7 +39,7 @@ function open(): State {
 }
 
 /** A cut line from a piece to the remains; lit in ember while the two pieces make something. */
-export function line(x: number, y: number, w: number, lit: boolean): Node {
+export function cutLine(x: number, y: number, w: number, lit: boolean): Node {
   return {
     x, y, w, h: 2,
     paint: (s) => { s.fill(0, 0, w, 1, lit ? 'ember' : 'timber.pit'); s.fill(0, 1, w, 1, lit ? 'ember.dk' : 'timber.hi'); },
@@ -52,12 +53,13 @@ function build(ui: Ui): Node {
   const joined = !!gridMatch(st.hand, g);
   const joining: Node[] = [
     stackSlot(b, { store: 'piece', i: 0 }, { x: 26, y: 35, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[0] ?? undefined }),
-    line(44, 43, 12, joined),
-    stackSlot(b, { store: 'remains', i: 0 }, { x: 56, y: 35, ramp: 'timber', locked: { key: 'heartroot', n: 1 } }),
-    line(74, 43, 12, joined),
+    cutLine(44, 43, 12, joined),
+    stackSlot(b, { store: 'remains', i: 0 }, { x: 56, y: 35, ramp: 'timber', locked: { key: 'heartroot', n: 1 }, noLock: true }),
+    cutLine(74, 43, 12, joined),
     stackSlot(b, { store: 'piece', i: 1 }, { x: 86, y: 35, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[1] ?? undefined }),
     progressArrow({ x: 108, y: 37, f: joined ? 1 : 0, ramp: 'timber' }),
     resultSlot(b, g, 136, 31, 'timber', true),
+    line({ x: 26, y: 57, w: 136, text: 'Lit: the two pieces join', c: 'ink.faded', shadow: false }),
   ];
   const pack = packBlock(b, 'timber', 73, 84);
   const outside = () => { st.hand.dropHeld(); b.after(); };

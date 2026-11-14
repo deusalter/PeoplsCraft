@@ -137,6 +137,8 @@ export interface StackSlotOpts {
   show?: Stack | null;
   /** Draws the slot as locked, showing what is built into it. */
   locked?: Stack | null;
+  /** A locked place without its lock (5.4). */
+  noLock?: boolean;
   mark?: SlotMark;
   tip?: (live: Live) => Tip | null;
 }
@@ -155,7 +157,7 @@ export function stackSlot(b: Bench, p: Place, o: StackSlotOpts): Node {
     anim: b.refused(id),
     paint: (s, live) => {
       paintSlot(s, {
-        ramp: o.ramp, large: o.large, mark,
+        ramp: o.ramp, large: o.large, mark, noLock: o.noLock,
         stack: stack ? { icon: thing(stack.key).icon, n: stack.n } : null,
         silhouette: o.silhouette, missing: stack ? undefined : o.missing,
       }, live);
