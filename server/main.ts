@@ -98,6 +98,16 @@ function harness(h: SimHost, path: string, q: URLSearchParams): unknown {
     return { ent: e ? { kind: e.kind, data: e.data } : null };
   }
   if (path === '/homes') return h.sim.shared.homes.map((o) => ({ x: o.x, y: o.y, z: o.z, npc: o.npc }));
+  if (path === '/players') return [...h.sim.players.values()].map((p) => {
+    const items: Record<string, number> = {};
+    for (const s of [...p.inv.slots, ...p.inv.armor]) if (s) items[s.k] = (items[s.k] ?? 0) + s.n;
+    const state = p.parked ? 'parked' : !p.online ? 'lingering' : p.loading || p.arriving >= 0 ? 'loading' : p.stalled ? 'stalled' : 'active';
+    return {
+      id: p.id, name: p.name, slot: p.slot, state, dim: p.dim, x: p.body.x, y: p.body.y, z: p.body.z,
+      hp: p.stats.hp, dead: p.stats.dead, level: p.stats.level, xp: p.stats.xp, coins: p.inv.coins, items, mail: p.mail.map((it) => ({ k: it.k, n: it.n })),
+    };
+  });
+  if (path === '/shared') return { summons: h.sim.shared.summons, owed: h.sim.shared.owed };
   if (path === '/stats') {
     const t = h.stats.tickMs, steps = h.stepCount, last = Math.min(steps, t.length, Math.max(1, Number(q.get('last')) || t.length));
     const a: number[] = [];

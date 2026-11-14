@@ -4022,6 +4022,37 @@ data. On the seed that showed it (`39377506`), 4 runs after the change had no co
 picked nothing up and "Ada picked up the sandstone her block dropped" failed on every run. `findSite` now also wants
 ground of `power` 0, as its "soft enough to dig by hand" meant; on that seed it levels the usual pad.
 
+D50. Stage 5, lane D: the fighting scenarios `boss`, `rejoin`, `stall`, `lateloot` and `projjoin` (7.9, 9, 10.2, 11).
+(a) Two more read-only questions beside those of D39 (v) and D41 (b), answered only under `--harness` (404 otherwise, as the
+server test checks): `/players` gives every `SimPlayer` in memory (record id, name, slot, state `loading`, `active`,
+`stalled`, `lingering` or `parked`, realm, position, health, level, experience, coins, item totals of pack and armour, and
+`mail`), and `/shared` gives `shared.summons` and `shared.owed`. A scenario checks what the host holds through them: who is
+stalled or lingering, a share under a record id, an offering in `mail`. A player that is not in the list is evicted.
+(b) The scenarios set their scene with the test commands of 10.1 (`caps 0 0`, `god`, `gear`, `fill`, `tp`, `level`,
+`heal`), and level a pad round Vanahar's altar 4 blocks north of the first bot. Where a bot must stand far off, a floored
+corridor is cleared east of the arena and the bot is sent along it with `tp`; a wall 3 high at 9 blocks round the altar
+keeps the walking boss (whose jump is 1.8 blocks) within reach of the altar, so that 76 blocks east of the altar is more
+than 64 from the boss and inside the 80 of a valid target. Bots shoot along a ballistic arc led by the boss's velocity.
+(c) `boss` reads "two of them shoot from 70 blocks" as: they never stood nearer than 64 blocks to the boss while shooting
+(their average is about 76), for 16 s, longer than the 10 s a fall waits; maxHp stays 924 in every snapshot meanwhile.
+They did not hit it before, so only their hits keep them in the count. The kill is made with them still out there.
+(d) `rejoin` cuts the socket of a bot who never hits the boss and holds his link 18 s, so that the reconnecting
+transport's hello arrives after the 10 s rescale; back inside the grace, with the same slot, place and `SimPlayer`, he goes
+76 blocks off and is paid as a participant alone.
+(e) `stall` fights alone and unprotected (level 40 for the health), so the realm empties at the park and the boss goes by
+the suspension's refund rule (D45 (a)); a bot evicted by then has the offering in the `mail` of its saved record, which
+the next join delivers with the pickup line.
+(f) `lateloot`'s leaver closes its socket (not `bye`, which would end its part in the fight, 7.9) and is a participant only
+by standing within 32 blocks at the summon. The arena is 50 blocks east of the spawn so that the newcomer does not land in
+the fight; he goes 150 blocks off before the kill.
+(g) `projjoin` calls Kankal up with the `boss 3` command (the third boss, the first with a spiral) and has Ada bring it
+into its middle phase; Bram waits beyond `PROJ_R` until a spiral starts there and then walks in beside Ada, since a
+spiral is thrown flat at the height of the one it is aimed at. Every projectile `hurt` he gets must have a `pe` with how 2
+on him for a projectile he was sent a `ps` of; no `ps` may reach him from beyond `PROJ_R`; and some must come by the sweep
+(the `ps` life below the kind's full life).
+(h) No scenario of this step failed for a defect in the server or the shared code. Each passed three runs in a row, one at
+a time, at 1-minute load averages between 7 and 31.
+
 ---
 
 ## 14. Review log

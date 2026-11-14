@@ -132,8 +132,8 @@ test('the client files are served from the same port, with the caching the proto
   assert.equal((await fetch(base + '/', { method: 'POST' })).status, 405);
 });
 
-test('a server started without --harness answers neither /hash nor /stats', { timeout: 30 * S }, async () => {
-  for (const path of ['/hash?dim=0&cx0=0&cz0=0&cx1=0&cz1=0', '/stats', '/stats?last=10']) {
+test('a server started without --harness answers none of the harness questions', { timeout: 30 * S }, async () => {
+  for (const path of ['/hash?dim=0&cx0=0&cz0=0&cx1=0&cz1=0', '/stats', '/stats?last=10', '/ent?dim=0&x=0&y=0&z=0', '/mobs?dim=0', '/homes', '/players', '/shared']) {
     const r = await fetch(base + path);
     assert.equal(r.status, 404, path);
     assert.equal(await r.text(), 'Not found');

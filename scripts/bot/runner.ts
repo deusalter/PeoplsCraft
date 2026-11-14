@@ -11,13 +11,30 @@ import { join, resolve } from 'node:path';
 import { type LagProxy, startLagProxy } from '../lagproxy';
 import abuse from '../scenarios/abuse';
 import basic from '../scenarios/basic';
+import boss from '../scenarios/boss';
 import crew from '../scenarios/crew';
+import lateloot from '../scenarios/lateloot';
+import projjoin from '../scenarios/projjoin';
+import rejoin from '../scenarios/rejoin';
+import stall from '../scenarios/stall';
 import type { Bot } from './bot';
 
 export interface Stats {
   steps: number; n: number; p50: number; p99: number; max: number; stepErrors: number;
   simPlayers: number; online: number; names: string[]; refused: { atk: number; fire: number; edit: number };
 }
+/** A player in the host's memory, as `/players` gives it. */
+export interface HostPlayer {
+  id: string; name: string; slot: number; state: 'loading' | 'active' | 'stalled' | 'lingering' | 'parked'; dim: number;
+  x: number; y: number; z: number; hp: number; dead: boolean; level: number; xp: number; coins: number;
+  items: Record<string, number>; mail: { k: string; n: number }[];
+}
+export interface HostShared {
+  summons: { n: number; item: string; by: string; dim: number; altar: [number, number, number] }[];
+  owed: Record<string, { xp: number; coins: number; items: { k: string; n: number }[] }>;
+}
+/** An active creature of a realm, as `/mobs` gives it. */
+export interface HostMob { id: number; key: string; x: number; y: number; z: number; h: number; hp: number; boss: boolean }
 /** What a scenario is given. */
 export interface Ctx {
   /** Where bots connect (the lag proxy when there is one). */
@@ -29,6 +46,10 @@ export interface Ctx {
   bot(b: Bot): Bot;
   stats(last?: number): Promise<Stats>;
   hash(dim: number, cx0: number, cz0: number, cx1: number, cz1: number): Promise<Record<string, string>>;
+  /** Every player in the host's memory, and the world record's summons and shares. */
+  players(): Promise<HostPlayer[]>;
+  shared(): Promise<HostShared>;
+  mobs(dim?: number): Promise<HostMob[]>;
   /** A check: recorded, and the run fails when one does not hold. */
   check(ok: boolean, what: string): void;
   log(line: string): void;
@@ -40,7 +61,7 @@ export interface Ctx {
   alive(): boolean;
 }
 type Scenario = (ctx: Ctx) => Promise<void>;
-const SCENARIOS: Record<string, Scenario> = { basic, abuse, crew };
+const SCENARIOS: Record<string, Scenario> = { basic, abuse, crew, boss, rejoin, stall, lateloot, projjoin };
 
 const root = resolve('.'), out = resolve('out/scenario'), pad = resolve('.claude/mp-work/pad/scenarios');
 
@@ -95,6 +116,9 @@ async function runOnce(name: string, scenario: Scenario, lag: boolean, keep: boo
     bot: (b) => { bots.push(b); return b; },
     stats: (last) => get<Stats>('/stats' + (last ? `?last=${last}` : '')),
     hash: (dim, cx0, cz0, cx1, cz1) => get<Record<string, string>>(`/hash?dim=${dim}&cx0=${cx0}&cz0=${cz0}&cx1=${cx1}&cz1=${cz1}`),
+    players: () => get<HostPlayer[]>('/players'),
+    shared: () => get<HostShared>('/shared'),
+    mobs: (dim = 0) => get<HostMob[]>(`/mobs?dim=${dim}`),
     check: (ok, what) => { checks.push([ok, what]); say(`${ok ? 'ok  ' : 'FAIL'} ${what}`); },
     log: say,
     restart: async () => {
