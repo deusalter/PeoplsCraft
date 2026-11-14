@@ -182,7 +182,7 @@ Three rules follow and are used everywhere below.
 
 **The stage.** The HUD is laid out on the stage: the middle of the virtual screen, as tall as the screen and `min(Vw, floor(Vh * 16 / 9))` wide. On an ultrawide window the corners of the HUD are therefore the corners of the stage, and the world is clear to either side of it. Windows, menus and washes use the whole screen.
 
-**Margins.** A HUD plate stands 4 units from the stage's edge (the hotbar 2 from the bottom, the compass 2 from the top). A window stands at least 3 units from every edge of the screen. A tooltip stands at least 2.
+**Margins.** A HUD plate stands 4 units from the stage's edge (the hotbar 2 from the bottom, the compass 2 from the top, the toast on the right edge itself, handed in from it). A window stands at least 3 units from every edge of the screen. A tooltip stands at least 2.
 
 **Anchors.**
 
@@ -193,10 +193,10 @@ Three rules follow and are used everywhere below.
 | Pause | A clay slab 216 by 146 centred over the dimmed world, its buttons in the same column |
 | The fall | The same column over the washed world |
 | HUD, bottom centre | Hotbar, practice strip, pips, level, name of the thing in hand: centred on the stage, measured up from its bottom edge |
-| HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at and the prompt 6 under it: centred on the stage, measured down from its top edge |
+| HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at with the prompt as its third row: centred on the stage, measured down from its top edge |
 | HUD, top left | The crew |
 | HUD, left, above the pips | Chat |
-| HUD, top right | Status frames, the Guide's present step on one line under them, then the toast |
+| HUD, top right | The toast in the corner while one shows; the status frames under it, and the Guide's present step on one line under them |
 | HUD, right | Pickups, then "Saved" at the bottom right corner |
 | HUD, centre | Crosshair |
 | Above everything | The tooltip, then the held stack, then the pointer |
@@ -372,7 +372,7 @@ In each sheet the first line names the glyph, `#` is ink, and the last line is i
 
 **Marks.** The macron is 3 units wide on row 0 for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
 
-**Symbols.** 17 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
+**Symbols.** 18 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
 
 ```
 tofu   lees     check    cross  right  left   up     down   step  shield   lmb      rmb      mmb      
@@ -388,18 +388,18 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 .....  .......  .......  .....  .....  .....  .....  .....  ...   .......  .......  .......  .......
 5      7        7        5      5      5      5      5      3     7        7        7        7
 
-muda     back     cairn    bed
-.......  .......  .......  .......
-.#####.  ..#....  ...##..  ..###..
-##...##  .##....  ..###..  .#...#.
-#..#..#  #######  .......  #.....#
-#.###.#  .##...#  .#####.  #..#..#
-#..#..#  ..#...#  .......  #.###.#
-##...##  ......#  #######  #.###.#
-.#####.  ..#####  #######  #######
-.......  .......  .......  .......
-.......  .......  .......  .......
-7        7        7        7
+muda     back     cairn    bed      skull
+.......  .......  .......  .......  .......
+.#####.  ..#....  ...##..  ..###..  .#####.
+##...##  .##....  ..###..  .#...#.  #######
+#..#..#  #######  .......  #.....#  ##.#.##
+#.###.#  .##...#  .#####.  #..#..#  ##.#.##
+#..#..#  ..#...#  .......  #.###.#  #######
+##...##  ......#  #######  #.###.#  .#####.
+.#####.  ..#####  #######  #######  .#.#.#.
+.......  .......  .......  .......  .......
+.......  .......  .......  .......  .......
+7        7        7        7        7
 
 ```
 
@@ -422,8 +422,9 @@ muda     back     cairn    bed
 | `{back}` | 7 |
 | `{cairn}` | 7 |
 | `{bed}` | 7 |
+| `{skull}` | 7 |
 
-`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{bed}` is a fire under an arch: in a furnace's list of works it stands at the right of each work that only that furnace's bed can do. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence.
+`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{bed}` is a fire under an arch: in a furnace's list of works it stands at the right of each work that only that furnace's bed can do. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence. `{skull}` stands before the name of a creature that attacks, on the readout (5.27), in that name's `blood.lt`.
 
 **Shadow.** Text on a dark plate, on the ground tile, on a button or on the world has a shadow: the same glyphs one unit right and one unit down in `root.0`, drawn first. Text on a light face (a slab, a page, a key cap) has none. The shadow is always `root.0` and never a darker copy of the text's colour, so that the palette stays closed.
 
@@ -725,7 +726,7 @@ The hover changes the floor under the icon and nothing else. It does not tint th
 
 **A thing that is missing** (a pattern laid out that the pack cannot fill, a kind not yet seen in the codex) is drawn as its icon's silhouette in one flat tone, `dk` of the host ramp, never as a faded icon.
 
-**A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: its icon is drawn flat in `root.4`, so its outline still reads, and the lock of a locked slot stands over the cell's bottom right corner at 10, 10, where the count would be; no count is written. A half wash of `root.0` over the whole icon was tried first: on the dark floor a washed icon differed from a makeable one only a little in brightness. A cell of the list is sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.1`, `root.2` under the pointer.
+**A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: its icon is drawn flat in `root.4`, so its outline still reads, and the lock of a locked slot stands over the cell's bottom right corner at 10, 10, where the count would be; no count is written. A half wash of `root.0` over the whole icon was tried first: on the dark floor a washed icon differed from a makeable one only a little in brightness. A cell of the list is a slot on a dark plate (5.4): `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.2`, `root.3` under the pointer.
 
 **The pattern laid out**, the one whose pieces now lie on the grid, is chosen in its list as a row is: its cell's floor is `root.3` and a frame of `root.4` one unit inside its 18 stands round the icon. It is not framed in `salt`, which says where the keys are; while the keys are on it the salt frame stands in place of the grey.
 
@@ -763,28 +764,28 @@ The hover changes the floor under the icon and nothing else. It does not tint th
 ```
 `. nothing  1 hi  3 face  4 sh  6 pit   (digits are tones of the host slab's ramp; shown in timber)`
 
-**A slot on a dark plate** (hotbar, toast, readout, the cells of a pattern list). Floor `root.0`, light edge `root.3`; hovered floor `root.2`.
+**A slot on a dark plate** (the readout, the cells of a pattern list). `root.0` along its top and left, a floor of `root.2`, `root.3` along its bottom and right; hovered floor `root.3`. On a floor of `root.0` a dark thing, itself outlined in `root.0`, lost its silhouette: the Tama on the readout and a ring in a pattern list all but vanished. The cells of a pattern list are this slot; a place still to fill keeps the well's `root.1` floor and a lower edge of `root.2`.
 
 ```
      0         1         2         3       
      01234567890123456789012345678901234567
   0  KKKKKKKKKKKKKKKKKk..KKKKKKKKKKKKKKKKKk
-  1  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  2  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  3  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  4  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  5  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  6  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  7  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  8  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
-  9  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
- 10  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
- 11  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
- 12  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
- 13  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
- 14  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
- 15  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
- 16  KKKKKKKKKKKKKKKKKh..Kjjjjjjjjjjjjjjjjh
+  1  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  2  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  3  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  4  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  5  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  6  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  7  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  8  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+  9  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+ 10  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+ 11  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+ 12  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+ 13  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+ 14  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+ 15  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
+ 16  Kjjjjjjjjjjjjjjjjh..Khhhhhhhhhhhhhhhhh
  17  khhhhhhhhhhhhhhhhh..khhhhhhhhhhhhhhhhh
 ```
 `. nothing  h root.3  j root.2  k root.1  K root.0`
@@ -1448,43 +1449,43 @@ Life at a quarter or less: each pip moves one unit up or down, changing every fo
 
 ### 5.16 Hotbar and selector
 
-One sprite 182 by 22, not a dark plate with slots dropped in it. An outline of `root.0`, then nine raised cells of 20 at x 1 + 20i, y 1, each lit from the top left: a rim one unit deep of `stone.face` along its top and left and `stone.dk` along its bottom and right (the unit where they meet at the bottom left `stone.sh`), a frame of `root.0` one unit deep inside it, and a well of `stone.pit` 16 square at x 3 + 20i, y 3 that holds the icon, sunk: a row and a column of `root.1` along its top and left where the rim shades it, and a row and a column of `stone.dk` along its bottom and right, its far walls lit (empty and flat, nine bare boxes read as a placeholder layout); its count at the well's bottom right as in a slot. The selector is 24 by 24 at x -1 + 20i, y -1, over the chosen cell: a frame two deep, an outer ring of `root.0` with its four corner units left out and an inner ring of `salt`, open in the middle so the cell shows through; it overhangs the strip by one unit all round. The first three cells, the first chosen (the diagram's column `.` is x -1):
+One strip 182 by 22, not a dark plate with slots dropped in it and not nine framed boxes. An outline of `root.0` round the whole strip, and dividers of `root.0` one unit wide at x 20, 40 … 160, so that nine cells stand at a pitch of 20 inside one outline. Each cell is sunk in the strip, lit from the top left: a row and a column of `stone.pit` along its top and left, a floor of `stone.dk`, a row and a column of `stone.sh` along its bottom and right. The icon stands at x 3 + 20i, y 3; its count at the floor's bottom right as in a slot (its last column at 16 + 20i, its lowest row at 18). The cells are 19 wide, the last 20, since nine pitches of 20 and two outlines make 182; the last cell's spare column is floor. (Raised cells each with a rim and a frame of `root.0` round a well read as nine separate buttons, and their empty wells as flat navy squares.) The selector is 24 by 24 at x -1 + 20i, y -1, over the chosen cell: a frame two deep, an outer ring of `root.0` with its four corner units left out and an inner ring of `salt`, open in the middle so the cell shows through; it overhangs the strip by one unit all round. The first three cells, the first chosen (the diagram's column `.` is x -1):
 
 ```
       0         1         2         3         4         5         6     
      .012345678901234567890123456789012345678901234567890123456789012345
- -1  .KKKKKKKKKKKKKKKKKKKKKK............................................
-  0  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
-  1  KWHHHHHHHHHHHHHHHHHHHMWKHHHHHHHHHHHHHHHHHMHHHHHHHHHHHHHHHHHHHMHHHHH
-  2  KWHKKKKKKKKKKKKKKKKKKMWKKKKKKKKKKKKKKKKKKMHKKKKKKKKKKKKKKKKKKMHKKKK
-  3  KWHKkkkkkkkkkkkkkkkkKMWKkkkkkkkkkkkkkkkkKMHKkkkkkkkkkkkkkkkkKMHKzzz
-  4  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
-  5  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
-  6  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
-  7  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
-  8  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
-  9  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 10  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 11  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 12  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 13  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 14  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 15  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 16  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 17  KWHKkzzzzzzzzzzzzzzMKMWKkzzzzzzzzzzzzzzMKMHKkzzzzzzzzzzzzzzMKMHKzzz
- 18  KWHKkMMMMMMMMMMMMMMMKMWKkMMMMMMMMMMMMMMMKMHKkMMMMMMMMMMMMMMMKMHKzzz
- 19  KWHKKKKKKKKKKKKKKKKKKMWKKKKKKKKKKKKKKKKKKMHKKKKKKKKKKKKKKKKKKMHKKKK
- 20  KWJMMMMMMMMMMMMMMMMMMMWKMMMMMMMMMMMMMMMMMMJMMMMMMMMMMMMMMMMMMMJMMMM
- 21  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 22  .KKKKKKKKKKKKKKKKKKKKKK............................................
+ -1  .KKKKKKKKKKKKKKKKKKKKKK...........................................
+  0  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+  1  KWzzzzzzzzzzzzzzzzzzzKWKzzzzzzzzzzzzzzzzzKzzzzzzzzzzzzzzzzzzzKzzzz
+  2  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+  3  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+  4  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+  5  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+  6  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+  7  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+  8  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+  9  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 10  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 11  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 12  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 13  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 14  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 15  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 16  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 17  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 18  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 19  KWzMMMMMMMMMMMMMMMMMJKWKMMMMMMMMMMMMMMMMJKzMMMMMMMMMMMMMMMMMJKzMMM
+ 20  KWzJJJJJJJJJJJJJJJJJJKWKJJJJJJJJJJJJJJJJJKzJJJJJJJJJJJJJJJJJJKzJJJ
+ 21  KWWWWWWWWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 22  .KKKKKKKKKKKKKKKKKKKKKK...........................................
 ```
-`. nothing  H stone.face  J stone.sh  k root.1  K root.0  M stone.dk  W salt  z stone.pit`
+`. nothing  J stone.sh  K root.0  M stone.dk  W salt  z stone.pit`
 
 A thing that is cooling (a salve, the Recall Stone) has the cooling wash over its icon from the top down, a sixteenth of the time to the row.
 
 ### 5.17 Toast
 
-A small clay slab 160 by 32, opaque, handed in from the right edge: the one light part of the HUD (rule 1). An outline of `root.0` with its corner units left out; a light edge one deep of `salt` along the top and left; a dark edge two deep along the bottom and right, `clay.sh` then `clay.pit`; the face `clay.face`. The 16 by 16 icon stands on the face at 8, 8, with no slot. The first line's cell at 30, 7 in the light-face tone of what the toast is: `growth.dk` for a step of the Guide, a grade's light-face tone for a thing found, `blood.dk` for a warning, `ink` otherwise. The second line's cell at 30, 18 in `ink`. Both have no shadow. The first line is cut with `…` at 124; the second wraps onto a third rather than being cut, and the slab grows to 42 to hold it. It slides in from the stage's right edge 16 units a frame, stays 5 s, and slides out the same way. One shows at a time; the rest wait their turn. It stands 4 from the stage's right edge, 4 under the Guide's step (which stands under the status frames). While a boss bar is up, and its left edge would come within 4 units of the strips' right end (`cx + 91 + 4`), it starts 4 under the second strip instead. Its left 40 units (`i` the icon's cells, `t` and `n` the first and second lines' cells):
+A small clay slab 160 by 32, opaque, handed in from the right edge: the one light part of the HUD (rule 1). An outline of `root.0` with its corner units left out; a light edge one deep of `salt` along the top and left; a dark edge two deep along the bottom and right, `clay.sh` then `clay.pit`; the face `clay.face`. The 16 by 16 icon stands on the face at 8, 8, with no slot. The first line's cell at 30, 7 in the light-face tone of what the toast is: `growth.dk` for a step of the Guide, a grade's light-face tone for a thing found, `blood.dk` for a warning, `ink` otherwise. The second line's cell at 30, 18 in `ink`. Both have no shadow. The first line is cut with `…` at 124; the second wraps onto a third rather than being cut, and the slab grows to 42 to hold it. It slides in from the stage's right edge 16 units a frame, stays 5 s, and slides out the same way. One shows at a time; the rest wait their turn. It is docked in the top right corner: its right edge on the stage's right edge, its top at y 0 where its left edge stands 4 clear of the compass's column (`cx + 91 + 4`, a stage of 510 or more), else at y 26, one under the compass's line. While it shows, the status frames and the Guide's step come down under it, 4 below its foot, and go back up when it leaves, so that it is always the first thing in the corner and never a card floating under them. Where what stands under the compass reaches within 4 of its left edge (a boss bar and its event strip, a readout wider than the gap) it stands 4 under that instead, still on the right edge, and the status frames and the step keep their place at the top. (Hung 4 under the Guide's step and 4 in from the edge, it read as a modal card in the middle of the sky.) Its left 40 units (`i` the icon's cells, `t` and `n` the first and second lines' cells):
 
 ```
      0         1         2         3         
@@ -1558,7 +1559,7 @@ A small clay slab 160 by 32, opaque, handed in from the right edge: the one ligh
 
 A world event (Night raid, Sand March, Amāvassa) is the same with a thin strip that shows the time left, in `blood` for the first two and `violet.lt` for the third.
 
-**Status frame.** A dark plate 18 by 18 with a frame of `growth` for a good state and `blood` for a bad one, the icon at 1, 1. A bad state's frame also has a unit cut from each of its corners, the outline stepping in to meet it, so that harm and help differ in outline and not in colour alone. Under it the time left in the small face, centred, its cell at y 20; in the last ten seconds it is `blood.lt` and blinks, lit for 0.5 s and out for 0.5 s. A good frame, and the top left corner of a bad one:
+**Status frame.** Frames stand at a pitch of 22, 4 clear of each other, so that the times under them never run together into one string of figures. A dark plate 18 by 18 with a frame of `growth` for a good state and `blood` for a bad one, the icon at 1, 1. A bad state's frame also has a unit cut from each of its corners, the outline stepping in to meet it, so that harm and help differ in outline and not in colour alone. Under it the time left in the small face, centred, its cell at y 20; in the last ten seconds it is `blood.lt` and blinks, lit for 0.5 s and out for 0.5 s. A good frame, and the top left corner of a bad one:
 
 ```
      0         1       
@@ -2078,7 +2079,7 @@ A plain dark plate 182 by 12. It shows 138 degrees of the horizon, 84 units eith
 
 ### 5.27 Readout of what is looked at
 
-A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the top of the stage under the compass. A dark slot at 3, 3 with the icon of the block or creature; the name's cell at 24, 2; the second line at 24, 12. For a block the second line is worked out from the tool in hand: when it will break the block, a `{check}` in `growth.lt`, a space, then its name and "will do" in `salt` ("Iron pick will do", or "Breaks by hand"); when it is too weak, a `{cross}`, a space and what is needed, all in `blood.lt` ("Needs a Hīrak pick"), so that the yes and the no differ by their glyph as well as by their colour. In grey the yes read as a line that did not matter, the most useful line on the plate. A second icon of the needed tool after the line was dropped: it did not line up with the slot's icon and made the plate 18 wider than its words. A townsperson's second line is their work in `root.4`. For a creature the second line is a thin strip of its life, 5 tall, as wide as the name. An icon drawn on this plate stands at least two ramp steps above `root.1`: a dark creature is drawn in `root.2` to `root.4`, never `root.1` to `root.3`.
+A plain dark plate 24 tall (40 with the row of what E does), as wide as its longest line plus 28, centred at the top of the stage under the compass. A dark slot at 3, 3 with the icon of the block or creature; the name's cell at 24, 2; the second line at 24, 12. For a block the second line is worked out from the tool in hand: when it will break the block, a `{check}` in `growth.lt`, a space, then its name and "will do" in `salt` ("Iron pick will do", or "Breaks by hand"); when it is too weak, a `{cross}`, a space and what is needed, all in `blood.lt` ("Needs a Hīrak pick"), so that the yes and the no differ by their glyph as well as by their colour. In grey the yes read as a line that did not matter, the most useful line on the plate. A second icon of the needed tool after the line was dropped: it did not line up with the slot's icon and made the plate 18 wider than its words. A townsperson's second line is their work in `root.4`. For a creature the second line is a thin strip of its life (5.15), 41 wide in ten segments of 3, its cell at 24, 14: as wide as the name it was 24 units of two-unit segments, unreadable at scale 2. A creature that attacks has `{skull}` and a space before its name, both in `blood.lt`; a calm one's name is `salt`, so the plate says which kind it is before the strip does. When E does something to the thing (talk, open), that is a third row of the same plate at 24, 23: the key cap (5.28), 4 clear, then the word in `salt` with its shadow, its cell at y 25; the plate is then 40 tall. Drawn as a second plate 6 under the first, the prompt read as a second notice. The slot's floor is `root.2` (5.4). An icon drawn on this plate stands at least two ramp steps above `root.1`: a dark creature is drawn in `root.2` to `root.4`, never `root.1` to `root.3`.
 
 ```
      0         1         2         3         4         5         6         7         8         9         0         1         2
@@ -2261,21 +2262,21 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | H1 | compass | 122 | 2 | 182 | 12 | compass strip |
 | H2 | text | 122 | 15 | 182 | 10 | under it, text face with shadow: "Night 3 of 8" at the right; the place as "x -104  y 64  z 2210" at the left only while the setting Coordinates is on (it is off at first) |
 | H3 | boss | 122 | 26 | 182 | 20 | boss bar: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it 12 below the first strip, at y 58. Two at most |
-| H4 | readout | 150 | 26 | 126 | 24 | what you look at; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
+| H4 | readout | 150 | 26 | 126 | 24 | what you look at, 40 tall with the row of what E does; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
 | H5 | party | 4 | 4 | 12 | 125 | the crew folded to heads (5.24): one row 18 tall to each friend online, up to seven: the head 10 by 10 in its outline of `root.0`, a life strip 12 by 4 one clear unit under it; no names |
-| H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 20, from the right edge leftward, the time left under each in the small face |
-| H7 | toast | 263 | 82 | 160 | 32 | one toast, a clay slab 160 by 32 (42 when the second line wraps), sliding in from the right for 5 s. On this stage it would reach under the strips, so while a boss bar is up it starts 4 under the second strip, at y 82; otherwise 4 under the Guide's step, at y 48 |
-| H8 | tracker | 323 | 32 | 100 | 12 | the present step of the Guide folded to one line under the status frames, right-aligned: the step mark and the step in salt, the count in root.4 ("Smelt iron  2 of 3"), on one strip of the chat wash a unit wider than the text all round, no frame; the chapter and where to go are in the journal |
+| H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 22, from the right edge leftward, the time left under each in the small face; while a toast shows in the corner they stand 4 under it |
+| H7 | toast | 267 | 26 | 160 | 32 | one toast, a clay slab 160 by 32 (42 when the second line wraps), sliding in from the right for 5 s, docked in the top right corner with its right edge on the stage's: at y 26 on this stage, under the compass's line, with the status frames and the step under it; at y 0 on a stage of 510 or more. While a boss bar is up its strips reach within 4 of it, so it stands 4 under the second strip, at y 84, and the frames keep their place |
+| H8 | tracker | 323 | 32 | 100 | 12 | the present step of the Guide folded to one line 28 under the top of the status frames, moving with them, right-aligned: the step mark and the step in salt, the count in root.4 ("Smelt iron  2 of 3"), on one strip of the chat wash a unit wider than the text all round, no frame; the chapter and where to go are in the journal |
 | H9 | feed | 327 | 186 | 96 | 40 | pickups: lines 10 tall, newest lowest, right-aligned: "+3 Rubble (12)" in the grade's colour |
 | H10 | text | 396 | 228 | 27 | 10 | "Saved", text face, for two seconds |
 | H11 | chat | 4 | 111 | 144 | 71 | chat: up to eight whole lines 10 tall, newest lowest, on one strip of the chat wash as wide as the column, wrapped as 5.23 says, wrapped rows 8 in. Where chat reaches over the hotbar's column the newest ends 68 above the bottom; where it ends left of that column it comes down to 48 above the bottom. Fewer lines while the crew list stands above. Each line leaves 8 s after it came, so a still HUD shows no chat at all |
 | H12 | cross | 209 | 116 | 9 | 9 | crosshair, 9 by 9: salt plus, root.0 outline |
-| H13 | prompt | 163 | 56 | 100 | 14 | prompt: a key cap and what E does to the thing the readout names ("Talk"), on a strip of the chat wash 2 wider each side, centred on the stage 6 under the readout plate. There is one look target: the readout and the prompt always name the same thing, and no prompt is drawn when the thing cannot be used (a Tama, a block) |
+| H13 | prompt | 174 | 49 | 78 | 14 | prompt: the readout's third row (5.27), a key cap and what E does to the thing the readout names ("Talk"), inside the same plate. There is one look target: the readout and the prompt always name the same thing, and no row is drawn when the thing cannot be used (a Tama, a block) |
 | H14 | text | 163 | 174 | 100 | 10 | name of the thing in hand, centred, in its grade's colour with its shadow, for 1.6 s after a change, on no plate and no strip, as the tradition writes it; it stands over the row of defence and lees, 66 above the stage's bottom |
 | H15 | text | 122 | 186 | 70 | 10 | second row, left: shield mark and defence, then the jar mark and lees carried |
 | H16 | pips | 223 | 187 | 81 | 9 | second row, right: ten arm pips, filling from the right |
 | H17 | pips | 122 | 198 | 81 | 9 | first row, left: ten life pips. No number stands beside them: the pips already say it, and the life's number is in the pack's body panel |
-| H18 | text | 205 | 198 | 17 | 10 | level, centred on x 213 in `growth.lt`, sitting on the practice strip as the tradition sets it: its figures end 2 above the strip, level with the feet of the pips, and each figure is ringed in `root.0` one unit round (the text drawn at the four steps left, right, up and down, then over them) and has no shadow. With a shadow, floating midway between the two pip rows, it read as a count of something and not as a level |
+| H18 | text | 205 | 198 | 17 | 10 | level, centred on x 213 in `growth.lt`, sitting on the practice strip as the tradition sets it: its figures end 2 above the strip, level with the feet of the pips, and each figure is ringed in `root.0` one unit round (the text drawn at the four steps left, right, up and down, then over them) and has no shadow. With a shadow, floating midway between the two pip rows, it read as a count of something and not as a level. While the strip is empty nothing is written: a new arrival's lone 1 beside an empty strip read as a stray figure |
 | H19 | pips | 223 | 198 | 81 | 9 | first row, right: ten hunger pips, filling from the right |
 | H20 | strip | 122 | 209 | 182 | 5 | practice strip, thin, eighteen segments |
 | H21 | hotbar | 122 | 216 | 182 | 22 | hotbar; the selector overhangs it by one unit all round |
@@ -2285,7 +2286,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 - **Keys.** 1 to 9 and the wheel choose a hotbar cell. Enter or T opens chat. Tab holds the roster open. V sets a ping. E, G and M open the pack, the journal and the map.
 - **First.** A new arrival sees the hotbar empty with its first cell chosen, ten life pips, ten hunger pips, ten arm pips, the compass, and the first step of the Guide at the right.
 - **Floating numbers** over a struck creature are the text face with shadow, `salt` for a blow, `ember.hi` for a critical one with an exclamation mark after it, `growth.lt` for mending. They rise by whole units and are cut after 0.85 s.
-- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; the Guide's step stands under the status frames at y 54 and the toast 4 under it, or under the strips while a boss bar is up; pickups stand above the arm row, three lines at most, from y 150.
+- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; the Guide's step stands under the status frames at y 54; a toast takes the corner at y 26 and the frames and the step come down under it, or it stands under the strips while a boss bar is up; pickups stand above the arm row, three lines at most, from y 150.
 - **A blow from a side** shows as a wedge 9 by 5 of `blood` with a `root.0` outline, 40 units from the centre toward the side it came from, in one of eight directions, for 1 s.
 
 ### Pack, with the body panel and the patterns made by hand

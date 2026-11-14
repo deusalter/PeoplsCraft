@@ -8,6 +8,7 @@ import type { Node, Ui } from '../node';
 import { type Colour, SEATS } from '../palette';
 import type { Surface } from '../surface';
 import { paintStrip } from './hud';
+import { KEYCAP_H, keycap } from './keycap';
 import { paintSlot } from './slot';
 
 const REST = { hover: false, down: false, focus: false, t: 0 };
@@ -96,33 +97,52 @@ export interface ReadoutOpts {
   refusal?: boolean;
   /** The line says the tool in hand will do: `salt` after a `{check}` in `growth.lt`. */
   able?: boolean;
-  /** For a creature, its life as a thin strip as wide as the name. */
+  /** For a creature, its life as a thin strip 41 wide in ten segments under the name. */
   life?: number;
+  /** A creature that attacks: its name in `blood.lt` after a skull; a calm one's is in salt. */
+  hostile?: boolean;
+  /** What E does to the thing, as a third row of the plate: the key cap, then the word in salt. */
+  use?: string;
 }
+
+/** The creature's life strip on the readout: ten segments of 3 and their lines inside an outline. */
+export const READOUT_LIFE_W = 41;
+const USE_Y = 23;
 
 /**
  * The readout of what is looked at (5.27). Whether the tool in hand will break a block is told by a glyph as well as
  * by a colour, a check or a cross before the line, so that a yes in grey was not read as a line that does not matter.
+ * What E does is a row of the same plate, so that the readout and its prompt are one notice and never two boxes.
  */
 export function readout(o: ReadoutOpts): Node {
-  const nw = measure(o.name);
+  const name = o.hostile ? `{skull} ${o.name}` : o.name;
+  const nw = measure(name);
   const mark = o.refusal ? '{cross} ' : o.able ? '{check} ' : '';
-  const lw = o.line ? measure(mark + o.line) : 0;
-  const w = Math.max(nw, lw) + 28;
+  const lw = o.life !== undefined ? READOUT_LIFE_W : o.line ? measure(mark + o.line) : 0;
+  const cap = o.use ? keycap({ x: 0, y: 0, label: 'E' }) : null;
+  const uw = cap ? cap.w + 4 + measure(o.use!) : 0;
+  const w = Math.max(nw, lw, uw) + 28;
+  const h = cap ? USE_Y + KEYCAP_H + 3 : 24;
   return {
-    x: o.cx - Math.floor(w / 2), y: o.y, w, h: 24,
+    x: o.cx - Math.floor(w / 2), y: o.y, w, h,
     paint: (s) => {
-      s.nine(PLATE, 0, 0, w, 24);
+      s.nine(PLATE, 0, 0, w, h);
       s.translate(3, 3);
       paintSlot(s, { ramp: 'dark', stack: { icon: o.icon, n: 1 } }, REST);
       s.translate(-3, -3);
-      s.text(o.name, 24, 2, 'salt', true);
-      if (o.life !== undefined) paintStrip(s, { x: 0, y: 0, w: nw, f: o.life, tones: ['blood.lt', 'blood', 'blood.dk'], segments: Math.max(1, Math.round(nw / 20)), thin: true }, 24, 14);
+      s.text(name, 24, 2, o.hostile ? 'blood.lt' : 'salt', true);
+      if (o.life !== undefined) paintStrip(s, { x: 0, y: 0, w: READOUT_LIFE_W, f: o.life, tones: ['blood.lt', 'blood', 'blood.dk'], segments: 10, thin: true }, 24, 14);
       else if (o.line && o.refusal) s.text(mark + o.line, 24, 12, 'blood.lt', true);
       else if (o.line && o.able) {
         s.text('{check}', 24, 12, 'growth.lt', true);
         s.text(o.line, 24 + measure(mark), 12, 'salt', true);
       } else if (o.line) s.text(o.line, 24, 12, 'root.4', true);
+      if (cap) {
+        s.translate(24, USE_Y);
+        cap.paint!(s, REST);
+        s.translate(-24, -USE_Y);
+        s.text(o.use!, 24 + cap.w + 4, USE_Y + 2, 'salt', true);
+      }
     },
   };
 }

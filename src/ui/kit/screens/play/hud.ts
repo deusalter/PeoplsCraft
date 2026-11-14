@@ -4,7 +4,6 @@ import { TEXT } from '../../font/face';
 import { count, measure, rightX } from '../../font/measure';
 import type { Node, Ui } from '../../node';
 import { type Colour, GRADES } from '../../palette';
-import { keycap } from '../../parts/keycap';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
 import { CHAT_WRAP, CREW_HEADS_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
@@ -55,7 +54,7 @@ export interface HudOpts {
    * it. `use` is what E does to it, and no prompt is drawn when nothing can be done; `ore` is a block's key, and the
    * readout's second line is worked out from the tool in hand.
    */
-  look?: { icon: string; name: string; line?: string; life?: number; use?: string; ore?: string };
+  look?: { icon: string; name: string; line?: string; life?: number; use?: string; ore?: string; hostile?: boolean };
   /** A new arrival: the hotbar empty, every measure full, the Guide's first step, nobody near. */
   first?: boolean;
   /** The crew list is not drawn while chat is open or the roster is held. */
@@ -77,6 +76,8 @@ export interface HudOpts {
 
 /** The second boss bar or event strip: 12 under the first one's strip. */
 const BOSS2_Y = 26 + 20 + 12;
+/** From one status frame to the next: the frame of 18 and 4 clear. */
+const STATUS_PITCH = 22;
 
 const BAR: (Stack | null)[] = [
   { key: 'iron_pickaxe', n: 1 }, { key: 'iron_sword', n: 1, mod: 'keen' }, { key: 'iron_bow', n: 1 }, { key: 'arrow', n: 64 },
@@ -136,23 +137,18 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   ];
   out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, night: first ? 'Night 1 of 8' : 'Night 3 of 8' }));
 
+  // What stands in the centre column under the compass's line, which the toast must keep 4 clear of.
+  let centre: Node | null = null;
   if (o.boss) {
+    centre = { x: L(cx - 91), y: 26, w: 182, h: BOSS2_Y + 22 - 26 };
     out.push(bossBar({ x: L(cx - 91), y: 26, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
     out.push(bossBar({ x: L(cx - 91), y: BOSS2_Y, name: 'Night raid', f: 0.4, event: 'blood' }));
   } else if (o.look) {
     const lk = o.look;
     const said = lk.ore ? oreLine(lk.ore, first ? null : BAR[0]?.key ?? null) : { line: lk.line, refusal: false };
-    out.push(readout({ cx: L(cx), y: 26, icon: lk.icon, name: lk.name, life: lk.life, ...said }));
-    // The prompt stands 6 under the readout and names what the readout names, so E can only mean one thing.
-    if (lk.use && o.prompt !== false) {
-      const cap = keycap({ x: 0, y: 0, label: 'E' });
-      const text = lk.use;
-      const w = cap.w + 4 + measure(text) + 1;
-      const x0 = L(cx - Math.floor(w / 2)), y0 = 26 + 24 + 6;
-      out.push({ x: x0 - 2, y: y0 - 1, w: w + 4, h: 16, paint: (s) => { s.wash(0, 0, w + 4, 16, 'root.0', 3); } });
-      out.push({ ...cap, x: x0, y: y0 });
-      out.push({ x: x0 + cap.w + 4, y: y0 + 2, w: measure(text) + 1, h: 11, paint: (s) => { s.text(text, 0, 0, 'salt', true); } });
-    }
+    // What E does is the plate's third row, so that E can only mean the one thing the readout names.
+    centre = readout({ cx: L(cx), y: 26, icon: lk.icon, name: lk.name, life: lk.life, hostile: lk.hostile, use: o.prompt !== false ? lk.use : undefined, ...said });
+    out.push(centre);
   }
 
   const lowY = narrow ? 26 : 4;
@@ -161,23 +157,30 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   if (showCrew) out.push(crewHeads({ x: L(4), y: lowY, members: friends }));
 
   if (!first) {
-    // Left to right in the order the pack's States tab lists them, so the two never disagree.
-    const n = BODY_STATES.length;
-    BODY_STATES.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + (n - 1 - i) * 20), y: lowY, icon: s.icon, good: s.good, seconds: s.seconds })));
-    // The Guide's step stands under the status frames, and the one toast shown 4 under it.
-    const stepY = lowY + 28;
-    if (o.notices !== false) out.push(tracker(R(4), stepY, 'Smelt iron', '2 of 3'));
     const toasts = [
       { frame: 'blood' as Colour, icon: 'raid_skull', title: 'A Night raid comes', line: 'Hold the doors till dawn' },
       { frame: 'growth' as Colour, icon: 'ingot', title: 'Smelt iron', line: 'A step of the Guide' },
       { frame: GRADES[2].frame, icon: 'warden_bell', title: 'Kankāl Bell', line: 'Found in a Sealed Store' },
-    ];
-    // Where the column's left edge would come within 4 of the boss strips' end it starts under the strips instead.
-    const tx = R(4 + TOAST_W);
-    const clash = o.boss && tx < L(cx + 91 + 4);
-    let ty = clash ? Math.max(BOSS2_Y + 22 + 4, stepY + TRACKER_H + 4) : stepY + TRACKER_H + 4;
+    ].slice(0, o.notices === false ? 0 : TOAST_MOST);
+    // The toast is handed in at the top right corner, its right edge on the stage's: at y 0 where it stands 4 clear of
+    // the compass's column, else under the compass's line, and the status frames and the Guide's step come down under
+    // it while it shows. Where what stands under the compass (the strips of a great feeder, a wide readout) reaches
+    // within 4 of it, it stands 4 under that instead, and the frames and the step keep their place at the top.
+    const tx = R(TOAST_W);
+    let statusY = lowY, ty = 0;
+    if (toasts.length) {
+      const th = toasts.reduce((a, t) => a + toastHeight(t) + TOAST_GAP, -TOAST_GAP);
+      if (tx >= L(cx + 91 + 4)) { ty = 0; statusY = th + 4; }
+      else if (!centre || centre.x + centre.w + 4 <= tx) { ty = 26; statusY = ty + th + 4; }
+      else ty = Math.max(centre.y + centre.h + 4, lowY + 28 + TRACKER_H + 4);
+    }
+    // Left to right in the order the pack's States tab lists them, so the two never disagree; 4 clear between frames,
+    // so that their times never run together.
+    const n = BODY_STATES.length;
+    BODY_STATES.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + (n - 1 - i) * STATUS_PITCH), y: statusY, icon: s.icon, good: s.good, seconds: s.seconds })));
+    if (o.notices !== false) out.push(tracker(R(4), statusY + 28, 'Smelt iron', '2 of 3'));
     const floor = (narrow ? 150 : H - 54) - 2;
-    for (const t of o.notices === false ? [] : toasts.slice(0, TOAST_MOST)) {
+    for (const t of toasts) {
       const h = toastHeight(t);
       if (ty + h > floor) break;
       out.push(toast({ x: tx, y: ty, ...t }));
@@ -211,11 +214,13 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   const life = first ? [100, 100] : [84, 100], hunger = first ? [20, 20] : [9, 20], arm = first ? [60, 60] : [38, 60];
   out.push(pips({ x: L(cx + 10), y: H - 53, kind: 'arm', now: arm[0], max: arm[1], fromRight: true }));
   out.push(pips({ x: L(cx - 91), y: H - 42, kind: 'life', now: life[0], max: life[1], mending: !first && !STILL }));
+  const practice = first ? 0 : 320 / 900;
   const level = first ? '1' : '14';
   // The level sits on the practice strip as the tradition sets it: its figures end 2 above the strip, level with the
   // feet of the pips, and each is ringed in root.0 so that it reads as the strip's number and not as a count beside them.
+  // While the strip is empty no level is written: a lone 1 beside an empty strip read as a stray figure.
   const lw = measure(level);
-  out.push({
+  if (practice > 0) out.push({
     x: L(cx - Math.floor(lw / 2)) - 1, y: H - 42, w: lw + 2, h: 10,
     paint: (s) => {
       for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) s.text(level, dx, dy, 'root.0');
@@ -223,7 +228,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     },
   });
   out.push(pips({ x: L(cx + 10), y: H - 42, kind: 'hunger', now: hunger[0], max: hunger[1], fromRight: true }));
-  out.push(strip({ x: L(cx - 91), y: H - 31, w: 182, f: first ? 0 : 320 / 900, tones: ['growth.lt', 'growth', 'growth.dk'], segments: 18, thin: true }));
+  out.push(strip({ x: L(cx - 91), y: H - 31, w: 182, f: practice, tones: ['growth.lt', 'growth', 'growth.dk'], segments: 18, thin: true }));
   out.push(hotbar({
     x: L(cx - 91), y: H - 24, chosen: 0,
     cells: first ? Array(9).fill(null) : BAR.map((s) => (s ? { icon: thing(s.key).icon, n: s.n } : null)),
