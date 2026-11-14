@@ -58,7 +58,7 @@
   "The old pieces were made by hands with a skill that nobody has now, I think."
  ],
  "folk.housed:runescribe": [
-  "Where to cut is learned by the hand. Nobody can tell it to you.",
+  "My lines are the ones that join a holder's hand to the charge.",
   "A bad cut leaks into the arm, and the arm tires sooner for the same work.",
   "My teacher had me cut slab after slab before one of mine carried a night's holding.",
   "I held one of those recall stones all night once, and it did nothing for me.",
@@ -312,13 +312,13 @@
   "No pack will come for the stores tonight. The things from the moon are out instead."
  ],
  "folk.dark:smith": [
-  "The moon is dark tonight. My door stays shut from now until first light."
+  "My door stays shut from now until first light, peopl. The moon is dark."
  ],
  "folk.dark:apothecary": [
   "Chandasāvak cut deep, peopl. Come in and let me close it before you go out again."
  ],
  "folk.dark:tinker": [
-  "No telling has the Chandasāvak coming up like this on a dark night."
+  "Every telling I know has the Chandasāvak under a seal."
  ],
  "folk.dark:runescribe": [
   "A lamp does nothing to the Chandasāvak once they are up, peopl. They give their own light."
@@ -327,7 +327,7 @@
   "The pale beasts are up to eat the other kinds, peopl. Tell me what you see them take."
  ],
  "folk.dark:deserter": [
-  "On the sand we never saw a night like this.",
+  "Out on the sand, Chandasāvak walk as well.",
   "At the fires tonight everyone is inside the light, and nobody sleeps."
  ],
 
@@ -426,8 +426,8 @@
   "Look after it. It is old work."
  ],
  "folk.buy:runescribe": [
-  "Every line on it is my own cutting.",
-  "Do not knock the lines on it against stone."
+  "The lines on it were cut on my frame.",
+  "If a line on it chips, bring it to me to cut again."
  ],
  "folk.buy:beastcaller": [
   "Drive it once and a small one forms on the food.",
@@ -444,14 +444,14 @@
  ],
  "folk.sell:provisioner": [
   "Cheap, peopl. A hearth further on will pay more for it than I do.",
-  "Meat goes on my back to the next hearth."
+  "I carry meat on to the next hearth."
  ],
  "folk.sell:smith": [
   "Iron pieces go back in my fire and come out as bars.",
-  "Gold I take at any weight. It bends cold, and bends again."
+  "Gold I take in any amount. It bends cold."
  ],
  "folk.sell:apothecary": [
-  "Caps from Under go into the stronger salve.",
+  "Caps from Under make the stronger salve.",
   "Mushrooms and fibre as well, if you have them."
  ],
  "folk.sell:tinker": [
@@ -481,7 +481,7 @@
  "folk.short:deserter": "Beat off a march and you will have the Mūda for it.",
 
  "folk.leave:wayfinder": "Set a new bed in the room, peopl, for the next walker on the road to sit down in.",
- "folk.leave:provisioner": "There is nothing to sit on through the night. I will sell the coal further down the road.",
+ "folk.leave:provisioner": "I walk on today, peopl, and sell what I carry at the hearths down the road.",
  "folk.leave:smith": "The anvil is yours, peopl. Bring bars to my next hearth if you want them worked.",
  "folk.leave:apothecary": "My salves are packed. Holders at other hearths have arms that need seeing to.",
  "folk.leave:tinker": "Your Joining Bench is the first I have seen. Other walkers will hear of it from me.",
@@ -528,7 +528,7 @@
  ],
  "fire.say:struck": [
   "Drive it out of the light. It will get up somewhere else.",
-  "You broke the ground of our fire, peopl. We will drive you off it."
+  "That draws, peopl, and you set it inside our light. Go out past the houses."
  ],
  "fire.say:fuel": [
   "Leave the wood at the edge and go.",

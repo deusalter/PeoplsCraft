@@ -353,7 +353,7 @@
    "voice": "sight",
    "limit": 60,
    "assign": "system",
-   "entries": 10
+   "entries": 11
   },
   "realm": {
    "about": "Lines on crossing between the three places, and on loading",
@@ -9489,6 +9489,18 @@
    "limit": 60,
    "assign": "system",
    "note": "shown when a player joins already down; no text may write an arrival's death (8.11)"
+  },
+  "fall:cause.shot": {
+   "surface": "fall",
+   "key": "cause.shot",
+   "needs": [],
+   "file": "src/sim/projectiles.ts",
+   "line": 100,
+   "now": "Slain by a projectile",
+   "voice": "sight",
+   "limit": 60,
+   "assign": "system",
+   "note": "the cause a projectile that strikes a player sends (src/sim/projectiles.ts), which the fall screen writes into fall:cause.slain today (src/game.ts:302); the loader writes this whole line in place of that one when the cause is this literal"
   },
   "fall:cause.slain": {
    "surface": "fall",

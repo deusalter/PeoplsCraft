@@ -197,6 +197,7 @@
  "fall:cause.lava": "Molten rock burned the body through.",
  "fall:cause.none": "You were down when you left.",
  "fall:cause.slain": "Brought down by {name}",
+ "fall:cause.shot": "Something thrown from a distance struck the body down.",
  "fall:cause.void": "There was nothing underfoot.",
  "realm:compass.altar": "Nearest altar: {n} strides {direction} ({x}, {z})",
  "realm:compass.here": "You are here",

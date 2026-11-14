@@ -634,6 +634,7 @@ L('fall', 'cause.lava', G, 'Lava does not negotiate');
 L('fall', 'cause.void', G, 'There was nothing under you');
 L('fall', 'cause.hunger', G, "'Starved'", { now: 'Starved' });
 L('fall', 'cause.slain', G, 'Slain by ${c}', { now: 'Slain by {name}' });
+L('fall', 'cause.shot', 'src/sim/projectiles.ts', "'a projectile'", { now: 'Slain by a projectile', note: 'the cause a projectile that strikes a player sends (src/sim/projectiles.ts), which the fall screen writes into fall:cause.slain today (src/game.ts:302); the loader writes this whole line in place of that one when the cause is this literal' });
 L('fall', 'cause.none', G, 'You did not get back up', { note: 'shown when a player joins already down; no text may write an arrival\'s death (8.11)' });
 L('fall', 'at', G, '  ·  at ${m.at[1]}, ${m.at[2]}, ${m.at[3]}', { now: '  ·  at {x}, {y}, {z}', voice: 'label' });
 // ---- the three places ----
