@@ -24,7 +24,7 @@ export const platesSheet: Sheet = {
       marks: [{ kind: 'bed', deg: -30 }, { kind: 'guide', deg: 52 }, { kind: 'friend', seat: 3, deg: -62 }, { kind: 'fell', deg: 170 }],
     }));
     kids.push(readout({ cx: 91, y: 26, icon: 'ore', name: 'Iron Ore', line: 'Needs a stone pick', refusal: true }));
-    kids.push(readout({ cx: 91, y: 52, icon: 'log', name: 'Oak Log', line: 'Any axe will do' }));
+    kids.push(readout({ cx: 91, y: 52, icon: 'log', name: 'Oak Log', line: 'Any axe will do', able: true }));
     kids.push(readout({ cx: 91, y: 78, icon: 'haunch', name: 'Tama', life: 0.6 }));
     // Name tags, pings and the marks of the compass.
     kids.push(salt(196, 0, 'Tags, pings, marks'));

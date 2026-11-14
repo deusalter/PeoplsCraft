@@ -26,6 +26,8 @@ export interface CompassOpts {
 }
 
 export const COMPASS_W = 182;
+/** The clear units kept between a mark on the compass and a wind's letter. */
+const WIND_CLEAR = 3;
 const HALF = 84;
 const SPAN = 69;
 
@@ -47,21 +49,29 @@ export function compass(o: CompassOpts): Node {
       const mid = 90;
       // A friend's head with its frame is 10 tall and lies over the plate's inner edges.
       s.clip(2, 1, COMPASS_W - 3, 10);
+      const winds: [number, number][] = [];
       for (let k = 0; k < 16; k++) {
         const deg = k * 22.5, d = along(deg, o.heading);
         if (Math.abs(d) > HALF) continue;
         const x = mid + d;
         if (k % 4 === 0) {
-          const ch = 'NESW'[k / 4];
-          s.text(ch, x - Math.floor(measure(ch) / 2) + 1, 1, 'salt');
+          const ch = 'NESW'[k / 4], lx = x - Math.floor(measure(ch) / 2) + 1;
+          s.text(ch, lx, 1, 'salt');
+          winds.push([lx, lx + measure(ch) - 1]);
         } else if (k % 2 === 0) s.fill(x, 3, 1, 6, 'root.4');
         else s.fill(x, 5, 1, 2, 'root.4');
       }
       for (const m of o.marks ?? []) {
         const d = Math.max(-HALF + 3, Math.min(HALF - 3, along(m.deg, o.heading)));
-        const x = mid + d - 3;
-        if (m.kind === 'friend') s.map(HEADS[m.seat - 1], x - 1, 1);
-        else s.map(COMPASS_MARKS[m.kind], x, 3);
+        // A mark that would touch a wind's letter stands aside from it, 3 clear: a head against the N merged with it.
+        const mw = m.kind === 'friend' ? 10 : 7;
+        let left = mid + d - 3 - (m.kind === 'friend' ? 1 : 0);
+        for (const [a, b] of winds) {
+          if (left + mw - 1 < a - WIND_CLEAR || left > b + WIND_CLEAR) continue;
+          left = left + mw / 2 < (a + b + 1) / 2 ? a - WIND_CLEAR - mw : b + WIND_CLEAR + 1;
+        }
+        if (m.kind === 'friend') s.map(HEADS[m.seat - 1], left, 1);
+        else s.map(COMPASS_MARKS[m.kind], left, 3);
       }
       s.unclip();
       s.fill(mid, 1, 2, 2, 'salt');
@@ -80,31 +90,39 @@ export interface ReadoutOpts {
   cx: number; y: number;
   icon: string;
   name: string;
-  /** The second line: `root.4`, or `blood.lt` when it says why the thing cannot be taken. */
+  /** The second line: `root.4`, or as `refusal` and `able` say. */
   line?: string;
+  /** The line says why the thing cannot be taken: `blood.lt` after a `{cross}`. */
   refusal?: boolean;
-  /** With a refusal, the icon of the tool that would do, at the right end of the second line. */
-  needs?: string;
+  /** The line says the tool in hand will do: `salt` after a `{check}` in `growth.lt`. */
+  able?: boolean;
   /** For a creature, its life as a thin strip as wide as the name. */
   life?: number;
 }
 
+/**
+ * The readout of what is looked at (5.27). Whether the tool in hand will break a block is told by a glyph as well as
+ * by a colour, a check or a cross before the line, so that a yes in grey was not read as a line that does not matter.
+ */
 export function readout(o: ReadoutOpts): Node {
   const nw = measure(o.name);
-  const lw = o.line ? measure(o.line) : 0;
-  const needs = o.refusal && o.needs ? o.needs : null;
-  const w = Math.max(nw, lw + (needs ? 2 + 16 : 0)) + 28;
+  const mark = o.refusal ? '{cross} ' : o.able ? '{check} ' : '';
+  const lw = o.line ? measure(mark + o.line) : 0;
+  const w = Math.max(nw, lw) + 28;
   return {
     x: o.cx - Math.floor(w / 2), y: o.y, w, h: 24,
     paint: (s) => {
       s.nine(PLATE, 0, 0, w, 24);
-      if (needs) s.icon(needs, 24 + lw + 2, 4);
       s.translate(3, 3);
       paintSlot(s, { ramp: 'dark', stack: { icon: o.icon, n: 1 } }, REST);
       s.translate(-3, -3);
       s.text(o.name, 24, 2, 'salt', true);
       if (o.life !== undefined) paintStrip(s, { x: 0, y: 0, w: nw, f: o.life, tones: ['blood.lt', 'blood', 'blood.dk'], segments: Math.max(1, Math.round(nw / 20)), thin: true }, 24, 14);
-      else if (o.line) s.text(o.line, 24, 12, o.refusal ? 'blood.lt' : 'root.4', true);
+      else if (o.line && o.refusal) s.text(mark + o.line, 24, 12, 'blood.lt', true);
+      else if (o.line && o.able) {
+        s.text('{check}', 24, 12, 'growth.lt', true);
+        s.text(o.line, 24 + measure(mark), 12, 'salt', true);
+      } else if (o.line) s.text(o.line, 24, 12, 'root.4', true);
     },
   };
 }
@@ -357,20 +375,27 @@ function paintBars(s: Surface, x: number, y: number, bars: number): void {
 /** The pitch of the crew's rows: the name's cell 10, one clear unit under its descenders, the life strip 4. */
 export const CREW_ROW = 15;
 
-/** The width of the crew on the HUD folded to heads: a head 10 wide with a unit either side for its life strip. */
+/** The width of the crew on the HUD folded to heads: a head 10 wide in its outline of root.0, and its life strip. */
 export const CREW_HEADS_W = 12;
 
+/** The pitch of the folded crew's rows: the outlined head 12, a clear unit, the life strip 4, a clear unit. */
+export const CREW_HEADS_ROW = 18;
+
 /**
- * The crew at the top left of the HUD (5.24), folded: each friend's head 10 by 10 in a column 12 wide, their life a
- * strip 12 by 4 under it, rows 15 tall, no plate and no names; the names are on the roster, held open with Tab.
+ * The crew at the top left of the HUD (5.24), folded: each friend's head 10 by 10 inside an outline of root.0 that
+ * follows its cut corners, in a column 12 wide; their life a strip 12 by 4 one clear unit under it; rows 18 tall, no
+ * plate and no names; the names are on the roster, held open with Tab. With the seat's ring straight against the
+ * sky, a pale ring vanished on a pale sky and the faces looked pasted on.
  */
 export function crewHeads(o: { x: number; y: number; members: Member[] }): Node {
   return {
-    x: o.x, y: o.y, w: CREW_HEADS_W, h: o.members.length * CREW_ROW,
+    x: o.x, y: o.y, w: CREW_HEADS_W, h: o.members.length * CREW_HEADS_ROW - 1,
     paint: (s) => o.members.forEach((m, i) => {
-      const y = i * CREW_ROW;
-      head(s, m.seat, 1, y, m.life <= 0);
-      paintLife(s, 0, y + 10, CREW_HEADS_W, m.life);
+      const y = i * CREW_HEADS_ROW;
+      s.fill(1, y, 10, 12, 'root.0');
+      s.fill(0, y + 1, 12, 10, 'root.0');
+      head(s, m.seat, 1, y + 1, m.life <= 0);
+      paintLife(s, 0, y + 13, CREW_HEADS_W, m.life);
     }),
   };
 }
