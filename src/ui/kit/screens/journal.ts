@@ -7,7 +7,7 @@ import { cut as inkCut } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
 import { type Section, BOOK_H, BOOK_TABS, BOOK_W, book, pageHeading } from '../parts/book';
 import { button } from '../parts/button';
-import { channel } from '../parts/gauges';
+import { channel, segmentEdges } from '../parts/gauges';
 import { paintSlot } from '../parts/slot';
 import { centred } from '../scale';
 import { CREW, type CrewMember } from '../sample/crew';
@@ -78,7 +78,7 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
   if (st.need) {
     const have = s === 'done' ? st.need : s === 'now' ? p.have : 0;
     right.push(inkLine(0, 67, PW, `${count(have)} of ${count(st.need)}`, 'ink', true));
-    right.push(channel({ x: 0, y: 78, len: PW, f: have / st.need, ramp: 'clay' }));
+    right.push(channel({ x: 0, y: 78, len: PW, f: have / st.need, ramp: 'clay', segments: st.need <= 12 ? st.need : undefined }));
   }
   // Where to go is the line the crew acts on: it wraps onto a second line rather than being cut, and what the step
   // gives moves down under it, keeping clear of the page's foot.
@@ -165,12 +165,15 @@ function peoplePage(p: People): Node[] {
     para(0, 14, PW, p.holds, 'ink.faded', 2),
     inkLine(0, 38, PW, 'Standing'),
     inkLine(0, 38, PW, `${p.notch} of 5`, 'ink', true),
+    channel({ x: 0, y: 49, len: PW, f: p.notch / 5, ramp: 'clay', segments: 5 }),
     {
-      x: 0, y: 49, w: PW, h: 7,
-      paint: (g, live) => {
-        channel({ x: 0, y: 0, len: PW, f: (p.notch + p.toward) / 5, ramp: 'clay' }).paint!(g, live);
-        // The five notches: a cut of the rim's dark tone across the channel at each fifth.
-        for (let k = 1; k < 5; k++) g.fill(Math.round((k * (PW - 2)) / 5), 1, 1, 5, 'clay.pit');
+      // The way toward the next notch, as a line of ember under the segment it will fill.
+      x: 0, y: 57, w: PW, h: 1,
+      paint: (g) => {
+        if (p.notch >= 5 || p.toward <= 0) return;
+        const e = segmentEdges(PW - 2, 5);
+        const a = e[p.notch], seg = e[p.notch + 1] - 1 - a;
+        g.fill(1 + a, 0, Math.max(1, Math.floor(p.toward * seg)), 1, 'ember');
       },
     },
     inkLine(0, 62, PW, 'Raised by'),
