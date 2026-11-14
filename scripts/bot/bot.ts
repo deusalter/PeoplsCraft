@@ -63,6 +63,12 @@ export class Bot {
   flags = new Set<string>();
   /** Whether the body steps up one block by itself, as the setting does in the browser. */
   autoJump = true;
+  /** Chunks kept round the bot, generated and subscribed; play needs only those within RADIUS. */
+  radius = RADIUS;
+  /** While set, the bot does not say `ready`: the host keeps it loading. */
+  holdReady = false;
+  /** When each socket was dialled (performance.now() ms), and the `boot` of each welcome. */
+  dials: number[] = []; boots: number[] = [];
   /** Ticks run in play. */
   ticks = 0;
   private readySent = -1; private time = 0; private moveT = 0; private wasWet = false; private wasLava = false;
@@ -84,7 +90,7 @@ export class Bot {
   connect(url: string, password?: string, view = 4): Promise<void> {
     const ws = serverUrl(url);
     if (!ws) throw new Error('not an address: ' + url);
-    this.transport = new WsTransport(ws, { open: (u) => new Tap(u, this.wire, this.taps) as unknown as WebSocket });
+    this.transport = new WsTransport(ws, { open: (u) => { this.dials.push(performance.now()); return new Tap(u, this.wire, this.taps) as unknown as WebSocket; } });
     const s = this.session = new Session(this.transport);
     this.vox.attach(s);
     this.invc = new InvClient(s, () => this.flags);
@@ -126,6 +132,10 @@ export class Bot {
     this.timer = null;
     this.transport?.close();
   }
+  /** Say goodbye and stop: the host parks the player at once (7.9). */
+  bye(): void { this.session.send({ t: 'bye' }); setTimeout(() => this.close(), 200); }
+  /** After a death, ask to be sent home. */
+  respawn(): void { this.session.send({ t: 'respawn' }); }
   /** Kill the socket, as a link that breaks does; the transport reconnects by itself. */
   drop(): void { for (const t of this.taps) t.kill(); }
   /** Stop reading and writing for `ms` without closing, as a dead link does; what was held then goes through. */
@@ -355,7 +365,7 @@ export class Bot {
   }
   private onWelcome(m: S2COf<'welcome'>): void {
     const b = this.body;
-    this.counts.welcomes++;
+    this.counts.welcomes++; this.boots.push(m.boot);
     this.seed = m.world.seed; this.dim = m.dim; this.slot = m.you.slot; this.flags = new Set(m.flags);
     b.frozen = true; b.flying = false;
     b.teleport(m.pos[0], m.pos[1], m.pos[2]); b.yaw = m.pos[3]; b.pitch = m.pos[4];
@@ -392,9 +402,10 @@ export class Bot {
   /** The chunks within RADIUS are kept and those beyond RADIUS + 1 let go; one missing generation is made per frame. */
   private keepChunks(): void {
     const v = this.vox, cx = Math.floor(this.body.x / 16), cz = Math.floor(this.body.z / 16);
-    for (const c of [...v.chunks.values()]) if (Math.abs(c.cx - cx) > RADIUS + 1 || Math.abs(c.cz - cz) > RADIUS + 1) v.drop(c);
+    const r = this.radius;
+    for (const c of [...v.chunks.values()]) if (Math.abs(c.cx - cx) > r + 1 || Math.abs(c.cz - cz) > r + 1) v.drop(c);
     let best: VoxChunk | null = null, bestD = Infinity;
-    for (let dx = -RADIUS; dx <= RADIUS; dx++) for (let dz = -RADIUS; dz <= RADIUS; dz++) {
+    for (let dx = -r; dx <= r; dx++) for (let dz = -r; dz <= r; dz++) {
       const c = v.create(cx + dx, cz + dz), d = dx * dx + dz * dz;
       if (!c.blocks && d < bestD) { best = c; bestD = d; }
     }
@@ -412,7 +423,7 @@ export class Bot {
         if ((this.frameN++ & 15) === 0) this.vox.tick(now, this.body.x, this.body.z);
         this.vox.flush(now);
       }
-      if (this.joined && !this.ready && this.readySent !== this.tpId && this.areaReady()) { this.readySent = this.tpId; s.send({ t: 'ready', tp: this.tpId }); }
+      if (this.joined && !this.ready && !this.holdReady && this.readySent !== this.tpId && this.areaReady()) { this.readySent = this.tpId; s.send({ t: 'ready', tp: this.tpId }); }
       let n = 0;
       while (this.acc >= STEP && n < 5) {
         if (n) s.pump();

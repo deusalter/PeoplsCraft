@@ -548,6 +548,8 @@ class FakeSocket {
   open(): void { this.readyState = 1; this.onopen?.(); }
   say(m: object): void { this.onmessage?.({ data: JSON.stringify(m) }); }
   end(): void { this.readyState = 3; this.onclose?.(); }
+  /** What Node's WebSocket does when the connection is refused: an error, and no close ever. */
+  refuse(): void { this.onerror?.(); }
 }
 function fakeWire() {
   let now = 0;
@@ -618,6 +620,26 @@ test('the WebSocket transport retries with a growing backoff, counts only its ne
   assert.equal(socks.length, n + 1, 'no retry after a final error');
   t.send({ t: 'chat', text: 'x' });
   assert.equal(f.sent.length, 0);
+});
+
+test('a dial refused with an error and no close is given up at once, and the backoff goes on', () => {
+  const { env, socks, pass } = fakeWire();
+  const t = new WsTransport('ws://h:1/ws', env), closes: string[] = [];
+  t.onClose = (c) => { closes.push(c); };
+  socks[0].open(); socks[0].say({ t: 'welcome' }); socks[0].say({ t: 'error', code: 'shutdown', msg: '' }); socks[0].end();
+  const at: number[] = [];
+  for (let ms = 0; ms < 16000 && socks.length < 6; ms += 10) {
+    const n = socks.length;
+    pass(10);
+    if (socks.length > n) { at.push(ms + 10); socks.at(-1)!.refuse(); }
+  }
+  assert.deepEqual(at.map((v, i) => v - (at[i - 1] ?? 0)), [500, 1000, 2000, 4000, 8000]);
+  assert.ok(socks.slice(1, -1).every((w) => w.closed), 'each refused socket is let go');
+  assert.equal(t.state, 'retrying');
+  // a socket that errors and then closes, as in a browser, is lost once
+  const last = socks.at(-1)!;
+  last.end();
+  assert.equal(closes.filter((c) => c === 'retrying').length, 6);
 });
 
 test('a hidden page dials again only once it is shown, whatever closed it', () => {

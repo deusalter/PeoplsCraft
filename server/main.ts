@@ -106,9 +106,13 @@ function harness(h: SimHost, path: string, q: URLSearchParams): unknown {
     return {
       id: p.id, name: p.name, slot: p.slot, state, dim: p.dim, x: p.body.x, y: p.body.y, z: p.body.z,
       hp: p.stats.hp, dead: p.stats.dead, level: p.stats.level, xp: p.stats.xp, coins: p.inv.coins, items, mail: p.mail.map((it) => ({ k: it.k, n: it.n })),
+      bed: p.bed, sleeping: p.sleeping, buffs: Object.fromEntries(p.stats.buffs),
     };
   });
-  if (path === '/shared') return { summons: h.sim.shared.summons, owed: h.sim.shared.owed, gates: h.sim.shared.gates };
+  if (path === '/shared') {
+    const s = h.sim.shared;
+    return { summons: s.summons, owed: s.owed, gates: s.gates, clock: s.clock, flags: [...h.sim.flags], quest: s.quest, event: { a: s.events.a, k: s.events.k, g: s.events.g }, spawn: s.worldSpawn };
+  }
   if (path === '/stats') {
     const t = h.stats.tickMs, steps = h.stepCount, last = Math.min(steps, t.length, Math.max(1, Number(q.get('last')) || t.length));
     const a: number[] = [];

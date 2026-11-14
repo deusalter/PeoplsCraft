@@ -4082,6 +4082,46 @@ footing.
 (g) No scenario of this step failed for a defect in the server or the shared code. Each passed three runs in a row, one at a time,
 at 1-minute load averages between 10 and 20.
 
+D52. Stage 5, lane D: the scenarios `bed`, `sleep`, `latejoin` and `restart` (4.2, 7.10, 9, 10.2, 11).
+(a) A defect in the shared code, found by `restart`. `net/ws-client.ts` waited for the `close` that a browser sends after a
+failed dial; Node's `WebSocket`, refused a connection, sends `error` and never `close` (its `readyState` stays 0). A bot whose
+server was down therefore sat on each refused dial until the 6 s silence watchdog gave it up, and dialled 0.5 s and then about
+7.5 s after a stop instead of 0.5, 1, 2 and 4 s. An `error` on the transport's current socket now counts as its loss, as a
+`close` does; the generation guard makes the `close` a browser sends after it a no-op. `server.test` drives a socket that
+errors without closing and gets the backoff of 4.2 (it failed before the change). The bot's tap also forgets such a socket.
+(b) More read-only answers under `--harness` beside those of D50 (a) and D51 (a): `/players` also gives `bed`, `sleeping`
+and `buffs` (seconds left by key), and `/shared` also gives `clock`, the flag set, `quest`, the event (`a`, `k`, `g`) and
+the world spawn. The runner's `restart` takes `kill` (SIGKILL), `samePort` (so that clients come back by themselves),
+`downMs` and a callback run while the server is down; a bot can keep more chunks than it plays in (`radius`), hold back
+its `ready` (`holdReady`), and records when it dialled and the `boot` of each welcome.
+(c) `bed` reads its case of 9 in both branches. Online: two players set one bedroll; a third party's break clears both
+beds with the toast, and the owner's next death goes to the world spawn (a death with the bed in place first wakes her
+beside it). On disk only: the owner sets a new bed, walks 240 blocks west, says goodbye and is evicted; the bed is broken
+and the other player leaves, so the Overworld is suspended and no sim chunk holds the bed. Back, her record still names
+the bed; nothing looks at it until her death, when `goHome` sends her there loading (`pendingBed`), finds no bed, and
+lands her at the world spawn with "Your bedroll is gone. Returned to the world spawn." Deaths are falls of 30 blocks under
+a column the scenario clears, so that a tree cannot break the fall; the long walk west is a `tp` in creative onto a floor
+the scenario lays, whatever the ground there.
+(d) 9 has no case about sleep, so `sleep` checks the rules of 7.10: a spawn point by day; refusals with a hostile within
+14 blocks and with an event running; the count toasts; a sleeper woken by moving half a block; three nights that pass
+without a stalled player (morning within 1.4 to 3.5 s of his link going silent: the 1.5 s of the stall and the next check), with every Overworld player asleep while one
+is in the Hollows, and without a lingering one (the count then reads 1/2); each time the clock at `floor + 1.02`, `dawn`
+for 180 s on exactly the sleepers, the banner to the Overworld only, and the bots' own clocks equal to the host's.
+(e) `latejoin` lays stone under the 81 chunks round the spawn (between 390 and 730 KB of edit sets on these seeds) and has
+the newcomer keep 15 x 15 chunks. "Nearest chunks first" is checked as 4.7 orders them, by Chebyshev ring from the chunk of
+the stored position: the 25 chunks within 2 all came before any chunk 5 or more away, and no chunk after one more than a
+ring farther. "Paced": no `ce` carried more than 32 KB of data unless it held one chunk (17 to 31 messages). "Invisible to
+creatures and cannot be hurt" is held for 6 s with three Kantak standing at the landing; once he says `ready` they hurt him
+within 2 s.
+(f) `restart` checks what 9 promises a player can see and the host holds, except projectiles: the harness has no question
+for them, and the bots fire none. The thrown planks are lost with the drops, as 9 says. In the six crashes of the three
+runs the summon's own commit was always written within the 0.2 s, and no `commit.json` was left at the kill, so the
+branch "not in the commit" and the journal replay did not occur here; the scenario accepts either branch and checks one
+offering in all. `disk.test` covers the replay.
+(g) Noticed and not changed, since no scenario fails on it: `trySummon` takes the offering before `mobs.spawn`, which
+returns null when the creature pool is full, so a summon into a full pool loses it.
+(h) Each scenario passed three runs in a row, one at a time, at 1-minute load averages between 7 and 17.
+
 ---
 
 ## 14. Review log

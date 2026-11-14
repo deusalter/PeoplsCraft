@@ -23,6 +23,10 @@ import rejoin from '../scenarios/rejoin';
 import sameblock from '../scenarios/sameblock';
 import stall from '../scenarios/stall';
 import travel2 from '../scenarios/travel2';
+import bed from '../scenarios/bed';
+import latejoin from '../scenarios/latejoin';
+import restart from '../scenarios/restart';
+import sleep from '../scenarios/sleep';
 import type { Bot } from './bot';
 
 export interface Stats {
@@ -34,12 +38,14 @@ export interface HostPlayer {
   id: string; name: string; slot: number; state: 'loading' | 'active' | 'stalled' | 'lingering' | 'parked'; dim: number;
   x: number; y: number; z: number; hp: number; dead: boolean; level: number; xp: number; coins: number;
   items: Record<string, number>; mail: { k: string; n: number }[];
+  bed: [number, number, number] | null; sleeping: boolean; buffs: Record<string, number>;
 }
 export interface HostShared {
   summons: { n: number; item: string; by: string; dim: number; altar: [number, number, number] }[];
   owed: Record<string, { xp: number; coins: number; items: { k: string; n: number }[] }>;
   /** The gate registry of 9: every gate `land()` raised, by the cell `buildGate` was called with. */
   gates: { kind: 1 | 2; dim: number; x: number; y: number; z: number; alongX: boolean }[];
+  clock: number; flags: string[]; quest: number; event: { a: 'raid' | 'moon' | 'ashen' | null; k: number; g: number }; spawn: [number, number];
 }
 /** An item lying in a realm, as `/drops` gives it. */
 export interface HostDrop { id: number; k: string; n: number; x: number; y: number; z: number; owner: string | null }
@@ -66,15 +72,18 @@ export interface Ctx {
   /** A check: recorded, and the run fails when one does not hold. */
   check(ok: boolean, what: string): void;
   log(line: string): void;
-  /** Stop the server with SIGTERM, as an operator does, and start it again on the same folder; `url` and `direct`
-   *  then name the new one. Resolves with the exit code of the stop. */
-  restart(): Promise<number | null>;
+  /** Stop the server with SIGTERM, as an operator does (with `kill`, SIGKILL, as a crash does), wait `downMs`, and start
+   *  it again on the same folder; `url` and `direct` then name the new one, which listens on the same port when
+   *  `samePort`, so that clients can come back by themselves. Resolves with the exit code of the stop. */
+  restart(opts?: { kill?: boolean; samePort?: boolean; downMs?: number; onStopped?: () => void }): Promise<number | null>;
+  /** The server's data folder. */
+  data: string;
   /** The server's output so far. */
   serverLog(): string;
   alive(): boolean;
 }
 type Scenario = (ctx: Ctx) => Promise<void>;
-const SCENARIOS: Record<string, Scenario> = { basic, abuse, crew, boss, rejoin, stall, lateloot, projjoin, sameblock, chest2, chestbreak, embed, travel2, gatecut };
+const SCENARIOS: Record<string, Scenario> = { basic, abuse, crew, boss, rejoin, stall, lateloot, projjoin, sameblock, chest2, chestbreak, embed, travel2, gatecut, bed, sleep, latejoin, restart };
 
 const root = resolve('.'), out = resolve('out/scenario'), pad = resolve('.claude/mp-work/pad/scenarios');
 
@@ -85,9 +94,9 @@ function buildServer(): void {
 }
 
 interface Server { proc: ChildProcess; base: string; logs: string[] }
-function startServer(data: string, extra: string[]): Promise<Server> {
+function startServer(data: string, extra: string[], port = 0): Promise<Server> {
   const logs: string[] = [];
-  const proc = spawn(process.execPath, [join(out, 'server', 'main.js'), '--data', data, '--port', '0', '--host', '127.0.0.1', '--harness', '--cheats', '--max-players', '32', ...extra],
+  const proc = spawn(process.execPath, [join(out, 'server', 'main.js'), '--data', data, '--port', String(port), '--host', '127.0.0.1', '--harness', '--cheats', '--max-players', '32', ...extra],
     { cwd: out, stdio: ['ignore', 'pipe', 'pipe'] });
   return new Promise((ok, no) => {
     const t = setTimeout(() => no(new Error('the server did not say where it listens:\n' + logs.join(''))), 30000);
@@ -136,16 +145,24 @@ async function runOnce(name: string, scenario: Scenario, lag: boolean, keep: boo
     ent: async (dim, x, y, z) => (await get<{ ent: { kind: string; data: any } | null }>(`/ent?dim=${dim}&x=${x}&y=${y}&z=${z}`)).ent,
     check: (ok, what) => { checks.push([ok, what]); say(`${ok ? 'ok  ' : 'FAIL'} ${what}`); },
     log: say,
-    restart: async () => {
+    restart: async (o = {}) => {
       if (proxy) { await proxy.close(); proxy = null; }
-      const rc = await stopServer(server);
+      let rc: number | null;
+      if (o.kill) {
+        const gone = new Promise<number | null>((ok) => server.proc.once('exit', (c) => ok(c)));
+        server.proc.kill('SIGKILL');
+        rc = await gone;
+      } else rc = await stopServer(server);
       earlier.push(...server.logs);
-      server = await startServer(world, extra);
+      o.onStopped?.();
+      if (o.downMs) await new Promise((r) => setTimeout(r, o.downMs));
+      server = await startServer(world, extra, o.samePort ? Number(new URL(server.base).port) : 0);
       if (lag) await lagOn();
       say(`server restarted: ${server.base}`);
       return rc;
     },
     serverLog: () => earlier.join('') + server.logs.join(''),
+    data: world,
     alive: () => server.proc.exitCode === null,
   };
   console.log(`scenario ${name}${lag ? ' through the lag proxy' : ''}, run ${i + 1}: server ${server.base}, data ${data}`);

@@ -108,7 +108,8 @@ export class WsTransport implements Transport {
       if (this.onMessage) this.onMessage(m);
     };
     ws.onclose = () => { if (gen === this.gen) this.lost(gen); };
-    ws.onerror = () => { /* a close follows */ };
+    // a browser follows an error with a close; Node's WebSocket, refused a connection, sends the error alone
+    ws.onerror = () => { if (gen === this.gen) this.lost(gen); };
     this.watch();
   }
   /** The current socket is gone: retry, or stop for good when the host said something final on it. */

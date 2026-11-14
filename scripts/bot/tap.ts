@@ -33,7 +33,7 @@ export class Tap {
     live.add(this);
     this.ws.onopen = (e) => (this.onopen as ((e: Event) => void) | null)?.(e);
     this.ws.onclose = (e) => { live.delete(this); this.flushSoon(); (this.onclose as ((e: CloseEvent) => void) | null)?.(e); };
-    this.ws.onerror = (e) => (this.onerror as ((e: Event) => void) | null)?.(e);
+    this.ws.onerror = (e) => { if (this.ws.readyState !== 1) live.delete(this); (this.onerror as ((e: Event) => void) | null)?.(e); };
     this.ws.onmessage = (e: MessageEvent) => {
       const d: unknown = e.data, w = this.wire;
       if (d instanceof ArrayBuffer) { if (d.byteLength && new Uint8Array(d)[0] === 1) w.bytesIn.snapshot += d.byteLength; else w.bytesIn.other += d.byteLength; }
