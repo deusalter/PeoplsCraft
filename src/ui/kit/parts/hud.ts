@@ -101,7 +101,12 @@ export function paintStrip(s: Surface, o: StripOpts, x: number, y: number): void
     s.fill(x + 1, y + 2, n, rows - 2, o.tones[1]);
     s.fill(x + 1, y + h - 2, n, 1, o.tones[2]);
   }
-  for (let k = 1; k < o.segments; k++) s.fill(x + 1 + Math.round((k * inner) / o.segments) - 1, y + 1, 1, rows, 'root.0');
+  // Where the segments and their lines divide the inside exactly, each segment is as wide as the next.
+  const pitch = (inner + 1) / o.segments;
+  for (let k = 1; k < o.segments; k++) {
+    const at = Number.isInteger(pitch) ? k * pitch : 1 + Math.round((k * inner) / o.segments) - 1;
+    s.fill(x + at, y + 1, 1, rows, 'root.0');
+  }
 }
 
 export interface HotbarOpts {
@@ -113,11 +118,11 @@ export interface HotbarOpts {
 }
 
 /**
- * The hotbar (5.16), one sprite 182 by 22: an outline of `root.0`, then nine raised cells of 20 at x 1 + 20i, each a
- * rim of stone lit from the top left (`stone.face` along its top and left, `stone.dk` along its bottom and right), a
- * frame of `root.0` inside the rim, and a well of `stone.pit` 16 square at 3 + 20i, 3 holding the icon, sunk: `root.1`
- * along its top and left, `stone.dk` along its bottom and right. The selector
- * of 24 at x -1 + 20i, y -1 lies over the chosen cell.
+ * The hotbar (5.16), one strip 182 by 22: an outline of `root.0` round the whole, dividers of `root.0` one unit wide
+ * at x 20, 40 … 160, and between them nine cells sunk in the strip, each `stone.pit` along its top and left, a floor of
+ * `stone.dk`, `stone.sh` along its bottom and right, the icon at 3 + 20i, 3. The last cell is a unit wider than the
+ * rest, since nine pitches of 20 and two outlines make 182; its spare column is floor. The selector of 24 at
+ * x -1 + 20i, y -1 lies over the chosen cell.
  */
 export function hotbar(o: HotbarOpts): Node {
   return {
@@ -128,22 +133,15 @@ export function hotbar(o: HotbarOpts): Node {
       s.fill(0, 1, 1, 20, 'root.0');
       s.fill(181, 1, 1, 20, 'root.0');
       for (let i = 0; i < 9; i++) {
-        const x = 1 + 20 * i;
-        s.fill(x, 1, 20, 20, 'stone.sh');
-        s.fill(x, 1, 19, 1, 'stone.face');
-        s.fill(x, 2, 1, 18, 'stone.face');
-        s.fill(x + 1, 20, 19, 1, 'stone.dk');
-        s.fill(x + 19, 1, 1, 20, 'stone.dk');
-        s.fill(x + 1, 2, 18, 18, 'root.0');
-        // The well is sunk: the rim's shade of root.1 along its top and left, its far walls lit in stone.dk, so
-        // that an empty cell reads as a hollow and not as a flat dark box.
-        s.fill(x + 2, 3, 16, 16, 'stone.pit');
-        s.fill(x + 2, 3, 16, 1, 'root.1');
-        s.fill(x + 2, 4, 1, 15, 'root.1');
-        s.fill(x + 3, 18, 15, 1, 'stone.dk');
-        s.fill(x + 17, 4, 1, 14, 'stone.dk');
+        const x = 1 + 20 * i, w = i === 8 ? 20 : 19;
+        if (i < 8) s.fill(x + 19, 1, 1, 20, 'root.0');
+        s.fill(x, 1, w, 20, 'stone.dk');
+        s.fill(x, 1, w, 1, 'stone.pit');
+        s.fill(x, 2, 1, 19, 'stone.pit');
+        s.fill(x + 1, 20, w - 1, 1, 'stone.sh');
+        s.fill(x + w - 1, 2, 1, 18, 'stone.sh');
         const st = o.cells[i];
-        if (st) { s.icon(st.icon, x + 2, 3); paintCount(s, st.n, x + 16, 17); }
+        if (st) { s.icon(st.icon, x + 2, 3); paintCount(s, st.n, x + 16, 18); }
         const c = o.cooling?.[i];
         if (c && c > 0) s.wash(x + 2, 3, 16, Math.max(1, Math.ceil(c * 16)), 'root.0', 2);
       }
