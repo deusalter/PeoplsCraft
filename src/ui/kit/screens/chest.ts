@@ -32,8 +32,11 @@ function sample(): Hand {
   });
 }
 
-/** The side panel: two small buttons 46 by 14, 4 in from its edges and 2 apart, so each says what it does in words. */
-const PANEL_W = 54, PANEL_H = 38;
+/**
+ * The side panel: two small buttons 46 by 14 on rows 4 apart, 4 in from its edges, so each says what it does in words.
+ * Its top is the slab's top: hung 17 down it was fastened to nothing.
+ */
+const PANEL_W = 54, PANEL_H = 4 + 14 + 4 + 14 + 4;
 const SORT_W = measure('Sort chest') + 10;
 
 let hand: Hand | null = null;
@@ -64,13 +67,15 @@ function build(ui: Ui, title: string): Node {
   // arrows on them did not say which way each one moved things.
   const says = (name: string, line: string) => () => ({ lines: [{ text: name, c: 'salt' as const }, { text: line, c: 'root.4' as const }], delay: 0.4 });
   const panel = slab({
-    x: 175, y: 17, w: PANEL_W, h: PANEL_H, ramp: 'timber',
+    x: 175, y: 0, w: PANEL_W, h: PANEL_H, ramp: 'timber',
     kids: [
       button({ id: 'chest.take', x: 4, y: 4, w: 46, h: 14, ramp: 'timber', label: 'Take all', tip: says('Take all', 'Into the pack, then the hotbar'), onPress: () => { takeAll(h); b.after(); } }),
-      button({ id: 'chest.stash', x: 4, y: 20, w: 46, h: 14, ramp: 'timber', label: 'Stash', tip: says('Stash', 'Every kind the chest already holds'), onPress: () => { stash(h); b.after(); } }),
+      button({ id: 'chest.stash', x: 4, y: 22, w: 46, h: 14, ramp: 'timber', label: 'Stash', tip: says('Stash', 'Every kind the chest already holds'), onPress: () => { stash(h); b.after(); } }),
     ],
   });
-  return overWorld(ui, win, [slab({ x: 0, y: 0, w: 176, h: 172, ramp: 'timber', title, titleRoom: SORT_W + 4, kids }), panel], {
+  // Where the two tops meet, each slab's left-out corner would leave a notch in one straight outline.
+  const join: Node = { x: 175, y: 0, w: 1, h: 1, paint: (s) => s.fill(0, 0, 1, 1, 'root.0') };
+  return overWorld(ui, win, [slab({ x: 0, y: 0, w: 176, h: 172, ramp: 'timber', title, titleRoom: SORT_W + 4, kids }), panel, join], {
     outside: () => { h.dropHeld(); b.after(); },
   });
 }

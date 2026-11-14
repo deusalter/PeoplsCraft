@@ -2406,7 +2406,7 @@ The pack is the main slab, 176 by 182, with one row of tabs standing 21 above it
 
 ### Chest
 
-Size 229 by 172: the slab 176 by 172 and a panel 54 by 38 fastened to its right side. Material: timber. Anchor: centre of the screen, the panel counted.
+Size 229 by 172: the slab 176 by 172 and a panel 54 by 40 fastened to its right side, its top on the slab's top. Material: timber. Anchor: centre of the screen, the panel counted.
 
 ```
 #==========================================================#
@@ -2445,9 +2445,9 @@ Size 229 by 172: the slab 176 by 172 and a panel 54 by 38 fastened to its right 
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | C0 | slab | 0 | 0 | 176 | 172 | timber slab |
 | C1 | text | 8 | 6 | 40 | 10 | "Chest", or "Supply Crate" |
-| P0 | panel | 175 | 17 | 54 | 38 | a timber panel fastened to the slab's right side beside the chest's slots, sharing its outline column |
-| C2 | button | 179 | 21 | 46 | 14 | "Take all", a small timber button with its word on it; its tooltip adds "Into the pack, then the hotbar". Two bare arrows did not say which one emptied the chest and which filled it |
-| C3 | button | 179 | 37 | 46 | 14 | "Stash", 2 under C2: moves out of the pack every kind the chest already holds, as its tooltip says. It is not "Store all": a chest that takes only what it already holds keeps the pack's tools out of it |
+| P0 | panel | 175 | 0 | 54 | 40 | a timber panel fastened to the slab's right side, its top on the slab's top, sharing its outline column. Hung 17 down, beside nothing in particular, it was fastened to neither the slab's top nor a row |
+| C2 | button | 179 | 4 | 46 | 14 | "Take all", a small timber button with its word on it; its tooltip adds "Into the pack, then the hotbar". Two bare arrows did not say which one emptied the chest and which filled it |
+| C3 | button | 179 | 22 | 46 | 14 | "Stash", 4 under C2: moves out of the pack every kind the chest already holds, as its tooltip says. It is not "Store all": a chest that takes only what it already holds keeps the pack's tools out of it |
 | C4 | button | 107 | 3 | 61 | 12 | "Sort chest", the only button in the title row, its right edge 8 in. Two buttons both called "Sort", 70 apart, were told apart only by where they stood |
 | C5 | slots | 8 | 18 | 162 | 54 | the chest, nine by three |
 | C6 | text | 8 | 76 | 40 | 10 | "Pack" |
