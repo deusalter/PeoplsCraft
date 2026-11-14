@@ -2822,7 +2822,7 @@ Size 298 by 186, with tabs standing 21 above. Material: book (5.19): a leather c
 | G8 | text | 157 | 27 | 126 | 60 | its telling, wrapped to 126, six lines at most |
 | G9 | gauge | 157 | 91 | 126 | 7 | a sunk channel in as many segments as the step counts (5.14), filling a segment at a time in ember, with "3 of 5" right-aligned above it; only for steps that count |
 | G10 | text | 157 | 107 | 126 | 20 | where to: the compass mark (9 by 9, ink) at 0, 0 and the words in ink at 12, saying the thing, then how far and which way: "Vanahar Altar: 212 m east", "Iron ore: 38 m down". A line that ends in up or down has the `{up}` or `{down}` arrow of the text face in place of the compass mark, 2 in, since the compass cannot point straight up or down. Every screen writes a distance as a count and "m", as the HUD and the roster do; "strides" is a word of the tables, not of a readout. It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
-| G11 | text | 157 | 121 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink; three lines at most, or two starting 4 under a where-to of two lines |
+| G11 | text | 157 | 131 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink, at the page's foot: its last line's cell at y 151, 12 above the page number's, and its lines counted up from there; three lines at most, fewer where they would come within 4 of a where-to of two lines. Set 4 under the lines above it, it hung at a height that changed with them, a gap of 50 under the telling |
 | G12 | turn | 267 | 164 | 16 | 7 | page on |
 | G13 | text | 213 | 163 | 16 | 10 | page number |
 

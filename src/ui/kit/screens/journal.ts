@@ -3,11 +3,11 @@
 import { AWAY_HEADS, HEADS, HEAD_SIZE } from '../art/heads';
 import type { SilhouetteName } from '../art/silhouettes';
 import { count, measure as measureInk } from '../font/measure';
-import { cut as inkCut, wrap } from '../font/wrap';
+import { box, cut as inkCut, wrap } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
 import type { Colour } from '../palette';
 import type { Surface } from '../surface';
-import { type Section, BOOK_H, BOOK_TABS, BOOK_W, book, pageHeading } from '../parts/book';
+import { type Section, BOOK_H, BOOK_TABS, BOOK_W, PAGE_TEXT, book, pageHeading } from '../parts/book';
 import { button } from '../parts/button';
 import { channel, segmentEdges } from '../parts/gauges';
 import { paintSlot } from '../parts/slot';
@@ -48,6 +48,8 @@ const SECTION_TABS: Section[] = [
   { id: 'jr.rb.crew', name: 'Crew', icon: 'crew' },
 ];
 const PW = 126;
+/** The cell of the last line of what a step gives, on the right page: 12 above the page number's cell at the book's 163. */
+const GIVES_LAST = 163 - 12 - PAGE_TEXT.top;
 /** The mark column of the Guide's list: 8 wide, the step's words 2 past it. */
 const MARK_W = 8;
 const STEP_X = MARK_W + 2;
@@ -104,15 +106,19 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
     right.push(inkLine(0, 67, PW, `${count(have)} of ${count(st.need)}`, 'ink', true));
     right.push(channel({ x: 0, y: 78, len: PW, f: have / st.need, ramp: 'clay', segments: st.need <= 12 ? st.need : undefined }));
   }
-  // Where to go is the line the crew acts on: it wraps onto a second line rather than being cut, and what the step
-  // gives moves down under it, keeping clear of the page's foot.
-  let below = 108;
+  // Where to go is the line the crew acts on: it wraps onto a second line rather than being cut.
+  let below = 94;
   if (st.where && s !== 'done') {
     const where = whereLine(0, 94, PW, st.where);
     right.push(where);
     below = 94 + where.h + 4;
   }
-  if (st.gives) right.push(para(0, below, PW, st.gives, 'ink.faded', below > 108 ? 2 : 3));
+  // What the step gives stands at the page's foot, its last line 12 above the page number, so that it never hangs at a
+  // height that depends on the lines above it; three lines at most, fewer when a long where-to comes down to it.
+  if (st.gives) {
+    const n = Math.min(3, box(st.gives, PW, 3).lines.length, Math.floor((GIVES_LAST + 10 - below) / 10));
+    if (n > 0) right.push(para(0, GIVES_LAST - (n - 1) * 10, PW, st.gives, 'ink.faded', n));
+  }
   return { left, right };
 }
 
