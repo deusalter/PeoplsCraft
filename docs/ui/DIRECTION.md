@@ -873,7 +873,7 @@ A button 20 tall is dressed stone, on any slab and on the ground tile: these are
 
 Inside the outline of `root.0`, whose corners are left out, the button is lit from the top left like every slab: the first row and the first column `stone.lt`; the face `stone.sh`; the last row and the last column `stone.pit`, with a row and a column of `stone.dk` inside them, so that the bevel is one light unit on the top and left and one dark and one pit on the bottom and right. The two units where light meets dark, at the top right and the bottom left, are face. The face of a button 20 tall is grained: one tile of dressed stone 16 by 16 is repeated across the whole face inside the bevel, the label's ground included, from the face's top left. It is drawn in three tones only, `stone.sh` and the two grits a few levels either side of it (`grit.lt`, `grit.dk`, section 2): four pebbles of 2 by 1 or 2 by 2, each lit from the top left, and one crack of three units. Pressed, the grain drops a unit with the label. Smaller buttons are plain. A course of cuts in `stone.dk` kept clear of the label was tried first: at palette contrast its cuts read as specks, and leaving the middle bare bunched them at the two ends. The label is centred, `salt` with its shadow; its cell is at `y = floor((h - 9) / 2)`, which puts the capitals of a button 20 tall on rows 6 to 12.
 
-Normal and hovered. Hovered: the outline turns `salt`, the light row and column `stone.hi`, the label `ember.hi`. A button with keyboard focus and not the pointer has its outline dashed, runs of two units of `salt` and two of `root.0` counted from each corner, and keeps its `salt` label, so that focus is never read as hover. (The diagram below shows the solid outline of hover.)
+Normal and hovered. Hovered: the outline turns `salt`, the light row and column `stone.hi`, the label `ember.hi`. A door that loses something (leaving a world that is not saved) hovers its label in `blood.lt` instead, the warning colour on dark. A button with keyboard focus and not the pointer has its outline dashed, runs of two units of `salt` and two of `root.0` counted from each corner, and keeps its `salt` label, so that focus is never read as hover. (The diagram below shows the solid outline of hover.)
 
 ```
      0         1         2         3         4         5         6         7         8         9        
@@ -3391,6 +3391,7 @@ Size 427 by 240. Material: a clay slab 216 by 146 over the world under a half of
 | Z5 | button | 113 | 117 | 200 | 20 | "Settings" |
 | Z6 | button | 113 | 141 | 200 | 20 | "Controls" |
 | Z7 | button | 113 | 165 | 200 | 20 | "Save and leave"; on a server "Leave" |
+| | | | | | | When the last save failed, Z7 is "Try to save again" and an eighth row stands 24 under it: "Leave without saving", its label `blood.lt` when hovered or pressed in place of `ember.hi`. The slab grows by 24. A door must never promise the save the line above says cannot happen |
 
 - **Shows.** One clay slab titled like any window, the world and whether it is saved written on it at the top left, and four buttons in a column inside it. Not a bare column of buttons with grey lines centred over it.
 - **Clickable.** The buttons.

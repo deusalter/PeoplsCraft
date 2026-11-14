@@ -20,6 +20,8 @@ export interface PauseView {
   onSettings(): void;
   onControls(): void;
   onLeave(): void;
+  /** Offered only when the last save failed: the door above "Leave without saving". */
+  onRetry?(): void;
 }
 
 export const pauseScreen: Screen<PauseView> = (v, ui) => {
@@ -27,14 +29,24 @@ export const pauseScreen: Screen<PauseView> = (v, ui) => {
   // The lines end 10 under their cell's top; the buttons stand 8 under the last line, 4 apart, and 8 over the foot.
   const second = v.crew ?? v.saved;
   const top = (second ? 28 : 18) + 10 + 8;
-  const W = 216, H = top + 4 * 24 - 4 + 8, X = 113 - 8, Y = Math.floor((240 - H) / 2);
+  // A failed save must not be promised again by the last door: it is offered once more above a door that says so.
+  const failed = !v.server && v.saved !== undefined && !v.saved.ok;
+  const rows = failed ? 5 : 4;
+  const W = 216, H = top + rows * 24 - 4 + 8, X = 113 - 8, Y = Math.floor((240 - H) / 2);
   const kids: Node[] = [
     line({ x: 8, y: 18, w: W - 16, text: v.world, c: 'ink.faded', shadow: false }),
     button({ id: 'pause.back', x: 8, y: top, w: 200, label: 'Back to the game', onPress: v.onBack }),
     button({ id: 'pause.settings', x: 8, y: top + 24, w: 200, label: 'Settings', onPress: v.onSettings }),
     button({ id: 'pause.controls', x: 8, y: top + 48, w: 200, label: 'Controls', onPress: v.onControls }),
-    button({ id: 'pause.leave', x: 8, y: top + 72, w: 200, label: v.server ? 'Leave' : 'Save and leave', onPress: v.onLeave }),
   ];
+  if (failed) {
+    kids.push(
+      button({ id: 'pause.retry', x: 8, y: top + 72, w: 200, label: 'Try to save again', onPress: v.onRetry }),
+      button({ id: 'pause.leave', x: 8, y: top + 96, w: 200, label: 'Leave without saving', warn: true, onPress: v.onLeave }),
+    );
+  } else {
+    kids.push(button({ id: 'pause.leave', x: 8, y: top + 72, w: 200, label: v.server ? 'Leave' : 'Save and leave', onPress: v.onLeave }));
+  }
   if (v.crew) kids.push(line({ x: 8, y: 28, w: W - 16, text: `${v.crew.address}, ${v.crew.here} of ${v.crew.seats} here`, c: 'ink.faded', shadow: false }));
   if (v.saved) kids.push(line({ x: 8, y: 28, w: W - 16, text: v.saved.text, c: v.saved.ok ? 'ink.faded' : 'blood.dk', shadow: false }));
   return washedMenu(ui, 'pause', { c: 'root.0', quarters: 2 }, [
@@ -46,7 +58,7 @@ export const pauseScreen: Screen<PauseView> = (v, ui) => {
 
 const view = (o: Pick<PauseView, 'world' | 'server' | 'saved' | 'crew'>): PauseView => ({
   ...o,
-  onBack: () => go('hud'), onSettings: () => go('settings'), onControls: () => go('controls-play'), onLeave: () => go('title'),
+  onBack: () => go('hud'), onSettings: () => go('settings'), onControls: () => go('controls-play'), onLeave: () => go('title'), onRetry: () => go('pause'),
 });
 
 export const SCREENS: NamedScreen[] = [

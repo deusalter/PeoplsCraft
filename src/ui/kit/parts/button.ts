@@ -16,6 +16,8 @@ export interface ButtonOpts {
   /** The ramp of the slab a small button stands on; left out, the button is dressed stone, as on menus. */
   ramp?: Ramp;
   disabled?: boolean;
+  /** A door that loses something (leaving unsaved): hovered or pressed, the label turns blood.lt, not ember.hi. */
+  warn?: boolean;
   force?: Force;
   onPress?: () => void;
   tip?: (live: Live) => Tip | null;
@@ -88,7 +90,7 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
  * Paints a button at the origin (5.6): dressed stone on menus and the ground tile, or, given the ramp of the slab it
  * stands on, a small button of that slab.
  */
-export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, ramp?: Ramp): void {
+export function paintButton(s: Surface, w: number, h: number, label: string, live: Live, disabled = false, ramp?: Ramp, warn = false): void {
   if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp); return; }
   const pressed = !disabled && live.down && live.hover;
   // Hovered, the outline is solid salt; with the keys on it and not the pointer, dashed; pressed into the slab, root.0.
@@ -105,11 +107,11 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
     // Sunk: shade under the top lip, the light caught on the lower one, the label still lit as hovered and moved a
     // unit down and right with the face.
     bevel(s, w, h, 'stone.pit', 'stone.dk', 'stone.sh', 'stone.lt', null);
-    text = 'ember.hi';
+    text = warn ? 'blood.lt' : 'ember.hi';
     drop = 1;
   } else {
     bevel(s, w, h, live.hover ? 'stone.hi' : 'stone.lt', null, 'stone.sh', 'stone.dk', 'stone.pit');
-    if (live.hover) text = 'ember.hi';
+    if (live.hover) text = warn ? 'blood.lt' : 'ember.hi';
   }
   if (tall && !disabled) grain(s, w, h, pressed);
   const t = cut(label, w - 4);
@@ -124,7 +126,7 @@ export function button(o: ButtonOpts): Node {
     id: o.id, x: o.x, y: o.y, w: o.w, h,
     focus: !o.disabled,
     takes: true,
-    paint: (s, live) => paintButton(s, o.w, h, o.label, lv(live, o.force), o.disabled, o.ramp),
+    paint: (s, live) => paintButton(s, o.w, h, o.label, lv(live, o.force), o.disabled, o.ramp, o.warn),
     tip: o.tip,
     on: o.disabled ? undefined : { click: () => o.onPress?.() },
   };
