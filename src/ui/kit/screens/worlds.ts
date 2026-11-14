@@ -28,32 +28,55 @@ export interface WorldsView {
 }
 
 const ROW_H = 36;
-/** The column the rows' pictures and words stand in, as wide as the four buttons under the well. */
-const COL_W = 280;
+/** The well, as wide as the four buttons under it and standing in their column. */
+const WELL_W = 280;
 
 /**
- * The well runs the screen's width less 8 on each side, from 32 under the top to 52 over the bottom, with the ground
- * tile showing above it (the title) and below it (the buttons), as the tradition's lists stand. Each row's picture and
- * words stand in the column of the buttons, so the eye does not travel to the screen's edge to read a name.
+ * The well stands in the column of the buttons, 280 wide and centred, from 32 under the top to 52 over the bottom, with
+ * the ground tile showing above it (the title), below it (the buttons) and to either side. Across the screen's width
+ * its rows held their picture and words in a column 93 units in from the well's left, a dead band down every row. With
+ * no world it keeps its size, as an empty list keeps its well.
  */
-function frame(ui: Ui, any: boolean) {
-  const x = 8, y = 32, w = ui.w - 16;
-  // With no world the well is one row deep, the row that says so: three rows deep it was a dark box with two grey lines
-  // in its top corner.
-  const h = any ? ui.h - 52 - y : ROW_H + 2;
-  const inset = Math.max(0, Math.floor((w - 2 - COL_W) / 2));
-  return { x, y, w, h, inset, colX: x + 1 + inset };
+function frame(ui: Ui) {
+  const x = Math.floor((ui.w - WELL_W) / 2), y = 32;
+  return { x, y, w: WELL_W, h: ui.h - 52 - y };
 }
 
-function row(w: WorldRow, i: number, inset: number): RowSpec {
+/** The picture's place in a row and the column of its words, from the row's left. */
+const PIC_X = 2, TEXT_X = 38;
+
+function row(w: WorldRow, i: number): RowSpec {
   return {
     id: `worlds.row.${i}`, name: w.name,
     body: (s, rw) => {
-      const tw = Math.min(rw, inset + COL_W) - inset - 44;
-      s.map(worldPreview(w.seed), inset + 2, 2);
-      s.text(cut(w.name, tw), inset + 38, 7, 'salt', true);
+      const tw = rw - TEXT_X - 4;
+      s.map(worldPreview(w.seed), PIC_X, 2);
+      s.text(cut(w.name, tw), TEXT_X, 7, 'salt', true);
       // The level first, since it is what tells one world from another and must not be the part a cut takes.
-      s.text(cut(`level ${w.level}, ${w.played}, seed ${w.seed}`, tw), inset + 38, 19, 'root.4', true);
+      s.text(cut(`level ${w.level}, ${w.played}, seed ${w.seed}`, tw), TEXT_X, 19, 'root.4', true);
+    },
+  };
+}
+
+/**
+ * The list with no world: its first row is a row still to be filled, the picture's place an empty frame with the
+ * faint silhouette of a hill in it, as an empty slot shows what belongs there, the name's place "No world yet" and the
+ * detail's place what to do. Two grey lines in the top corner of a bare strip read as broken; centred in the dark they
+ * were a web page's empty state.
+ */
+function emptyRow(fw: number): Node {
+  return {
+    x: 1, y: 1, w: fw, h: ROW_H,
+    paint: (s) => {
+      s.fill(PIC_X, 2, 32, 32, 'root.0');
+      s.fill(PIC_X + 1, 3, 30, 30, 'root.1');
+      s.fill(PIC_X + 1, 3, 30, 1, 'root.2');
+      s.fill(PIC_X + 1, 4, 1, 29, 'root.2');
+      // The hill: a stepped skyline of blocks 4 wide, as the pictures are built, in root.2 on the frame's floor.
+      const tops = [21, 21, 17, 17, 13, 17, 21, 25];
+      tops.forEach((t, c) => { const x = PIC_X + 2 + c * 4, w = Math.min(4, PIC_X + 31 - x); if (w > 0) s.fill(x, t, w, 33 - t, 'root.2'); });
+      s.text('No world yet', TEXT_X, 7, 'salt', true);
+      s.text(cut('Press New world to start one.', fw - TEXT_X - 4), TEXT_X, 19, 'root.4', true);
     },
   };
 }
@@ -90,20 +113,21 @@ export const worldsScreen: Screen<WorldsView> = (v, ui) => {
   const w = v.worlds[v.chosen];
   const del = w?.openElsewhere ? 'Open in another tab' : 'Delete';
   if (v.asking && w && !ui.focused()?.startsWith('worlds.ask.')) ui.focusOn('worlds.ask.keep', false);
-  const f = frame(ui, any);
+  const f = frame(ui);
   const { dx, dy } = menuOrigin(ui);
   // The table's parts stand in the menu's block; the well and the buttons stand by the screen's edges, so they are
   // placed in screen units and handed to the block less its origin.
-  const by = ui.h - 48 - dy, bx = f.colX - dx;
+  const by = ui.h - 48 - dy, bx = f.x - dx;
+  const list = well({
+    id: 'worlds.list', x: f.x - dx, y: f.y - dy, w: f.w, h: f.h, host: 'ground', ui, rowH: ROW_H,
+    rows: v.worlds.map((r, i) => row(r, i)), chosen: any ? v.chosen : undefined,
+    onChoose: v.onChoose, onUse: v.onPlay,
+  });
+  if (!any) list.kids?.[0].kids?.push({ ...emptyRow(f.w - 2), x: 0, y: 0 });
   return groundMenu(ui, 'worlds', [
-    line({ x: f.colX - dx, y: 12 - dy, w: 100, text: 'Worlds', c: 'salt', shadow: true }),
-    well({
-      // With no world the ground shows under the one row down to the buttons, which stay put.
-      id: 'worlds.list', x: f.x - dx, y: f.y - dy, w: f.w, h: f.h, host: 'ground', ui, rowH: ROW_H,
-      rows: v.worlds.map((r, i) => row(r, i, f.inset)), chosen: any ? v.chosen : undefined,
-      empty: 'No world yet', emptyHint: 'Press New world to start one.', emptyX: f.inset + 38,
-      onChoose: v.onChoose, onUse: v.onPlay,
-    }),
+    // At the well's left edge, its cell ending 6 over the well's top.
+    line({ x: f.x - dx, y: f.y - 6 - 9 - dy, w: 100, text: 'Worlds', c: 'salt', shadow: true }),
+    list,
     button({ id: 'worlds.play', x: bx, y: by, w: 136, label: 'Play', disabled: !w, onPress: () => v.onPlay(v.chosen) }),
     button({ id: 'worlds.new', x: bx + 144, y: by, w: 136, label: 'New world', onPress: v.onNew }),
     button({ id: 'worlds.delete', x: bx, y: by + 24, w: 136, label: del, disabled: !w || !!w.openElsewhere, onPress: () => v.onDelete(v.chosen) }),
