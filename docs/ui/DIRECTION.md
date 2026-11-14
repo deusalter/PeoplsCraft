@@ -550,18 +550,7 @@ A slab 24 by 14:
 ```
 `. nothing  1 hi  2 lt  3 face  4 sh  6 pit  K root.0   (digits are tones of the host slab's ramp; shown in timber)`
 
-It is drawn as nine slices with corners 3 by 3. The face of clay and timber is flat: no grain, no speckle, no second tone. Stone is dressed, as the stance says, and so not the grey of a plain slab: its face has a few **pebbles** set in it, lit from the top left. A pebble stands proud of the face: `hi` at its top left corner, `lt` over the rest of its top, `sh` along its bottom and right where it throws its shade. There are two shapes, a round one 3 by 3 and a long one 4 by 3:
-
-```
-     0        
-     012345678
-  0  12...122.
-  1  224..2224
-  2  .44...444
-```
-`. the face  1 hi  2 lt  4 sh   (the round pebble at 0, 0; the long one at 5, 0)`
-
-The face from (3, 3) is cut into cells of 24 by 24. Each cell holds one pebble or none (a little over half hold one), a long one in about a third of them and a round one in the rest, at a place within the cell fixed by a hash of the cell's column and row, so the pebbles have no row, column or rhythm and the same slab looks the same on every paint. A pebble is set only where the whole of it stands 3 units clear of every part on the slab (slot, well, gauge, button, picture), of every line of text, and of the slab's edges; the title's row is kept bare across the whole slab. A pebble never touches a letter or a slot. Chips of 2 by 2 and cuts of 3 by 1 in cells of 14, 2 units clear, came before: single specks fell beside the titles and between the slots and read as noise laid on for texture. An earlier tooling of light dashes in staggered courses was dropped too: it read as wallpaper, and its dashes struck through the words they crossed.
+It is drawn as nine slices with corners 3 by 3. The face of clay and timber is flat: no grain, no speckle, no second tone. Stone is dressed, as the stance says, and so not the grey of a plain slab: along the band 6 deep at its top and at its bottom it carries **tool marks**, cuts of 3 by 1 in `sh` on rows 4 and `h - 5`, one every 24 units, the run centred on the slab. A cut is left out where it would stand within 3 of a part or over the title's words. The middle of the face, where the work is, stays plain. Pebbles 3 by 3 and 4 by 3 set by a hash over the whole face came before, and chips of 2 by 2 and cuts of 3 by 1 in cells of 14 before them: on a working face beside the slots and the result both read as dust and dead pixels, noise laid on for texture. An earlier tooling of light dashes in staggered courses over the face read as wallpaper, and its dashes struck through the words they crossed. A joint line under the title was not drawn: the title has no rule under it (5.3).
 
 | Slab | Ramp | Used for |
 | --- | --- | --- |

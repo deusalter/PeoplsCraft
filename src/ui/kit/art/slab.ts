@@ -14,26 +14,6 @@ export const SLAB = coded([
   '.KKKKK.',
 ], 'slab', [3, 3, 3, 3]);
 
-/**
- * The pebbles set in a stone face (5.1), lit from the top left: a stone standing proud of the face, `hi` at its top
- * left corner, `lt` over the rest of its top, `sh` along its bottom and right where it throws its shade. Two shapes, a
- * round one 3 by 3 and a long one 4 by 3. A `.` is the face.
- */
-export type Mark = readonly string[];
-export const PEBBLE: Mark = ['12.', '224', '.44'];
-export const LONG_PEBBLE: Mark = ['122.', '2224', '.444'];
-
-/** The face is set in cells of this many units; a cell holds one pebble or none, at a place of its own. */
-export const DRESSING_CELL = 24;
-
-/** A whole number from 0 to 2^32 for a cell, the same on every paint, unlike its neighbours'. */
-export function cellHash(i: number, j: number, k: number): number {
-  let h = (Math.imul(i + 1, 0x27d4eb2d) ^ Math.imul(j + 7, 0x165667b1) ^ Math.imul(k + 3, 0x9e3779b1)) >>> 0;
-  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0;
-  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0;
-  return (h ^ (h >>> 16)) >>> 0;
-}
-
 /** The plain dark plate (5.2): a light edge of `root.3` along the top and left only. */
 export const PLATE = coded([
   '.KKK.',

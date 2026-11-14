@@ -1,4 +1,5 @@
-import { DRESSING_CELL, LONG_PEBBLE, PEBBLE, FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB, cellHash } from '../art/slab';
+import { FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB } from '../art/slab';
+import { measure } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Node } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
@@ -15,11 +16,13 @@ export interface SlabOpts {
   kids?: Node[];
 }
 
-/** How far a pebble stands from every part, every line of text and the slab's edges. */
+/** How far a tool mark stands from every part and every line of text. */
 const CLEAR = 3;
+/** One tool mark to so many units along the top and bottom bands. */
+const MARK_PITCH = 24;
 
 /**
- * The rectangles a stone face must keep clear of chisel marks, from the slab's top left: every node that paints,
+ * The rectangles a stone face must keep clear of tool marks, from the slab's top left: every node that paints,
  * and inside a node that holds others, each of them too, since a container may paint less than its box.
  */
 function parts(kids: Node[] | undefined, ox: number, oy: number, out: number[][]): void {
@@ -30,31 +33,20 @@ function parts(kids: Node[] | undefined, ox: number, oy: number, out: number[][]
 }
 
 /**
- * The pebbles of a stone face (5.1): the face is cut into cells of 24, and each cell holds one pebble or none, round or
- * long, at a place of its own within it, so that there is no row, column or rhythm to read. A pebble is set only where
- * all of it stands 3 clear of every part, every line of text and the slab's edges. Specks of one and two units over
- * the whole face, touching titles and slots, read as noise laid on for texture.
+ * The tooling of a stone face (5.1): cuts of 3 by 1 in `sh` at a fixed pitch along the band 6 deep at the top and the
+ * bottom, the middle of the face left plain where the work is. Pebbles and specks scattered over the whole face sat
+ * beside the slots and read as dust and dead pixels.
  */
 function dress(s: Surface, w: number, h: number, keep: number[][]): void {
-  const fx = 3, fy = 3, fw = w - 6, fh = h - 6, C = DRESSING_CELL;
   const clear = (x: number, y: number) =>
-    x >= fx + CLEAR && y >= fy + CLEAR && x < fx + fw - CLEAR && y < fy + fh - CLEAR &&
-    keep.every(([rx, ry, rw, rh]) => x < rx - CLEAR || y < ry - CLEAR || x >= rx + rw + CLEAR || y >= ry + rh + CLEAR);
-  const roles = { 1: 'hi', 2: 'lt', 4: 'sh' } as const;
-  for (let j = 0; j * C < fh; j++) for (let i = 0; i * C < fw; i++) {
-    const r = cellHash(i, j, 0);
-    if (r % 100 >= 60) continue;
-    const m = (r >>> 8) % 3 === 0 ? LONG_PEBBLE : PEBBLE;
-    const mw = m[0].length, mh = m.length;
-    const mx = fx + i * C + ((r >>> 12) % (C - mw)), my = fy + j * C + ((r >>> 20) % (C - mh));
-    if (!(clear(mx, my) && clear(mx + mw - 1, my) && clear(mx, my + mh - 1) && clear(mx + mw - 1, my + mh - 1))) continue;
-    m.forEach((row, dy) => [...row].forEach((ch, dx) => {
-      if (ch !== '.') s.fill(mx + dx, my + dy, 1, 1, tone('stone', roles[ch as '1' | '2' | '4']));
-    }));
+    keep.every(([rx, ry, rw, rh]) => x + 3 <= rx - CLEAR || y < ry - CLEAR || x >= rx + rw + CLEAR || y >= ry + rh + CLEAR);
+  const first = 3 + Math.floor(((w - 6) % MARK_PITCH) / 2) + Math.floor(MARK_PITCH / 2) - 2;
+  for (let x = first; x + 3 <= w - 6; x += MARK_PITCH) {
+    for (const y of [4, h - 5]) if (clear(x, y)) s.fill(x, y, 3, 1, tone('stone', 'sh'));
   }
 }
 
-/** A window slab (5.1) of clay, timber or stone, with its title (5.3); stone carries its chisel marks. */
+/** A window slab (5.1) of clay, timber or stone, with its title (5.3); stone carries its tool marks. */
 export function slab(o: SlabOpts): Node {
   const { w, h, ramp } = o;
   const title = o.title ? cut(o.title, w - 16 - (o.titleRoom ?? 0)) : '';
@@ -63,8 +55,8 @@ export function slab(o: SlabOpts): Node {
     paint: (s) => {
       s.nine(SLAB, 0, 0, w, h, ramp);
       if (ramp === 'stone') {
-        // The title's whole row stays bare: a pebble beside a title read as a speck stuck to it.
-        const keep: number[][] = title ? [[0, 6, w, 10]] : [];
+        // Over the title a cut would read as a mark belonging to its letters.
+        const keep: number[][] = title ? [[8, 6, measure(title), 10]] : [];
         parts(node.kids, 0, 0, keep);
         dress(s, w, h, keep);
       }
