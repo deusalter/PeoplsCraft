@@ -4,7 +4,7 @@ import { cut } from '../font/wrap';
 import type { Node, Screen } from '../node';
 import type { Colour } from '../palette';
 import { button, paintButton } from '../parts/button';
-import { lv, sunk } from '../parts/common';
+import { lv } from '../parts/common';
 import { field } from '../parts/controls';
 import { FORM, formButtonsY, formTitle, groundMenu, line } from '../parts/menu';
 import { ANSWERS, type ServerAnswer } from '../sample/menus';
@@ -35,21 +35,12 @@ const validName = (n: string) => n.length >= 1 && n.length <= 16 && [...n].every
 export const RETRY_WAIT = 5;
 
 /**
- * An answer from the server in the 12 kept under the field it is about: a strip 12 tall sunk in the ground tile, so that
- * the line is read off a dark floor and not off the courses, its text clipped to the floor.
+ * A line in the 12 kept under a field: bare text with its shadow on the ground, its letters 2 under the field, as a
+ * label is. Sunk in a strip of its own it read as a second field, a disabled one.
  */
-function answerStrip(x: number, y: number, text: string, c: Colour): Node {
-  const w = 200, h = 12;
-  const t = cut(text, w - 8, TEXT);
-  return {
-    x, y, w, h,
-    paint: (s) => {
-      sunk(s, 0, 0, w, h, 'ground');
-      s.clip(1, 1, w - 2, h - 2);
-      s.text(t, 4, 1, c, true);
-      s.unclip();
-    },
-  };
+function fieldNote(x: number, y: number, text: string, c: Colour): Node {
+  const t = cut(text, 200, TEXT);
+  return { x, y, w: 201, h: 11, paint: (s) => { s.text(t, 0, 0, c, true); } };
 }
 
 export const joinScreen: Screen<JoinView> = (v, ui) => {
@@ -76,7 +67,10 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
     kids.push(line({ x: 113, y, w: 200, text: label, c: 'salt', shadow: true }));
     const refused = about === key;
     kids.push(f(`join.${key}`, y + 10, value, on, refused ? { ...extra, show: { refused: true } } : extra));
-    if (said(key)) kids.push(answerStrip(113, y + 10 + FORM.fieldH + 1, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
+    const at = y + 10 + FORM.fieldH + 1;
+    if (said(key)) kids.push(fieldNote(113, at, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
+    // Why Join stands disabled, said where the missing thing goes.
+    else if (key === 'name' && !v.name) kids.push(fieldNote(113, at, 'Type a name to join', 'root.4'));
   };
   row(0, 'address', 'Address', v.address, v.onAddress, { limit: 64 });
   row(1, 'name', 'Name', v.name, v.onName, { limit: 16, allow: NAME_CHAR });
@@ -89,7 +83,7 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
       id: 'join.join', x: 113, y: by, w: 200, h: 20, takes: true, focus: ok, anim: retry || undefined,
       paint: (s, live) => {
         const n = left(live.t);
-        const label = !retry ? 'Join' : n > 0 ? `Try again in ${n}` : 'Try again';
+        const label = !retry ? 'Join' : n > 0 ? `Try again in ${n} s` : 'Try again';
         paintButton(s, 200, 20, label, lv(live), !ok || n > 0);
       },
       on: ok ? { click: () => { if (ready()) v.onJoin(); } } : undefined,
