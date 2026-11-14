@@ -97,7 +97,8 @@ export function toneIndex(ramp: Ramp, roleIdx: number): number { return ci(RAMP_
 /** Grades 0 to 6: the tone on a dark plate, the tone on a light face, the tooltip's frame. */
 export const GRADES: readonly { name: string; dark: Colour; light: Colour; frame: Colour }[] = [
   { name: 'Surface', dark: 'salt', light: 'ink', frame: 'root.4' },
-  { name: 'Upper', dark: 'growth.lt', light: 'growth.dk', frame: 'growth.lt' },
+  // Upper takes the mid green on dark, so that its name never reads as the lighter green of a better-than line.
+  { name: 'Upper', dark: 'growth', light: 'growth.dk', frame: 'growth' },
   { name: 'Deep', dark: 'cyan.lt', light: 'cyan.dk', frame: 'cyan.lt' },
   { name: 'Hollow', dark: 'violet.lt', light: 'violet.dk', frame: 'violet.lt' },
   { name: 'Island', dark: 'dusk.lt', light: 'ember.dk', frame: 'dusk.lt' },

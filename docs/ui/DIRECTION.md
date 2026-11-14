@@ -58,8 +58,8 @@ Three rules follow and are used everywhere below.
 | `ember.lt` | `#f7b54a` | `o` | hunger pip light; flame; trail on a draining strip |
 | `ember` | `#dd7a26` | `O` | hunger; heat; a working that is running |
 | `ember.dk` | `#8a3a1a` | `u` | shade of hunger and flame; grade Island on a light face |
-| `growth.lt` | `#b5e36b` | `n` | better-than lines; can-afford; grade Upper on dark; lit top of the practice strip |
-| `growth` | `#63ad3c` | `N` | the practice strip; the frame of a slot that accepts what is held |
+| `growth.lt` | `#b5e36b` | `n` | better-than lines; can-afford; lit top of the practice strip |
+| `growth` | `#63ad3c` | `N` | the practice strip; the frame of a slot that accepts what is held; grade Upper on dark and its tooltip frame |
 | `growth.dk` | `#235c34` | `m` | shade of the practice strip; grade Upper on a light face |
 | `arm.lt` | `#8fd3f5` | `b` | lit top of the arm fill; set-bonus and where-to lines on dark |
 | `arm` | `#3d8fdb` | `B` | the arm; the progress arrow at the Line Frame |
@@ -92,12 +92,14 @@ Three rules follow and are used everywhere below.
 | Grade | Name | On dark (`root.1`) | Contrast | On a light face (`clay.face`) | Contrast | Tooltip frame |
 | --- | --- | --- | ---: | --- | ---: | --- |
 | 0 | Surface | `salt` #f7f2e3 | 15.3 | `ink` #2b1f2e | 8.1 | `root.4` |
-| 1 | Upper | `growth.lt` #b5e36b | 11.6 | `growth.dk` #235c34 | 4.1 | `growth.lt` |
+| 1 | Upper | `growth` #63ad3c | 6.2 | `growth.dk` #235c34 | 4.1 | `growth` |
 | 2 | Deep | `cyan.lt` #58e6d9 | 11.2 | `cyan.dk` #0b5a66 | 4.0 | `cyan.lt` |
 | 3 | Hollow | `violet.lt` #c39bff | 7.7 | `violet.dk` #5b34a6 | 4.3 | `violet.lt` |
 | 4 | Island | `dusk.lt` #ff9e57 | 8.4 | `ember.dk` #8a3a1a | 4.0 | `dusk.lt` |
 | 5 | Floor | `rose.lt` #ff6f9c | 6.5 | `rose.dk` #96164a | 4.3 | `rose.lt` |
 | 6 | Old | `ember.hi` #ffe08a | 13.3 | `gilt.dk` #6b4d08 | 4.0 | `ember.hi` |
+
+Upper on dark is the mid green `growth`, not `growth.lt`: with the light green its name and a better-than line in the same tooltip said two things in one colour.
 
 **Meaning.** Colour is used for these meanings and no others.
 
@@ -133,6 +135,7 @@ Three rules follow and are used everywhere below.
 | `root.4` | `stone.pit` | 3.8 |
 | `blood.lt` | `root.1` | 6.2 |
 | `growth.lt` | `root.1` | 11.6 |
+| `growth` | `root.1` | 6.2 |
 | `arm.lt` | `root.1` | 10.4 |
 | `blood.dk` | `clay.face` | 5.2 |
 | `arm.dk` | `clay.face` | 4.5 |
