@@ -108,17 +108,20 @@ export function tracker(right: number, y: number, step: string, have: string): N
   };
 }
 
-/** Where chat wraps on a stage: 237 at Middle, and always clear of the prompt centred under the crosshair. */
-export function chatWrap(stageW: number): number { return Math.min(CHAT_WRAP, Math.floor(stageW / 2) - 64); }
+/**
+ * Where chat wraps on a stage: the setting's width less 3 (237 at Middle), and always clear of the prompt centred
+ * under the crosshair.
+ */
+export function chatWrap(stageW: number, width = CHAT_WRAP + 3): number { return Math.min(width - 3, Math.floor(stageW / 2) - 64); }
 
 /**
  * The bottom of the newest chat line. When chat with its wash ends 4 left of the hotbar's column, it comes down to 48
  * above the stage's bottom, level with the top of the hotbar's measures; when it reaches over that column it stands
  * 68 above, clear of the name of the thing in hand.
  */
-export function chatBottom(stageW: number, stageH: number): number {
+export function chatBottom(stageW: number, stageH: number, width?: number): number {
   // 4 clear of the hotbar's column: at 1 the chat's wash seemed to run into the pips and the hotbar.
-  const clear = 4 + chatWrap(stageW) + 3 <= Math.floor(stageW / 2) - 91 - 4;
+  const clear = 4 + chatWrap(stageW, width) + 3 <= Math.floor(stageW / 2) - 91 - 4;
   return stageH - (clear ? 48 : 68);
 }
 

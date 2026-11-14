@@ -160,9 +160,9 @@ export function slider(o: SliderOpts): Node {
       const l = lv(live, o.force);
       sunk(s, 0, 0, w, 14, o.host, floor);
       if (hx > 0) s.fill(1, 1, hx, 12, run);
-      // A notch at each step, top and bottom, where the handle's centre would stand; none when the steps are too
-      // close to tell apart.
-      if (o.steps && o.steps > 1 && stops / o.steps >= 4) {
+      // A notch at each step, top and bottom, where the handle's centre would stand, for a setting of 16 steps or
+      // fewer. One of more steps is moved as if continuous and has none, so that a notched channel always means steps.
+      if (o.steps && o.steps > 1 && o.steps <= 16 && stops / o.steps >= 4) {
         for (let k = 1; k < o.steps; k++) {
           const nx = Math.round((k / o.steps) * stops) + HANDLE_W / 2 - 1;
           s.fill(nx, 1, 1, 2, notch); s.fill(nx, 11, 1, 2, notch);

@@ -4,10 +4,12 @@ import { count, measure, rightX } from '../font/measure';
 import type { KeyEv, Node, Screen, Ui } from '../node';
 import { button } from '../parts/button';
 import { checkbox, slider } from '../parts/controls';
+import { chat } from '../parts/plates';
 import { tabbedSlab } from '../parts/tabs';
 import { slabTrack } from '../parts/well';
 import { SETTINGS, type Setting, type SettingsTab } from '../sample/settings';
 import { firstFocus, go, placeWindow } from './books-common';
+import { CHAT, chatBottom, chatWrap } from './play/hud';
 import type { NamedScreen } from './index';
 
 export interface SettingsView {
@@ -25,9 +27,13 @@ export interface SettingsView {
 const W = 248, H = 212, ROW = 16, ROWS_Y = 20, VISIBLE = 10;
 
 function valueText(s: Setting): string {
-  if (s.kind === 'measure') return count(s.value) + (s.unit ?? '');
-  return '';
+  if (s.kind !== 'measure') return '';
+  if (s.zero && s.value === s.min) return s.zero;
+  return s.outOf ? `${count(s.value)} of ${count(s.max)}` : count(s.value) + (s.unit ?? '');
 }
+
+/** The id of the choice whose button the pointer is over, so that its preview is drawn while it stays there. */
+let peeking: string | null = null;
 
 function rowNodes(v: SettingsView, i: number, s: Setting, y: number, ui: Ui): Node[] {
   const id = `set.${v.tabs[v.tab].key}.${i}`;
@@ -45,7 +51,7 @@ function rowNodes(v: SettingsView, i: number, s: Setting, y: number, ui: Ui): No
     const steps = Math.round((s.max - s.min) / s.step);
     return [
       label,
-      { x: 100, y: y + 3, w: 40, h: 10, paint: (g) => { g.text(t, rightX(t, 39), 0, 'ink'); } },
+      { x: 92, y: y + 3, w: 48, h: 10, paint: (g) => { g.text(t, rightX(t, 47), 0, 'ink'); } },
       slider({
         id, x: 144, y: y + 1, w: 80, value: (s.value - s.min) / (s.max - s.min), steps, host: 'clay', ui,
         onChange: (f) => change({ ...s, value: s.min + Math.round(f * steps) * s.step }),
@@ -55,6 +61,10 @@ function rowNodes(v: SettingsView, i: number, s: Setting, y: number, ui: Ui): No
   const step = (d: number) => { change({ ...s, at: (s.at + d + s.values.length) % s.values.length }); ui.invalidate(); };
   const b = button({ id, x: 144, y: y + 1, w: 80, h: 14, ramp: 'clay', label: s.values[s.at], onPress: () => step(1) });
   b.on = { ...b.on, key: (e: KeyEv) => { if (e.key === 'ArrowLeft') { step(-1); return true; } if (e.key === 'ArrowRight') { step(1); return true; } } };
+  if (s.peek) {
+    const { enter, leave } = b.on ?? {};
+    b.on = { ...b.on, enter: () => { enter?.(); peeking = id; }, leave: () => { leave?.(); if (peeking === id) peeking = null; } };
+  }
   return [label, b];
 }
 
@@ -89,6 +99,18 @@ export const settingsScreen: Screen<SettingsView> = (v, ui) => {
   const slabKids: Node[] = [area];
   if (maxTop > 0) slabKids.push(slabTrack({ id: `${scrollId}.track`, x: 234, y: ROWS_Y, h: VISIBLE * ROW, ramp: 'clay', top, visible: VISIBLE, total: rows.length, onScroll: setTop }));
   slabKids.push(button({ id: 'set.done', x: Math.floor((W - 200) / 2), y: H - 28, w: 200, label: 'Done', onPress: v.onDone }));
+  // While the chat width is pointed at or focused, chat itself stands where it will, at that width, over everything.
+  // Its strip is laid opaque here: the wash over the slab's labels mixed two texts into one.
+  const peekRow = rows.findIndex((r) => r.kind === 'choice' && r.peek === 'chat');
+  const peek: Node[] = [];
+  if (peekRow >= 0) {
+    const r = rows[peekRow] as Extract<Setting, { kind: 'choice' }>;
+    const id = `set.${tab.key}.${peekRow}`;
+    const width = Number(r.values[r.at].split(', ')[1]);
+    const st = ui.layout.stage;
+    const ghost = chat({ x: st.x + 4, bottom: chatBottom(st.w, st.h, width), lines: CHAT, wrap: chatWrap(st.w, width) });
+    peek.push({ ...ghost, paint: (g, live) => { if (peeking !== id && ui.focused() !== id) return; g.fill(0, 0, ghost.w, ghost.h, 'root.0'); ghost.paint!(g, live); } });
+  }
   const at = placeWindow(ui, W, H, 21);
   const slab = tabbedSlab({
     id: 'set.slab', x: at.x, y: at.y, w: W, h: H, ramp: 'clay', title: tab.name, edge: 'top',
@@ -98,7 +120,7 @@ export const settingsScreen: Screen<SettingsView> = (v, ui) => {
   return {
     id: 'settings', x: 0, y: 0, w: ui.w, h: ui.h,
     paint: (s) => { if (v.over === 'ground') s.tile(GROUND, 0, 0, ui.w, ui.h); else s.wash(0, 0, ui.w, ui.h, 'root.0', 2); },
-    kids: [slab],
+    kids: [slab, ...peek],
     on: {
       key: (e) => {
         if (e.key === 'Escape') { v.onDone(); return true; }
