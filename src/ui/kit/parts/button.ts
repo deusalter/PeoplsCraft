@@ -27,7 +27,7 @@ export interface ButtonOpts {
 }
 
 /**
- * The stone of a face 20 tall or more (art/button): its joints, pebbles and crack. Pressed, they drop a unit down and
+ * The stone of a face 20 tall or more (art/button): its pebbles and crack. Pressed, they drop a unit down and
  * right with the label, and what would fall on the far bevel is left off.
  */
 function grain(s: Surface, w: number, h: number, label: string, tx: number, ty: number, pressed: boolean): void {
