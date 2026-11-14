@@ -1,6 +1,6 @@
-// Chat, open (section 6): twelve lines over the HUD, ending where closed chat ends, and the entry along the bottom of
-// the stage, 2 units above its edge, over the hotbar, as the tradition puts it, stopping 100 short of the stage's right
-// edge so that the pickups and "Saved" keep their place. Enter
+// Chat, open (section 6): the entry in chat's own column, its bottom where closed chat ends, and the lines 2 above it.
+// Along the bottom of the stage it covered the hotbar and nobody could see what was in hand while typing in a fight;
+// in the column it covers neither the hotbar nor the measures over it. Enter
 // sends and closes; Esc closes and keeps the text; Up and Down walk through what was sent; a line that starts with /
 // is a command and its answer comes back as a line from the server. The crew list is not drawn while chat is open.
 import { measure } from '../font/measure';
@@ -100,9 +100,9 @@ function build(ui: Ui): Node {
   const stage = ui.layout.stage;
   if (!st.focused && !STILL) { st.focused = true; setTimeout(() => ui.focusOn(ENTRY), 0); }
   const shown = st.back ? st.lines.slice(0, -st.back) : st.lines;
-  const bottom = chatBottom(stage.w, stage.h), wrapAt = chatWrap(stage.w);
+  const wrapAt = chatWrap(stage.w), entryBottom = chatBottom(stage.w, stage.h), bottom = entryBottom - 14 - 2;
   const lines = chat({ x: 0, bottom, lines: shown, open: true, wrap: wrapAt });
-  const W = stage.w - 104;
+  const W = wrapAt + 3;
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
     kids: [
@@ -113,7 +113,7 @@ function build(ui: Ui): Node {
         on: { wheel: (e) => { st.back = Math.max(0, Math.min(st.lines.length - 1, st.back - e.notches)); ui.invalidate(); return true; } },
         kids: [lines],
       },
-      { x: stage.x + 4, y: stage.h - 16, w: W, h: 14, kids: [entry(ui, 0, W)] },
+      { x: stage.x + 4, y: entryBottom - 14, w: W, h: 14, kids: [entry(ui, 0, W)] },
     ],
   };
 }
