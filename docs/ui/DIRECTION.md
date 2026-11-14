@@ -3355,8 +3355,8 @@ Size 427 by 240. Material: none. The world under a half of `root.0`, the dim beh
 "                                                                                                                                              "
 "                                     "Z1"                                                                                                     "
 "                                     "Z2"                                                                                                     "
-"                                     "Z3"                                                                                                     "
 "                                     "Z4"                                                                                                     "
+"                                                                                                                                              "
 "                                                                                                                                              "
 "                                     +-----------------------------------------------------------------+                                      "
 "                                     | Z5 button                                                       |                                      "
@@ -3385,19 +3385,19 @@ Size 427 by 240. Material: none. The world under a half of `root.0`, the dim beh
 +==============================================================================================================================================+
 ```
 
-Drawn on a server, where every row is present. Alone, Z2, Z4 and Z8 are left out and the rows close up.
+Drawn on a server. Alone, Z2 and Z8 are left out and Z3 and Z4 stand in their place; on a server Z3 is left out and Z4 stands under Z2.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | Z1 | text | 113 | 40 | 200 | 10 | "Paused", `salt` with its shadow, centred on the column |
-| Z2 | text | 113 | 52 | 200 | 10 | on a server only: "The world runs on" in `blood.lt`, centred: the world does not stop, which is a warning. Written into the title as "Paused (the world runs on)" it made a long, odd heading |
-| Z3 | text | 113 | 62 | 200 | 10 | the world's name, `root.4` with its shadow, centred; alone it stands at 52, 12 under the title's cell |
-| Z4 | text | 113 | 72 | 200 | 10 | alone: when it was saved, "Saved 0:42 ago" or "Saving" in `root.4`, or why not in `blood.lt`; on a server: where it is and who is on, in `root.4`: "spark.local:8420, 8 of 8 here" |
-| Z5 | button | 113 | 90 | 200 | 20 | "Back to the game", 8 under the last line's cell; the buttons stand 4 apart |
-| Z6 | button | 113 | 114 | 200 | 20 | "Settings" |
-| Z7 | button | 113 | 138 | 200 | 20 | "Controls" |
-| Z8 | button | 113 | 162 | 200 | 20 | on a server only: "Crew", which opens the roster held open until it is closed, so that the crew can be read without holding Tab |
-| Z9 | button | 113 | 186 | 200 | 20 | "Save and leave"; on a server "Leave" |
+| Z2 | text | 113 | 52 | 200 | 10 | on a server only: the place and its address, "Spark  spark.local:8420", `salt` with its shadow, centred, two spaces between them. "The world runs on" in `blood.lt` above three centred lines spent the warning colour on a line that warns of nothing |
+| Z3 | text | 113 | 52 | 200 | 10 | alone: the world's name, `root.4` with its shadow, centred, 12 under the title's cell |
+| Z4 | text | 113 | 62 | 200 | 10 | alone: when it was saved, "Saved 0:42 ago" or "Saving" in `root.4`, or why not in `blood.lt`; on a server: who is on and that the world goes on, in `root.4`: "7 of 8 here, the world runs on". Red is kept for "Not saved" and its kind |
+| Z5 | button | 113 | 80 | 200 | 20 | "Back to the game", 8 under the last line's cell; the buttons stand 4 apart |
+| Z6 | button | 113 | 104 | 200 | 20 | "Settings" |
+| Z7 | button | 113 | 128 | 200 | 20 | "Controls" |
+| Z8 | button | 113 | 152 | 200 | 20 | on a server only: "Crew", which opens the roster held open until it is closed, so that the crew can be read without holding Tab |
+| Z9 | button | 113 | 176 | 200 | 20 | "Save and leave"; on a server "Leave" |
 | | | | | | | When the last save failed, the last button is "Try to save again" and another stands 24 under it: "Leave without saving", its label `blood.lt` when hovered or pressed in place of `ember.hi`. A door must never promise the save the line above says cannot happen |
 
 - **Shows.** The title, the world and whether it is saved, in salt and grey over the dimmed world, the lines under the title (Z2 to Z4) on one strip of the chat wash 2 wider than the longest of them on each side, since `root.4` bare on the half-dimmed sky was barely legible at the 960 size; and the stone buttons in a column under them: no slab. A clay slab behind the stone buttons set two materials against each other and boxed a column that needed no box, which read as a web dialog.

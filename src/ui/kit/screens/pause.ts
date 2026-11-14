@@ -38,12 +38,17 @@ export const pauseScreen: Screen<PauseView> = (v, ui) => {
   let y = TITLE_Y + 12;
   // The lines under the title on one strip of the chat wash, 2 wider than the longest on each side: grey bare on the
   // dimmed sky was barely there at the 960 size.
-  const said: { t: string; c: 'root.4' | 'blood.lt' }[] = [];
-  const say = (text: string, c: 'root.4' | 'blood.lt') => { said.push({ t: cut(text, COLUMN_W - 5), c }); };
-  if (v.server) say('The world runs on', 'blood.lt');
-  say(v.world, 'root.4');
-  if (v.crew) say(`${v.crew.address}, ${v.crew.here} of ${v.crew.seats} here`, 'root.4');
-  if (v.saved) say(v.saved.text, v.saved.ok ? 'root.4' : 'blood.lt');
+  const said: { t: string; c: 'salt' | 'root.4' | 'blood.lt' }[] = [];
+  const say = (text: string, c: 'salt' | 'root.4' | 'blood.lt') => { said.push({ t: cut(text, COLUMN_W - 5), c }); };
+  // On a server: the place and its address in salt, then who is on and that the world goes on in grey. "The world runs
+  // on" in blood.lt over three centred lines spent the warning colour on a line that warns of nothing.
+  if (v.server && v.crew) {
+    say(`${v.world}  ${v.crew.address}`, 'salt');
+    say(`${v.crew.here} of ${v.crew.seats} here, the world runs on`, 'root.4');
+  } else {
+    say(v.world, 'root.4');
+    if (v.saved) say(v.saved.text, v.saved.ok ? 'root.4' : 'blood.lt');
+  }
   const sw = Math.max(...said.map((l) => measure(l.t))) + 5, sh = said.length * 10;
   kids.push({
     x: X + Math.floor((COLUMN_W - sw) / 2), y, w: sw, h: sh,
