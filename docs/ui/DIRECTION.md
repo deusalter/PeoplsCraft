@@ -2205,7 +2205,7 @@ A plain dark plate 24 tall (40 with the row of what E does), as wide as its long
 ```
 `. nothing  g root.4  k root.1  K root.0  r blood.lt`
 
-**Title mark**, 221 by 32. "Peopls Craft" is built of the timber the benches are made of and stands out of the wall, as the tradition builds a game's name from its own blocks. The letters are the text face's own at three units to the glyph unit (capitals 21 tall, the p's tail 6 more, a cut corner of the face a step of 3), set 3 units further apart than the face sets them. Each letter is faced with boards 7 tall: the face `timber.face`, the top row of each board `timber.lt`, its bottom row `timber.sh`, and the letter's own top and left edge `timber.hi`, so it is lit from the top left. Behind the face the letter is pushed back 3 units down and to the right: the first two steps of that depth `timber.dk`, the last `timber.pit`. One outline of `root.0` runs round the whole, corners included. There is no plaque behind it: a parchment board with a dog-eared corner read as a signboard from clip art. It stands 30 from the top of the title's block. It is built from the glyphs, never by scaling a drawing of text. No subtitle stands under it: the title shows the mark and four doors (section 6).
+**Title mark**, 248 by 31. "PEOPLS CRAFT" is drawn by hand for the mark alone and stands out of the wall, as the tradition builds a game's name from its own blocks. Its letters are not the text face enlarged: the text face scaled up kept the thin shapes of small letters and read as large text, not as a drawn name. Each letter is laid out on cells of 3 by 3 units, 8 cells (24 units) tall, with strokes 2 cells (6 units) thick and a width of its own (E, L, S, C and F 5 cells, P, O, R, A and T 6), the corners of O, C, S, A and of the bowls of P and R cut by one cell; letters stand 5 apart and the words 15. PEOPLS is timber: face `timber.face`, its top row and left column `timber.hi`, its bottom row and right column `timber.sh`, grain lines of `timber.sh` one unit deep on every fourth row, broken into runs by a fixed hash and never on an edge. CRAFT is fired clay in the same roles, `salt`, `clay.face`, `clay.sh`, and stands 2 units lower, so that the name reads as two pieces set into the wall and not as one typeset line. Behind both faces the letters are pushed back 3 units down and to the right in `clay.dk`, and one outline of `root.0` runs round the whole, corners included. There is no plaque behind it: a parchment board with a dog-eared corner read as a signboard from clip art. It stands 30 from the top of the title's block. No subtitle stands under it: the title shows the mark and four doors (section 6).
 
 **Raised letters**, for the one line of a screen that stands on a wash with no window ("You fell"): the text face with every unit of a glyph made a block 2 by 2, the whole line then lit as one raised shape: a unit with open ground above or to its left is `salt`, one with open ground below or to its right `clay.sh`, the rest `clay.lt`, and every unit of ground touching it, corners included, `root.0`. A line is twice the text face's width plus 2 by 22. It is built from the glyphs, never by scaling a drawing of text.
 
@@ -3135,7 +3135,7 @@ Size 427 by 240. Material: ground tile over the whole screen. Anchor: the whole 
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| A1 | logo | 103 | 30 | 221 | 32 | the title mark |
+| A1 | logo | 89 | 30 | 248 | 31 | the title mark |
 | A2 | text | 113 | 78 | 200 | 10 | one line, centred, only when it is true: why nothing will be saved, in blood.lt |
 | A3 | button | 113 | 96 | 200 | 20 | "Worlds" |
 | A4 | button | 113 | 120 | 200 | 20 | "Join a server" |
@@ -3637,7 +3637,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| I1 | logo | 103 | 60 | 221 | 32 | the title mark |
+| I1 | logo | 89 | 60 | 248 | 31 | the title mark |
 | I2 | gauge | 119 | 109 | 188 | 11 | a dark well sunk in the tile (5.8) with, 3 in, the HUD's thin strip (5.15), 182 by 5, 20 under the mark: eighteen segments, each root.2 when empty and, as it fills unit by unit, ember with a top row of ember.lt and a bottom row of ember.dk; it never runs back |
 | I3 | text | 113 | 123 | 200 | 10 | one line, centred, 6 under the strip, with its shadow: what is being done in salt ("Laying the ground", "Coming up"), then two spaces and which stage it is of how many in `root.4`, the less important line on dark ("2 of 4"), so that a long stall reads as one slow stage and not a hang. `grit.lt` was asked for and is kept for the pebbles of a button |
 | I4 | text | 113 | 135 | 200 | 10 | on a server only, how many are there ("7 of 8 here"), centred in `root.4` with its shadow, 12 under the stage. Written after the stage on one line, it joined two facts that have nothing to do with each other |

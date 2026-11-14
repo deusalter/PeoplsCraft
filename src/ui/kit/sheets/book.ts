@@ -60,9 +60,9 @@ export const bookSheet: Sheet = {
     }));
     kids.push(salt(296, 196, 'Shape: step, skill, end mark'));
     kids.push(salt(296, 208, 'Tone: locked, open, earned'));
-    kids.push(titleMark({ cx: 113, y: 214 }));
+    kids.push(titleMark({ cx: 124, y: 214 }));
     kids.push(salt(4, 252, 'The title mark'));
-    kids.push({ x: 232, y: 228, w: 64, h: 32, paint: (s) => s.tile(GROUND, 0, 0, 64, 32) });
+    kids.push({ x: 254, y: 228, w: 40, h: 32, paint: (s) => s.tile(GROUND, 0, 0, 40, 32) });
     kids.push(salt(300, 236, 'Ground tile'));
     return page(ui, kids);
   },
