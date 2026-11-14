@@ -4,6 +4,7 @@ import { measure, rightX } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { KeyEv, Node, Screen, Tip } from '../node';
 import type { NodeState } from '../art/tree';
+import type { Colour } from '../palette';
 import { button } from '../parts/button';
 import { tabbedSlab } from '../parts/tabs';
 import { panTo, tree } from '../parts/tree';
@@ -88,9 +89,14 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
   const head = me ? `${v.toSpend} to spend` : `${cut(owner.name, 90)} (read only)`;
   // What the chosen node is, what a rank of it does and what it needs, on three lines under the field.
   const needs = job.links.filter(([, b]) => b === node.id).map(([a]) => job.nodes.find((n) => n.id === a)!.name);
-  const needLine = needs.length ? `Needs: ${needs.join(' or ')}` : 'Needs nothing: a first step';
+  // The third line says why Take is not there before it says what is needed: a full node is done, not locked.
+  const full = rank >= node.ranks;
+  const needLine: { text: string; c: Colour } = full ? { text: 'Full', c: 'growth.dk' }
+    : nodeState === 'locked' ? { text: `{cross} Needs ${needs.join(' or ')}`, c: 'blood.dk' }
+    : me && v.toSpend <= 0 ? { text: '{cross} No points to spend', c: 'blood.dk' }
+    : { text: needs.length ? `Needs: ${needs.join(' or ')}` : 'Needs nothing: a first step', c: 'ink.faded' };
   const rankText = `${rank} of ${node.ranks}`;
-  const textW = W - 16, room = me ? textW - 48 : textW;
+  const textW = W - 16, room = canTake ? textW - 48 : textW;
   const by = FIELD_Y + FIELD_H + 2;
   const kids: Node[] = [
     field,
@@ -101,11 +107,11 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
         s.text(rankText, rightX(rankText, textW), 0, 'ink.faded');
         s.text(cut(node.name, textW - measure(rankText) - 6), 0, 0, nodeState === 'locked' ? 'ink.faded' : 'ink');
         s.text(cut(node.does, room), 0, 11, 'ink');
-        s.text(cut(needLine, room), 0, 22, nodeState === 'locked' ? 'blood.dk' : 'ink.faded');
+        s.text(cut(needLine.text, room), 0, 22, needLine.c);
       },
     },
-    // Another's tree is read, not changed: no Take is drawn there at all.
-    ...(me ? [button({ id: 'sk.take', x: right - 44, y: H - 20, w: 44, h: 16, ramp: 'stone', label: 'Take', disabled: !canTake, onPress: () => v.onTake(node.id) })] : []),
+    // Take stands only where it can be pressed: on another's tree, on a full node or a locked one, it is not drawn.
+    ...(canTake ? [button({ id: 'sk.take', x: right - 44, y: H - 20, w: 44, h: 16, ramp: 'stone', label: 'Take', onPress: () => v.onTake(node.id) })] : []),
   ];
   const at = placeWindow(ui, W, H, 21, 21);
   const top = tabbedSlab({
