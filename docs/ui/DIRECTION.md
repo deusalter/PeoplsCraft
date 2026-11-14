@@ -1092,7 +1092,7 @@ A tab's name is its tooltip. A tab that cannot be chosen yet is not drawn.
 
 A list lives in a well: a sunk rectangle with `root.0` along the top and left, a light edge along the bottom and right and a floor of `root.1`. The light edge is the `hi` of the slab the well is sunk in (`salt` on clay, as drawn here) and `stone.lt` on the ground tile. Fields, checkboxes and slider grooves take their light edge by the same rule. Rows are 18 tall and as wide as the floor less the scroll track. In a row: the icon at 1, 1; the name's cell at 20, 4, `salt` or a grade's colour, with shadow; a number right-aligned 3 units from the row's right end. A hovered row has a floor of `root.2`. The chosen row has a floor of `root.3` and no frame: a frame of `salt` round a row means only that the keys are on it, so that a chosen row never reads as a web list's outlined selection. A row that cannot be used is all `root.4`.
 
-The scroll track is the last 6 units of the floor, `root.0`. Its thumb is `root.3` with a top row of `root.4`, a bottom row of `root.2` and three grip rows of `root.1` at its middle; hovered or dragged, the thumb is `root.4` with a top row of `salt`. The thumb is never shorter than 12. A list that fits has no track and its rows take the whole floor.
+The scroll track is the last 6 units of the floor, `root.0`. Its thumb stands 4 wide inside it, a column of `root.0` left on either side, and is `root.3` with a top row of `root.4`, a bottom row of `root.2` and three grip rows of `root.1` at its middle; hovered or dragged, the thumb is `root.4` with a top row of `salt`. The thumb is never shorter than 12. At the track's full width the chosen row's `root.3` floor ran straight into the thumb and the two read as one block; the column of `root.0` between them is the gutter that keeps them apart. A list that fits has no track and its rows take the whole floor.
 
 ```
      0         1         2         3         4         5         6         7         
@@ -1101,19 +1101,19 @@ The scroll track is the last 6 units of the floor, `root.0`. Its thumb is `root.
   1  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKKKKKKW
   2  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKKKKKKW
   3  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKKKKKKW
-  4  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjggggggW
-  5  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjhhhhhhW
-  6  KjjjjjjjjjjjjjjjjjjjjWWWWjjjjjjjjWjjjjjWjjjjjWjjjjjjjjjjjjjjjWjjjWWWWjjjjhhhhhhW
-  7  KjjjjjjjjjjjjjjjjjjjjWKKKWjjjjjjjWKjjjjWKjjjjWKjjjjjjjjjjjjjWWKjjjKKKWjjjhhhhhhW
-  8  KjjjjjjjjjjjjjjjjjjjjWKjjWKWjjjWjWWWWjjWWWWjjWKjWWWWjjjjjjjjjWKjjjjjjWKjjhhhhhhW
-  9  KjjjjjjjjjjjjjjjjjjjjWWWWjKWKjjWKWKKKWjWKKKWjWKjWKKKWjjjjjjjjWKjjjjjWjKjjhkkkkhW
- 10  KjjjjjjjjjjjjjjjjjjjjWKWKKjWKjjWKWKjjWKWKjjWKWKjWWWWWKjjjjjjjWKjjjjWjKjjjhhhhhhW
- 11  KjjjjjjjjjjjjjjjjjjjjWKjWjjWKjjWKWKjjWKWKjjWKWKjWKKKKKjjjjjjjWKjjjWjKjjjjhkkkkhW
- 12  KjjjjjjjjjjjjjjjjjjjjWKjjWjjWWWWKWWWWWKWWWWWKWWjjWWWWjjjjjjjWWWjjWWWWWjjjhhhhhhW
- 13  KjjjjjjjjjjjjjjjjjjjjjKjjjKjjKKKKjKKKKKjKKKKKjKKjjKKKKjjjjjjjKKKjjKKKKKjjhkkkkhW
- 14  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjhhhhhhW
- 15  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjhhhhhhW
- 16  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjhhhhhhW
+  4  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKggggKW
+  5  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKhhhhKW
+  6  KjjjjjjjjjjjjjjjjjjjjWWWWjjjjjjjjWjjjjjWjjjjjWjjjjjjjjjjjjjjjWjjjWWWWjjjjKhhhhKW
+  7  KjjjjjjjjjjjjjjjjjjjjWKKKWjjjjjjjWKjjjjWKjjjjWKjjjjjjjjjjjjjWWKjjjKKKWjjjKhhhhKW
+  8  KjjjjjjjjjjjjjjjjjjjjWKjjWKWjjjWjWWWWjjWWWWjjWKjWWWWjjjjjjjjjWKjjjjjjWKjjKhhhhKW
+  9  KjjjjjjjjjjjjjjjjjjjjWWWWjKWKjjWKWKKKWjWKKKWjWKjWKKKWjjjjjjjjWKjjjjjWjKjjKhkkhKW
+ 10  KjjjjjjjjjjjjjjjjjjjjWKWKKjWKjjWKWKjjWKWKjjWKWKjWWWWWKjjjjjjjWKjjjjWjKjjjKhhhhKW
+ 11  KjjjjjjjjjjjjjjjjjjjjWKjWjjWKjjWKWKjjWKWKjjWKWKjWKKKKKjjjjjjjWKjjjWjKjjjjKhkkhKW
+ 12  KjjjjjjjjjjjjjjjjjjjjWKjjWjjWWWWKWWWWWKWWWWWKWWjjWWWWjjjjjjjWWWjjWWWWWjjjKhhhhKW
+ 13  KjjjjjjjjjjjjjjjjjjjjjKjjjKjjKKKKjKKKKKjKKKKKjKKjjKKKKjjjjjjjKKKjjKKKKKjjKhkkhKW
+ 14  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKhhhhKW
+ 15  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKhhhhKW
+ 16  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKhhhhKW
  17  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjW
  18  KjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjKKKKKKW
  19  KWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWKKKKKKW
@@ -2614,7 +2614,7 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | F4 | flame | 71 | 38 | 13 | 15 | burn gauge: the fuel left, emptying downward |
 | F5 | slots | 70 | 55 | 18 | 18 | fuel, flame silhouette |
 | F6 | arrow | 96 | 38 | 22 | 15 | progress arrow, filling unit by unit |
-| F6b | text | 92 | 60 | 60 | 10 | "Needs fuel" in `ink.faded`, beside the fuel slot and under the arrow, while there is ore to work and room for it but no fire and no fuel; nothing else on the slab says why nothing happens |
+| F6b | text | 92 | 60 | 70 | 10 | "{cross} Needs fuel" in `blood.dk`, the refusal's tone on a light face, 4 right of the fuel slot and under the arrow, while there is ore to work and room for it but no fire and no fuel; nothing else on the slab says why nothing happens. In `ink.faded` it read as a hint and not as the reason the furnace stands still |
 | F7 | bigslot | 128 | 33 | 26 | 26 | what comes out |
 | F8 | text | 8 | 73 | 40 | 10 | "Pack" |
 | F9 | button | 112 | 70 | 56 | 12 | "Sort pack" |
@@ -2622,7 +2622,7 @@ Size 291 by 166. Material: stone. Anchor: centre of the screen.
 | F11 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 | L0 | slab | 175 | 0 | 116 | 166 | side panel, fastened right |
 | L1 | text | 183 | 6 | 80 | 10 | "Works" |
-| L2 | well | 183 | 18 | 100 | 128 | dark well of list rows 18 tall: icon and name of each thing this bed loosens or this fire sets; seven show, the rest scroll. A row whose ore is in neither the ore slot, the pack nor the hotbar cannot be worked now and is drawn as a row that cannot be used (5.8): its icon flat in root.4, its name in root.4. The work under way, the one whose ore lies in the ore slot, is the chosen row (5.8). A name keeps its grade's colour, as on every list of things. A work that only this furnace's bed can do carries `{bed}` in `root.4` right-aligned 3 from the row's end, and its tooltip adds "Only a bed of Kuranga Remains works it" in `root.4`; the Stone Furnace, whose works every bed can do, shows no mark. The column of ore, flame and fuel starts at y 19 so that a long title ("Kuranga Furnace") stands 5 clear of the ore slot |
+| L2 | well | 183 | 18 | 100 | 128 | dark well of list rows 18 tall: icon and name of each thing this bed loosens or this fire sets; seven show, the rest scroll. A row whose ore is in neither the ore slot, the pack nor the hotbar cannot be worked now and is drawn as a row that cannot be used (5.8): its icon flat in root.4, its name in root.4; its tooltip ends with why, in `blood.lt`: "{cross} No Gold Ore in the pack". The work under way, the one whose ore lies in the ore slot, is the chosen row (5.8). A name keeps its grade's colour, as on every list of things. A work that only this furnace's bed can do carries `{bed}` in `root.4` right-aligned 3 from the row's end, and its tooltip adds "Only a bed of Kuranga Remains works it" in `root.4`; the Stone Furnace, whose works every bed can do, shows no mark. The column of ore, flame and fuel starts at y 19 so that a long title ("Kuranga Furnace") stands 5 clear of the ore slot |
 
 The fuel left is not written on the slab: the flame empties as it burns, and its tooltip says "Fuel for 0:52", or "No fire" and "Fuel goes in the slot below" in `root.4`. A bare time in the panel's corner was cut off from what it timed.
 

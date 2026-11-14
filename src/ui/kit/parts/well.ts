@@ -145,13 +145,21 @@ export function well(o: WellOpts): Node {
   };
 }
 
-/** The thumb (5.8): `root.3` with a top row of `root.4`, a bottom row of `root.2`, three grip rows of `root.1` at its middle. */
-export function paintThumb(s: Surface, x: number, y: number, h: number, hot: boolean): void {
-  s.fill(x, y, TRACK_W, h, hot ? 'root.4' : 'root.3');
-  s.fill(x, y, TRACK_W, 1, hot ? 'salt' : 'root.4');
-  s.fill(x, y + h - 1, TRACK_W, 1, 'root.2');
+/** The thumb's width: the track's 6 less a column of `root.0` either side, so that a chosen row never runs into it. */
+const THUMB_W = TRACK_W - 2;
+
+/**
+ * The thumb (5.8), 4 wide inside the track: `root.3` with a top row of `root.4`, a bottom row of `root.2`, three grip
+ * rows of `root.1` at its middle. `tx` is the track's left. At the track's full width a chosen row's `root.3` floor ran
+ * straight into it.
+ */
+export function paintThumb(s: Surface, tx: number, y: number, h: number, hot: boolean): void {
+  const x = tx + 1;
+  s.fill(x, y, THUMB_W, h, hot ? 'root.4' : 'root.3');
+  s.fill(x, y, THUMB_W, 1, hot ? 'salt' : 'root.4');
+  s.fill(x, y + h - 1, THUMB_W, 1, 'root.2');
   const m = Math.floor(h / 2);
-  for (const g of [m - 2, m, m + 2]) s.fill(x + 1, y + g, TRACK_W - 2, 1, 'root.1');
+  for (const g of [m - 2, m, m + 2]) s.fill(x + 1, y + g, THUMB_W - 2, 1, 'root.1');
 }
 
 /**
