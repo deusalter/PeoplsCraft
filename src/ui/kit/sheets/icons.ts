@@ -46,13 +46,14 @@ export const iconsSheet: Sheet = {
         kids: [slot({ id: `tm.${t}`, x: 0, y: 0, ramp: 'stone', stack: { icon: t, n: 1 } }), ink(22, 5, TAB_NAMES[t] ?? t)],
       })),
     }));
-    // Marks of a state.
+    // Marks of a state, where the slot's own marks stand (5.4): the lock over the bottom right corner, since a locked
+    // place has no count; the rest over the top right, which leaves the bottom right to the count.
     const marks = Object.keys(STATE_MARKS);
     kids.push(plate({
       x: 305, y: 130, w: 169, h: 52,
       kids: [salt(5, 3, 'Marks of a state'), ...marks.map((m, i): Node => ({
         x: 5 + i * 20, y: 16, w: 18, h: 18,
-        kids: [slot({ id: `mk.${m}`, x: 0, y: 0, ramp: 'dark', stack: { icon: ['helm', 'tonic', 'crystal', 'ingot', 'coal'][i], n: 1 } }), { x: 11, y: 0, w: 7, h: 7, paint: (s) => s.map(STATE_MARKS[m], 0, 0) }],
+        kids: [slot({ id: `mk.${m}`, x: 0, y: 0, ramp: 'dark', stack: { icon: ['helm', 'tonic', 'crystal', 'ingot', 'coal'][i], n: 1 } }), { x: 10, y: m === 'lock' ? 10 : 1, w: 7, h: 7, paint: (s) => s.map(STATE_MARKS[m], 0, 0) }],
       })),
         salt(5, 37, 'Lock, alert, new, more, less', 'root.4')],
     }));
