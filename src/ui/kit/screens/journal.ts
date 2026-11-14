@@ -3,8 +3,9 @@
 import { AWAY_HEADS, HEADS, HEAD_SIZE } from '../art/heads';
 import type { SilhouetteName } from '../art/silhouettes';
 import { count, measure as measureInk } from '../font/measure';
-import { cut as inkCut } from '../font/wrap';
+import { cut as inkCut, wrap } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
+import type { Colour } from '../palette';
 import type { Surface } from '../surface';
 import { type Section, BOOK_H, BOOK_TABS, BOOK_W, book, pageHeading } from '../parts/book';
 import { button } from '../parts/button';
@@ -47,8 +48,22 @@ const SECTION_TABS: Section[] = [
   { id: 'jr.rb.crew', name: 'Crew', icon: 'crew' },
 ];
 const PW = 126;
+/** The mark column of the Guide's list: 8 wide, the step's words 2 past it. */
+const MARK_W = 8;
+const STEP_X = MARK_W + 2;
+/** A step still to come once the one before it is done: a hollow box, 5 by 5, standing on the baseline. */
+const OPEN_MARK = ['#####', '#...#', '#...#', '#...#', '#####'];
+/** A step that cannot be begun yet: a lock, 5 by 5, a shackle over a body with its keyhole. */
+const LOCK_MARK = ['.###.', '.#.#.', '#####', '##.##', '#####'];
+
+function paintMark(g: Surface, rows: string[], x: number, c: Colour): void {
+  rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] === '#') g.fill(x + i, 3 + j, 1, 1, c); });
+}
 /** From one taker's row to the next on a bounty's page: a head 10 tall and a unit clear. */
 const TAKER = 11;
+/** The channel of what one carries toward a bounty, and the height of its row with the words over it. */
+const CARRY_LEN = 80;
+const CARRY_ROW = 22;
 
 function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
   const ch = v.chapters[v.chapter];
@@ -58,19 +73,27 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
   const isNext = (i: number) => (v.chapter === p.chapter && i === p.step + 1) || (lastOfPresent && v.chapter === p.chapter + 1 && i === 0);
   const state = (i: number) => (v.chapter < p.chapter || (v.chapter === p.chapter && i < p.step) ? 'done' : v.chapter === p.chapter && i === p.step ? 'now' : isNext(i) ? 'next' : 'later');
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: ch.title })];
+  let rowY = 14;
   ch.steps.forEach((st, i) => {
     const s = state(i);
-    const title = inkCut(st.title, PW - 11);
+    // A long step wraps onto a second line under its first words rather than being cut: the page has the room.
+    const lines = wrap(st.title, PW - STEP_X - 1).slice(0, 2).map((l) => l.text);
     const chosen = i === v.step;
+    const h = lines.length * 10;
     left.push(pageRow({
-      id: `jr.step.${i}`, x: 0, y: 14 + i * 10, w: PW, h: 10, chosen, onChoose: () => v.onChoose(i),
+      id: `jr.step.${i}`, x: 0, y: rowY, w: PW, h, chosen, onChoose: () => v.onChoose(i),
       paint: (g) => {
-        // Done, now, next and later differ by a mark and a tone together, never by the tone alone.
-        if (s === 'done') g.text('{check}', 1, 0, 'growth.dk');
-        if (s === 'now') g.text('{step}', 3, 0, 'ink');
-        g.text(title, 10, 0, s === 'now' || s === 'next' ? 'ink' : 'ink.faded');
+        // Done, now, next and later differ by a mark in the 8 of the mark column and a tone together, never by the
+        // tone alone: a check, the step's arrow, a hollow box for one that can be begun next, a lock for the rest.
+        if (s === 'done') g.text('{check}', 0, 0, 'growth.dk');
+        else if (s === 'now') g.text('{step}', 2, 0, 'ink');
+        else if (s === 'next') paintMark(g, OPEN_MARK, 1, 'ink');
+        else paintMark(g, LOCK_MARK, 1, 'ink.faded');
+        const c = s === 'now' || s === 'next' ? 'ink' : 'ink.faded';
+        lines.forEach((t, k) => g.text(t, STEP_X, k * 10, c));
       },
     }));
+    rowY += h;
   });
   const st = ch.steps[v.step];
   const s = state(v.step);
@@ -103,23 +126,17 @@ function bountyState(b: Bounty, w: number): string {
 }
 
 /**
- * "taken by", then "you" when one took it oneself, then the other takers' heads in their seats' frames: in a crew of
- * eight a count says nothing, and the text face has no room on a row for two handles. One other taker whose handle fits
- * is named after the head. The names stand beside the same heads on the bounty's page. Heads past the room are counted.
+ * "taken by", then who took it in words: "you" when one took it oneself, else the first taker's handle, then how many
+ * more, "taken by Mira_K +2". With eight in a crew a row of faces did not say who held the bounty; the faces stand
+ * with their names on the bounty's own page.
  */
 function takenBy(g: Surface, b: Bounty, crew: CrewMember[], self: number, x: number, y: number, w: number): void {
-  const others = b.took.filter((s) => s !== self);
-  const head = b.took.includes(self) ? (others.length ? 'taken by you and ' : 'taken by you') : 'taken by ';
-  g.text(head, x, y, 'ink.faded');
-  let hx = x + measureInk(head);
-  const room = Math.floor((x + w - hx + 1) / (HEAD_SIZE + 1));
-  const shown = others.length > room ? others.slice(0, Math.max(0, room - 1)) : others;
-  for (const seat of shown) { g.map(HEADS[seat - 1], hx, y); hx += HEAD_SIZE + 1; }
-  if (shown.length < others.length) g.text(`+${others.length - shown.length}`, hx + 1, y, 'ink.faded');
-  else if (others.length === 1) {
-    const name = crew.find((c) => c.seat === others[0])?.name ?? '';
-    if (measureInk(name) <= x + w - hx - 2) g.text(name, hx + 2, y, 'ink.faded');
-  }
+  const mine = b.took.includes(self);
+  const first = mine ? 'you' : crew.find((c) => c.seat === b.took[0])?.name ?? '';
+  const more = b.took.length > 1 ? ` +${b.took.length - 1}` : '';
+  const head = 'taken by ';
+  const name = inkCut(first, w - measureInk(head) - measureInk(more) - (more ? 1 : 0));
+  g.text(`${head}${name}${more}`, x, y, 'ink.faded');
 }
 
 function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
@@ -141,13 +158,15 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
   });
   const b = v.bounties[v.bounty];
   const mine = b.took.includes(v.seat);
-  // The telling runs as far down the page as the lines under it allow; the button keeps its place at the page's foot.
-  const TAKE_Y = 140;
+  // The telling runs as far down the page as the lines under it allow; the button keeps its place at the page's foot,
+  // its bottom on the last row a page's text may reach, clear of the page number under it.
+  const TAKE_Y = 134;
   const shown = b.took.length > 2 ? b.took.slice(0, 1) : b.took;
   // "Taken by" stands on the first taker's row, so a row of its own is not spent on it.
   const under = b.barred ? 20 : b.took.length ? shown.length * TAKER + (b.took.length > 2 ? 10 : 0) : 0;
   const carried = b.carry !== undefined && !b.barred;
-  const telling = para(0, 28, PW, b.telling, 'ink', Math.floor((TAKE_Y - 4 - under - (under ? 2 : 0) - 12 - (carried ? 10 : 0) - 28) / 10));
+  const carryH = carried ? CARRY_ROW : 0;
+  const telling = para(0, 28, PW, b.telling, 'ink', Math.floor((TAKE_Y - 4 - under - (under ? 2 : 0) - 12 - carryH - 28) / 10));
   let y = 28 + telling.h + 2;
   const right: Node[] = [
     pageHeading({ x: 0, y: 0, w: PW, text: inkCut(b.task, PW) }),
@@ -157,13 +176,13 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
   ];
   y += 12;
   if (carried) {
-    // How near the pack is to the ask: the count in words, then a short channel beside it, on one row.
+    // How near the pack is to the ask: the count in words, then under it a channel 80 long on a row of its own, its
+    // rim 2 under the words' descenders. Squeezed beside the words, 28 long, it touched them and said little.
     const have = Math.min(b.carry!, b.n);
     const words = `You carry ${count(b.carry!)} of ${count(b.n)}`;
-    const cx = Math.max(measureInk(words) + 4, PW - 30);
     right.push(inkLine(0, y - 2, PW, words, have >= b.n ? 'growth.dk' : 'ink'));
-    if (PW - cx >= 16) right.push(channel({ x: cx, y: y - 1, len: PW - cx, f: have / b.n, ramp: 'clay', segments: b.n <= 12 && (PW - cx - 2) >= b.n * 3 ? b.n : undefined }));
-    y += 10;
+    right.push(channel({ x: 0, y: y + 10, len: CARRY_LEN, f: have / b.n, ramp: 'clay', segments: b.n <= 12 && (CARRY_LEN - 2) >= b.n * 3 ? b.n : undefined }));
+    y += CARRY_ROW;
   }
   if (b.barred) right.push(para(0, y, PW, b.barred, 'blood.dk', 2));
   else if (b.took.length) {
@@ -214,22 +233,28 @@ function peoplePage(p: People): Node[] {
   ];
 }
 
+/** The crew list's columns: the mark of one's own row at 1, the head at 6, the name 3 past the head. */
+const CREW_HEAD_X = 6;
+const CREW_NAME_X = CREW_HEAD_X + HEAD_SIZE + 3;
+
 const WORN_SLOTS: SilhouetteName[] = ['head', 'body', 'legs', 'trinket', 'trinket'];
 
 function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
   const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: 'Crew' }), inkLine(0, 0, PW - 2, 'Level', 'ink.faded', true)];
   v.crew.forEach((m, i) => {
     // Each player's head before the name, as on the roster. One who is away is a head in shade with "away" in place
-    // of the level; one's own row says "you" there.
+    // of the level. One's own row keeps its level, which "you" in its place hid, and is marked by the step's arrow in
+    // the column before the heads.
     const self = m.seat === v.seat;
-    const right = self ? 'you' : m.online ? String(m.level) : 'away';
-    const name = inkCut(m.name, PW - 14 - measureInk(right) - 4);
+    const right = m.online ? String(m.level) : 'away';
+    const name = inkCut(m.name, PW - CREW_NAME_X - measureInk(right) - 4);
     left.push(pageRow({
       id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, onChoose: () => v.onChoose(i),
       paint: (g) => {
-        g.map((m.online ? HEADS : AWAY_HEADS)[m.seat - 1], 1, 1);
-        g.text(right, PW - 2 - measureInk(right), 1, m.online && !self ? 'ink' : 'ink.faded');
-        g.text(name, 13, 1, m.online ? 'ink' : 'ink.faded');
+        if (self) g.text('{step}', 1, 1, 'ink');
+        g.map((m.online ? HEADS : AWAY_HEADS)[m.seat - 1], CREW_HEAD_X, 1);
+        g.text(right, PW - 2 - measureInk(right), 1, m.online ? 'ink' : 'ink.faded');
+        g.text(name, CREW_NAME_X, 1, m.online ? 'ink' : 'ink.faded');
       },
     }));
   });
@@ -243,8 +268,7 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
     inkLine(14, 14, PW - 14, `Level ${m.level}, ${m.job}`),
     inkLine(14, 24, PW - 14, m.online ? `In ${m.place}` : 'Not here now', m.online ? 'ink' : 'ink.faded'),
   ];
-  if (m.seat === v.seat) right.push(inkLine(14, 34, PW - 14, 'You', 'ink.faded'));
-  else if (m.online && m.at) right.push(whereLine(14, 34, PW - 14, `${count(dist)} m from you`, 1));
+  if (m.seat !== v.seat && m.online && m.at) right.push(whereLine(14, 34, PW - 14, `${count(dist)} m from you`, 1));
   right.push(inkLine(0, 48, PW, 'Worn'));
   WORN_SLOTS.forEach((sil, k) => {
     const icon = m.worn[k];
@@ -276,7 +300,8 @@ export const journalScreen: Screen<JournalView> = (v, ui) => {
   const bk = book({
     id: 'jr.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), sections: SECTION_TABS, chosen: si,
     onSection: (i) => { ui.cue('page'); v.onSection(SECTIONS[i]); },
-    pages: guide ? [v.chapter * 2 + 1, v.chapter * 2 + 2] : undefined,
+    // One book: the Guide's chapters are its first leaves, then a spread each for bounties, standing and the crew.
+    pages: guide ? [v.chapter * 2 + 1, v.chapter * 2 + 2] : [v.chapters.length * 2 + si * 2 - 1, v.chapters.length * 2 + si * 2],
     prev: guide && v.chapter > 0 ? () => { ui.cue('page'); v.onPage(v.chapter - 1); } : undefined,
     next: guide && v.chapter < v.chapters.length - 1 ? () => { ui.cue('page'); v.onPage(v.chapter + 1); } : undefined,
     left: pages.left, right: pages.right,
