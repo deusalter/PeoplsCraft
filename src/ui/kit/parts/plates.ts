@@ -1,5 +1,5 @@
 import { HEADS } from '../art/heads';
-import { COMPASS_MARKS, PING } from '../art/marks';
+import { COMPASS_MARKS, NIGHT_MARK, PING } from '../art/marks';
 import { PLATE } from '../art/slab';
 import { SMALL, TEXT } from '../font/face';
 import { centreX, count, measure, rightX } from '../font/measure';
@@ -8,7 +8,7 @@ import type { Node, Ui } from '../node';
 import { type Colour, SEATS } from '../palette';
 import type { Surface } from '../surface';
 import { paintStrip } from './hud';
-import { KEYCAP_H, keycap } from './keycap';
+import { keycap } from './keycap';
 import { paintSlot } from './slot';
 
 const REST = { hover: false, down: false, focus: false, t: 0 };
@@ -23,7 +23,8 @@ export interface CompassOpts {
   heading: number;
   marks?: CompassMark[];
   place?: string;
-  night?: string;
+  /** The night of the round and the nights in it, shown in the strip's right compartment. */
+  night?: { n: number; of: number };
 }
 
 export const COMPASS_W = 182;
@@ -39,14 +40,33 @@ function along(deg: number, heading: number): number {
 }
 
 /**
+ * How far the night's compartment reaches past the strip: its light edge and a unit clear, the moon, 3 clear, "3/8",
+ * 2 clear, its outline.
+ */
+export function nightW(night: { n: number; of: number }): number {
+  return 2 + NIGHT_MARK.w + 3 + measure(`${night.n}/${night.of}`) + 3;
+}
+
+/**
  * The compass strip (5.26): a plain dark plate 182 by 12 showing 138 degrees of the horizon. The four winds are
- * letters of salt with no shadow, the points between ticks of `root.4`, the heading two marks of salt at x 90.
+ * letters of salt with no shadow, the points between ticks of `root.4`, the heading two marks of salt at x 90. The
+ * night stands in a compartment fastened to the strip's right end, sharing its outline column, so that the strip
+ * stays centred on the crosshair and nothing stands between it and what hangs under it.
  */
 export function compass(o: CompassOpts): Node {
+  const nw = o.night ? nightW(o.night) : 0;
   return {
-    x: o.x, y: o.y, w: COMPASS_W, h: o.place ? 21 : 24,
+    x: o.x, y: o.y, w: COMPASS_W + nw, h: o.place ? 21 : 12,
     paint: (s) => {
       s.nine(PLATE, 0, 0, COMPASS_W, 12);
+      if (o.night) {
+        const x0 = COMPASS_W - 1;
+        s.nine(PLATE, x0, 0, nw + 1, 12);
+        // The shared column is outline from top to foot; the two plates' left-out corners would notch it.
+        s.fill(x0, 0, 1, 12, 'root.0');
+        s.map(NIGHT_MARK, x0 + 3, 2);
+        s.text(`${o.night.n}/${o.night.of}`, x0 + 3 + NIGHT_MARK.w + 3, 1, 'salt');
+      }
       const mid = 90;
       // A friend's head with its frame is 10 tall and lies over the plate's inner edges.
       s.clip(2, 1, COMPASS_W - 3, 10);
@@ -77,12 +97,7 @@ export function compass(o: CompassOpts): Node {
       s.unclip();
       s.fill(mid, 1, 2, 2, 'salt');
       s.fill(mid, 9, 2, 2, 'salt');
-      // Alone, the night is centred 2 under the strip, so that it reads as the compass's and not as the right end of
-      // the readout under it; beside a place it stands at the right.
-      const nw = o.night ? measure(o.night) + 8 : 0;
-      if (o.place) s.text(cut(o.place, COMPASS_W - 2 - nw), 1, 13, 'salt', true);
-      if (o.night && o.place) s.text(o.night, rightX(o.night, COMPASS_W - 2), 13, 'salt', true);
-      else if (o.night) s.text(o.night, centreX(o.night, 0, COMPASS_W), 14, 'salt', true);
+      if (o.place) s.text(cut(o.place, COMPASS_W - 2), 1, 13, 'salt', true);
     },
   };
 }
@@ -110,41 +125,53 @@ export interface ReadoutOpts {
 
 /** The creature's life strip on the readout: ten segments of 3 and their lines inside an outline. */
 export const READOUT_LIFE_W = 41;
-const USE_Y = 23;
+/**
+ * Every readout is one size, so that the eye finds it in the same place whatever it names: 132, the longest second
+ * line of a block ("Needs a stone pick" after its cross, 102) with the slot and 4 clear. At 120 that line was cut.
+ */
+export const READOUT_W = 132;
+export const READOUT_H = 26;
+/** Where the text of both lines starts: 3 clear of the slot at 4, 4. */
+const TEXT_X = 25;
+/** The second line's cell; the key cap stands at y 10 so that its label's capitals sit on the line's. */
+const LINE2_Y = 12;
 
 /**
- * The readout of what is looked at (5.27). Whether the tool in hand will break a block is told by a glyph as well as
- * by a colour, a check or a cross before the line, so that a yes in grey was not read as a line that does not matter.
- * What E does is a row of the same plate, so that the readout and its prompt are one notice and never two boxes.
+ * The readout of what is looked at (5.27): 132 by 26 always, the icon's slot at 4, 4, the name on the first line and
+ * the second line under it, what E does at the second line's right as a key cap and its word. Whether the tool in hand
+ * will break a block is told by a glyph as well as by a colour, a check or a cross before the line, so that a yes in
+ * grey was not read as a line that does not matter.
  */
 export function readout(o: ReadoutOpts): Node {
-  const name = o.hostile ? `{skull} ${o.name}` : o.name;
-  const nw = measure(name);
-  const mark = o.refusal ? '{cross} ' : o.able ? '{check} ' : '';
-  const lw = o.life !== undefined ? READOUT_LIFE_W : o.line ? measure(mark + o.line) : 0;
+  const w = READOUT_W, h = READOUT_H;
   const cap = o.use ? keycap({ x: 0, y: 0, label: 'E' }) : null;
-  const uw = cap ? cap.w + 4 + measure(o.use!) : 0;
-  const w = Math.max(nw, lw, uw) + 28;
-  const h = cap ? USE_Y + KEYCAP_H + 3 : 24;
+  const useW = o.use ? measure(o.use) : 0;
+  // The cap and its word end 4 in from the right, as the slot stands 4 in from the left.
+  const useX = w - 4 - useW;
+  const capX = cap ? useX - 3 - cap.w : w - 4;
+  const room = (cap ? capX - 4 : w - 4) - TEXT_X;
+  const name = cut(o.hostile ? `{skull} ${o.name}` : o.name, (cap ? capX - 2 : w - 4) - TEXT_X);
+  const mark = o.refusal ? '{cross} ' : o.able ? '{check} ' : '';
+  const line = o.line ? cut(mark + o.line, room) : '';
   return {
     x: o.cx - Math.floor(w / 2), y: o.y, w, h,
     paint: (s) => {
       s.nine(PLATE, 0, 0, w, h);
-      s.translate(3, 3);
+      s.translate(4, 4);
       paintSlot(s, { ramp: 'dark', stack: { icon: o.icon, n: 1 } }, REST);
-      s.translate(-3, -3);
-      s.text(name, 24, 2, o.hostile ? 'blood.lt' : 'salt', true);
-      if (o.life !== undefined) paintStrip(s, { x: 0, y: 0, w: READOUT_LIFE_W, f: o.life, tones: ['blood.lt', 'blood', 'blood.dk'], segments: 10, thin: true }, 24, 14);
-      else if (o.line && o.refusal) s.text(mark + o.line, 24, 12, 'blood.lt', true);
-      else if (o.line && o.able) {
-        s.text('{check}', 24, 12, 'growth.lt', true);
-        s.text(o.line, 24 + measure(mark), 12, 'salt', true);
-      } else if (o.line) s.text(o.line, 24, 12, 'root.4', true);
+      s.translate(-4, -4);
+      s.text(name, TEXT_X, 2, o.hostile ? 'blood.lt' : 'salt', true);
+      if (o.life !== undefined) paintStrip(s, { x: 0, y: 0, w: READOUT_LIFE_W, f: o.life, tones: ['blood.lt', 'blood', 'blood.dk'], segments: 10, thin: true }, TEXT_X, 15);
+      else if (line && o.refusal) s.text(line, TEXT_X, LINE2_Y, 'blood.lt', true);
+      else if (line && o.able) {
+        s.text('{check}', TEXT_X, LINE2_Y, 'growth.lt', true);
+        s.text(line.slice(mark.length), TEXT_X + measure(mark), LINE2_Y, 'salt', true);
+      } else if (line) s.text(line, TEXT_X, LINE2_Y, 'root.4', true);
       if (cap) {
-        s.translate(24, USE_Y);
+        s.translate(capX, 10);
         cap.paint!(s, REST);
-        s.translate(-24, -USE_Y);
-        s.text(o.use!, 24 + cap.w + 4, USE_Y + 2, 'salt', true);
+        s.translate(-capX, -10);
+        s.text(o.use!, useX, LINE2_Y, 'salt', true);
       }
     },
   };

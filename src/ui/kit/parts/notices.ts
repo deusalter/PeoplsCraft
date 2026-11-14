@@ -123,21 +123,25 @@ export const blinkOn = (t: number): boolean => t < 3 || Math.floor(t * 2) % 2 ==
  * A status frame (5.18): a dark plate 18 by 18 framed in growth for a help, or in blood with its frame's corners cut
  * for a harm, the time left under it in the small face, blinking in blood.lt for the last ten seconds.
  */
+/** A status frame with the plate of its time: the frame 18, 2 clear, the plate 7. */
+export const STATUS_H = 27;
+
 export function statusFrame(o: StatusOpts): Node {
   const last = o.seconds <= 10;
   return {
-    x: o.x, y: o.y, w: 18, h: 26, anim: last || undefined,
+    x: o.x, y: o.y, w: 18, h: STATUS_H, anim: last || undefined,
     paint: (s, live) => {
       s.nine(o.good ? FRAMED_PLATE : HARM_PLATE, 0, 0, 18, 18, { tint: o.good ? 'growth' : 'blood' });
       s.icon(o.icon, 1, 1);
       if (last && !blinkOn(live.t)) return;
-      // The time on a plate of its own, 15 by 7 with its corners left out, a unit under the frame and a unit of plate
-      // round the figures; no shadow. Bare on the world with a shadow, the shadow filled the counters and the gaps of
-      // the 3 by 5 figures and "2:31" read as a blot.
+      // The time on a plate of its own, 16 by 7 with its corners left out, a unit in from either side of the frame so
+      // that it hangs centred under it, 2 under the frame; no shadow. Bare on the world with a shadow, the shadow
+      // filled the counters and the gaps of the 3 by 5 figures and "2:31" read as a blot; a unit under the frame,
+      // plate and frame read as one block.
       const t = clock(o.seconds);
-      s.fill(2, 19, 13, 7, 'root.1');
-      s.fill(1, 20, 15, 5, 'root.1');
-      s.text(t, centreX(t, 0, 18, SMALL), 20, last ? 'blood.lt' : 'salt', false, SMALL);
+      s.fill(2, 20, 14, 7, 'root.1');
+      s.fill(1, 21, 16, 5, 'root.1');
+      s.text(t, centreX(t, 1, 16, SMALL), 21, last ? 'blood.lt' : 'salt', false, SMALL);
     },
   };
 }

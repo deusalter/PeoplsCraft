@@ -65,3 +65,14 @@ export const WHERE_MARK = pixmap({ rows: [
   '.#.....#.',
   '..#####..',
 ], key: { '#': 'tint' } }, 'mark.where');
+
+/** The night's mark in the compass's right compartment, 7 by 7: a crescent, its horns reaching past its back. */
+export const NIGHT_MARK = coded([
+  '..WWWW.',
+  '.WWgg..',
+  'WWg....',
+  'WWg....',
+  'WWg....',
+  '.WWgg..',
+  '..WWWW.',
+], 'mark.night');

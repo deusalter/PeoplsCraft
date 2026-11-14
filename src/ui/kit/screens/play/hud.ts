@@ -6,7 +6,7 @@ import type { Node, Ui } from '../../node';
 import { type Colour, GRADES } from '../../palette';
 import { CARRIED_MARKS } from '../../art/hud';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
-import { TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
+import { STATUS_H, TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
 import { CHAT_WRAP, CREW_HEADS_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
 import { BODY_STATES } from '../../sample/states';
@@ -75,10 +75,12 @@ export interface HudOpts {
   entry?: boolean;
 }
 
-/** The top of what stands under the compass: 4 under the night centred beneath it. */
-const CENTRE_Y = 28;
-/** The second boss bar or event strip: 12 under the first one's strip. */
-const BOSS2_Y = CENTRE_Y + 20 + 12;
+/** The first boss bar: 4 under the compass's plate, which ends at y 13. */
+const BOSS_Y = 18;
+/** Each further bar or event strip stands 20 under the one above it. */
+const BOSS_PITCH = 20;
+/** The readout of what is looked at: 6 under the compass's plate. */
+const READOUT_Y = 20;
 /** From one status frame to the next: the frame of 18 and 4 clear. */
 const STATUS_PITCH = 22;
 
@@ -151,19 +153,19 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     { kind: 'bed', deg: 200 }, { kind: 'guide', deg: 34 }, { kind: 'fell', deg: 302 },
     { kind: 'friend', seat: 2, deg: 8 }, { kind: 'friend', seat: 3, deg: 61 }, { kind: 'friend', seat: 6, deg: 338 }, { kind: 'friend', seat: 5, deg: 130 },
   ];
-  out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, night: first ? 'Night 1 of 8' : 'Night 3 of 8' }));
+  out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, night: { n: first ? 1 : 3, of: 8 } }));
 
   // What stands in the centre column under the compass's line, which the toast must keep 4 clear of.
   let centre: Node | null = null;
   if (o.boss) {
-    centre = { x: L(cx - 91), y: CENTRE_Y, w: 182, h: BOSS2_Y + 22 - CENTRE_Y };
-    out.push(bossBar({ x: L(cx - 91), y: CENTRE_Y, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
-    out.push(bossBar({ x: L(cx - 91), y: BOSS2_Y, name: 'Night raid', f: 0.4, event: 'blood' }));
+    centre = { x: L(cx - 91), y: BOSS_Y, w: 182, h: BOSS_PITCH + 22 };
+    out.push(bossBar({ x: L(cx - 91), y: BOSS_Y, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
+    out.push(bossBar({ x: L(cx - 91), y: BOSS_Y + BOSS_PITCH, name: 'Night raid', f: 0.4, event: 'blood' }));
   } else if (o.look) {
     const lk = o.look;
     const said = lk.ore ? oreLine(lk.ore, first ? null : BAR[0]?.key ?? null) : { line: lk.line, refusal: false };
     // What E does is the plate's third row, so that E can only mean the one thing the readout names.
-    centre = readout({ cx: L(cx), y: CENTRE_Y, icon: lk.icon, name: lk.name, life: lk.life, hostile: lk.hostile, use: o.prompt !== false ? lk.use : undefined, ...said });
+    centre = readout({ cx: L(cx), y: READOUT_Y, icon: lk.icon, name: lk.name, life: lk.life, hostile: lk.hostile, use: o.prompt !== false ? lk.use : undefined, ...said });
     out.push(centre);
   }
 
@@ -185,13 +187,15 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     // 4 under it.
     const tx = R(TOAST_W);
     const statusY = lowY;
-    let ty = statusY + 28 + TRACKER_H + 4;
+    // The Guide's step stands 2 under the plates of the times.
+    const stepY = statusY + STATUS_H + 2;
+    let ty = stepY + TRACKER_H + 4;
     if (centre && centre.x + centre.w + 4 > tx) ty = Math.max(ty, centre.y + centre.h + 4);
     // Left to right in the order the pack's States tab lists them, so the two never disagree; 4 clear between frames,
     // so that their times never run together.
     const n = BODY_STATES.length;
     BODY_STATES.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + (n - 1 - i) * STATUS_PITCH), y: statusY, icon: s.icon, good: s.good, seconds: s.seconds })));
-    if (o.notices !== false) out.push(tracker(R(4), statusY + 28, 'Smelt iron', '2 of 3'));
+    if (o.notices !== false) out.push(tracker(R(4), stepY, 'Smelt iron', '2 of 3'));
     const floor = (narrow ? 150 : H - 54) - 2;
     for (const t of toasts) {
       const h = toastHeight(t);
