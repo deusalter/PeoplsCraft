@@ -1,4 +1,5 @@
-// The screen at a fall (section 6): the world under a flat wash of blood.pit that comes up in three steps; on it, with
+// The screen at a fall (section 6): the world dimmed a quarter, then a wash of blood.dk over it that comes up in two
+// steps, so the scene stays seen through the red (blood.pit at three quarters read as a flat maroon fill); on it, with
 // no window, "You fell" in raised letters at the top third, what did it and what was shed under it, and two buttons
 // that wake after 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and chat stay
 // drawn over the wash.
@@ -9,6 +10,7 @@ import type { Colour } from '../palette';
 import { button } from '../parts/button';
 import { chat, nameTag } from '../parts/plates';
 import { since } from './play/common';
+import { chatBottom } from './play/hud';
 import { seat } from '../sample/crew';
 import type { NamedScreen } from './index';
 
@@ -27,7 +29,7 @@ function build(ui: Ui, id: string): Node {
   const f = FALLS[id];
   const t = since(ui.t, fellAt, 5);
   const awake = t >= 0.8;
-  const quarters = t < 0.1 ? 1 : t < 0.2 ? 2 : 3;
+  const quarters = t < 0.1 ? 1 : 2;
   const col = Math.floor((ui.w - 200) / 2), top = Math.floor((ui.h - 240) / 2);
   const title = raised('You fell');
   const line = (y: number, text: string, c: Colour = 'salt'): Node => ({
@@ -57,8 +59,9 @@ function build(ui: Ui, id: string): Node {
     over.push(
       nameTag({ cx: sw.x + Math.floor(sw.w * 0.14), y: 112, name: seat(2).name, seat: 2, life: seat(2).life }),
       nameTag({ cx: sw.x + Math.floor(sw.w * 0.84), y: 96, name: seat(3).name, seat: 3, life: seat(3).life }),
+      // Chat stands where it stands in play, and lower when that would bring a line within 16 of the last button.
       chat({
-        x: sw.x + 4, bottom: sw.y + 226, lines: [
+        x: sw.x + 4, bottom: Math.max(sw.y + chatBottom(sw.w, sw.h), top + by + 24 + 20 + 16 + 3 * 10), lines: [
           { text: `${seat(1).name} fell to a Tama` },
           { seat: 2, from: seat(2).name, text: 'coming down' },
           { seat: 3, from: seat(3).name, text: 'lees by the torch' },
@@ -71,7 +74,7 @@ function build(ui: Ui, id: string): Node {
   if (t < 0.3) setTimeout(() => ui.invalidate(), 110);
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
-    paint: (s) => s.wash(0, 0, ui.w, ui.h, 'blood.pit', quarters),
+    paint: (s) => { s.wash(0, 0, ui.w, ui.h, 'root.0', 1); s.wash(0, 0, ui.w, ui.h, 'blood.dk', quarters); },
     on: { key: (e) => { if (e.key === 'Enter' && awake) { fellAt = ui.t; ui.invalidate(); return true; } return e.key === 'Escape'; } },
     takes: true,
     kids: [...over, ...kids],
