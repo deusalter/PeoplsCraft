@@ -3637,7 +3637,7 @@ The HUD's chat with its entry (5.23): twelve lines ending where closed chat ends
 
 ### States of a body (to come)
 
-The States tab of the pack (the second of its four). The upper part is a well holding the large figure of 5.29 standing alone on the ground tile. Under the well, list rows 20 tall on the slab, as the pack's States tab above draws them: status icon in its frame, the state's name in the colour of what it does, the time left right-aligned, and in the tooltip what ends it. The six kinds of harm are not shown on the body; each is a 9 by 9 mark beside a number wherever a tooltip gives harm (an edge, a weight, a flame, the loosening, a fall, the sun), and a creature's entry in the codex lists the kinds it yields to and the kinds it turns.
+The States tab of the pack (the second of its four), as the pack's States tab above draws it: no figure (the pack beside it shows the body), the title, then rows 22 tall from the top of the panel: status icon in its frame, the state's name on the first line in the colour of what it does, cut with `…` before it can wrap, what it does and the time left on the second line, and in the tooltip what ends it. The six kinds of harm are not shown on the body; each is a 9 by 9 mark beside a number wherever a tooltip gives harm (an edge, a weight, a flame, the loosening, a fall, the sun), and a creature's entry in the codex lists the kinds it yields to and the kinds it turns.
 
 ### Keys and stores (to come)
 
