@@ -97,12 +97,8 @@ export const slotsSheet: Sheet = {
         ink(8, 30, 'the buttons of its row.', 'ink.faded'),
       ],
     }));
-    kids.push(slab({ x: 248, y: 227, w: 176, h: 35, ramp: 'timber', title: 'A title far too long for its slab and its row' }));
-    kids.push(salt(428, 178, 'Slabs'));
-    kids.push(salt(428, 190, 'stand'));
-    kids.push(salt(428, 202, 'on a'));
-    kids.push(salt(428, 214, 'dimmed'));
-    kids.push(salt(428, 226, 'world.'));
+    kids.push(slab({ x: 248, y: 227, w: 176, h: 20, ramp: 'timber', title: 'A title far too long for its slab and its row' }));
+    kids.push(salt(248, 251, 'Slabs stand on a dimmed world.'));
     return page(ui, kids);
   },
 };
