@@ -22,6 +22,8 @@ export interface CodexView {
   chosen: number;
   onSection(i: number): void;
   onSpread(i: number): void;
+  /** A page arrow that crosses into another section: to its spread `spread`. */
+  onTurn(section: number, spread: number): void;
   onChoose(i: number): void;
   onClose(): void;
 }
@@ -37,8 +39,13 @@ const PW = 126, COLS = 7, CELLS = 49;
 /** The picture well: a parchment hollow sunk in the page, the 16 by 16 picture in its middle. */
 const WELL = 24;
 
-/** Columns of a spread's grid: a short chapter (the eight) stands in rows of four, so that no empty cell promises more. */
-const colsFor = (n: number) => (n <= 8 ? 4 : COLS);
+/**
+ * How a spread's entries stand: a short chapter (the eight, the old things) as a list of two columns, each row a slot
+ * and the name beside it ("?" where not met), 20 a row; a longer one as a grid of seven. Eight slots in rows of four
+ * left half the page bare parchment under a cramped block.
+ */
+const SHORT = 8;
+const layoutFor = (n: number) => (n <= SHORT ? { cols: 2, dx: 63, dy: 20 } : { cols: COLS, dx: 18, dy: 18 });
 
 /**
  * An entry slot sunk in the page (X3): the clay slot with a floor of `clay.sh`, `clay.face` under the pointer. A kind
@@ -132,6 +139,28 @@ function uses(key: string): { into: string[]; from: string[] } {
   return { into: [...new Set(into)], from };
 }
 
+/** Whether the known steps, and the line of how many are left, fit whole from `top` to the page's foot. */
+function roomFor(e: Entry, creature: boolean, top: number): boolean {
+  const H = PAGE_BOTTOM - PAGE_TEXT.top - top;
+  let y = 0, left = 0;
+  const n = creature ? 4 : e.steps.length;
+  for (let i = 0; i < n; i++) {
+    const t = e.steps[i];
+    if (!t) { left++; continue; }
+    y += box(t, PW, 99).h;
+  }
+  if (left) y += (y ? 4 : 0) + 10;
+  return y <= H;
+}
+
+/** The thing a creature leaves, found by the name its Drops fact gives, alone or after the creature's own name. */
+function dropOf(e: Entry): string | null {
+  const said = e.facts?.find((f) => f.label === 'Drops')?.text;
+  if (!said) return null;
+  for (const t of THINGS.values()) if (t.name === said || t.name === `${e.name} ${said}`) return t.key;
+  return null;
+}
+
 /**
  * The right page (X5 to X9): the name, whose word it is under it on up to two lines, the picture well 24 square at the
  * left, sunk in the parchment, the facts in the column beside it (each a grey label and its value in ink), then for
@@ -156,10 +185,15 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
       if (known) s.icon(e.icon, 4, 4); else s.silhouette(e.icon, 4, 4, 'clay.sh', 'clay.sh');
     },
   });
+  // What it leaves, when it is a thing of the world, is shown as that thing in a slot under the facts and not said
+  // again among them: in words only, the lower half of the page stood bare.
+  let drop = known ? dropOf(e) : null;
+  // Only where the steps still fit whole under it: a slot that cut the last thing learned off cost more than it gave.
+  if (drop && !roomFor(e, creature, (known && e.word ? 10 + box(e.word, PW, 2).h + 2 : 12) + WELL + 4 + 11 + 18 + 4)) drop = null;
   let fy = 0;
   if (known && e.facts) {
     const FX = WELL + 4, FW = PW - FX;
-    for (const f of e.facts.slice(0, 3)) {
+    for (const f of e.facts.filter((f) => !(drop && f.label === 'Drops')).slice(0, 3)) {
       if (fy + 10 > 30) break;
       const label = `${f.label}: `, lw = measure(label);
       const value = cut(f.text, FW - lw);
@@ -172,6 +206,12 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
   // A kind not yet met keeps its picture as the silhouette and its page bare, but for one line from the world once
   // someone in the crew has seen it, so that the page says where to look.
   if (!known && e.hint) kids.push(inkLine(0, y, PW, e.hint, 'ink.faded'));
+  if (drop) {
+    kids.push(inkLine(0, y, PW, 'Drops', 'ink.faded'));
+    y += 11;
+    kids.push(...slotGrid(y, [drop]));
+    y += 18 + 4;
+  }
   if (known && e.uses) {
     const u = uses(e.key);
     const row = (title: string, keys: string[]) => {
@@ -199,37 +239,47 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
   if (measure(sp.heading) + 6 + measure(tally) <= PW) {
     left.push({ x: 0, y: 0, w: PW, h: 10, paint: (s) => { s.text(tally, rightX(tally, PW - 1), 0, 'ink.faded'); } });
   }
-  // Only the cells the spread has are drawn, so a short chapter is a short grid with its two lines under it.
-  const cols = colsFor(entries.length);
+  // Only the cells the spread has are drawn, so a short chapter is a short list with its two lines under it.
+  const L = layoutFor(entries.length), cols = L.cols;
   const rows = Math.max(1, Math.ceil(entries.length / cols));
+  const listed = entries.length <= SHORT;
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
+    const name = e.seen ? cut(e.name, L.dx - 21 - 2) : '?';
     left.push({
-      id: `cx.entry.${i}`, x: (i % cols) * 18, y: 14 + Math.floor(i / cols) * 18, w: 18, h: 18,
+      id: `cx.entry.${i}`, x: (i % cols) * L.dx, y: 14 + Math.floor(i / cols) * L.dy, w: listed ? L.dx - 2 : 18, h: 18,
       takes: true, focus: true,
       on: { down: () => v.onChoose(i) },
       tip: () => ({ lines: [{ text: e.seen ? e.name : creature ? 'Not yet met' : 'Not yet found', c: e.seen ? 'salt' : 'root.4' }] }),
-      paint: (s, live) => paintEntry(s, e, live, i === v.chosen),
+      paint: (s, live) => {
+        paintEntry(s, e, live, i === v.chosen);
+        if (listed) s.text(name, 21, 4, e.seen ? 'ink' : 'ink.faded');
+      },
     });
   }
   // The chosen cell: a frame of ember 2 deep standing a unit out of the cell, drawn over its neighbours' edges.
   if (v.chosen >= 0 && v.chosen < entries.length) {
-    const cx = (v.chosen % cols) * 18, cy = 14 + Math.floor(v.chosen / cols) * 18;
+    const cx = (v.chosen % cols) * L.dx, cy = 14 + Math.floor(v.chosen / cols) * L.dy;
     left.push({ x: cx - 1, y: cy - 1, w: 20, h: 20, paint: (s) => { ring(s, 0, 0, 20, 20, 'ember'); ring(s, 1, 1, 18, 18, 'ember'); } });
   }
   const blurb = box(sp.blurb, PW, 2);
-  left.push({ x: 0, y: 14 + rows * 18 + 4, w: PW, h: blurb.h, paint: (s) => { for (const l of blurb.lines) s.text(l.text, 0, l.y, 'ink'); } });
+  left.push({ x: 0, y: 14 + (rows - 1) * L.dy + 18 + 6, w: PW, h: blurb.h, paint: (s) => { for (const l of blurb.lines) s.text(l.text, 0, l.y, 'ink'); } });
   // Page numbers run on through the sections' spreads.
   let before = 0;
   for (let k = 0; k < v.section; k++) before += v.sections[k].spreads.length;
   const page = (before + v.spread) * 2 + 1;
   const at = centred(ui.w, ui.h, BOOK_W, BOOK_H);
+  // The arrows lead on through the sections as the page numbers do: back from a section's first spread is the last
+  // spread of the one before. Page 11 with no back arrow said there was nothing before it.
+  const back = v.spread > 0 ? () => { ui.cue('page'); v.onSpread(v.spread - 1); }
+    : v.section > 0 ? () => { ui.cue('page'); v.onTurn(v.section - 1, v.sections[v.section - 1].spreads.length - 1); } : undefined;
+  const on = v.spread < sec.spreads.length - 1 ? () => { ui.cue('page'); v.onSpread(v.spread + 1); }
+    : v.section < v.sections.length - 1 ? () => { ui.cue('page'); v.onTurn(v.section + 1, 0); } : undefined;
   const bk = book({
     id: 'cx.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), sections: SECTION_TABS, chosen: v.section,
     onSection: (i) => { ui.cue('page'); v.onSection(i); },
     pages: [page, page + 1],
-    prev: v.spread > 0 ? () => { ui.cue('page'); v.onSpread(v.spread - 1); } : undefined,
-    next: v.spread < sec.spreads.length - 1 ? () => { ui.cue('page'); v.onSpread(v.spread + 1); } : undefined,
+    prev: back, next: on,
     left, right: rightPage(entries[v.chosen], creature),
   });
   const move = (d: number) => {
@@ -245,8 +295,8 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
       key: (e: KeyEv) => {
         if (e.key === 'Escape') { v.onClose(); return true; }
         if (e.key >= '1' && e.key <= '5') { v.onSection(Number(e.key) - 1); return true; }
-        if (e.key === 'PageUp' && v.spread > 0) { v.onSpread(v.spread - 1); return true; }
-        if (e.key === 'PageDown' && v.spread < sec.spreads.length - 1) { v.onSpread(v.spread + 1); return true; }
+        if (e.key === 'PageUp' && back) { back(); return true; }
+        if (e.key === 'PageDown' && on) { on(); return true; }
         const d: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -cols, ArrowDown: cols };
         if (d[e.key] !== undefined) { move(d[e.key]); return true; }
       },
@@ -269,6 +319,7 @@ function sample(name: string, title: string, section: number, spread = 0, chosen
         sections: CODEX, section: st.section, spread: st.spread, chosen: st.chosen,
         onSection: (i) => { st.section = i; st.spread = 0; st.chosen = firstSeen(CODEX[i], 0); ui.invalidate(); },
         onSpread: (i) => { st.spread = i; st.chosen = firstSeen(CODEX[st.section], i); ui.invalidate(); },
+        onTurn: (sec, sp) => { st.section = sec; st.spread = sp; st.chosen = firstSeen(CODEX[sec], sp); ui.invalidate(); },
         onChoose: (i) => { st.chosen = i; ui.invalidate(); },
         onClose: () => go('hud'),
       }, ui);

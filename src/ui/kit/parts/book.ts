@@ -1,5 +1,4 @@
 import { PAGE_ARROW, PAGE_ARROW_LEFT } from '../art/book';
-import { SMALL } from '../font/face';
 import { centreX } from '../font/measure';
 import type { Live, Node } from '../node';
 import { type Colour, SEATS } from '../palette';
@@ -151,9 +150,10 @@ export function book(o: BookOpts): Node {
     paint: (s) => {
       paintBook(s);
       if (o.pages) {
+        // The text face, its capitals level with the arrows: small digits in faded ink were lost between them.
         const [a, b] = o.pages.map(String);
-        s.text(a, centreX(a, PAGE_TEXT.left, PAGE_TEXT.w, SMALL), 165, 'ink.faded', false, SMALL);
-        s.text(b, centreX(b, PAGE_TEXT.right, PAGE_TEXT.w, SMALL), 165, 'ink.faded', false, SMALL);
+        s.text(a, centreX(a, PAGE_TEXT.left, PAGE_TEXT.w), 163, 'ink.faded');
+        s.text(b, centreX(b, PAGE_TEXT.right, PAGE_TEXT.w), 163, 'ink.faded');
       }
     },
     kids,
