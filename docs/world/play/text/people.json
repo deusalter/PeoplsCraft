@@ -272,32 +272,32 @@
  ],
 
  "folk.night:wayfinder": [
-  "My hand is on the stone until first light, peopl. Ask me about the road in the morning.",
+  "My hand is on the stone until first light, peopl. Ask me about the road when the sun is up.",
   "Take what you need from the shelf and weigh the lees out yourself."
  ],
  "folk.night:provisioner": [
-  "I am holding, peopl. Take what you want and set the lees down by the pot.",
+  "I am holding, peopl. Set the lees down by the pot for whatever you carry off.",
   "Bring your goods over here if you want to sell. I cannot get up from the stone."
  ],
  "folk.night:smith": [
   "While I hold I cannot go to the anvil, peopl, and the fire is out.",
-  "Show me the bar by the lamp, and I will work it in the morning."
+  "Show me the bar by the lamp, and I will work it tomorrow."
  ],
  "folk.night:apothecary": [
-  "This hand stays on the stone tonight. I will see to your arm at first light.",
+  "This hand stays on the stone tonight. I will see to your arm after the night is out.",
   "My arm is only sore by morning on a quiet night like this."
  ],
  "folk.night:tinker": [
-  "I cannot turn pieces over with one hand on the stone. Take what is laid out.",
-  "Come at first light and I will look at what you found."
+  "I cannot turn pieces over with one hand on the stone.",
+  "Come in daylight and I will look at what you found."
  ],
  "folk.night:runescribe": [
-  "The lines in this slab carry what my hand drives. I do not lift it until first light.",
-  "Ask me about cutting when my hand is off the stone."
+  "The lines in this slab carry what my hand drives. I do not lift it until the sky is grey.",
+  "Cutting can wait until my hand is off the stone."
  ],
  "folk.night:beastcaller": [
   "Keep your small one out of this room tonight, peopl. Its bone is unsalted, and I am holding.",
-  "Buy what is out. The raw remains stay shut in their box tonight."
+  "What is on the table is for sale. The raw remains stay shut in their box until day."
  ],
  "folk.night:deserter": [
   "I hold badly, peopl. My arm is shaking before the night is half gone.",
@@ -332,15 +332,15 @@
  ],
 
  "folk.attack:wayfinder": [
-  "I do not fight, peopl. Keep them off the bed while they are at the walls.",
-  "What has come is stronger than the lees in my pot."
+  "What has come is stronger than the lees in my pot.",
+  "Fight them at the walls, peopl. I hold until they are gone."
  ],
  "folk.attack:provisioner": [
   "They have come for the stores. Get between them and the chests.",
   "I do not fight, peopl. If they reach the bed I will have to go."
  ],
  "folk.attack:smith": [
-  "Keep them off my anvil and the bed, peopl. I am holding and cannot lift the hammer.",
+  "They will break my anvil and the bed first, peopl. I am holding and cannot lift the hammer.",
   "A forge of remains draws as well as the chests. They will go for it."
  ],
  "folk.attack:apothecary": [
@@ -349,14 +349,14 @@
  ],
  "folk.attack:tinker": [
   "They want what is in the chests. Do not let them have it.",
-  "My pieces are in the box by the bed. Keep them off it."
+  "My pieces are in the box by the bed. Stand over it."
  ],
  "folk.attack:runescribe": [
   "No cut in any stone turns these. Fight them.",
   "My hand stays on the slab. The edge is where you are needed."
  ],
  "folk.attack:beastcaller": [
-  "Kill them at the edge, peopl. I do not fight.",
+  "Kill them out in the open, peopl. A blade is no part of my trade.",
   "There will be remains for the bone when it is done."
  ],
  "folk.attack:deserter": [
@@ -481,13 +481,13 @@
  "folk.short:deserter": "Beat off a march and you will have the Mūda for it.",
 
  "folk.leave:wayfinder": "Set a new bed in the room, peopl, and the next walker on the road will sit down in it.",
- "folk.leave:provisioner": "There is nothing to sit on through the night. My goods go down the road with me.",
- "folk.leave:smith": "The anvil is yours, peopl. Without a seat for the night I hold at an old house.",
+ "folk.leave:provisioner": "There is nothing to sit on through the night. I will sell the coal further down the road.",
+ "folk.leave:smith": "The anvil is yours, peopl. Bring bars to my next hearth if you want them worked.",
  "folk.leave:apothecary": "My salves are packed. Holders at other hearths have arms that need seeing to.",
- "folk.leave:tinker": "Without a bed I cannot hold here. The walkers will hear of your Joining Bench.",
- "folk.leave:runescribe": "My slab goes with me to the next old house. Put a bed back and send for me.",
- "folk.leave:beastcaller": "The bone and the box of remains go with me. Nothing holds this ground tonight, peopl.",
- "folk.leave:deserter": "No fire of ours will take me back, so I hold in an empty house tonight.",
+ "folk.leave:tinker": "The Joining Bench stays where you built it. The walkers will hear of it from me.",
+ "folk.leave:runescribe": "A broken bed is no seat for the night. Build the room up again and send for me.",
+ "folk.leave:beastcaller": "Nothing holds this ground tonight, peopl, and the raw remains in my box would draw them.",
+ "folk.leave:deserter": "No fire of ours will take me back. Tonight I hold in an empty house.",
 
  "folk.extra:deserter.burrower": "The burrower took our people while we lived on its sand. They were in it when you boiled it down.",
  "folk.extra:wayfinder.moon_in": "Amāvassa is in {n} nights, peopl. Be under a roof or where you mean to fight.",
