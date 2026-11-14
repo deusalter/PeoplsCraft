@@ -1,6 +1,6 @@
 // The journal (section 6, Journal): one book shared by the crew, with tabs for the Guide, bounties, standing and the
 // crew. The Guide gives a chapter to the left page and the chosen step to the right.
-import { HEADS, HEAD_SIZE } from '../art/heads';
+import { AWAY_HEADS, HEADS, HEAD_SIZE } from '../art/heads';
 import type { SilhouetteName } from '../art/silhouettes';
 import { count, measure as measureInk } from '../font/measure';
 import { cut as inkCut } from '../font/wrap';
@@ -217,7 +217,7 @@ function peoplePage(p: People): Node[] {
 const WORN_SLOTS: SilhouetteName[] = ['head', 'body', 'legs', 'trinket', 'trinket'];
 
 function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
-  const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: 'Crew' })];
+  const left: Node[] = [pageHeading({ x: 0, y: 0, w: PW, text: 'Crew' }), inkLine(0, 0, PW - 2, 'Level', 'ink.faded', true)];
   v.crew.forEach((m, i) => {
     // Each player's head before the name, as on the roster. One who is away is a head in shade with "away" in place
     // of the level; one's own row says "you" there.
@@ -227,7 +227,7 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
     left.push(pageRow({
       id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, onChoose: () => v.onChoose(i),
       paint: (g) => {
-        if (m.online) g.map(HEADS[m.seat - 1], 1, 1); else g.draw(HEADS[m.seat - 1], 1, 1, { flat: 'clay.sh' });
+        g.map((m.online ? HEADS : AWAY_HEADS)[m.seat - 1], 1, 1);
         g.text(right, PW - 2 - measureInk(right), 1, m.online && !self ? 'ink' : 'ink.faded');
         g.text(name, 13, 1, m.online ? 'ink' : 'ink.faded');
       },
@@ -239,7 +239,7 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
   // slot and two lines, as the bounty page lists them.
   const right: Node[] = [
     pageHeading({ x: 0, y: 0, w: PW, text: inkCut(m.name, PW) }),
-    { x: 0, y: 14, w: HEAD_SIZE, h: HEAD_SIZE, paint: (g) => g.map(HEADS[m.seat - 1], 0, 0) },
+    { x: 0, y: 14, w: HEAD_SIZE, h: HEAD_SIZE, paint: (g) => g.map((m.online ? HEADS : AWAY_HEADS)[m.seat - 1], 0, 0) },
     inkLine(14, 14, PW - 14, `Level ${m.level}, ${m.job}`),
     inkLine(14, 24, PW - 14, m.online ? `In ${m.place}` : 'Not here now', m.online ? 'ink' : 'ink.faded'),
   ];

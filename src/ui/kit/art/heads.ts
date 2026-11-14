@@ -151,6 +151,19 @@ export function seatFace(seat: number, wide = false): { rows: (Colour | null)[][
 /** The head that stands for a player beside their name, on the compass and on the map: 10 by 10 with its frame. */
 export const HEADS: readonly PixelMap[] = FACES.map((f, i) => faceMap(f, framed(f.rows), i + 1, `head.small.${i + 1}`));
 
+/**
+ * The head of one who is away: their own face, so that it is still them, in the greys of the root by the role of each
+ * tone (lit, mid, shade, darkest) and framed in `clay.dk` in place of their seat's colour. A blank square in the head's
+ * place said nothing of whom.
+ */
+export const AWAY_HEADS: readonly PixelMap[] = FACES.map((f, i) => {
+  const key: Record<string, Colour> = {
+    L: 'root.4', H: 'root.4', c: 'root.4', s: 'root.3', h: 'root.3', C: 'root.3', t: 'root.2', d: 'root.2', x: 'root.2',
+    m: 'root.1', e: 'root.1', k: 'root.1', K: 'root.0', F: 'clay.dk',
+  };
+  return pixmap({ rows: framed(f.rows), key }, `head.away.${i + 1}`);
+});
+
 /** The head as a 16 by 16 icon, for a side tab or a list row: `head:<seat>`. The face is 10 by 10, framed and outlined. */
 export const HEAD_ICONS: Record<string, PixelMap> = Object.fromEntries(FACES.map((f, i) => {
   const inner = framed(widened(f.rows));
