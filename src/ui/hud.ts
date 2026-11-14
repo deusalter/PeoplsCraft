@@ -50,10 +50,45 @@ interface Pip { el: HTMLElement; i: HTMLElement; d: HTMLElement; px: number; on:
 interface Tag { el: HTMLElement; name: HTMLElement; bar: HTMLElement; slot: number; text: string; hp: number; seen: boolean; look: number; on: boolean }
 /** A ping in the world: a marker with the pinger's name and the distance. */
 interface Mark { el: HTMLElement; label: HTMLElement; text: string; on: boolean }
-/** Players' tags show within this distance (2.5). */
-const TAG_R = 48;
+/** Players' tags show within this distance, and terrain hiding one is looked for this often (seconds) (2.5). */
+export const TAG_R = 48, TAG_LOOK = 0.25;
 const PING_COLOR = '#ffd27a';
 const ray = newRayHit();
+
+/** Whether a tag `dist` blocks off shows this frame. `hidden` is the terrain test, asked once per TAG_LOOK while in range;
+ *  between asks the last answer stands. */
+export function tagSight(t: { look: number; seen: boolean }, dist: number, dt: number, hidden: () => boolean): boolean {
+  if (dist > TAG_R) return false;
+  t.look -= dt;
+  if (t.look <= 0) { t.look = TAG_LOOK; t.seen = !hidden(); }
+  return t.seen;
+}
+/** What a key does on the HUD: open the chat line (empty, or with a slash), show the player list, ping; or nothing. `typing`:
+ *  a text field has the keys; `busy`: the game is not ready, or a menu, a window, the death screen or the chat line is open. */
+export function hudKey(code: string, repeat: boolean, s: { typing: boolean; busy: boolean; locked: boolean; dead: boolean }): 'chat' | 'command' | 'list' | 'ping' | null {
+  if (s.typing || s.busy) return null;
+  if (code === 'Tab') return 'list';
+  if (repeat) return null;
+  if (code === 'Enter' || code === 'KeyT') return 'chat';
+  if (code === 'Slash') return 'command';
+  if (code === 'KeyV' && s.locked && !s.dead) return 'ping';
+  return null;
+}
+const vP = new THREE.Vector3();
+/** Where the world point lands on a `w` by `h` screen, in pixels from the top left; false when it is behind the camera. */
+export function screenAt(cam: THREE.Camera, x: number, y: number, z: number, w: number, h: number, out: { x: number; y: number }): boolean {
+  vP.set(x, y, z).project(cam);
+  if (vP.z > 1) return false;
+  out.x = ((vP.x + 1) / 2) * w; out.y = ((1 - vP.y) / 2) * h;
+  return true;
+}
+/** Where a ping from the eye along the unit direction lands: on the face of the block looked at, else PING_REACH along it. */
+export function pingAt(world: Parameters<typeof raycast>[0], ex: number, ey: number, ez: number, dx: number, dy: number, dz: number, out: number[]): number[] {
+  raycast(world, ex, ey, ez, dx, dy, dz, PING_REACH, ray);
+  if (ray.hit) { out[0] = ray.x + 0.5 + ray.nx * 0.5; out[1] = ray.y + 0.5 + ray.ny * 0.5; out[2] = ray.z + 0.5 + ray.nz * 0.5; }
+  else { out[0] = ex + dx * PING_REACH; out[1] = ey + dy * PING_REACH; out[2] = ez + dz * PING_REACH; }
+  return out;
+}
 
 export class Hud {
   readonly root: HTMLElement;
@@ -102,7 +137,10 @@ export class Hud {
   readonly social = new Social();
   readonly chat: ChatView; readonly roster: RosterView;
   private pipL: HTMLElement; private more: Pip[] = [];
-  private ptags: Tag[] = []; private marks2: Mark[] = [];
+  private ptags: Tag[] = []; private marks2: Mark[] = []; private pq = [0, 0, 0]; private sp = { x: 0, y: 0 };
+  /** The ray of the tag being placed (eye, direction, length), and its terrain test, bound once. */
+  private tq = [0, 0, 0, 0, 0, 0, 0];
+  private tagHidden = (): boolean => { const q = this.tq; raycast(this.g.world, q[0], q[1], q[2], q[3], q[4], q[5], q[6], ray, false, true); return ray.hit; };
   private keyDown = (e: KeyboardEvent): void => this.onKeyDown(e);
   private keyUp = (e: KeyboardEvent): void => { if (e.code === 'Tab') this.roster.show(false); };
 
@@ -171,24 +209,17 @@ export class Hud {
   /** Enter, T or / open the chat line (/ with a slash in it), Tab shows who is here while held, V pings. */
   private onKeyDown(e: KeyboardEvent): void {
     const g = this.g, t = e.target as HTMLElement | null;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
-    if (!g.ready || g.menu.open || g.menu.dead || g.win.open || this.chat.isOpen) return;
-    if (e.code === 'Tab') { this.roster.show(true); return; }
-    if (e.repeat) return;
-    if (e.code === 'Enter' || e.code === 'KeyT' || e.code === 'Slash') {
-      e.preventDefault(); e.stopImmediatePropagation();
-      this.chat.open(e.code === 'Slash' ? '/' : '');
-    } else if (e.code === 'KeyV' && g.input.locked && !g.stats.dead) {
-      e.preventDefault(); e.stopImmediatePropagation();
-      this.ping();
-    }
+    const k = hudKey(e.code, e.repeat, { typing: !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'),
+      busy: !g.ready || g.menu.open || g.menu.dead || g.win.open || this.chat.isOpen, locked: g.input.locked, dead: g.stats.dead });
+    if (!k) return;
+    if (k === 'list') { this.roster.show(true); return; }
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (k === 'ping') this.ping(); else this.chat.open(k === 'command' ? '/' : '');
   }
   /** A ping on the block looked at, or PING_REACH blocks along the view when nothing is there. */
   ping(): void {
-    const p = this.g.player, d = p.dir(this.v), ex = p.x, ey = p.y + p.eye, ez = p.z;
-    raycast(this.g.world, ex, ey, ez, d.x, d.y, d.z, PING_REACH, ray);
-    if (ray.hit) this.social.ping(ray.x + 0.5 + ray.nx * 0.5, ray.y + 0.5 + ray.ny * 0.5, ray.z + 0.5 + ray.nz * 0.5);
-    else this.social.ping(ex + d.x * PING_REACH, ey + d.y * PING_REACH, ez + d.z * PING_REACH);
+    const p = this.g.player, d = p.dir(this.v), q = pingAt(this.g.world, p.x, p.y + p.eye, p.z, d.x, d.y, d.z, this.pq);
+    this.social.ping(q[0], q[1], q[2]);
   }
   /** Number of phase thresholds the boss has dropped below. */
   private phaseOf(phases: { below: number }[], f: number): number { let n = 0; for (let i = 0; i < phases.length; i++) if (phases[i].below < 1 && f <= phases[i].below) n++; return n; }
@@ -340,7 +371,7 @@ export class Hud {
 
   /** Name tags over other players within TAG_R that terrain does not hide, and the pings in the world. */
   private updateSocial(dt: number): void {
-    const g = this.g, cam = g.gfx.camera, v = this.v, w = this.vw, h = this.vh, so = this.social;
+    const g = this.g, cam = g.gfx.camera, sp = this.sp, w = this.vw, h = this.vh, so = this.social;
     let ti = 0;
     const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
     // what each player is doing, for the list: from the snapshots, this client's own from their header
@@ -357,11 +388,9 @@ export class Hud {
       if (!m || dist > TAG_R) continue;
       const t = this.ptags[ti];
       if (t.slot !== pv.slot) { t.slot = pv.slot; t.look = 0; t.text = ''; t.hp = -1; }
-      t.look -= dt;
-      if (t.look <= 0) { t.look = 0.25; raycast(g.world, cx, cy, cz, dx / dist, dy / dist, dz / dist, Math.max(0, dist - 0.6), ray, false, true); t.seen = !ray.hit; }
-      if (!t.seen) continue;
-      v.set(tx, ty, tz).project(cam);
-      if (v.z > 1) continue;
+      const q = this.tq; q[0] = cx; q[1] = cy; q[2] = cz; q[3] = dx / dist; q[4] = dy / dist; q[5] = dz / dist; q[6] = Math.max(0, dist - 0.6);
+      if (!tagSight(t, dist, dt, this.tagHidden)) continue;
+      if (!screenAt(cam, tx, ty, tz, w, h, sp)) continue;
       ti++;
       const st = stateOf(pv.flags), text = st ? `${m.name} · ${st}` : m.name;
       if (text !== t.text) { t.text = text; t.name.textContent = text; t.name.style.color = st ? '#b4bacb' : '#fff'; }
@@ -369,20 +398,19 @@ export class Hud {
       if (hp !== t.hp) { t.hp = hp; t.bar.style.transform = `scaleX(${hp})`; }
       if (!t.on) { t.on = true; t.el.style.display = 'block'; }
       t.el.style.opacity = String(Math.min(1, (TAG_R - dist) / 8));
-      t.el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px) translate(-50%, -100%)`;
+      t.el.style.transform = `translate(${sp.x}px, ${sp.y}px) translate(-50%, -100%)`;
     }
     for (; ti < this.ptags.length; ti++) { const t = this.ptags[ti]; t.slot = -1; if (t.on) { t.on = false; t.el.style.display = 'none'; } }
     let mi = 0;
     const p = g.player;
     for (const q of so.pings) {
       if (mi >= this.marks2.length) break;
-      v.set(q.x, q.y + 0.6, q.z).project(cam);
-      if (v.z > 1) continue;
+      if (!screenAt(cam, q.x, q.y + 0.6, q.z, w, h, sp)) continue;
       const k = this.marks2[mi++], d = Math.round(Math.hypot(q.x - p.x, q.y - p.y, q.z - p.z)), text = `${q.name || 'Ping'} · ${d} m`;
       if (text !== k.text) { k.text = text; k.label.textContent = text; k.label.style.color = SEAT[q.slot % SEAT.length]; }
       if (!k.on) { k.on = true; k.el.style.display = 'block'; }
       k.el.style.opacity = String(Math.min(1, q.t));
-      k.el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px) translate(-50%, -100%)`;
+      k.el.style.transform = `translate(${sp.x}px, ${sp.y}px) translate(-50%, -100%)`;
     }
     for (; mi < this.marks2.length; mi++) { const k = this.marks2[mi]; if (k.on) { k.on = false; k.el.style.display = 'none'; } }
   }

@@ -1,13 +1,14 @@
 // Other players as drawn: the view of one (what the snapshots say, plus the walk, the swing, the flash and the fall that
 // only drawing needs), its boxes through the creatures' batch, worn armour over them, and the held item in its fist.
 import * as THREE from 'three';
-import { T_LIQUID, T_OPAQUE, T_SOLID } from '../data/blocks';
+import { T_BOX, T_LIQUID, T_OPAQUE, T_SOLID, texLayer } from '../data/blocks';
 import { TIERS, item } from '../data/items';
 import { type Part, rigOf } from '../data/mobs';
 import { ARMOR_PARTS, HAND, PLAYER_PARTS } from '../data/playerModel';
 import { PF_AWAY, PF_DIG, PF_FLY, PF_SLEEP, PF_SNEAK, PF_USING, type PlayerInfo } from '../net/protocol';
 import type { World } from '../world/world';
 import { type BoxBatch, type ShadowBatch, makeItemMaterial } from './batches';
+import { U } from './gfx';
 import type { ItemModels } from './itemModel';
 
 /** Seconds of one swing of the arm (2.5), of the hurt flash, of the topple of a death before the body is hidden. */
@@ -28,7 +29,20 @@ export class PlayerView {
   by = 0; pby = 0; pyaw = 0; ppitch = 0; crouch = 0; pcrouch = 0; lie = 0; plie = 0;
   /** Eased world light (ls < 0: not sampled yet), and the stride count footsteps last sounded at. */
   ls = -1; lb = 0; stepN = 0;
+  /** The block the host says it is digging (`dg`; dgy < 0: none), seconds to the next chips off it, to the next splash, and
+   *  the speed it fell at as last placed (blocks per second). */
+  dgx = 0; dgy = -1; dgz = 0; chipT = 0; splashT = 0; fallV = 0;
 }
+
+/** Seconds between the chips and dig sounds of another player's digging, as the local body's dig ticks (`Interact`). */
+export const CHIP_T = 0.22;
+/** Cracks drawn at once: one per player in view. */
+const MAX_CRACKS = 8;
+const CRACK_VERT = /* glsl */ `out vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+const CRACK_FRAG = /* glsl */ `precision highp float; precision highp sampler2DArray; uniform sampler2DArray uAtlas; uniform float uLayer; in vec2 vUv;
+void main() { vec4 t = texture(uAtlas, vec3(vUv, uLayer)); if (t.a < 0.05) discard; gl_FragColor = vec4(t.rgb * 0.05, t.a * 0.85); }`;
+/** The crack stage (0..7) a block shows at dig progress `dig` (0..1), as the local player's own overlay picks it. */
+export const crackStage = (dig: number): number => Math.min(7, Math.floor(dig * 8));
 
 const TAU = Math.PI * 2;
 const wrap = (a: number): number => a - Math.round(a / TAU) * TAU;
@@ -52,6 +66,8 @@ export class PlayerRender {
   readonly group = new THREE.Group();
   private mat = makeItemMaterial(false);
   private held: { mesh: THREE.Mesh; key: string; light: THREE.Vector4; used: boolean }[] = [];
+  private cracks: { mesh: THREE.Mesh; mat: THREE.ShaderMaterial }[] = [];
+  private crack0 = texLayer('crack0');
   private models = new Map<string, Part[]>();
   /** Joint matrices of the model being drawn, one per box. */
   private joints: THREE.Matrix4[] = [];
@@ -93,7 +109,37 @@ export class PlayerRender {
       if (shadows && v.deadT < 0 && !(v.flags & PF_FLY)) this.contact(w, shadows, v, alpha, dayAmt);
     }
     for (const h of this.held) if (!h.used && h.mesh.visible) h.mesh.visible = false;
+    let ci = 0;
+    for (const v of list) if (v.active && v.deadT < 0 && v.dgy >= 0 && v.dig > 0 && ci < MAX_CRACKS) {
+      const id = w.getBlock(v.dgx, v.dgy, v.dgz);
+      if (id) this.crack(ci++, v, id);
+    }
+    for (; ci < this.cracks.length; ci++) this.cracks[ci].mesh.visible = false;
   }
+
+  /** Crack `i` over the block `v` digs, at the stage its dig progress has reached, sized to the block's box. */
+  private crack(i: number, v: PlayerView, id: number): void {
+    let c = this.cracks[i];
+    if (!c) {
+      const mat = new THREE.ShaderMaterial({ vertexShader: CRACK_VERT, fragmentShader: CRACK_FRAG, transparent: true, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, uniforms: { uAtlas: U.uAtlas, uLayer: { value: 0 } } });
+      const mesh = new THREE.Mesh(CRACK_BOX, mat);
+      mesh.renderOrder = 3; mesh.frustumCulled = false;
+      c = this.cracks[i] = { mesh, mat };
+      this.group.add(mesh);
+    }
+    const o = id * 6, x0 = T_BOX[o] / 16, y0 = T_BOX[o + 1] / 16, z0 = T_BOX[o + 2] / 16, x1 = T_BOX[o + 3] / 16, y1 = T_BOX[o + 4] / 16, z1 = T_BOX[o + 5] / 16;
+    c.mesh.position.set(v.dgx + (x0 + x1) / 2, v.dgy + (y0 + y1) / 2, v.dgz + (z0 + z1) / 2);
+    c.mesh.scale.set(x1 - x0 + 0.004, y1 - y0 + 0.004, z1 - z0 + 0.004);
+    c.mat.uniforms.uLayer.value = this.crack0 + crackStage(v.dig);
+    c.mesh.visible = true;
+  }
+  /** The cracks drawn last frame: where, and at which atlas layer (read by the tests). */
+  shownCracks(): { x: number; y: number; z: number; layer: number }[] {
+    return this.cracks.filter((c) => c.mesh.visible).map((c) => ({ x: c.mesh.position.x, y: c.mesh.position.y, z: c.mesh.position.z, layer: c.mat.uniforms.uLayer.value as number - this.crack0 }));
+  }
+  /** Held-item meshes made so far, and how many of them show. */
+  get heldCount(): { made: number; shown: number } { let shown = 0; for (const h of this.held) if (h.mesh.visible) shown++; return { made: this.held.length, shown }; }
 
   private draw(batch: BoxBatch, v: PlayerView, alpha: number, time: number, armor: readonly string[], held: string): void {
     const x = v.px + (v.x - v.px) * alpha, y = v.py + (v.y - v.py) * alpha, z = v.pz + (v.z - v.pz) * alpha;
@@ -201,3 +247,4 @@ export class PlayerRender {
   }
 }
 const EMPTY: readonly string[] = ['', '', ''];
+const CRACK_BOX = new THREE.BoxGeometry(1, 1, 1);

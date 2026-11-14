@@ -6,7 +6,7 @@
 // present, with the same rules the host flies them by.
 import { DIMS } from '../data/dims';
 import { MOB_LIST, type MobDef, PROJECTILES } from '../data/mobs';
-import { BLOCKS } from '../data/blocks';
+import { BLOCKS, T_LAYER } from '../data/blocks';
 import { BOSS_KINDS, EXTRAPOLATE, GHOST_SECONDS, INTERP_LOCAL, INTERP_MAX, INTERP_MIN, MF_ATK, MF_FLEE, MF_FRESH, MF_GROUND, MF_HURT, MF_TP, PF_DEAD, PF_GROUND, PF_HURT,
   PF_SLEEP, PF_SNEAK, PF_SWING_MASK, PF_SWING_SHIFT, PF_TP, PF_WATER, type PlayerInfo, SNAP_EVERY, SNAP_KEEP } from '../net/protocol';
 import { decodeSnapshot, type SnapBoss, type Snapshot } from '../net/snapshot';
@@ -14,7 +14,7 @@ import type { BoxBatch } from '../render/batches';
 import { DropRender, DropView } from '../render/dropView';
 import type { ItemModels } from '../render/itemModel';
 import { type BossView, type MobHost, MobRender, MobView } from '../render/mobView';
-import { HURT_T, PlayerRender, PlayerView, SWING_T } from '../render/playerView';
+import { CHIP_T, HURT_T, PlayerRender, PlayerView, SWING_T } from '../render/playerView';
 import { ProjView, renderProjs } from '../render/projView';
 import { FXM, floorNear, groundY } from '../sim/boss';
 import { STEP } from '../sim/clock';
@@ -23,6 +23,7 @@ import { followSegs } from '../sim/mobhit';
 import { moveBody, newRayHit, raycast } from '../sim/physics';
 import { PROJ_KEYS } from '../sim/projectiles';
 import type { Bodies, Ghosts } from './api';
+import { tintOf } from './fxplay';
 import type { Session } from './session';
 
 /** Colour of the motes that gather round a boss while it winds up, by attack kind. */
@@ -125,6 +126,8 @@ class Net {
   half = 0;
   readonly mobs = new Map<number, MobTrack>(); readonly players = new Map<number, PlayerTrack>();
   readonly projs = new Map<number, ProjView>(); readonly drops = new Map<number, DropView>();
+  /** The block each other player digs, by slot, from `dg`: kept apart from the tracks, since the event can come before the body. */
+  readonly digs = new Map<number, { x: number; y: number; z: number }>();
   constructor(readonly local: boolean) {}
 }
 
@@ -204,7 +207,7 @@ export class EntityStore implements Bodies, Ghosts {
     // the welcome's tick starts the estimate; only snapshot arrivals move it, since the welcome may have waited for storage
     s.on('welcome', (m) => { this.clearNet(); net.slot = m.you.slot; net.dim = m.dim; net.last = -1; net.head = null; net.offs.length = net.devs.length = 0; net.prevMs = -1; net.est = m.tick; });
     s.on('tp', (m) => { if (m.dim !== net.dim) { this.clearNet(); net.dim = m.dim; } });
-    s.on('pl', (m) => { if (m.del) for (const slot of m.del) { const tr = net.players.get(slot); if (tr) { tr.v.active = false; net.players.delete(slot); } } });
+    s.on('pl', (m) => { if (m.del) for (const slot of m.del) { net.digs.delete(slot); const tr = net.players.get(slot); if (tr) { tr.v.active = false; net.players.delete(slot); } } });
     s.on('rtt', (m) => { const rt = this.clock() - m.c; if (rt >= 0 && rt < 10000) net.half = net.half ? net.half + (rt * TPMS / 2 - net.half) * 0.25 : rt * TPMS / 2; });
     s.on('fx', (m) => { for (const ev of m.l) this.onWireFx(ev); });
   }
@@ -359,12 +362,23 @@ export class EntityStore implements Bodies, Ghosts {
     v.hurt = f & PF_HURT && tr.placed && !(lf & PF_HURT) ? HURT_T : Math.max(0, v.hurt - dt);
     v.crouch += ((f & PF_SNEAK ? 1 : 0) - v.crouch) * Math.min(1, dt * 14);
     v.lie += ((f & PF_SLEEP ? 1 : 0) - v.lie) * Math.min(1, dt * 6);
+    // the ease never reaches 0 by itself, and the pose holds the head and legs still while any lie is left
+    if (!(f & PF_SLEEP) && v.lie < 1e-3) v.lie = 0;
     v.deadT = f & PF_DEAD ? (v.deadT < 0 ? 0 : v.deadT + dt) : -1;
+    const dg = v.deadT < 0 ? this.net!.digs.get(v.slot) : undefined;
+    if (dg) { v.dgx = dg.x; v.dgy = dg.y; v.dgz = dg.z; } else { v.dgy = -1; v.chipT = 0; }
+    // the sample that sets the water bit is where the fall into it ends, so the speed it came in at is the one before
+    const fall = Math.max(-o.vy, v.fallV);
+    v.fallV = -o.vy;
     if (jump) { v.px = v.x; v.py = v.y; v.pz = v.z; v.pyaw = v.yaw; v.ppitch = v.pitch; v.by = v.pby = v.yaw; v.crouch = v.pcrouch = f & PF_SNEAK ? 1 : 0; v.lie = v.plie = f & PF_SLEEP ? 1 : 0; }
     tr.lf = f; tr.placed = true;
     const w = this.g.world;
     if (!w.ready(Math.floor(v.x), Math.floor(v.z))) return;
     this.playerRender.sampleLight(w, v, jump && v.ls < 0 ? 1 : Math.min(1, dt * 10));
+    if (v.dgy >= 0 && (v.chipT -= dt) <= 0) { v.chipT = CHIP_T; this.chips(v); }
+    // into water falling: the splash the local body makes, scaled the same way by how hard it hit
+    if (v.splashT > 0) v.splashT -= dt;
+    if (f & PF_WATER && !(lf & PF_WATER) && !jump && fall > 3 && v.splashT <= 0) { v.splashT = 0.6; this.splash(v, fall); }
     // footsteps, once a stride, as the local body sounds its own
     const sn = Math.floor(v.anim / (STEP_LEN * 2.0) + 0.5);
     if (sn !== v.stepN) {
@@ -374,6 +388,25 @@ export class EntityStore implements Bodies, Ghosts {
         if (below && b) this.g.audio.play('step_' + b.sound, f & PF_SNEAK ? 0.15 : 0.4, 1, [v.x, v.y, v.z]);
       }
     }
+  }
+
+  /** One dig tick of another player: its dig sound and three chips off the face of the block toward the digger. */
+  private chips(v: PlayerView): void {
+    const g = this.g, w = g.world, x = v.dgx, y = v.dgy, z = v.dgz, id = w.getBlock(x, y, z), b = BLOCKS[id];
+    if (!id || !b) return;
+    const ex = v.x - (x + 0.5), ey = v.y + 1.5 - (y + 0.5), ez = v.z - (z + 0.5), ax = Math.abs(ex), ay = Math.abs(ey), az = Math.abs(ez);
+    const nx = ax >= ay && ax >= az ? Math.sign(ex) : 0, ny = !nx && ay >= az ? Math.sign(ey) : 0, nz = !nx && !ny ? Math.sign(ez) || 1 : 0;
+    const l = w.getLight(x + nx, y + ny, z + nz), R = Math.random;
+    g.audio.play('dig_' + b.sound, 0.5, 1, [x + 0.5, y + 0.5, z + 0.5]);
+    for (let i = 0; i < 3; i++) g.particles.spawn(x + 0.5 + nx * 0.55 + (R() - 0.5) * 0.5, y + 0.5 + ny * 0.55 + (R() - 0.5) * 0.5, z + 0.5 + nz * 0.55 + (R() - 0.5) * 0.5,
+      nx * 1.5 + (R() - 0.5) * 2, ny * 1.5 + R() * 2, nz * 1.5 + (R() - 0.5) * 2, 0.5, 0.12, tintOf(id), 0, 14, T_LAYER[id * 6], true, (l >> 4) / 15, (l & 15) / 15);
+  }
+  /** Another player landing in water at `fall` blocks per second. */
+  private splash(v: PlayerView, fall: number): void {
+    const g = this.g, w = g.world, R = Math.random, hard = Math.min(1, 0.25 + fall * 0.05), sy = Math.floor(v.y + 0.4) + 0.9, n = 6 + Math.round(hard * 10);
+    const l = w.getLight(Math.floor(v.x), Math.floor(sy) + 1, Math.floor(v.z));
+    g.audio.play('splash', hard, 1, [v.x, sy, v.z]);
+    for (let i = 0; i < n; i++) g.particles.spawn(v.x + (R() - 0.5) * 0.6, sy, v.z + (R() - 0.5) * 0.6, (R() - 0.5) * 2.5, 1.5 + R() * 2.5, (R() - 0.5) * 2.5, 0.5, 0.09, 0xbfe4ff, 0, 14, -1, false, (l >> 4) / 15, (l & 15) / 15);
   }
 
   /** The entity events of a connection's `fx` (the rest are FxPlay's): projectiles and drops start, change and end here,
@@ -432,6 +465,7 @@ export class EntityStore implements Bodies, Ghosts {
         if (tr) tr.dying = { how: ev[2], at: net.last };
         break;
       }
+      case 'dg': { const [, slot, on, x, y, z] = ev; if (on) net.digs.set(slot, { x, y, z }); else net.digs.delete(slot); break; }
       case 'mk': for (let i = 2; i + 2 < ev.length; i += 3) this.marks.push({ id: ev[1], x: ev[i] as number, z: ev[i + 1] as number, t: ev[i + 2] as number, fresh: true }); break;
     }
   }
@@ -506,7 +540,7 @@ export class EntityStore implements Bodies, Ghosts {
     for (const v of this.players) v.active = false;
     for (const v of this.projs) v.active = false;
     for (const v of this.drops) this.dropRender.hide(v);
-    if (net) { net.mobs.clear(); net.players.clear(); net.projs.clear(); net.drops.clear(); }
+    if (net) { net.mobs.clear(); net.players.clear(); net.projs.clear(); net.drops.clear(); net.digs.clear(); }
   }
 
   render(batch: BoxBatch, alpha: number, time: number): void {
