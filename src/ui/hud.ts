@@ -63,6 +63,10 @@ export function tagSight(t: { look: number; seen: boolean }, dist: number, dt: n
   if (t.look <= 0) { t.look = TAG_LOOK; t.seen = !hidden(); }
   return t.seen;
 }
+/** The name line of a player's tag: the name, and what the player is doing when it is anything but playing. */
+export function tagText(name: string, flags: number): string { const st = stateOf(flags); return st ? `${name} · ${st}` : name; }
+/** How full a tag's 40 px health bar is drawn at health `hp` (0..1): whole pixels, so a bar is rewritten only when a pixel changes. */
+export const tagFill = (hp: number): number => Math.round(Math.max(0, Math.min(1, hp)) * 40) / 40;
 /** What a key does on the HUD: open the chat line (empty, or with a slash), show the player list, ping; or nothing. `typing`:
  *  a text field has the keys; `busy`: the game is not ready, or a menu, a window, the death screen or the chat line is open. */
 export function hudKey(code: string, repeat: boolean, s: { typing: boolean; busy: boolean; locked: boolean; dead: boolean }): 'chat' | 'command' | 'list' | 'ping' | null {
@@ -392,9 +396,9 @@ export class Hud {
       if (!tagSight(t, dist, dt, this.tagHidden)) continue;
       if (!screenAt(cam, tx, ty, tz, w, h, sp)) continue;
       ti++;
-      const st = stateOf(pv.flags), text = st ? `${m.name} · ${st}` : m.name;
-      if (text !== t.text) { t.text = text; t.name.textContent = text; t.name.style.color = st ? '#b4bacb' : '#fff'; }
-      const hp = Math.round(pv.hp * 40) / 40;
+      const text = tagText(m.name, pv.flags);
+      if (text !== t.text) { t.text = text; t.name.textContent = text; t.name.style.color = text === m.name ? '#fff' : '#b4bacb'; }
+      const hp = tagFill(pv.hp);
       if (hp !== t.hp) { t.hp = hp; t.bar.style.transform = `scaleX(${hp})`; }
       if (!t.on) { t.on = true; t.el.style.display = 'block'; }
       t.el.style.opacity = String(Math.min(1, (TAG_R - dist) / 8));

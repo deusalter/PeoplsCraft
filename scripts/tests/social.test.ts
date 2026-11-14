@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CHAT_KEEP, Social, bearing, stateOf, wrapPi } from '../../src/client/social';
 import { Session } from '../../src/client/session';
-import { CHAT_MAX, PF_AWAY, PF_DEAD, PF_GROUND, PF_SLEEP, PING_SECONDS, type C2S, type PlayerInfo, type S2C } from '../../src/net/protocol';
+import { CHAT_MAX, PF_AWAY, PF_DEAD, PF_GROUND, PF_SLEEP, PF_SNEAK, PF_USING, PING_SECONDS, type C2S, type PlayerInfo, type S2C } from '../../src/net/protocol';
 import type { Transport } from '../../src/net/transport';
 import * as THREE from 'three';
 import { EntityStore, type EntityHost } from '../../src/client/entities';
@@ -17,7 +17,7 @@ import type { BoxBatch } from '../../src/render/batches';
 import type { ItemModels } from '../../src/render/itemModel';
 import { DEAD_HIDE, HURT_T, PlayerRender, PlayerView, SWING_T, TOPPLE_T, crackStage } from '../../src/render/playerView';
 import type { Fx } from '../../src/sim/fx';
-import { TAG_LOOK, TAG_R, hudKey, pingAt, screenAt, tagSight } from '../../src/ui/hud';
+import { TAG_LOOK, TAG_R, hudKey, pingAt, screenAt, tagFill, tagSight, tagText } from '../../src/ui/hud';
 import type { World } from '../../src/world/world';
 
 class Wire implements Transport {
@@ -195,13 +195,16 @@ const voxels = { getBlock: (x: number, y: number) => blockAt(x, y), ready: () =>
 const models = { isCube: () => false, get: () => new THREE.BufferGeometry() } as unknown as ItemModels;
 /** A stand-in for the creatures' box batch: each box's colour, flash and centre. */
 class Boxes { l: { c: number; flash: number; x: number; y: number; z: number }[] = []; add(m: THREE.Matrix4, c: number, _s: number, _b: number, flash: number): void { const e = m.elements; this.l.push({ c, flash, x: e[12], y: e[13], z: e[14] }); } }
-const HEAD = PLAYER_PARTS.findIndex((q) => q.a === 'head');
+const HEAD = PLAYER_PARTS.findIndex((q) => q.a === 'head'), BODY = PLAYER_PARTS.findIndex((q) => q.a === 'body');
+/** The lowest box hung on a joint: the boot of a leg, the knuckles of a forearm. */
+const lowest = (a: string): number => PLAYER_PARTS.reduce((k, q, i) => (q.a === a && (k < 0 || (q.o?.[1] ?? 0) < (PLAYER_PARTS[k].o?.[1] ?? 0)) ? i : k), -1);
+const FOOT = lowest('legA'), HAND = lowest('foreA');
 
 function other(): { ents: EntityStore; v: () => PlayerView; feed: (from: number, to: number, p: (tick: number) => Partial<SnapPlayer>, each?: (v: PlayerView) => void) => void;
-  fx: (...l: Fx[]) => void; spawns: number[][]; sounds: { name: string; at?: number[] }[]; draw: (info?: Partial<PlayerInfo>) => Boxes } {
+  fx: (...l: Fx[]) => void; spawns: number[][]; sounds: { name: string; vol: number; at?: number[] }[]; draw: (info?: Partial<PlayerInfo>, time?: number) => Boxes } {
   const tr: Transport = { kind: 'loopback', state: 'open', send() {}, sendBin() {}, onOpen: null, onMessage: null, onBinary: null, onClose: null, close() {} };
-  const s = new Session(tr), spawns: number[][] = [], sounds: { name: string; at?: number[] }[] = [];
-  const host = { world: voxels, particles: { spawn: (...a: number[]) => { spawns.push(a); } }, audio: { play: (name: string, _v: number, _p: number, at?: number[]) => { sounds.push({ name, at }); } },
+  const s = new Session(tr), spawns: number[][] = [], sounds: { name: string; vol: number; at?: number[] }[] = [];
+  const host = { world: voxels, particles: { spawn: (...a: number[]) => { spawns.push(a); } }, audio: { play: (name: string, vol: number, _p: number, at?: number[]) => { sounds.push({ name, vol, at }); } },
     player: { x: 0, y: GROUND, z: 0, shake() {} }, gfx: { dayAmt: 1 }, paused: false, time: 0, dim: 0 } as unknown as EntityHost;
   const ents = new EntityStore(host, models);
   let now = 0;
@@ -220,9 +223,9 @@ function other(): { ents: EntityStore; v: () => PlayerView; feed: (from: number,
       if (each) each(ents.player(2)!);
     }
   };
-  const draw = (pi: Partial<PlayerInfo> = {}): Boxes => {
+  const draw = (pi: Partial<PlayerInfo> = {}, time = 0): Boxes => {
     const b = new Boxes();
-    ents.playerRender.render(b as unknown as BoxBatch, ents.players, 1, 0, () => ({ ...info(2, 'Bram'), ...pi }), voxels as unknown as World, null, 1);
+    ents.playerRender.render(b as unknown as BoxBatch, ents.players, 1, time, () => ({ ...info(2, 'Bram'), ...pi }), voxels as unknown as World, null, 1);
     return b;
   };
   return { ents, v: () => ents.player(2)!, feed, fx: (...l) => { tr.onMessage!({ t: 'fx', l }); s.pump(); }, spawns, sounds, draw };
@@ -404,4 +407,92 @@ test('a ping lands on the block looked at or 32 along the view, and its marker i
   assert.ok(screenAt(cam, 0, 70, -10, 800, 600, p)); assert.ok(Math.abs(p.x - 400) < 1e-6 && Math.abs(p.y - 300) < 1e-6, 'ahead: the middle');
   assert.ok(screenAt(cam, 3, 72, -10, 800, 600, p)); assert.ok(p.x > 400 && p.y < 300, 'right and up');
   assert.equal(screenAt(cam, 0, 70, 10, 800, 600, p), false, 'behind: not drawn');
+});
+
+test('another player walks with a stride from its speed, sounding a footstep every 2.2 blocks on the ground only', () => {
+  const stride = (speed: number, flags = PF_GROUND): { o: ReturnType<typeof other>; lo: number; hi: number } => {
+    const o = other(), fz: number[] = [];
+    o.feed(90, 210, (t) => ({ x: 0.5 + (t - 90) * speed / 60, flags }), (v) => { if (v.moving > speed * 0.9) { const b = o.draw().l; fz.push(b[FOOT].z - b[BODY].z); } });
+    return { o, lo: Math.min(...fz), hi: Math.max(...fz) };
+  };
+  const w = stride(3);
+  assert.ok(Math.abs(w.o.v().moving - 3) < 0.2, `speed ${w.o.v().moving} from the position deltas`);
+  // the phase runs at twice the distance walked: two seconds at 3 blocks a second, less the first snapshot's wait
+  assert.ok(w.o.v().anim > 11 && w.o.v().anim < 12.5, `walk phase ${w.o.v().anim}`);
+  assert.ok(w.hi > 0.2 && w.lo < -0.2, `the foot swings ahead and behind the hip (${w.lo}..${w.hi})`);
+  const slow = stride(1.5);
+  assert.ok(slow.hi - slow.lo < (w.hi - w.lo) * 0.7, 'a slower walk, a shorter stride');
+  const still = other(), sz: number[] = [];
+  still.feed(90, 210, () => ({}), () => { const b = still.draw().l; sz.push(b[FOOT].z - b[BODY].z); });
+  assert.ok(Math.max(...sz) - Math.min(...sz) < 1e-9, 'standing, the legs stay still');
+  assert.equal(still.v().anim, 0);
+
+  const steps = (o: ReturnType<typeof other>): { name: string; vol: number }[] => o.sounds.filter((q) => q.name.startsWith('step_'));
+  assert.deepEqual(steps(w.o).map((q) => [q.name, q.vol]), [['step_stone', 0.4], ['step_stone', 0.4], ['step_stone', 0.4]], '6 blocks walked on stone: 3 steps');
+  assert.equal(steps(still).length, 0, 'standing makes none');
+  assert.equal(steps(stride(3, 0).o).length, 0, 'off the ground, none');
+  const sneak = stride(3, PF_GROUND | PF_SNEAK);
+  assert.ok(sneak.hi - sneak.lo < (w.hi - w.lo) * 0.7, 'a sneak shortens the stride');
+  assert.deepEqual(steps(sneak.o).map((q) => q.vol), [0.15, 0.15, 0.15], 'and quietens the steps');
+  const wade = other();
+  wade.feed(90, 210, (t) => ({ x: 21 + (t - 90) * 0.05, y: GROUND - 1, flags: PF_GROUND | PF_WATER }));
+  assert.equal(steps(wade).length, 0, 'in water, none');
+});
+
+test('a sneaking player leans forward and sinks; one using an item holds its hand up at its face', () => {
+  const o = other();
+  o.feed(90, 130, () => ({}));
+  const st = o.draw().l;
+  o.feed(131, 250, () => ({ flags: PF_GROUND | PF_SNEAK }));
+  const sn = o.draw().l;
+  // yaw 0 looks toward -z
+  assert.ok(Math.abs(sn[FOOT].y - (st[FOOT].y - 0.06)) < 1e-3, `the whole body 0.06 lower (feet ${st[FOOT].y} to ${sn[FOOT].y})`);
+  assert.ok(st[BODY].z - sn[BODY].z > 0.1, `the trunk leans forward (${st[BODY].z} to ${sn[BODY].z})`);
+  assert.ok(st[HEAD].z - sn[HEAD].z > 0.25 && sn[HEAD].y < st[HEAD].y - 0.1, 'the head goes forward and down with it');
+  assert.equal(sn[FOOT].z, st[FOOT].z, 'the feet stay where they stand');
+
+  o.feed(251, 300, () => ({ flags: PF_GROUND }));
+  const up = o.draw().l;
+  assert.ok(Math.abs(up[HEAD].z - st[HEAD].z) < 1e-3 && Math.abs(up[HEAD].y - st[HEAD].y) < 1e-3, 'up again');
+  assert.ok(up[HAND].y < up[HEAD].y - 0.7, 'the hand hangs at the side');
+  o.feed(301, 360, () => ({ flags: PF_GROUND | PF_USING }));
+  const us = o.draw().l;
+  assert.ok(us[HAND].y > up[HAND].y + 0.6 && Math.abs(us[HAND].y - us[HEAD].y) < 0.2, `using, the hand is at head height (${us[HAND].y}, head ${us[HEAD].y})`);
+  assert.ok(us[HAND].z < up[HAND].z - 0.15, 'and in front of the face');
+});
+
+test('a digging player swings its arm over and over, 4.2 times a second, while no swing of its own is running', () => {
+  const o = other(), T = 1 / 4.2;
+  o.feed(90, 130, () => ({ flags: PF_GROUND | PF_DIG }));
+  const ys: number[] = [];
+  for (let k = 0; k < 8; k++) {
+    const h = o.draw({}, 10 + k * T / 8).l[HAND], h2 = o.draw({}, 10 + k * T / 8 + T).l[HAND];
+    ys.push(h.y);
+    assert.ok(Math.abs(h.y - h2.y) < 0.02 && Math.abs(h.z - h2.z) < 0.02, `the same pose one period on (${k}/8)`);
+  }
+  assert.ok(Math.max(...ys) - Math.min(...ys) > 0.7, `the fist goes up and comes down (${Math.min(...ys)}..${Math.max(...ys)})`);
+  assert.ok(ys.indexOf(Math.max(...ys)) === 4, 'highest half way through the stroke');
+  o.feed(131, 160, () => ({ flags: PF_GROUND }));
+  const rest: number[] = [];
+  for (let k = 0; k < 8; k++) rest.push(o.draw({}, 10 + k * T / 8).l[HAND].y);
+  assert.ok(Math.max(...rest) - Math.min(...rest) < 0.01, 'not digging, the arm only sways');
+});
+
+test('a ping reaches 32 blocks: a block 31.5 below is hit, one 32.5 below is not', () => {
+  assert.deepEqual(pingAt(voxels as unknown as World, 0.5, GROUND + 31.5, 0.5, 0, -1, 0, [0, 0, 0]), [0.5, GROUND, 0.5]);
+  assert.deepEqual(pingAt(voxels as unknown as World, 0.5, GROUND + 32.5, 0.5, 0, -1, 0, [0, 0, 0]), [0.5, GROUND + 0.5, 0.5], 'past reach: the point 32 along the view');
+  const d = Math.SQRT1_2, far = pingAt(voxels as unknown as World, 0.5, GROUND + 20, 0.5, -d, -d, 0, [0, 0, 0]);
+  assert.deepEqual(far, [-19.5, GROUND, 0.5], 'slantwise, 28 blocks along the view, on the top face it meets');
+});
+
+test("a name tag reads the player's name and what it is doing, and its health bar fills by whole pixels of 40", () => {
+  assert.equal(tagText('Bram', PF_GROUND), 'Bram');
+  assert.equal(tagText('Bram', PF_GROUND | PF_SLEEP), 'Bram · asleep');
+  assert.equal(tagText('Bram', PF_AWAY), 'Bram · away');
+  assert.equal(tagText('Bram', PF_DEAD), 'Bram · fallen');
+  assert.equal(tagFill(1), 1); assert.equal(tagFill(0), 0);
+  assert.equal(tagFill(0.5), 0.5);
+  assert.equal(tagFill(0.33), 13 / 40, 'a third is 13 of 40 pixels');
+  assert.equal(tagFill(0.012), 0, 'under half a pixel shows nothing');
+  assert.equal(tagFill(1.3), 1); assert.equal(tagFill(-0.2), 0);
 });
