@@ -88,6 +88,16 @@ function rightLine(right: number, y: number, text: string, c: Colour, face = TEX
   return { x: rightX(text, right, face), y, w: measure(text, face) + 1, h: face.height + 1, paint: (s) => { s.text(text, 0, 0, c, true, face); } };
 }
 
+/**
+ * A line on a strip of the chat wash 10 tall reaching 2 past its words on each side (the shadow counted), at `x`: the
+ * held thing's name and each pickup. In its grade's colour bare on the world, a green name vanished into noon grass
+ * and only its shadow read, as a smudge.
+ */
+function washedLine(x: number, y: number, text: string, c: Colour): Node {
+  const w = measure(text) + 1 + 4;
+  return { x, y, w, h: 10, paint: (s) => { s.wash(0, 0, w, 10, 'root.0', 3); s.text(text, 2, 0, c, true); } };
+}
+
 /** The height of the Guide's present step on the HUD: one line on a strip of the chat wash. */
 export const TRACKER_H = 12;
 
@@ -195,7 +205,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     const feed: [string, number][] = [['+3 Rubble (12)', 0], ['+1 Bone (7)', 0], ['+2 Shade Flesh (6)', 1], ['+1 Kankāl Bell', 2]];
     const lines = feed.slice(narrow ? 1 : 0);
     const y0 = narrow ? 150 : H - 54;
-    lines.forEach(([t, g], i) => out.push(rightLine(R(4), y0 + i * 10, t, GRADES[g].dark, TEXT)));
+    lines.forEach(([t, g], i) => out.push(washedLine(R(4) - measure(t) - 5, y0 + i * 10, t, GRADES[g].dark)));
     out.push(rightLine(R(4), H - 12, 'Saved', 'salt', TEXT));
   }
 
@@ -208,9 +218,8 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   const inHand = first ? null : BAR[0]!;
   if (inHand) {
     const name = stackName(inHand), c = GRADES[stackGrade(inHand)].dark;
-    // No plate: the grade's colour with its shadow, as the tradition writes it, over the row of defence and lees.
-    const nw = measure(name) + 1;
-    out.push({ x: L(cx - Math.floor(measure(name) / 2)), y: H - 66, w: nw, h: 11, paint: (s) => { s.text(name, 0, 0, c, true); } });
+    // The grade's colour with its shadow on a strip of the chat wash, over the row of defence and lees.
+    out.push(washedLine(L(cx - Math.floor(measure(name) / 2)) - 2, H - 66, name, c));
   }
   const carried = first ? '{shield} 0   {lees} 0' : `{shield} 9   {lees} ${count(1240)}`;
   out.push({ x: L(cx - 91), y: H - 54, w: measure(carried) + 1, h: 11, paint: (s) => { s.text(carried, 0, 0, 'salt', true); } });

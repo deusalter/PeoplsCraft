@@ -131,8 +131,13 @@ export function statusFrame(o: StatusOpts): Node {
       s.nine(o.good ? FRAMED_PLATE : HARM_PLATE, 0, 0, 18, 18, { tint: o.good ? 'growth' : 'blood' });
       s.icon(o.icon, 1, 1);
       if (last && !blinkOn(live.t)) return;
+      // The time on a plate of its own, 15 by 7 with its corners left out, a unit under the frame and a unit of plate
+      // round the figures; no shadow. Bare on the world with a shadow, the shadow filled the counters and the gaps of
+      // the 3 by 5 figures and "2:31" read as a blot.
       const t = clock(o.seconds);
-      s.text(t, centreX(t, 0, 18, SMALL), 20, last ? 'blood.lt' : 'salt', true, SMALL);
+      s.fill(2, 19, 13, 7, 'root.1');
+      s.fill(1, 20, 15, 5, 'root.1');
+      s.text(t, centreX(t, 0, 18, SMALL), 20, last ? 'blood.lt' : 'salt', false, SMALL);
     },
   };
 }
