@@ -2111,7 +2111,7 @@ A plain dark plate 24 tall, as wide as its longer line plus 28, centred at the t
 
 ### 5.28 Key cap, crosshair, banner, title mark
 
-**Key cap**, 14 tall, as wide as its label plus 6, so 2 units stand clear on each side of the label inside the outline: row 0 the outline, row 1 `stone.hi`, then the `stone.lt` face to row 10 with the label's cell at y 2 so that capitals and ascenders stand on rows 3 to 9 and never touch the top, rows 11 and 12 `stone.dk`, row 13 the outline. The label is in ink. Caps of one row stand side by side sharing an outline column. Used in prompts and on the controls screen.
+**Key cap**, 14 tall, as wide as its label plus 6 or as wide as a list of caps asks with its label centred, so at least 2 units stand clear on each side of the label inside the outline: row 0 the outline, row 1 `stone.hi`, then the `stone.lt` face to row 10 with the label's cell at y 2 so that capitals and ascenders stand on rows 3 to 9 and never touch the top, rows 11 and 12 `stone.dk`, row 13 the outline. The label is in ink. Caps of one row stand side by side sharing an outline column. Used in prompts and on the controls screen.
 
 ```
      0         
@@ -3451,7 +3451,7 @@ Size 248 by 212, with tabs standing 21 above. Material: clay. Anchor: centre of 
 
 ### Controls
 
-Size: as its rows need, 216 by 198 for the game's keys (at least 216 wide, so that "Done" stands 8 in from each side). Material: clay. Anchor: centre of the screen, over the ground tile from the title or over the dimmed world from the pause.
+Size: as its rows need, 246 by 198 for the game's keys (at least 216 wide, so that "Done" stands 8 in from each side). Material: clay. Anchor: centre of the screen, over the ground tile from the title or over the dimmed world from the pause.
 
 ```
 #============================================================================#
@@ -3486,14 +3486,14 @@ Size: as its rows need, 216 by 198 for the game's keys (at least 216 wide, so th
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| Y0 | slab | 0 | 0 | 216 | 198 | clay slab, as wide as its two columns with 8 at each side and 12 between, as tall as its rows, the button and 8 under it |
+| Y0 | slab | 0 | 0 | 246 | 198 | clay slab, as wide as its two columns with 8 at each side and 12 between, as tall as its rows, the button and 8 under it |
 | Y1 | text | 8 | 6 | 60 | 10 | "Controls" |
-| Y2 | rows | 8 | 20 | | 144 | left column, rows 16 tall: the key caps from the row's left (the mouse 2 lower), then what it does in ink, 6 after the widest run of caps in the column, at the cap's text height |
+| Y2 | rows | 8 | 20 | | 144 | left column, rows 16 tall: the key caps from the row's left (the mouse 2 lower), then what it does in ink, 6 after the run of caps, at the cap's text height. Every row's run of caps is one width on the screen, the widest of a single cap and of Move's four caps at the width of its widest, sharing outline columns (49 for the game's keys): a single cap takes the whole run with its label centred, the four of Move share it. Caps each as wide as their label left the column ragged |
 | Y3 | rows | | 20 | | 144 | right column, the same, starting 12 after the left column's longest line |
-| Y4 | button | 8 | 170 | 200 | 20 | "Done", the menus' stone button, centred, 6 under the last row and 8 above the slab's foot |
+| Y4 | button | 23 | 170 | 200 | 20 | "Done", the menus' stone button, centred, 6 under the last row and 8 above the slab's foot |
 | Y5 | text | | 6 | | 10 | right-aligned to the slab's width less 8, in `ink.faded`: "Press a row to change its key", or while a row waits, "Press a key for Sneak" |
 
-- **The mouse** is drawn 9 by 13 in the key cap's stone: two buttons over the palm, a seam of `root.0` between them holding the wheel, the palm under a row of `root.0`. The button meant is pressed: filled in `ember` with its lit edge `ember.lt` and its shaded edge `ember.dk`; for the middle button the wheel is `ember`. A 2-unit patch on a 6 by 9 mouse was the only thing that told left from right.
+- **The mouse** is drawn 9 by 13 in the key cap's stone, with its button's word 3 after it in `ink.faded`, "Left", "Right" or "Wheel", inside the run of caps: two buttons over the palm, a seam of `root.0` between them holding the wheel, the palm under a row of `root.0`. The button meant is pressed: filled in `ember` with its lit edge `ember.lt` and its shaded edge `ember.dk`; for the middle button the wheel is `ember`. A 2-unit patch on a 6 by 9 mouse was the only thing that told left from right.
 - **A row is a button.** Hovered, its floor (2 units round the caps and the words) turns `clay.lt`; with keyboard focus it has a ring of `salt`. Pressed (or Enter), it waits: the floor `clay.lt` with a ring of `ink`, the cap waited for reads "?", and the next key, or a mouse button pressed on the row, takes its place; a row of several caps (Move) then waits for its next cap. Esc leaves it as it was. A key that two rows share turns both rows' words `blood.dk`, and the tooltip of each says "Shares a key with Pack" in `blood.lt`. The number row and Esc cannot be changed: their words are `ink.faded`, they take no hover, and their tooltip says "This key cannot be changed".
 - **Shows.** The keys as drawn caps: move, jump, sneak, sprint, the three mouse buttons, pack, journal, map, chat, roster, ping, drop, salve, hotbar, hide the interface, pause.
 - **Clickable.** Each row but the two fixed ones; "Done". A change takes effect at once and is saved at once.

@@ -39,6 +39,8 @@ export interface ControlsView {
 const ROW = 16, ROWS_Y = 20, PAD = 8, GAP = 12, AFTER_CAP = 6, MOUSE_W = 9, MOUSE_H = 13;
 
 const MOUSE_BUTTONS: Mouse[] = ['left', 'middle', 'right'];
+/** The mouse button's word, in faded ink after the mouse: which half is pressed is a small thing to read alone. */
+const MOUSE_WORD: Record<Mouse, string> = { left: 'Left', right: 'Right', middle: 'Wheel' };
 
 /**
  * A mouse 9 by 13 in the key cap's stone, lit from the top left: two buttons over the palm, split by a seam that holds
@@ -74,10 +76,20 @@ function mouse(x: number, y: number, which: Mouse): Node {
   };
 }
 
-function capW(c: Cap): number { return typeof c === 'string' ? measure(c) + 6 : MOUSE_W; }
+/** The least width a cap needs: its label plus 6, or the mouse with its word 3 after it. */
+function capW(c: Cap): number { return typeof c === 'string' ? measure(c) + 6 : MOUSE_W + 3 + measure(MOUSE_WORD[c.mouse]); }
 
-/** Caps of one row stand side by side sharing an outline column, as a run of keys on a board does. */
-function capsW(caps: Cap[]): number { return caps.reduce((w, c) => w + capW(c), 0) - Math.max(0, caps.length - 1); }
+/**
+ * The one width of a row's run of caps on this screen, so that every cap stands left-aligned at the same width and the
+ * words after them start in one column: the widest single cap, or a run of several caps (Move) at the width of its
+ * widest, sharing outline columns, whichever is more. Caps each as wide as their label left the column ragged.
+ */
+function runW(rows: Binding[]): number {
+  return Math.max(...rows.map((b) => b.caps.length === 1 ? capW(b.caps[0]) : b.caps.length * Math.max(...b.caps.map(capW)) - (b.caps.length - 1)));
+}
+
+/** The width of each of `n` caps sharing outline columns so that together they are `run` wide. */
+const eachW = (run: number, n: number) => Math.floor((run + n - 1) / n);
 
 function same(a: Cap, b: Cap): boolean {
   return typeof a === 'string' ? typeof b === 'string' && a === b : typeof b !== 'string' && a.mouse === b.mouse;
@@ -100,17 +112,18 @@ export function capOf(e: KeyEv): string | null {
   return null;
 }
 
-interface Column { rows: Binding[]; x: number; textX: number; w: number }
+interface Column { rows: Binding[]; x: number; run: number; textX: number; w: number }
 
-function column(rows: Binding[], x: number): Column {
-  const textX = Math.max(...rows.map((b) => capsW(b.caps))) + AFTER_CAP;
-  return { rows, x, textX, w: textX + Math.max(...rows.map((b) => measure(b.does))) };
+function column(rows: Binding[], x: number, run: number): Column {
+  const textX = run + AFTER_CAP;
+  return { rows, x, run, textX, w: textX + Math.max(...rows.map((b) => measure(b.does))) };
 }
 
 export const controlsScreen: Screen<ControlsView> = (v, ui) => {
   firstFocus(ui, 'controls', 'ctl.done');
-  const left = column(v.left, PAD);
-  const right = column(v.right, PAD + left.w + GAP);
+  const run = runW([...v.left, ...v.right]);
+  const left = column(v.left, PAD, run);
+  const right = column(v.right, PAD + left.w + GAP, run);
   const W = Math.max(216, right.x + right.w + PAD);
   const rowsH = Math.max(v.left.length, v.right.length) * ROW;
   const doneY = ROWS_Y + rowsH + 6;
@@ -134,12 +147,16 @@ export const controlsScreen: Screen<ControlsView> = (v, ui) => {
     const clash = clashes(b);
     const kids: Node[] = [];
     let at = 2;
+    const cw = eachW(col.run, b.caps.length);
     b.caps.forEach((c, k) => {
       // The cap being waited for reads "?" until a key is pressed.
       const shown: Cap = listening && listening.cap === k ? '?' : c;
-      const n = typeof shown === 'string' ? keycap({ x: at, y: 1, label: shown }) : mouse(at, 2, shown.mouse);
-      kids.push(n);
-      at += n.w - 1;
+      if (typeof shown === 'string') kids.push(keycap({ x: at, y: 1, label: shown, w: cw }));
+      else {
+        const word = MOUSE_WORD[shown.mouse];
+        kids.push(mouse(at, 2, shown.mouse), { x: at + MOUSE_W + 3, y: 3, w: measure(word), h: 10, paint: (s) => s.text(word, 0, 0, 'ink.faded') });
+      }
+      at += cw - 1;
     });
     const doesC: Colour = clash.length ? 'blood.dk' : b.fixed ? 'ink.faded' : 'ink';
     const tip = (): Tip | null => {

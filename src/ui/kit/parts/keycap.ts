@@ -5,11 +5,13 @@ import type { Node } from '../node';
 export const KEYCAP_H = 14;
 
 /**
- * A key cap (5.28): 14 tall, its label plus 6 wide. Outline, a `stone.hi` row, the `stone.lt` face with the label's
- * cell at y 2 so its capitals stand on rows 3 to 9 with a clear row above them, two rows of `stone.dk`, outline.
+ * A key cap (5.28): 14 tall, its label plus 6 wide, or as wide as asked with the label centred, so that the caps of a
+ * list stand as one column. Outline, a `stone.hi` row, the `stone.lt` face with the label's cell at y 2 so its capitals
+ * stand on rows 3 to 9 with a clear row above them, two rows of `stone.dk`, outline.
  */
-export function keycap(o: { x: number; y: number; label: string }): Node {
-  const w = measure(o.label) + 6;
+export function keycap(o: { x: number; y: number; label: string; w?: number }): Node {
+  const w = Math.max(o.w ?? 0, measure(o.label) + 6);
+  const lx = Math.floor((w - measure(o.label)) / 2);
   return {
     x: o.x, y: o.y, w, h: KEYCAP_H,
     paint: (s) => {
@@ -18,7 +20,7 @@ export function keycap(o: { x: number; y: number; label: string }): Node {
       s.fill(1, 1, w - 2, 1, 'stone.hi');
       s.fill(1, 2, w - 2, 9, 'stone.lt');
       s.fill(1, 11, w - 2, 2, 'stone.dk');
-      s.text(o.label, 3, 2, 'ink');
+      s.text(o.label, lx, 2, 'ink');
     },
   };
 }
