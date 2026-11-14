@@ -91,6 +91,8 @@ export interface Bounty {
   pay: number;
   /** Seats of the crew who took it. */
   took: number[];
+  /** How many of the thing asked for the one reading carries now, for a bounty that asks for things. */
+  carry?: number;
   /** Too far, or the standing is too low: shown in blood. */
   barred?: string;
   /** The same, short enough for the list's second line. */
@@ -98,15 +100,15 @@ export interface Bounty {
 }
 
 export const BOUNTIES: Bounty[] = [
-  { id: 'b.ore', asker: 'Kammār', task: 'Twenty iron ore', icon: 'ore', n: 20, pay: 40, took: [1, 4],
+  { id: 'b.ore', asker: 'Kammār', task: 'Twenty iron ore', icon: 'ore', n: 20, pay: 40, took: [1, 4], carry: 12,
     telling: 'The smith wants raw ore, not bars: he smelts it himself to his own weight. Bring it to the anvil in the village on the Yavas.' },
-  { id: 'b.meat', asker: 'Vāhak', task: 'Eight raw meat', icon: 'haunch', n: 8, pay: 24, took: [],
+  { id: 'b.meat', asker: 'Vāhak', task: 'Eight raw meat', icon: 'haunch', n: 8, pay: 24, took: [], carry: 3,
     telling: 'The provisioner salts meat against the nights the village is shut in. Boar and Sheep both serve.' },
   { id: 'b.idol', asker: 'Rehakār', task: 'A Vanahar Likeness', icon: 'bait', n: 1, pay: 120, took: [2],
     telling: 'Carved at the workbench from a log, fiber, jelly and a red flower. Rehakār wants one to cut lines on; it is not to be taken to the altar.' },
   { id: 'b.fuel', asker: 'A Marujan fire', task: 'Fuel for a fire', icon: 'coal', n: 32, pay: 0, took: [8],
     telling: 'Thirty-two coal to the fire in the Kāsa. They pay nothing in lees; their standing with the crew rises by one step.' },
-  { id: 'b.bars', asker: 'Kāru', task: 'Four iron bars', icon: 'ingot', n: 4, pay: 18, took: [3, 5, 6],
+  { id: 'b.bars', asker: 'Kāru', task: 'Four iron bars', icon: 'ingot', n: 4, pay: 18, took: [3, 5, 6], carry: 4,
     telling: 'For hinges and the frame of a Joining Bench. Kāru moves in once Vanahar has fallen and asks again each dawn.' },
   { id: 'b.crystal', asker: 'Vejja', task: 'Six crystal', icon: 'crystal', n: 6, pay: 75, took: [], barred: 'Needs the second notch with the householders', why: 'needs standing',
     telling: 'Crystal from geodes, to grind for salves. Vejja asks it only of a crew the householders stand by.' },

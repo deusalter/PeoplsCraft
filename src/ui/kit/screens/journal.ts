@@ -5,6 +5,7 @@ import type { SilhouetteName } from '../art/silhouettes';
 import { count, measure as measureInk } from '../font/measure';
 import { cut as inkCut } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
+import type { Surface } from '../surface';
 import { type Section, BOOK_H, BOOK_TABS, BOOK_W, book, pageHeading } from '../parts/book';
 import { button } from '../parts/button';
 import { channel, segmentEdges } from '../parts/gauges';
@@ -94,15 +95,31 @@ function guidePages(v: JournalView): { left: Node[]; right: Node[] } {
 
 /**
  * What a bounty's row says under its task, in faded ink, so that a row is never told apart by colour alone: whether it
- * is open, taken and by how many, or why it cannot be. Who asks is on its page.
+ * is open, or why it cannot be. A taken bounty is written by `takenBy`.
  */
-function bountyState(b: Bounty, self: number): string {
-  if (b.barred) return b.why ?? 'not open yet';
-  if (!b.took.length) return 'open';
-  const mine = b.took.includes(self);
-  const others = b.took.length - (mine ? 1 : 0);
-  if (mine) return others ? `taken by you and ${others}` : 'taken by you';
-  return `taken by ${others}`;
+function bountyState(b: Bounty, w: number): string {
+  if (b.barred) return inkCut(b.why ?? 'not open yet', w);
+  return 'open';
+}
+
+/**
+ * "taken by", then "you" when one took it oneself, then the other takers' heads in their seats' frames: in a crew of
+ * eight a count says nothing, and the text face has no room on a row for two handles. One other taker whose handle fits
+ * is named after the head. The names stand beside the same heads on the bounty's page. Heads past the room are counted.
+ */
+function takenBy(g: Surface, b: Bounty, crew: CrewMember[], self: number, x: number, y: number, w: number): void {
+  const others = b.took.filter((s) => s !== self);
+  const head = b.took.includes(self) ? (others.length ? 'taken by you and ' : 'taken by you') : 'taken by ';
+  g.text(head, x, y, 'ink.faded');
+  let hx = x + measureInk(head);
+  const room = Math.floor((x + w - hx + 1) / (HEAD_SIZE + 1));
+  const shown = others.length > room ? others.slice(0, Math.max(0, room - 1)) : others;
+  for (const seat of shown) { g.map(HEADS[seat - 1], hx, y); hx += HEAD_SIZE + 1; }
+  if (shown.length < others.length) g.text(`+${others.length - shown.length}`, hx + 1, y, 'ink.faded');
+  else if (others.length === 1) {
+    const name = crew.find((c) => c.seat === others[0])?.name ?? '';
+    if (measureInk(name) <= x + w - hx - 2) g.text(name, hx + 2, y, 'ink.faded');
+  }
 }
 
 function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
@@ -115,7 +132,7 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
       id: `jr.bounty.${i}`, x: 0, y: 14 + i * 20, w: PW, h: 20, chosen, onChoose: () => v.onChoose(i),
       paint: (g, live) => {
         g.text(task, 21, 0, 'ink');
-        g.text(inkCut(bountyState(b, v.seat), PW - 22), 21, 10, 'ink.faded');
+        if (b.took.length && !b.barred) takenBy(g, b, v.crew, v.seat, 21, 10, PW - 22); else g.text(bountyState(b, PW - 22), 21, 10, 'ink.faded');
         g.translate(0, 1);
         paintSlot(g, { ramp: 'clay', stack: { icon: b.icon, n: b.n } }, live);
         g.translate(0, -1);
@@ -127,8 +144,10 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
   // The telling runs as far down the page as the lines under it allow; the button keeps its place at the page's foot.
   const TAKE_Y = 140;
   const shown = b.took.length > 2 ? b.took.slice(0, 1) : b.took;
-  const under = b.barred ? 20 : b.took.length ? 10 + shown.length * TAKER + (b.took.length > 2 ? 10 : 0) : 0;
-  const telling = para(0, 28, PW, b.telling, 'ink', Math.floor((TAKE_Y - 4 - under - (under ? 2 : 0) - 12 - 28) / 10));
+  // "Taken by" stands on the first taker's row, so a row of its own is not spent on it.
+  const under = b.barred ? 20 : b.took.length ? shown.length * TAKER + (b.took.length > 2 ? 10 : 0) : 0;
+  const carried = b.carry !== undefined && !b.barred;
+  const telling = para(0, 28, PW, b.telling, 'ink', Math.floor((TAKE_Y - 4 - under - (under ? 2 : 0) - 12 - (carried ? 10 : 0) - 28) / 10));
   let y = 28 + telling.h + 2;
   const right: Node[] = [
     pageHeading({ x: 0, y: 0, w: PW, text: inkCut(b.task, PW) }),
@@ -137,23 +156,33 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
     inkLine(0, y, PW, b.pay ? `Pays {lees} ${count(b.pay)}` : 'Pays nothing in lees', 'ink'),
   ];
   y += 12;
+  if (carried) {
+    // How near the pack is to the ask: the count in words, then a short channel beside it, on one row.
+    const have = Math.min(b.carry!, b.n);
+    const words = `You carry ${count(b.carry!)} of ${count(b.n)}`;
+    const cx = Math.max(measureInk(words) + 4, PW - 30);
+    right.push(inkLine(0, y - 2, PW, words, have >= b.n ? 'growth.dk' : 'ink'));
+    if (PW - cx >= 16) right.push(channel({ x: cx, y: y - 1, len: PW - cx, f: have / b.n, ramp: 'clay', segments: b.n <= 12 && (PW - cx - 2) >= b.n * 3 ? b.n : undefined }));
+    y += 10;
+  }
   if (b.barred) right.push(para(0, y, PW, b.barred, 'blood.dk', 2));
   else if (b.took.length) {
-    right.push(inkLine(0, y, PW, 'Taken by', 'ink.faded'));
-    // Each taker is their head in its seat's frame with the name beside it; two rows are left above the button, and a
-    // third taker and more are counted.
+    // Each taker is their head in its seat's frame with the name beside it, the first on the row of "Taken by"; two
+    // rows are left above the button, and a third taker and more are counted.
+    const tx = measureInk('Taken by ') + 1;
+    right.push(inkLine(0, y, tx, 'Taken by', 'ink.faded'));
     shown.forEach((seat, k) => {
       const m = v.crew.find((c) => c.seat === seat)!;
       const self = m.seat === v.seat;
       right.push({
-        x: 0, y: y + 10 + k * TAKER, w: PW, h: HEAD_SIZE,
+        x: tx, y: y + k * TAKER, w: PW - tx, h: HEAD_SIZE,
         paint: (g) => {
           g.map(HEADS[m.seat - 1], 0, 0);
-          g.text(inkCut(self ? `${m.name}, you` : m.name, PW - 13), 13, 0, 'ink');
+          g.text(inkCut(self ? `${m.name}, you` : m.name, PW - tx - 13), 13, 0, 'ink');
         },
       });
     });
-    if (b.took.length > 2) right.push(inkLine(0, y + 10 + TAKER, PW, `and ${b.took.length - 1} more of the crew`, 'ink.faded'));
+    if (b.took.length > 2) right.push(inkLine(tx, y + TAKER, PW - tx, `and ${b.took.length - 1} more`, 'ink.faded'));
   }
   right.push(button({ id: 'jr.take', x: 0, y: TAKE_Y, w: 60, h: 14, label: mine ? 'Leave' : 'Take', ramp: 'clay', disabled: !!b.barred, onPress: () => v.onTake(b) }));
   return { left, right };
