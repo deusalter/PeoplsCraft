@@ -218,8 +218,8 @@
  "eight.phase:b_warden.2": "Tama close in as its body starts to come apart.",
 
  "eight.sight:b_sporemother": "The dome over the floor was its own growth: cap and thread fastened to the roof. Everything it threw fell on us from above.",
- "eight.kill:b_sporemother": "Under the cap was thread, wrapped round the Guhamāt Remains. The censers taken with the smoke had become Antar metal.",
- "eight.loss:b_sporemother": "Nothing new came near us in the nights after. While it hung there its host stayed round it, fed by the cap it dropped. Now its packs may come up near our gate to the hollow.",
+ "eight.kill:b_sporemother": "Under the cap was thread, wrapped round the Guhamāt Remains. Antar bars lay in the thread, of the same metal as the censer.",
+ "eight.loss:b_sporemother": "Nothing new came near us in the nights after. While it hung there its host stayed round it, fed by the cap it dropped.",
  "eight.habit:b_sporemother": "Its cap falls on marked ground, and we stand off the marks. Near the end it charges and slams with its own weight.",
  "eight.once:b_sporemother": "A Kavak formed on the floor where a piece of its falling cap had landed. The pieces are raw remains, and the lowest feeders form on them.",
  "eight.said:b_sporemother": "Guhamāt is the mother of the small caps in Under. It hangs from the roof until the smoke reaches it.",
@@ -239,7 +239,7 @@
 
  "eight.sight:b_luminarch": "A body of dense crystal turned inside a ring of loose crystal. Rays left it in fans toward whoever was nearest.",
  "eight.kill:b_luminarch": "It broke into pieces of dense crystal with Ākās through them. The densest of those pieces is the Ratan Crystal.",
- "eight.loss:b_luminarch": "Its kinds stayed on the islands round it, where its crystal was. With it dead nothing holds them there, and the way off the islands is the gate we raised. None has come by it yet.",
+ "eight.loss:b_luminarch": "Its kinds stayed on the islands round it while it lived. They stay there still, and every hostile kind we meet takes more blows to kill than before.",
  "eight.habit:b_luminarch": "The beam comes round slowly. A hunter who keeps moving stays out of it. It shifts from place to place over the stone, and its ring of pieces goes with it.",
  "eight.once:b_luminarch": "Its beam was on one of us. Next it hung across the floor with the beam on another. None of us saw it cross.",
  "eight.said:b_luminarch": "Nobody of ours has seen Ratan. They said it is a jewel far off past the second gate. Light the lens gathers calls it up.",
@@ -249,7 +249,7 @@
 
  "eight.sight:b_hart": "On four running legs a body with tines came across the dark floor, glowing violet. It slammed the ground where we stood. Chandasāvak came up behind it.",
  "eight.kill:b_hart": "Kuranga was lees set hard, and its tines were the same lees grown outward.",
- "eight.loss:b_hart": "The next dark night the deep kind was up as before, with no strongest at its head now. Packs with nothing over them do not hold ground, so a Night raid may fall on a dark night from now on, it seems.",
+ "eight.loss:b_hart": "The next dark night the deep kind was up as before, with no strongest at its head now.",
  "eight.habit:b_hart": "Kuranga answers the mask only after dark. No charge on any floor is faster. Once its tines light, it stops being where we last saw it.",
  "eight.once:b_hart": "Our fight with it ran until dawn. When the sun came up it went back down. The sun undoes its kind.",
  "eight.said:b_hart": "Of the things from the hollow moon, Kuranga is the largest. Put on the mask at its altar, and Kuranga sees you.",
