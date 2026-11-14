@@ -1,13 +1,13 @@
-// Loading (section 6, Loading): the mark, a segmented strip 20 under it that fills in ember, and one line 6 under that.
+// Loading (section 6, Loading): the mark, a sunk track 20 under it that fills in ember, and a readout 6 under that.
 import type { Screen } from '../node';
+import type { Surface } from '../surface';
 import { TITLE_MARK } from '../art/title';
 import { sunk } from '../parts/common';
-import { paintStrip } from '../parts/hud';
 import { titleMark } from '../parts/keycap';
-import { groundMenu, line } from '../parts/menu';
+import { groundMenu } from '../parts/menu';
 import { LOADING_STEPS } from '../sample/menus';
 import { HERE } from '../sample/crew';
-import { measure } from '../font/measure';
+import { measure, rightX } from '../font/measure';
 import { cut } from '../font/wrap';
 import { go } from './books-common';
 import type { NamedScreen } from './index';
@@ -24,41 +24,57 @@ export interface LoadingView {
   onGiveUp(): void;
 }
 
-/** The strip: the HUD's thin strip, 182 by 5, in eighteen segments, as wide as the hotbar. */
-const STRIP_W = 182, STRIP_H = 5, SEGMENTS = 18;
+/**
+ * The track: a hollow 182 by 7 sunk in the tile, as wide as the hotbar, `root.0` along its top and left and the tile's
+ * light edge along its bottom and right, filling in ember over eighteen segments. A thin strip set 3 inside a wider
+ * well lost its top edge to the dark courses and read as a hairline.
+ */
+const TRACK_W = 182, TRACK_H = 7, SEGMENTS = 18, INNER = TRACK_W - 2;
 const MARK_Y = 60;
-const STRIP_Y = MARK_Y + TITLE_MARK.h + 20;
-// The line stands 6 under the strip, 3 under its well.
-const LINE_Y = STRIP_Y + STRIP_H + 6;
+const TRACK_X = 213 - Math.floor(TRACK_W / 2);
+const TRACK_Y = MARK_Y + TITLE_MARK.h + 20;
+/** The stage's line stands 6 under the track; with "how many are here" under it, both lie on one strip of the chat wash. */
+const LINE_Y = TRACK_Y + TRACK_H + 6;
+
+function paintTrack(s: Surface, f: number): void {
+  // The empty floor is root.1, a step darker than the bricks' faces, so the hollow reads as cut into them.
+  sunk(s, 0, 0, TRACK_W, TRACK_H, 'ground', 'root.1');
+  const n = Math.round(Math.min(1, Math.max(0, f)) * INNER);
+  if (n) {
+    s.fill(1, 1, n, 1, 'ember.lt');
+    s.fill(1, 2, n, TRACK_H - 4, 'ember');
+    s.fill(1, TRACK_H - 2, n, 1, 'ember.dk');
+  }
+  // A cut between two segments is root.0 in the ember and root.2 in the empty floor, where root.0 would not show.
+  for (let k = 1; k < SEGMENTS; k++) {
+    const at = Math.round((k * INNER) / SEGMENTS);
+    s.fill(at, 1, 1, TRACK_H - 2, at <= n ? 'root.0' : 'root.2');
+  }
+}
 
 export const loadingScreen: Screen<LoadingView> = (v, ui) => {
   let high = 0;
+  const rows = v.here ? 2 : 1;
   return groundMenu(ui, 'loading', [
     titleMark({ cx: 213, y: MARK_Y }),
     {
-      // The strip lies in a dark well sunk in the tile, 2 units of floor round it, so that its empty segments stand off
-      // the dark courses.
-      x: 213 - Math.floor(STRIP_W / 2) - 3, y: STRIP_Y - 3, w: STRIP_W + 6, h: STRIP_H + 6, anim: true,
-      paint: (s, live) => {
-        sunk(s, 0, 0, STRIP_W + 6, STRIP_H + 6, 'ground');
-        high = Math.max(high, v.done(live.t));
-        paintStrip(s, { x: 0, y: 0, w: STRIP_W, f: high, tones: ['ember.lt', 'ember', 'ember.dk'], segments: SEGMENTS, thin: true }, 3, 3);
-      },
+      x: TRACK_X, y: TRACK_Y, w: TRACK_W, h: TRACK_H, anim: true,
+      paint: (s, live) => { high = Math.max(high, v.done(live.t)); paintTrack(s, high); },
     },
     {
-      // The stage in salt and its count after it in grey, centred as one line.
-      x: 113, y: LINE_Y, w: 201, h: 11, anim: true,
+      // Under the track, a readout as wide as it on a strip of the chat wash: what is being done in salt at its left and
+      // which stage of how many in grey at its right, then on a server how many are here, in grey at the left. Centred
+      // one under the other, each on the bare tile, the grey line was lost on the bricks.
+      x: TRACK_X, y: LINE_Y - 1, w: TRACK_W, h: rows * 10 + 2, anim: true,
       paint: (s, live) => {
+        s.wash(0, 0, TRACK_W, rows * 10 + 2, 'root.0', 3);
         const [n, of] = v.stage(live.t);
-        const count = `  ${n} of ${of}`;
-        const doing = cut(v.doing(live.t), 200 - measure(count));
-        const x = Math.floor((200 - measure(doing) - measure(count)) / 2);
-        s.text(doing, x, 0, 'salt', true);
-        s.text(count, x + measure(doing), 0, 'root.4', true);
+        const count = `${n} of ${of}`;
+        s.text(cut(v.doing(live.t), TRACK_W - 4 - measure(count) - 8), 2, 1, 'salt', true);
+        s.text(count, rightX(count, TRACK_W - 3), 1, 'root.4', true);
+        if (v.here) s.text(cut(v.here, TRACK_W - 4), 2, 11, 'root.4', true);
       },
     },
-    // On a server, how many are there: a fact of its own, on its own line 12 under the stage.
-    ...(v.here ? [line({ x: 113, y: LINE_Y + 12, w: 200, text: v.here, c: 'root.4', shadow: true, centre: true })] : []),
   ], { on: { key: (e) => { if (e.key === 'Escape') { v.onGiveUp(); return true; } } } });
 };
 

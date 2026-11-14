@@ -147,7 +147,7 @@ Upper on dark is the mid green `growth`, not `growth.lt`: with the light green i
 | --- | --- | --- |
 | The dim behind a window | `root.0` at a half | `root.1`, opaque |
 | The dim behind the pause | `root.0` at a half, as behind any window | `root.1`, opaque |
-| The strip under a chat line, a name tag, the prompt, the lines under "Paused", the Guide's step, the name of the thing in hand and a pickup on the HUD | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
+| The strip under a chat line, a name tag, the prompt, the lines under "Paused", the Guide's step, the name of the thing in hand and a pickup on the HUD, and the readout under the loading track | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
 | The fall | `blood.pit` at a quarter, a half, then three quarters held. Over the noon sky `blood.dk` at a half read as a lilac wash, which is the violet glow this interface refuses | `blood.pit`, opaque |
@@ -3632,11 +3632,11 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | I1 | logo | 89 | 60 | 248 | 31 | the title mark |
-| I2 | gauge | 119 | 109 | 188 | 11 | a dark well sunk in the tile (5.8) with, 3 in, the HUD's thin strip (5.15), 182 by 5, 20 under the mark: eighteen segments, each root.2 when empty and, as it fills unit by unit, ember with a top row of ember.lt and a bottom row of ember.dk; it never runs back |
-| I3 | text | 113 | 123 | 200 | 10 | one line, centred, 6 under the strip, with its shadow: what is being done in salt ("Laying the ground", "Coming up"), then two spaces and which stage it is of how many in `root.4`, the less important line on dark ("2 of 4"), so that a long stall reads as one slow stage and not a hang. `grit.lt` was asked for and is kept for the pebbles of a button |
-| I4 | text | 113 | 135 | 200 | 10 | on a server only, how many are there ("7 of 8 here"), centred in `root.4` with its shadow, 12 under the stage. Written after the stage on one line, it joined two facts that have nothing to do with each other |
+| I2 | gauge | 122 | 111 | 182 | 7 | a track sunk in the tile, as wide as the hotbar, 20 under the mark: `root.0` along its top and left, `stone.lt` (the tile's light edge) along its bottom and right, an empty floor of `root.1`, a step darker than the bricks' faces; eighteen segments, cut by `root.0` in the fill and `root.2` in the empty floor, filling unit by unit in ember with a top row of ember.lt and a bottom row of ember.dk; it never runs back. A thin strip 182 by 5 set 3 inside a wider well lost the well's top edge to the dark courses and read as a hairline |
+| I3 | text | 122 | 123 | 182 | 12 | a readout as wide as the track, 6 under it, on a strip of the chat wash 12 tall (22 with I4): what is being done in salt with its shadow at its left, 2 in ("Laying the ground", "Coming up"), and which stage of how many in `root.4` right-aligned 3 from its right end ("2 of 4"), so that a long stall reads as one slow stage and not a hang. Centred one under the other on the bare tile, the lines were centred twice over and the grey one was lost on the bricks. `grit.lt` was asked for and is kept for the pebbles of a button |
+| I4 | text | 122 | 133 | 182 | 10 | on a server only, on the same strip, how many are there ("7 of 8 here") in `root.4` with its shadow at the left, 2 in. Written after the stage on one line, it joined two facts that have nothing to do with each other |
 
-- **Shows.** The mark, a strip and one line. On a server a second line says how many are there. A picture of what was being raised once stood alone between the mark and the strip, tied to neither, and was dropped.
+- **Shows.** The mark, a track and a readout under it. On a server a second line says how many are there. A picture of what was being raised once stood alone between the mark and the strip, tied to neither, and was dropped.
 - **Clickable.** Nothing.
 - **Keys.** Esc gives up a join and goes back to the title.
 - **First.** Nothing has focus.
