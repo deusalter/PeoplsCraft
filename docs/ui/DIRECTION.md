@@ -719,7 +719,7 @@ The hover changes the floor under the icon and nothing else. It does not tint th
 
 **A thing that is missing** (a pattern laid out that the pack cannot fill, a kind not yet seen in the codex) is drawn as its icon's silhouette in one flat tone, `dk` of the host ramp, never as a faded icon.
 
-**A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by: its icon is drawn flat in `root.4`, so its outline still reads, and the lock of a locked slot stands over the cell's bottom right corner at 10, 10, where the count would be; no count is written. A pattern that gives more than one writes how many on a badge cut as the lock is, in the same corner: `root.0` round a face of `root.1`, the number in the small face in `root.4` with its shadow, at 2, 1 inside the badge, the badge as wide as the number and 4. Written as a stack's count, in `salt` in the text face, the pattern read as a thing already in the pack; bare grey digits drawn a unit in vanished into grey icons such as stone bricks. A half wash of `root.0` over the whole icon was tried first: on the dark floor a washed icon differed from a makeable one only a little in brightness. A cell of the list is a slot on a dark plate (5.4): `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.2`, `root.3` under the pointer.
+**A pattern the pack cannot afford**, in the cells of a pattern list, is known and has a shape to be told by (the pattern the grid already holds is never one: it is made by taking the result, and a lock on it beside a ready chain said the opposite of the chain): its icon is drawn flat in `root.4`, so its outline still reads, and the lock of a locked slot stands over the cell's bottom right corner at 10, 10, where the count would be; no count is written. A pattern that gives more than one writes how many on a badge cut as the lock is, in the same corner: `root.0` round a face of `root.1`, the number in the small face in `root.4` with its shadow, at 2, 1 inside the badge, the badge as wide as the number and 4. Written as a stack's count, in `salt` in the text face, the pattern read as a thing already in the pack; bare grey digits drawn a unit in vanished into grey icons such as stone bricks. A half wash of `root.0` over the whole icon was tried first: on the dark floor a washed icon differed from a makeable one only a little in brightness. A cell of the list is a slot on a dark plate (5.4): `root.0` along its top and left, `root.3` along its bottom and right, a floor of `root.2`, `root.3` under the pointer.
 
 **The pattern laid out**, the one whose pieces now lie on the grid, is chosen in its list as a row is: its cell's floor is `root.3` and a frame of `root.4` one unit inside its 18 stands round the icon. It is not framed in `salt`, which says where the keys are; while the keys are on it the salt frame stands in place of the grey.
 
@@ -1081,7 +1081,9 @@ A tab is a small slab of the host's ramp that sticks out of it and carries one 1
 ```
 `. nothing  1 hi  2 lt  3 face  4 sh  6 pit  K root.0   (digits are tones of the host slab's ramp; shown in timber)`
 
-A tab's name is its tooltip. A tab that cannot be chosen yet is not drawn.
+A tab's name is its tooltip. A tab that cannot be chosen yet is not drawn, except in a row whose tabs keep one order from screen to screen (the stations of the recipe panel): there it stands in its place, flat `dk` inside its outline, its icon flat in `sh`, and the lock of a locked slot (5.4), 7 by 7, at its icon's bottom right (10, 9 from the icon), so that it is told from a tab that is merely not chosen, which keeps its icon at full brightness. Dim alone, the two read alike.
+
+A chosen tab flush with the slab's far corner (the last of a row that fills the edge) carries its dark columns, `sh` and `pit`, straight down into the slab's dark edge, with no light step where the slab's corner stood: the light step drawn there stuck a notch of `hi` out into the dark edge.
 
 ### 5.8 Dark well, list row, scroll track
 
@@ -2517,7 +2519,7 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | R3 | check | 183 | 35 | 12 | 12 | checkbox with the label "Can make" at x 23 |
 | R5 | well | 183 | 52 | 98 | 92 | dark well: five by 5 pattern cells of 18, then a scroll track 6 wide |
 | R6 | text | 183 | 148 | 100 | 10 | "{lmb} lay out {rmb} make", in faded ink |
-| T1 to T5 | tab | 175 + 23 i | -21 or -18 | 24 | 24 or 18 | the five stations in one order on every making screen: By hand, Workbench, Anvil, Line Frame, Joining Bench. The one whose patterns are listed is chosen (24 tall); another whose patterns may be read here is a plain tab (18); one whose patterns cannot be read here is drawn flat, a face of `dk` with no light or dark edge and its icon flat in `sh`, and its tooltip says "Its patterns are not read here". A tab never moves: when each screen put itself first, the same station stood in a different place on every screen |
+| T1 to T5 | tab | 175 + 23 i | -21 or -18 | 24 | 24 or 18 | the five stations in one order on every making screen: By hand, Workbench, Anvil, Line Frame, Joining Bench. The one whose patterns are listed is chosen (24 tall); another whose patterns may be read here is a plain tab (18); one whose patterns cannot be read here is drawn flat, a face of `dk` with no light or dark edge and its icon flat in `sh` with the lock of a locked slot at its bottom right (5.7), and its tooltip says "Its patterns are not read here". A tab never moves: when each screen put itself first, the same station stood in a different place on every screen |
 
 - **Shows.** The grid, what it makes, and the patterns of the station. The Line Frame has the same parts; its slab is timber and its arrow fills in arm blue instead of ember, because the work there is line and crystal.
 - **Says why.** While pieces lie on the grid and nothing comes of them, one line stands at 91, 59, under the arrow, as a refusal: `{cross}`, a space and the words in `blood.dk`, the refusal on a light face, cut at 77 wide. It names what a laid pattern lacks, "{cross} Crystal short" ("{cross} 2 Crystal short" for two of one kind, "{cross} 3 pieces short" for several kinds), else "{cross} Nothing joins". Each empty cell the pattern wants keeps the missing thing's silhouette and takes a frame of `blood` one unit deep inside its floor, with no badge, for as long as it stays empty. "One piece short" in `ink.faded` read as a caption and did not say which piece.
@@ -2566,14 +2568,14 @@ Size 176 by 166. Material: timber. Anchor: centre of the screen.
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | J0 | slab | 0 | 0 | 176 | 166 | timber slab |
 | J1 | text | 8 | 6 | 80 | 10 | "Joining Bench" |
-| J2 | slots | 26 | 35 | 18 | 18 | first piece, ring silhouette |
-| J3 | rule | 44 | 43 | 12 | 2 | cut line from the first piece to the remains |
-| J4 | slots | 56 | 35 | 18 | 18 | the remains built into the bench: a locked slot showing Vanahar Remains, its floor `face` and no lock on it. The remains are the middle of the join, not a thing barred, and the 7 by 7 lock over them read as "cannot be used" |
-| J5 | rule | 74 | 43 | 12 | 2 | cut line from the second piece |
-| J6 | slots | 86 | 35 | 18 | 18 | second piece, ring silhouette |
-| J7 | arrow | 108 | 37 | 22 | 15 | progress arrow |
-| J8 | bigslot | 136 | 31 | 26 | 26 | the joined piece |
-| J8a | text | 26 | 57 | 136 | 10 | "Lit: the two pieces join" in faded ink: the key to the cut lines, which are `ember` over `ember.dk` while the two pieces make something and a dark groove (`pit` over `hi`) while they do not |
+| J2 | slots | 26 | 21 | 18 | 18 | first piece, ring silhouette. The chain stands under the title as the Workbench's grid does, on one centre line at y 30: 25 units of bare face between the title and a chain at 35 read as a missing row |
+| J3 | rule | 44 | 29 | 12 | 2 | cut line from the first piece to the remains |
+| J4 | slots | 56 | 21 | 18 | 18 | the remains built into the bench: a locked slot showing Vanahar Remains, its floor `face` and no lock on it. The remains are the middle of the join, not a thing barred, and the 7 by 7 lock over them read as "cannot be used" |
+| J5 | rule | 74 | 29 | 12 | 2 | cut line from the second piece |
+| J6 | slots | 86 | 21 | 18 | 18 | second piece, ring silhouette |
+| J7 | arrow | 108 | 23 | 22 | 15 | progress arrow |
+| J8 | bigslot | 136 | 17 | 26 | 26 | the joined piece |
+| J8a | text | 8 | 46 | 160 | 10 | what the bench says, in words: "Ready to join: Spring Boots" in ink while the two pieces make something; "{cross} A second piece short" or "{cross} These two do not join" in `blood.dk`, the refusal on a light face; with nothing laid, "Lay two pieces against the remains" in faded ink. The cut lines are `ember` over `ember.dk` while the pieces make something and a dark groove (`pit` over `hi`) while they do not. "Lit: the two pieces join", a key to the cut lines, did not say whether anything would come of them |
 | J9 | text | 8 | 73 | 40 | 10 | "Pack" |
 | J10 | button | 112 | 69 | 56 | 14 | "Sort pack" |
 | J11 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |

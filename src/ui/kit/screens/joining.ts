@@ -50,16 +50,26 @@ function build(ui: Ui): Node {
   const st = open();
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
   const b = st.bench, g = st.grid;
-  const joined = !!gridMatch(st.hand, g);
+  const made = gridMatch(st.hand, g);
+  const joined = !!made;
+  const laid = st.hand.stores.piece.slice(0, 2).filter((x) => x).length;
+  // What the bench says under the chain, in words and not as a key to the cut lines: what the pieces make, in ink;
+  // what is missing, as a refusal in blood after a cross; or, with nothing laid, what to do, in faded ink.
+  const said: { text: string; c: 'ink' | 'blood.dk' | 'ink.faded' } = made ? { text: `Ready to join: ${thing(made.out).name}`, c: 'ink' }
+    : laid === 2 ? { text: '{cross} These two do not join', c: 'blood.dk' }
+    : laid === 1 ? { text: '{cross} A second piece short', c: 'blood.dk' }
+    : { text: 'Lay two pieces against the remains', c: 'ink.faded' };
+  // The chain stands under the title, as the Workbench's grid does: the pieces at y 21, the joined piece's large slot
+  // at 17, all on one centre line at 30.
   const joining: Node[] = [
-    stackSlot(b, { store: 'piece', i: 0 }, { x: 26, y: 35, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[0] ?? undefined }),
-    cutLine(44, 43, 12, joined),
-    stackSlot(b, { store: 'remains', i: 0 }, { x: 56, y: 35, ramp: 'timber', locked: { key: 'heartroot', n: 1 }, noLock: true }),
-    cutLine(74, 43, 12, joined),
-    stackSlot(b, { store: 'piece', i: 1 }, { x: 86, y: 35, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[1] ?? undefined }),
-    progressArrow({ x: 108, y: 37, f: joined ? 1 : 0, ramp: 'timber' }),
-    resultSlot(b, g, 136, 31, 'timber', true),
-    line({ x: 26, y: 57, w: 136, text: 'Lit: the two pieces join', c: 'ink.faded', shadow: false }),
+    stackSlot(b, { store: 'piece', i: 0 }, { x: 26, y: 21, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[0] ?? undefined }),
+    cutLine(44, 29, 12, joined),
+    stackSlot(b, { store: 'remains', i: 0 }, { x: 56, y: 21, ramp: 'timber', locked: { key: 'heartroot', n: 1 }, noLock: true }),
+    cutLine(74, 29, 12, joined),
+    stackSlot(b, { store: 'piece', i: 1 }, { x: 86, y: 21, ramp: 'timber', silhouette: 'trinket', showAccepts: true, missing: g.ghost[1] ?? undefined }),
+    progressArrow({ x: 108, y: 23, f: joined ? 1 : 0, ramp: 'timber' }),
+    resultSlot(b, g, 136, 17, 'timber', true),
+    line({ x: 8, y: 46, w: 160, text: said.text, c: said.c, shadow: false }),
   ];
   const pack = packBlock(b, 'timber', 73, 84);
   const outside = () => { st.hand.dropHeld(); b.after(); };

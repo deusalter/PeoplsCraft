@@ -3,6 +3,7 @@ import { type Colour, type Ramp, type Role, tone } from '../palette';
 import type { Surface } from '../surface';
 import { type Force, lv } from './common';
 import { type SlabOpts, slab } from './slab';
+import { LOCK } from './slot';
 
 export interface TabSpec {
   id: string;
@@ -38,7 +39,7 @@ export type Tones = (r: Role) => Colour;
  * The chosen top tab at `tx`, the slab's outline row at y 0, drawn by the construction of 5.7: it rises 21 and is joined
  * to the slab, whose outline and light edge are gone across its inner width. A side tab is the same, turned.
  */
-export function chosenTab(fill: Fill, tx: number, t: Tones): void {
+export function chosenTab(fill: Fill, tx: number, t: Tones, last = false): void {
   const top = -CHOSEN_RISE;
   fill(tx + 1, top, 22, 1, 'root.0');
   fill(tx, top + 1, 1, CHOSEN_RISE, 'root.0');
@@ -50,6 +51,13 @@ export function chosenTab(fill: Fill, tx: number, t: Tones): void {
   fill(tx + 2, top + 3, 1, CHOSEN_RISE, t('lt'));
   fill(tx + 22, top + 2, 1, CHOSEN_RISE - 1, t('pit'));
   fill(tx + 21, top + 3, 1, CHOSEN_RISE - 2, t('sh'));
+  if (last) {
+    // Flush with the slab's far corner, the tab's dark columns are the slab's right edge: they run on down through the
+    // rows where the slab's corner stood, with no light step, so the tab and the slab are shaded by one line.
+    fill(tx + 22, 1, 1, 2, t('pit'));
+    fill(tx + 21, 1, 1, 2, t('sh'));
+    return;
+  }
   // Where the slab's top edge starts again past the tab: the light rows step in, as at the slab's own corner.
   fill(tx + 22, 1, 1, 1, t('hi'));
   fill(tx + 21, 2, 2, 1, t('lt'));
@@ -119,7 +127,7 @@ export function tabbedSlab(o: TabbedOpts): Node {
         s.translate(ox, oy);
         const f = fillFor(s);
         const t: Tones = (r) => tone(o.ramp, r);
-        if (chosen) chosenTab(f, at, t);
+        if (chosen) chosenTab(f, at, t, at + TAB_SIZE === (top ? o.w : o.h));
         else if (spec.off) offTab(f, at, t, i === 0);
         else {
           otherTab(f, at, t, i === 0);
@@ -127,7 +135,9 @@ export function tabbedSlab(o: TabbedOpts): Node {
         }
         s.translate(-ox, -oy);
         const [ix, iy] = top ? [4, chosen ? 4 : 2] : [chosen ? 4 : 2, 4];
-        if (spec.off) s.icon(spec.icon, ix, iy, 'flat', tone(o.ramp, 'sh'));
+        // A tab that cannot be chosen here keeps its dimmed icon and carries the lock of a locked slot at the icon's
+        // bottom right, so it is told from a tab that is merely not chosen, which stays at full brightness.
+        if (spec.off) { s.icon(spec.icon, ix, iy, 'flat', tone(o.ramp, 'sh')); s.map(LOCK, ix + 10, iy + 9); }
         else s.icon(spec.icon, ix, iy);
       },
     };

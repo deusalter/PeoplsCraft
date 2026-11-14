@@ -180,7 +180,9 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
   const kids: Node[] = list.map((p, i): Node => {
     const r = Math.floor(i / cols) - top, c = i % cols;
     const id = `${o.id}.cell.${p.out}`;
-    const makeable = canMake(b.hand, p);
+    // The pattern the grid holds can be made by taking the result, whatever the pack holds besides: it never wears the
+    // lock while the chain beside it stands ready.
+    const makeable = canMake(b.hand, p) || p === laid;
     const fitsGrid = !o.grid || layout(p, o.grid.w).filter((x) => x).length === needs(p).reduce((a, [, n]) => a + n, 0);
     return {
       id, x: c * 18, y: r * 18, w: 18, h: 18, takes: true, focus: true,
@@ -282,7 +284,7 @@ export function recipeControls(o: PanelOpts): Node[] {
   const q = st.search.trim().toLowerCase();
   const list = PATTERNS.filter((p) => p.station === station
     && (!q || thing(p.out).name.toLowerCase().includes(q))
-    && (!st.canMake || canMake(b.hand, p)));
+    && (!st.canMake || canMake(b.hand, p) || (here && !!o.grid && gridMatch(b.hand, o.grid) === p)));
   const out: Node[] = [
     field({
       id: `${o.id}.search`, x: 8, y: 16, w: o.compact ? 100 : o.wellW ?? 98, value: st.search, placeholder: 'Search', limit: 24, host: o.ramp, ui,
