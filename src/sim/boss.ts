@@ -79,7 +79,12 @@ export function refundSummons(shared: SharedState): void {
 function interrupted(realm: Realm, m: Mob): boolean {
   const b = m.boss!;
   if (b.lost) return true;
-  for (const id of b.parts) { const q = realm.sim.players.get(id); if (q && !q.parked && q.dim === realm.dim && (q.stalled || !q.online)) return true; }
+  // Parking takes a player out of its realm before it marks it parked, and the realm can be suspended in between: a player
+  // still in the realm's list is lingering, one already out of it is being parked. So the realm can empty in the very call
+  // that parks the last one the boss was waiting for, before a hold has seen it go.
+  const players = realm.players;
+  for (const id of b.waitFor) { const q = realm.sim.players.get(id); if (!q || q.parked || !players.includes(q)) return true; }
+  for (const id of b.parts) { const q = realm.sim.players.get(id); if (q && players.includes(q) && (q.stalled || !q.online)) return true; }
   return false;
 }
 /** The offering back to its summoner: the pack when in play, else the mail, else what the world owes the id. */
