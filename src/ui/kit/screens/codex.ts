@@ -39,15 +39,20 @@ const WELL = 24;
 /** Columns of a spread's grid: a short chapter (the eight) stands in rows of four, so that no empty cell promises more. */
 const colsFor = (n: number) => (n <= 8 ? 4 : COLS);
 
-/** An entry slot sunk in the page (X3): the clay slot with a floor of `clay.sh`; a kind not yet seen shows its flat mask in `clay.face`. */
+/**
+ * An entry slot sunk in the page (X3): the clay slot with a floor of `clay.sh`, `clay.face` under the pointer. A kind
+ * not yet seen shows its flat mask in `clay.dk`, a hollow below the floor, as any missing thing in a slot is drawn
+ * (5.4); in `clay.face` the mask stood lighter than the floor, near the page's own tone, and a known picture and an
+ * unknown one differed by little more than the outline.
+ */
 function paintEntry(s: Surface, e: Entry | undefined, live: Live, chosen: boolean): void {
   s.nine(SLOT, 0, 0, 18, 18, 'clay');
   const hot = !!e && live.hover;
-  s.fill(1, 1, 16, 16, hot && e.seen ? 'clay.face' : 'clay.sh');
+  s.fill(1, 1, 16, 16, hot ? 'clay.face' : 'clay.sh');
   if (!e) return;
   if (live.focus && !chosen) ring(s, 1, 1, 16, 16, 'salt');
   if (e.seen) s.icon(e.icon, 1, 1);
-  else s.silhouette(e.icon, 1, 1, hot ? 'clay.lt' : 'clay.face', hot ? 'clay.lt' : 'clay.face');
+  else s.silhouette(e.icon, 1, 1, 'clay.dk', 'clay.dk');
 }
 
 /** The four steps (X9): a paragraph for each one known, one rule of `clay.sh` for each one not, cut at the page's foot. */
