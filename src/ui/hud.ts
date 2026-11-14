@@ -6,6 +6,11 @@ import { BOSS_BARS } from '../data/hudstyle';
 import { HOTBAR } from '../sim/inventory';
 import { eventLabel, eventProgress } from '../client/invclient';
 import { BUFFS } from '../sim/stats';
+import { Social, bearing, stateOf } from '../client/social';
+import { PF_DEAD, PF_LOADING, PF_SLEEP, PING_REACH, SELF_DEAD, SELF_LOADING, SELF_SLEEPING } from '../net/protocol';
+import { newRayHit, raycast } from '../sim/physics';
+import { ChatView, SEAT } from './chat';
+import { RosterView } from './roster';
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -39,6 +44,55 @@ function buffLine(stats: Record<string, number | undefined>): string {
 const HURT_FX: Keyframe[] = [{ opacity: 0.8 }, { opacity: 0 }];
 const HURT_T: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }, DIR_T: KeyframeAnimationOptions = { duration: 1000, easing: 'ease-in' };
 interface Floater { el: HTMLElement; x: number; y: number; z: number; life: number; max: number; vy: number }
+/** A compass pip made on demand: a friend (a round mark in the seat's colour, the name under it) or a ping (a diamond, its distance). */
+interface Pip { el: HTMLElement; i: HTMLElement; d: HTMLElement; px: number; on: boolean; edge: boolean; slot: number; name: string; m: number }
+/** A name tag over another player: name and state, a thin health bar; whether terrain hides it, looked at every 0.25 s. */
+interface Tag { el: HTMLElement; name: HTMLElement; bar: HTMLElement; slot: number; text: string; hp: number; seen: boolean; look: number; on: boolean }
+/** A ping in the world: a marker with the pinger's name and the distance. */
+interface Mark { el: HTMLElement; label: HTMLElement; text: string; on: boolean }
+/** Players' tags show within this distance, and terrain hiding one is looked for this often (seconds) (2.5). */
+export const TAG_R = 48, TAG_LOOK = 0.25;
+const PING_COLOR = '#ffd27a';
+const ray = newRayHit();
+
+/** Whether a tag `dist` blocks off shows this frame. `hidden` is the terrain test, asked once per TAG_LOOK while in range;
+ *  between asks the last answer stands. */
+export function tagSight(t: { look: number; seen: boolean }, dist: number, dt: number, hidden: () => boolean): boolean {
+  if (dist > TAG_R) return false;
+  t.look -= dt;
+  if (t.look <= 0) { t.look = TAG_LOOK; t.seen = !hidden(); }
+  return t.seen;
+}
+/** The name line of a player's tag: the name, and what the player is doing when it is anything but playing. */
+export function tagText(name: string, flags: number): string { const st = stateOf(flags); return st ? `${name} · ${st}` : name; }
+/** How full a tag's 40 px health bar is drawn at health `hp` (0..1): whole pixels, so a bar is rewritten only when a pixel changes. */
+export const tagFill = (hp: number): number => Math.round(Math.max(0, Math.min(1, hp)) * 40) / 40;
+/** What a key does on the HUD: open the chat line (empty, or with a slash), show the player list, ping; or nothing. `typing`:
+ *  a text field has the keys; `busy`: the game is not ready, or a menu, a window, the death screen or the chat line is open. */
+export function hudKey(code: string, repeat: boolean, s: { typing: boolean; busy: boolean; locked: boolean; dead: boolean }): 'chat' | 'command' | 'list' | 'ping' | null {
+  if (s.typing || s.busy) return null;
+  if (code === 'Tab') return 'list';
+  if (repeat) return null;
+  if (code === 'Enter' || code === 'KeyT') return 'chat';
+  if (code === 'Slash') return 'command';
+  if (code === 'KeyV' && s.locked && !s.dead) return 'ping';
+  return null;
+}
+const vP = new THREE.Vector3();
+/** Where the world point lands on a `w` by `h` screen, in pixels from the top left; false when it is behind the camera. */
+export function screenAt(cam: THREE.Camera, x: number, y: number, z: number, w: number, h: number, out: { x: number; y: number }): boolean {
+  vP.set(x, y, z).project(cam);
+  if (vP.z > 1) return false;
+  out.x = ((vP.x + 1) / 2) * w; out.y = ((1 - vP.y) / 2) * h;
+  return true;
+}
+/** Where a ping from the eye along the unit direction lands: on the face of the block looked at, else PING_REACH along it. */
+export function pingAt(world: Parameters<typeof raycast>[0], ex: number, ey: number, ez: number, dx: number, dy: number, dz: number, out: number[]): number[] {
+  raycast(world, ex, ey, ez, dx, dy, dz, PING_REACH, ray);
+  if (ray.hit) { out[0] = ray.x + 0.5 + ray.nx * 0.5; out[1] = ray.y + 0.5 + ray.ny * 0.5; out[2] = ray.z + 0.5 + ray.nz * 0.5; }
+  else { out[0] = ex + dx * PING_REACH; out[1] = ey + dy * PING_REACH; out[2] = ez + dz * PING_REACH; }
+  return out;
+}
 
 export class Hud {
   readonly root: HTMLElement;
@@ -83,6 +137,16 @@ export class Hud {
   private hpI = -1; private maxHpI = -1; private hpText = ''; private manaI = -1; private maxManaI = -1; private manaText = ''; private foodI = -1; private foodText = '';
   private hpLow = false; private foodLow = false; private bossOn = false; private eventOn = false; private promptText: string | null = null; private evKind = ''; private evProg = -1;
   private vw = window.innerWidth; private vh = window.innerHeight;
+  /** Who else is here, what was said, where they pointed: the state the chat, the list, the tags and the pips show. */
+  readonly social = new Social();
+  readonly chat: ChatView; readonly roster: RosterView;
+  private pipL: HTMLElement; private more: Pip[] = [];
+  private ptags: Tag[] = []; private marks2: Mark[] = []; private pq = [0, 0, 0]; private sp = { x: 0, y: 0 };
+  /** The ray of the tag being placed (eye, direction, length), and its terrain test, bound once. */
+  private tq = [0, 0, 0, 0, 0, 0, 0];
+  private tagHidden = (): boolean => { const q = this.tq; raycast(this.g.world, q[0], q[1], q[2], q[3], q[4], q[5], q[6], ray, false, true); return ray.hit; };
+  private keyDown = (e: KeyboardEvent): void => this.onKeyDown(e);
+  private keyUp = (e: KeyboardEvent): void => { if (e.code === 'Tab') this.roster.show(false); };
 
   constructor(ui: HTMLElement, private g: Game) {
     const r = this.root = el('div', '#hud', ui);
@@ -98,7 +162,7 @@ export class Hud {
       this.slots.push({ root: s, ic, n: el('div', 'n', s), cdEl, cd: 0, cv: 0, k: '', cnt: 0 });
     }
     // compass: cardinal marks on a masked strip, pips (home, last death, guide target) on an unmasked layer above it
-    const cw = el('div', '#compass', r), strip = el('div', 'strip', cw), pipL = el('div', 'pips', cw);
+    const cw = el('div', '#compass', r), strip = el('div', 'strip', cw), pipL = this.pipL = el('div', 'pips', cw);
     el('div', 'mid', cw);
     for (let i = 0; i < 8; i++) this.marks.push({ el: el('div', i % 2 ? 'm sm' : 'm', strip, COMPASS_NAMES[i]), b: (i * Math.PI) / 4, px: -1e9 });
     for (let i = 0; i < 3; i++) {
@@ -117,7 +181,49 @@ export class Hud {
     this.savedEl = el('div', '#saved', r, 'Saved');
     for (let i = 0; i < 48; i++) { const e = el('div', 'float', r); e.style.display = 'none'; this.floats.push({ el: e, x: 0, y: 0, z: 0, life: 0, max: 1, vy: 0 }); }
     for (let i = 0; i < 10; i++) { const e = el('div', 'float tag', r); e.style.display = 'none'; this.tags.push(e); }
+    for (let i = 0; i < 8; i++) {
+      const e = el('div', 'float tag', r), name = el('div', '', e), b = el('div', '', e), bar = el('i', '', b);
+      e.style.display = 'none'; e.style.textAlign = 'center';
+      b.style.cssText = 'height:3px;width:40px;margin:2px auto 0;background:rgba(0,0,0,.6);box-shadow:0 0 0 1px rgba(0,0,0,.6)';
+      bar.style.cssText = 'display:block;height:100%;background:#e5544b;transform-origin:left';
+      this.ptags.push({ el: e, name, bar, slot: -1, text: '', hp: -1, seen: true, look: 0, on: false });
+    }
+    for (let i = 0; i < 8; i++) {
+      const e = el('div', 'float tag', r), d = el('div', '', e), label = el('div', '', e);
+      e.style.display = 'none'; e.style.textAlign = 'center';
+      d.style.cssText = `width:10px;height:10px;margin:0 auto 3px;transform:rotate(45deg);background:${PING_COLOR};box-shadow:0 0 0 1px #000,0 0 8px rgba(255,210,122,.8)`;
+      this.marks2.push({ el: e, label, text: '', on: false });
+    }
     window.addEventListener('resize', () => { this.vw = window.innerWidth; this.vh = window.innerHeight; });
+    const so = this.social;
+    so.cmd = (t) => g.cmd(t);
+    so.connect(g.session);
+    g.ents.info = (slot) => so.member(slot);
+    this.chat = new ChatView(r, so, {
+      opened: () => { g.input.uiMode = true; g.input.unlock(); },
+      closed: () => { g.input.uiMode = false; void g.input.lock(); },
+    });
+    this.roster = new RosterView(r, so, () => g.player);
+    // ahead of the game's own key handling on the window, so that T and / open this line and not another
+    window.addEventListener('keydown', this.keyDown, true);
+    window.addEventListener('keyup', this.keyUp, true);
+    window.addEventListener('blur', () => this.roster.show(false));
+  }
+
+  /** Enter, T or / open the chat line (/ with a slash in it), Tab shows who is here while held, V pings. */
+  private onKeyDown(e: KeyboardEvent): void {
+    const g = this.g, t = e.target as HTMLElement | null;
+    const k = hudKey(e.code, e.repeat, { typing: !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA'),
+      busy: !g.ready || g.menu.open || g.menu.dead || g.win.open || this.chat.isOpen, locked: g.input.locked, dead: g.stats.dead });
+    if (!k) return;
+    if (k === 'list') { this.roster.show(true); return; }
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (k === 'ping') this.ping(); else this.chat.open(k === 'command' ? '/' : '');
+  }
+  /** A ping on the block looked at, or PING_REACH blocks along the view when nothing is there. */
+  ping(): void {
+    const p = this.g.player, d = p.dir(this.v), q = pingAt(this.g.world, p.x, p.y + p.eye, p.z, d.x, d.y, d.z, this.pq);
+    this.social.ping(q[0], q[1], q[2]);
   }
   /** Number of phase thresholds the boss has dropped below. */
   private phaseOf(phases: { below: number }[], f: number): number { let n = 0; for (let i = 0; i < phases.length; i++) if (phases[i].below < 1 && f <= phases[i].below) n++; return n; }
@@ -211,6 +317,21 @@ export class Hud {
     this.pip(0, home, sp ? sp[0] + 0.5 : g.worldSpawn[0] + 0.5, sp ? sp[2] + 0.5 : g.worldSpawn[1] + 0.5, p.x, p.z, yaw);
     this.pip(1, !!da && da[0] === g.dim, da ? da[1] + 0.5 : 0, da ? da[3] + 0.5 : 0, p.x, p.z, yaw);
     this.pip(2, !!tg, tg ? tg[0] + 0.5 : 0, tg ? tg[1] + 0.5 : 0, p.x, p.z, yaw);
+    // friends where the snapshots show them, else where the last `where` put them; then the pings
+    let n = 0;
+    const so = this.social;
+    for (const f of so.members.values()) {
+      if (f.self || f.dim !== so.dim || !f.placed) continue;
+      const v = g.ents.player(f.slot), fx = v ? v.x : f.x, fz = v ? v.z : f.z;
+      if (Math.abs(fx - p.x) < 3 && Math.abs(fz - p.z) < 3) continue;
+      this.morePip(n++, f.slot, f.name, -1, bearing(p.x, p.z, yaw, fx, fz));
+    }
+    for (const q of so.pings) {
+      const m = Math.round(Math.hypot(q.x - p.x, q.z - p.z));
+      if (m < 3) continue;
+      this.morePip(n++, -1, '', m, bearing(p.x, p.z, yaw, q.x, q.z));
+    }
+    for (; n < this.more.length; n++) { const q = this.more[n]; if (q.on) { q.on = false; q.el.style.display = 'none'; } }
     const x = Math.floor(p.x), y = Math.floor(p.y), z = Math.floor(p.z), tod = ((g.clock % 1) * 24 + 6) % 24, min = Math.floor(tod * 60);
     if (x !== this.cX || y !== this.cY || z !== this.cZ || min !== this.cMin) {
       this.cX = x; this.cY = y; this.cZ = z; this.cMin = min;
@@ -230,8 +351,80 @@ export class Hud {
     if (m !== q.m) { q.m = m; q.d.textContent = m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km'; }
   }
 
+  /** Extra pip `i`: a friend in `slot` labelled `name`, or (slot -1) a ping `m` metres away. */
+  private morePip(i: number, slot: number, name: string, m: number, rel: number): void {
+    let q = this.more[i];
+    if (!q) {
+      const e = el('div', 'pip', this.pipL), ic = el('i', '', e);
+      q = this.more[i] = { el: e, i: ic, d: el('b', '', e), px: 1e9, on: true, edge: false, slot: -2, name: '', m: -1 };
+    }
+    if (!q.on) { q.on = true; q.el.style.display = ''; }
+    if (slot !== q.slot) {
+      q.slot = slot; q.name = ''; q.m = -1;
+      const color = slot < 0 ? PING_COLOR : SEAT[slot % SEAT.length];
+      q.i.style.background = color; q.d.style.color = color;
+      // friends are round, pings keep the stylesheet's diamond
+      q.i.style.borderRadius = slot < 0 ? '' : '50%'; q.i.style.transform = slot < 0 ? '' : 'none';
+    }
+    const edge = Math.abs(rel) > CSPAN, px = Math.round((Math.max(-CSPAN, Math.min(CSPAN, rel)) / CSPAN) * CW);
+    if (px !== q.px) { q.px = px; q.el.style.transform = `translateX(${px}px)`; }
+    if (edge !== q.edge) { q.edge = edge; q.el.classList.toggle('edge', edge); }
+    if (slot >= 0 && name !== q.name) { q.name = name; q.d.textContent = name; }
+    else if (slot < 0 && m !== q.m) { q.m = m; q.d.textContent = m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km'; }
+  }
+
+  /** Name tags over other players within TAG_R that terrain does not hide, and the pings in the world. */
+  private updateSocial(dt: number): void {
+    const g = this.g, cam = g.gfx.camera, sp = this.sp, w = this.vw, h = this.vh, so = this.social;
+    let ti = 0;
+    const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
+    // what each player is doing, for the list: from the snapshots, this client's own from their header
+    const hd = g.ents.head, hf = hd ? hd.flags : 0;
+    for (const m of so.members.values()) {
+      if (m.self) { so.setFlags(m.slot, (hf & SELF_DEAD ? PF_DEAD : 0) | (hf & SELF_LOADING ? PF_LOADING : 0) | (hf & SELF_SLEEPING ? PF_SLEEP : 0)); continue; }
+      const pv = g.ents.player(m.slot);
+      so.setFlags(m.slot, pv && pv.active ? pv.flags : -1);
+    }
+    for (const pv of g.ents.players) {
+      if (!pv.active || ti >= this.ptags.length || pv.deadT >= 0.6) continue;
+      const m = so.member(pv.slot), lie = pv.lie > 0.5;
+      const tx = pv.x, ty = pv.y + (lie ? 0.9 : pv.h + 0.5 - pv.crouch * 0.2), tz = pv.z, dx = tx - cx, dy = ty - cy, dz = tz - cz, dist = Math.hypot(dx, dy, dz);
+      if (!m || dist > TAG_R) continue;
+      const t = this.ptags[ti];
+      if (t.slot !== pv.slot) { t.slot = pv.slot; t.look = 0; t.text = ''; t.hp = -1; }
+      const q = this.tq; q[0] = cx; q[1] = cy; q[2] = cz; q[3] = dx / dist; q[4] = dy / dist; q[5] = dz / dist; q[6] = Math.max(0, dist - 0.6);
+      if (!tagSight(t, dist, dt, this.tagHidden)) continue;
+      if (!screenAt(cam, tx, ty, tz, w, h, sp)) continue;
+      ti++;
+      const text = tagText(m.name, pv.flags);
+      if (text !== t.text) { t.text = text; t.name.textContent = text; t.name.style.color = text === m.name ? '#fff' : '#b4bacb'; }
+      const hp = tagFill(pv.hp);
+      if (hp !== t.hp) { t.hp = hp; t.bar.style.transform = `scaleX(${hp})`; }
+      if (!t.on) { t.on = true; t.el.style.display = 'block'; }
+      t.el.style.opacity = String(Math.min(1, (TAG_R - dist) / 8));
+      t.el.style.transform = `translate(${sp.x}px, ${sp.y}px) translate(-50%, -100%)`;
+    }
+    for (; ti < this.ptags.length; ti++) { const t = this.ptags[ti]; t.slot = -1; if (t.on) { t.on = false; t.el.style.display = 'none'; } }
+    let mi = 0;
+    const p = g.player;
+    for (const q of so.pings) {
+      if (mi >= this.marks2.length) break;
+      if (!screenAt(cam, q.x, q.y + 0.6, q.z, w, h, sp)) continue;
+      const k = this.marks2[mi++], d = Math.round(Math.hypot(q.x - p.x, q.y - p.y, q.z - p.z)), text = `${q.name || 'Ping'} · ${d} m`;
+      if (text !== k.text) { k.text = text; k.label.textContent = text; k.label.style.color = SEAT[q.slot % SEAT.length]; }
+      if (!k.on) { k.on = true; k.el.style.display = 'block'; }
+      k.el.style.opacity = String(Math.min(1, q.t));
+      k.el.style.transform = `translate(${sp.x}px, ${sp.y}px) translate(-50%, -100%)`;
+    }
+    for (; mi < this.marks2.length; mi++) { const k = this.marks2[mi]; if (k.on) { k.on = false; k.el.style.display = 'none'; } }
+  }
+
   update(dt: number): void {
     const g = this.g, inv = g.inv, st = g.stats;
+    this.social.tick(dt);
+    this.updateSocial(dt);
+    this.chat.update(dt);
+    this.roster.update(dt);
     if (inv.rev !== this.rev || inv.sel !== this.sel) {
       const selChanged = inv.sel !== this.sel;
       this.rev = inv.rev; this.sel = inv.sel;
