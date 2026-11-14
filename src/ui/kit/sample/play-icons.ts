@@ -923,24 +923,27 @@ export const ICONS: Record<string, PixelMap> = {
     '................',
     '................',
   ]),
-  /** The mark of a night raid on its toast: a skull of bone, lit from the top left, a red light in each socket. */
+  /**
+   * The mark of a night raid on its toast: a skull of bone filling its 16 by 16, lit from the top left, a red light
+   * in each socket and its teeth bared. Drawn 12 by 10 in the middle of the cell it floated on the toast's face.
+   */
   raid_skull: icon('raid_skull', [
-    '................',
-    '................',
     '....KKKKKKKK....',
-    '...KAAAAAAAGK...',
-    '..KAGGGGGGGGJK..',
-    '..KAGKKGGKKGJK..',
-    '..KAGKrGGrKGJK..',
-    '..KGGGGGGGGGJK..',
-    '..KGGGGKKGGGJK..',
-    '...KGJGGGGJJK...',
-    '...KJKGKGKJJK...',
+    '..KKAAAAAAAGKK..',
+    '.KAAAGGGGGGGGHK.',
+    '.KAGGGGGGGGGGHK.',
+    'KAGGGGGGGGGGGHJK',
+    'KAGGKKGGGGKKGHJK',
+    'KGGKrRKGGKrRKHJK',
+    'KGGKRRKGGKRRKHJK',
+    'KGGGKKGGGGKKHHJK',
+    'KHGGGGGKKGGGHHJK',
+    '.KHGGGKJJKGHHJK.',
+    '.KHHHHHHHHHHJJK.',
+    '..KHKHKHKHKJJK..',
+    '..KHKHKHKHKJJK..',
+    '...KJJJJJJJJK...',
     '....KKKKKKKK....',
-    '................',
-    '................',
-    '................',
-    '................',
   ]),
   /** The head of a Tama, for the readout of a creature. */
   gloomshade: icon('gloomshade', [
