@@ -34,7 +34,7 @@ function build(ui: Ui, id: string): Node {
     x: col, y: top + y, w: 201, h: 11, paint: (s) => { s.text(text, centreX(text, 0, 200), 0, c, true); },
   });
   const kids: Node[] = [
-    { x: col + Math.floor((200 - title.w) / 2), y: top + 56, w: title.w + 2, h: title.h + 2, paint: (s) => { s.draw(title, 2, 2, { flat: 'root.0' }); s.map(title, 0, 0); } },
+    { x: col + Math.floor((200 - title.w) / 2), y: top + 56, w: title.w + 2, h: title.h + 2, paint: (s) => { s.draw(title, 1, 1, { flat: 'root.0' }); s.map(title, 0, 0); } },
     line(86, f.by),
   ];
   let y = 86;
