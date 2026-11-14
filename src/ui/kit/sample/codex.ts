@@ -111,7 +111,7 @@ const PEOPLES: Entry[] = [
 ];
 
 const OLD: Entry[] = [
-  { key: 'old_core', name: 'A ward core', icon: 'codex:old_core', seen: true, facts: [f('Found', 'an old house'), f('Where', 'Vana')],
+  { key: 'old_core', name: 'Ward Core', icon: 'codex:old_core', seen: true, word: 'A core under a hearth', facts: [f('Found', 'an old house'), f('Where', 'Vana')],
     steps: ['Found under the hearthstone of an old house.', 'The builders came from elsewhere.'] },
   ...['old_saw', 'old_harness', 'old_jar', 'old_pot', 'old_staff', 'old_net', 'old_bench'].map((key): Entry => ({ key, name: '', icon: `codex:${key}`, seen: false, steps: [] })),
 ];
