@@ -5,11 +5,13 @@ import test from 'node:test';
 import { SEA } from '../../src/core/constants';
 import { BIOME } from '../../src/data/biomes';
 import { B } from '../../src/data/blocks';
+import { item } from '../../src/data/items';
 import { BOSSES } from '../../src/data/mobs';
-import { onAtk } from '../../src/sim/actions';
+import { fire, onAtk } from '../../src/sim/actions';
 import { bossSummoned, partLeft, refundSummons } from '../../src/sim/boss';
 import type { ChunkSource } from '../../src/sim/chunksource';
 import type { Fx, Scope, Sink } from '../../src/sim/fx';
+import { toMail } from '../../src/sim/loot';
 import { mobDist } from '../../src/sim/mobhit';
 import type { Mob } from '../../src/sim/mobs';
 import type { SimPlayer } from '../../src/sim/player';
@@ -27,7 +29,7 @@ class Flat implements RealmStore {
   cells = new Map<string, number>();
   bio = 0; sea = false;
   getBlock(x: number, y: number, z: number): number { return this.cells.get(`${x},${y},${z}`) ?? (y >= 0 && y < GROUND ? B.stone : this.sea && y >= GROUND && y <= SEA ? B.water : 0); }
-  ready(): boolean { return true; }
+  ready(_x: number, _z: number): boolean { return true; }
   topY(): number { return GROUND - 1; }
   biomeAt(): number { return this.bio; }
   setBlock(x: number, y: number, z: number, id: number): boolean { this.cells.set(`${x},${y},${z}`, id); return true; }
@@ -679,4 +681,139 @@ test('7.9: the last participant parked while the boss waits for it: the realm is
   assert.equal(n.active, false);
   assert.deepEqual(b.mail, []);
   assert.deepEqual(r.sim.shared.summons, []);
+});
+
+// ---- the edges of the numbers ----
+
+test('7.1: a townsperson faces the player trading with it, not the one nearest', () => {
+  const r = rig(), m = r.realm.mobs.spawn('n_smith', 0.5, GROUND, 0.5)!;
+  const a = play(r, 'a', 5.5, 0.5), b = play(r, 'b', 0.5, 2.5);
+  const shop = (p: SimPlayer, q: SimPlayer): void => { p.window = { mode: 'shop', npc: 'n_smith', mob: m.id, sold: [] }; q.window = null; m.talk = 6; };
+  shop(a, b); run(r, 1, pin(m, 0.5, 0.5));
+  assert.ok(Math.abs(m.yaw - Math.PI / 2) < 1e-9, `toward a: ${m.yaw}`);
+  shop(b, a); run(r, 1, pin(m, 0.5, 0.5));
+  assert.ok(Math.abs(m.yaw) < 1e-9, `toward b: ${m.yaw}`);
+});
+
+test('7.1: minions count against their own owner\'s d.minions, not anyone else\'s', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 6.5, 0.5);
+  const totem = (p: SimPlayer): void => { p.inv.slots[p.inv.sel] = { k: 'iron_totem', n: 1 }; p.stats.mana = 1e6; };
+  totem(a); totem(b);
+  const mine = (p: SimPlayer): Mob[] => r.realm.mobs.list.filter((m) => m.active && m.def.ai === 'minion' && m.owner === p.id);
+  assert.equal(a.stats.d.minions, 1);
+  assert.equal(fire(r.sim, b, 6.5, GROUND + 1.6, 0.5, 1, 0, 0), 1);
+  const bs = mine(b)[0];
+  assert.equal(fire(r.sim, a, 0.5, GROUND + 1.6, 0.5, 1, 0, 0), 1);
+  const first = mine(a)[0].id;
+  assert.equal(fire(r.sim, a, 0.5, GROUND + 1.6, 0.5, 1, 0, 0), 1);
+  assert.equal(mine(a).length, 1, 'a\'s second took the place of its first');
+  assert.notEqual(mine(a)[0].id, first);
+  assert.deepEqual(mine(b), [bs], 'b\'s stays');
+  a.stats.d.minions = 2;
+  fire(r.sim, a, 0.5, GROUND + 1.6, 0.5, 1, 0, 0);
+  assert.equal(mine(a).length, 2); assert.equal(mine(b).length, 1);
+});
+
+test('7.4: minion damage and thorns count for the owner', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5), c = play(r, 'c', 40.5, 0.5);
+  a.modes.god = true;
+  const t = r.realm.mobs.spawn('bog_lurker', 3.5, GROUND, 0.5)!, w = r.realm.mobs.spawn('m_wisp', 1.5, GROUND + 2, 0.5)!;
+  w.owner = a.id; w.minionDmg = 1;
+  t.hp = t.maxHp = 1e6;
+  run(r, 120, pin(t, 3.5, 0.5));
+  assert.ok((t.hitBy.get('a') ?? 0) > 0, 'the minion\'s blows are a\'s');
+  assert.deepEqual([...t.hitBy.keys()], ['a']);
+  // thorns: a creature touching c is hurt back, in c's name
+  const s = r.realm.mobs.spawn('bog_lurker', 40.5, GROUND, 0.5)!;
+  c.stats.d.thorns = 0.4; c.stats.hp = 1e9;
+  run(r, 1, pin(s, 40.5, 0.5));
+  assert.equal(c.hurtTick, r.sim.tick);
+  assert.ok((s.hitBy.get('c') ?? 0) > 0, 'thorns');
+});
+
+test('7.2: one spawn attempt every 0.35 s for each active, alive player; none for a stalled or dead one', () => {
+  const r = rig(0.6), mobs = r.realm.mobs;
+  mobs.hostileCap = 0; mobs.passiveCap = 0;
+  const a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 1000.5, 0.5), c = play(r, 'c', 0.5, 1000.5), d = play(r, 'd', 1000.5, 1000.5);
+  b.stalled = true; c.stats.dead = true; void d;
+  const n = new Map<string, number>();
+  const ready = r.store.ready.bind(r.store);
+  // an attempt asks once whether its cell is loaded; with no creature about, nothing else in the creature step asks
+  r.store.ready = (x: number, z: number): boolean => { const k = (x > 500 ? 'b' : 'a') + (z > 500 ? 'z' : ''); n.set(k, (n.get(k) ?? 0) + 1); return ready(x, z); };
+  run(r, 60 * 7);
+  assert.equal(mobs.count(() => true), 0);
+  assert.ok(Math.abs((n.get('a') ?? 0) - 20) <= 1, `a: ${n.get('a')} attempts in 7 s`);
+  assert.ok(Math.abs((n.get('bz') ?? 0) - 20) <= 1, `d: ${n.get('bz')} attempts in 7 s`);
+  assert.equal(n.get('b'), undefined, 'stalled');
+  assert.equal(n.get('az'), undefined, 'dead');
+});
+
+test('7.2: a player counts toward another\'s caps within 48 blocks and not beyond', () => {
+  const r = rig(0.6), mobs = r.realm.mobs;
+  mobs.passiveCap = 0;
+  const a = play(r, 'a', 0.5, 0.5), hostile = (m: Mob): boolean => m.def.hostile;
+  for (let i = 0; i < 14; i++) mobs.spawn('gloomshade', 60.5 + i, GROUND, 60.5);
+  const b = play(r, 'b', 0.5 + 48.3, 0.5);
+  for (let i = 0; i < 400; i++) trySpawn(r.realm, a);
+  assert.equal(within(r, a, hostile), 14, 'b 48.3 away: the cap of 14');
+  put(b, 0.5 + 47.7, 0.5);
+  for (let i = 0; i < 400; i++) trySpawn(r.realm, a);
+  const n = within(r, a, hostile);
+  assert.ok(n >= 21 && n <= 23, `b 47.7 away: 21 (a group may pass it by 2): ${n}`);
+});
+
+test('7.9: a participant is a valid target out to 80 blocks from the altar', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 3.5, 0.5);
+  for (const p of [a, b]) p.modes.god = true;
+  const m = boss1(r, a);
+  run(r, 2);
+  a.modes.hidden = true;
+  put(b, 79.6, 0);
+  run(r, 2);
+  assert.equal(m.tp, b, '79.6 from the altar');
+  put(b, 80.4, 0);
+  run(r, 2);
+  assert.equal(m.tp, null, '80.4 from the altar');
+});
+
+test('7.9: a blow counts toward n for 20 s, then n falls 10 s later', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 150.5, 0.5);
+  for (const p of [a, b]) p.modes.god = true;
+  const m = boss1(r, a);
+  run(r, 1, pin(m, 0.5, 6.5));
+  assert.equal(m.maxHp, 420);
+  r.realm.mobs.hurt(m, 1, 0, 1, 0, false, b);
+  run(r, 61, pin(m, 0.5, 6.5));
+  assert.equal(m.maxHp, 672, 'b, 150 blocks off, hit it');
+  run(r, 60 * 28, () => { pin(m, 0.5, 6.5)(); m.hp = m.maxHp; });
+  assert.equal(m.maxHp, 672, '29 s after the blow');
+  run(r, 60 * 3.5, () => { pin(m, 0.5, 6.5)(); m.hp = m.maxHp; });
+  assert.equal(m.maxHp, 420, '32.5 s after the blow');
+});
+
+test('7.4: mail holds 36 stacks, filling a stack of the same item first; what fits in none is lost', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5), st = item('stick').stack;
+  r.sim.leave(a, 'bye');
+  toMail(a, { k: 'stick', n: 3 });
+  toMail(a, { k: 'flint', n: 1 });
+  toMail(a, { k: 'stick', n: st - 3 + 1 });
+  assert.deepEqual(a.mail.slice(0, 3), [{ k: 'stick', n: st }, { k: 'flint', n: 1 }, { k: 'stick', n: 1 }]);
+  toMail(a, { k: 'stick', n: st * 40 });
+  assert.equal(a.mail.length, 36);
+  assert.ok(a.mail.every((it) => it.k === 'flint' || it.n === st), 'every stick stack full');
+  toMail(a, { k: 'heartroot', n: 1 });
+  assert.equal(a.mail.length, 36); assert.ok(!a.mail.some((it) => it.k === 'heartroot'));
+});
+
+test('7.4: a stalled player takes neither its mail nor its drops until it is back', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5);
+  a.mail.push({ k: 'flint', n: 2 });
+  r.realm.drops.spawn(0.5, GROUND + 0.5, 0.5, { k: 'stick', n: 1 }, 0, 0, 0, 0, 'a');
+  a.stalled = true;
+  run(r, 60);
+  assert.deepEqual(a.mail, [{ k: 'flint', n: 2 }]); assert.equal(a.inv.count('flint'), 0); assert.equal(a.inv.count('stick'), 0);
+  assert.equal(r.realm.drops.alive, 1);
+  a.stalled = false;
+  run(r, 60);
+  assert.equal(a.mail.length, 0); assert.equal(a.inv.count('flint'), 2); assert.equal(a.inv.count('stick'), 1);
 });
