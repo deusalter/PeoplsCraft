@@ -6,6 +6,11 @@ import { BOSS_BARS } from '../data/hudstyle';
 import { HOTBAR } from '../sim/inventory';
 import { eventLabel, eventProgress } from '../client/invclient';
 import { BUFFS } from '../sim/stats';
+import { Social, bearing, stateOf } from '../client/social';
+import { PING_REACH } from '../net/protocol';
+import { newRayHit, raycast } from '../sim/physics';
+import { ChatView, SEAT } from './chat';
+import { RosterView } from './roster';
 
 export function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', parent?: HTMLElement, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -39,6 +44,16 @@ function buffLine(stats: Record<string, number | undefined>): string {
 const HURT_FX: Keyframe[] = [{ opacity: 0.8 }, { opacity: 0 }];
 const HURT_T: KeyframeAnimationOptions = { duration: 550, easing: 'ease-out' }, DIR_T: KeyframeAnimationOptions = { duration: 1000, easing: 'ease-in' };
 interface Floater { el: HTMLElement; x: number; y: number; z: number; life: number; max: number; vy: number }
+/** A compass pip made on demand: a friend (a round mark in the seat's colour, the name under it) or a ping (a diamond, its distance). */
+interface Pip { el: HTMLElement; i: HTMLElement; d: HTMLElement; px: number; on: boolean; edge: boolean; text: string; kind: string }
+/** A name tag over another player: name and state, a thin health bar; whether terrain hides it, looked at every 0.25 s. */
+interface Tag { el: HTMLElement; name: HTMLElement; bar: HTMLElement; slot: number; text: string; hp: number; seen: boolean; look: number; on: boolean }
+/** A ping in the world: a marker with the pinger's name and the distance. */
+interface Mark { el: HTMLElement; label: HTMLElement; text: string; on: boolean }
+/** Players' tags show within this distance (2.5). */
+const TAG_R = 48;
+const PING_COLOR = '#ffd27a';
+const ray = newRayHit();
 
 export class Hud {
   readonly root: HTMLElement;
@@ -83,6 +98,13 @@ export class Hud {
   private hpI = -1; private maxHpI = -1; private hpText = ''; private manaI = -1; private maxManaI = -1; private manaText = ''; private foodI = -1; private foodText = '';
   private hpLow = false; private foodLow = false; private bossOn = false; private eventOn = false; private promptText: string | null = null; private evKind = ''; private evProg = -1;
   private vw = window.innerWidth; private vh = window.innerHeight;
+  /** Who else is here, what was said, where they pointed: the state the chat, the list, the tags and the pips show. */
+  readonly social = new Social();
+  readonly chat: ChatView; readonly roster: RosterView;
+  private pipL: HTMLElement; private more: Pip[] = [];
+  private ptags: Tag[] = []; private marks2: Mark[] = [];
+  private keyDown = (e: KeyboardEvent): void => this.onKeyDown(e);
+  private keyUp = (e: KeyboardEvent): void => { if (e.code === 'Tab') this.roster.show(false); };
 
   constructor(ui: HTMLElement, private g: Game) {
     const r = this.root = el('div', '#hud', ui);
@@ -98,7 +120,7 @@ export class Hud {
       this.slots.push({ root: s, ic, n: el('div', 'n', s), cdEl, cd: 0, cv: 0, k: '', cnt: 0 });
     }
     // compass: cardinal marks on a masked strip, pips (home, last death, guide target) on an unmasked layer above it
-    const cw = el('div', '#compass', r), strip = el('div', 'strip', cw), pipL = el('div', 'pips', cw);
+    const cw = el('div', '#compass', r), strip = el('div', 'strip', cw), pipL = this.pipL = el('div', 'pips', cw);
     el('div', 'mid', cw);
     for (let i = 0; i < 8; i++) this.marks.push({ el: el('div', i % 2 ? 'm sm' : 'm', strip, COMPASS_NAMES[i]), b: (i * Math.PI) / 4, px: -1e9 });
     for (let i = 0; i < 3; i++) {
@@ -117,7 +139,56 @@ export class Hud {
     this.savedEl = el('div', '#saved', r, 'Saved');
     for (let i = 0; i < 48; i++) { const e = el('div', 'float', r); e.style.display = 'none'; this.floats.push({ el: e, x: 0, y: 0, z: 0, life: 0, max: 1, vy: 0 }); }
     for (let i = 0; i < 10; i++) { const e = el('div', 'float tag', r); e.style.display = 'none'; this.tags.push(e); }
+    for (let i = 0; i < 8; i++) {
+      const e = el('div', 'float tag', r), name = el('div', '', e), b = el('div', '', e), bar = el('i', '', b);
+      e.style.display = 'none'; e.style.textAlign = 'center';
+      b.style.cssText = 'height:3px;width:40px;margin:2px auto 0;background:rgba(0,0,0,.6);box-shadow:0 0 0 1px rgba(0,0,0,.6)';
+      bar.style.cssText = 'display:block;height:100%;background:#e5544b;transform-origin:left';
+      this.ptags.push({ el: e, name, bar, slot: -1, text: '', hp: -1, seen: true, look: 0, on: false });
+    }
+    for (let i = 0; i < 8; i++) {
+      const e = el('div', 'float tag', r), d = el('div', '', e), label = el('div', '', e);
+      e.style.display = 'none'; e.style.textAlign = 'center';
+      d.style.cssText = `width:10px;height:10px;margin:0 auto 3px;transform:rotate(45deg);background:${PING_COLOR};box-shadow:0 0 0 1px #000,0 0 8px rgba(255,210,122,.8)`;
+      this.marks2.push({ el: e, label, text: '', on: false });
+    }
     window.addEventListener('resize', () => { this.vw = window.innerWidth; this.vh = window.innerHeight; });
+    const so = this.social;
+    so.cmd = (t) => g.cmd(t);
+    so.connect(g.session);
+    g.ents.info = (slot) => so.member(slot);
+    this.chat = new ChatView(r, so, {
+      opened: () => { g.input.uiMode = true; g.input.unlock(); },
+      closed: () => { g.input.uiMode = false; void g.input.lock(); },
+    });
+    this.roster = new RosterView(r, so, () => g.player);
+    // ahead of the game's own key handling on the window, so that T and / open this line and not another
+    window.addEventListener('keydown', this.keyDown, true);
+    window.addEventListener('keyup', this.keyUp, true);
+    window.addEventListener('blur', () => this.roster.show(false));
+  }
+
+  /** Enter, T or / open the chat line (/ with a slash in it), Tab shows who is here while held, V pings. */
+  private onKeyDown(e: KeyboardEvent): void {
+    const g = this.g, t = e.target as HTMLElement | null;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+    if (!g.ready || g.menu.open || g.menu.dead || g.win.open || this.chat.isOpen) return;
+    if (e.code === 'Tab') { this.roster.show(true); return; }
+    if (e.repeat) return;
+    if (e.code === 'Enter' || e.code === 'KeyT' || e.code === 'Slash') {
+      e.preventDefault(); e.stopImmediatePropagation();
+      this.chat.open(e.code === 'Slash' ? '/' : '');
+    } else if (e.code === 'KeyV' && g.input.locked && !g.stats.dead) {
+      e.preventDefault(); e.stopImmediatePropagation();
+      this.ping();
+    }
+  }
+  /** A ping on the block looked at, or PING_REACH blocks along the view when nothing is there. */
+  ping(): void {
+    const p = this.g.player, d = p.dir(this.v), ex = p.x, ey = p.y + p.eye, ez = p.z;
+    raycast(this.g.world, ex, ey, ez, d.x, d.y, d.z, PING_REACH, ray);
+    if (ray.hit) this.social.ping(ray.x + 0.5 + ray.nx * 0.5, ray.y + 0.5 + ray.ny * 0.5, ray.z + 0.5 + ray.nz * 0.5);
+    else this.social.ping(ex + d.x * PING_REACH, ey + d.y * PING_REACH, ez + d.z * PING_REACH);
   }
   /** Number of phase thresholds the boss has dropped below. */
   private phaseOf(phases: { below: number }[], f: number): number { let n = 0; for (let i = 0; i < phases.length; i++) if (phases[i].below < 1 && f <= phases[i].below) n++; return n; }
@@ -211,6 +282,18 @@ export class Hud {
     this.pip(0, home, sp ? sp[0] + 0.5 : g.worldSpawn[0] + 0.5, sp ? sp[2] + 0.5 : g.worldSpawn[1] + 0.5, p.x, p.z, yaw);
     this.pip(1, !!da && da[0] === g.dim, da ? da[1] + 0.5 : 0, da ? da[3] + 0.5 : 0, p.x, p.z, yaw);
     this.pip(2, !!tg, tg ? tg[0] + 0.5 : 0, tg ? tg[1] + 0.5 : 0, p.x, p.z, yaw);
+    let n = 0;
+    for (const f of this.social.friends()) {
+      const v = g.ents.player(f.slot), fx = v ? v.x : f.x, fz = v ? v.z : f.z;
+      if (Math.abs(fx - p.x) < 3 && Math.abs(fz - p.z) < 3) continue;
+      this.morePip(n++, 'f' + f.slot, SEAT[f.slot % SEAT.length], f.name, bearing(p.x, p.z, yaw, fx, fz));
+    }
+    for (const q of this.social.pings) {
+      const m = Math.round(Math.hypot(q.x - p.x, q.z - p.z));
+      if (m < 3) continue;
+      this.morePip(n++, 'p', PING_COLOR, m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km', bearing(p.x, p.z, yaw, q.x, q.z));
+    }
+    for (; n < this.more.length; n++) { const q = this.more[n]; if (q.on) { q.on = false; q.el.style.display = 'none'; } }
     const x = Math.floor(p.x), y = Math.floor(p.y), z = Math.floor(p.z), tod = ((g.clock % 1) * 24 + 6) % 24, min = Math.floor(tod * 60);
     if (x !== this.cX || y !== this.cY || z !== this.cZ || min !== this.cMin) {
       this.cX = x; this.cY = y; this.cZ = z; this.cMin = min;
@@ -230,8 +313,75 @@ export class Hud {
     if (m !== q.m) { q.m = m; q.d.textContent = m < 1000 ? m + ' m' : (m / 1000).toFixed(1) + ' km'; }
   }
 
+  private morePip(i: number, kind: string, color: string, text: string, rel: number): void {
+    let q = this.more[i];
+    if (!q) {
+      const e = el('div', 'pip', this.pipL), ic = el('i', '', e);
+      q = this.more[i] = { el: e, i: ic, d: el('b', '', e), px: 1e9, on: true, edge: false, text: '', kind: '' };
+    }
+    if (!q.on) { q.on = true; q.el.style.display = ''; }
+    if (kind !== q.kind) {
+      q.kind = kind;
+      q.i.style.background = color; q.d.style.color = color;
+      // friends are round, pings keep the stylesheet's diamond
+      q.i.style.borderRadius = kind === 'p' ? '' : '50%'; q.i.style.transform = kind === 'p' ? '' : 'none';
+    }
+    const edge = Math.abs(rel) > CSPAN, px = Math.round((Math.max(-CSPAN, Math.min(CSPAN, rel)) / CSPAN) * CW);
+    if (px !== q.px) { q.px = px; q.el.style.transform = `translateX(${px}px)`; }
+    if (edge !== q.edge) { q.edge = edge; q.el.classList.toggle('edge', edge); }
+    if (text !== q.text) { q.text = text; q.d.textContent = text; }
+  }
+
+  /** Name tags over other players within TAG_R that terrain does not hide, and the pings in the world. */
+  private updateSocial(dt: number): void {
+    const g = this.g, cam = g.gfx.camera, v = this.v, w = this.vw, h = this.vh, so = this.social;
+    let ti = 0;
+    const cx = cam.position.x, cy = cam.position.y, cz = cam.position.z;
+    for (const pv of g.ents.players) {
+      if (!pv.active) continue;
+      so.setFlags(pv.slot, pv.flags);
+      if (ti >= this.ptags.length || pv.deadT >= 0.6) continue;
+      const m = so.member(pv.slot), lie = pv.lie > 0.5;
+      const tx = pv.x, ty = pv.y + (lie ? 0.9 : pv.h + 0.5 - pv.crouch * 0.2), tz = pv.z, dx = tx - cx, dy = ty - cy, dz = tz - cz, dist = Math.hypot(dx, dy, dz);
+      if (!m || dist > TAG_R) continue;
+      const t = this.ptags[ti];
+      if (t.slot !== pv.slot) { t.slot = pv.slot; t.look = 0; t.text = ''; t.hp = -1; }
+      t.look -= dt;
+      if (t.look <= 0) { t.look = 0.25; raycast(g.world, cx, cy, cz, dx / dist, dy / dist, dz / dist, Math.max(0, dist - 0.6), ray, false, true); t.seen = !ray.hit; }
+      if (!t.seen) continue;
+      v.set(tx, ty, tz).project(cam);
+      if (v.z > 1) continue;
+      ti++;
+      const st = stateOf(pv.flags), text = st ? `${m.name} · ${st}` : m.name;
+      if (text !== t.text) { t.text = text; t.name.textContent = text; t.name.style.color = st ? '#b4bacb' : '#fff'; }
+      const hp = Math.round(pv.hp * 40) / 40;
+      if (hp !== t.hp) { t.hp = hp; t.bar.style.transform = `scaleX(${hp})`; }
+      if (!t.on) { t.on = true; t.el.style.display = 'block'; }
+      t.el.style.opacity = String(Math.min(1, (TAG_R - dist) / 8));
+      t.el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px) translate(-50%, -100%)`;
+    }
+    for (; ti < this.ptags.length; ti++) { const t = this.ptags[ti]; t.slot = -1; if (t.on) { t.on = false; t.el.style.display = 'none'; } }
+    let mi = 0;
+    const p = g.player;
+    for (const q of so.pings) {
+      if (mi >= this.marks2.length) break;
+      v.set(q.x, q.y + 0.6, q.z).project(cam);
+      if (v.z > 1) continue;
+      const k = this.marks2[mi++], d = Math.round(Math.hypot(q.x - p.x, q.y - p.y, q.z - p.z)), text = `${q.name || 'Ping'} · ${d} m`;
+      if (text !== k.text) { k.text = text; k.label.textContent = text; k.label.style.color = SEAT[q.slot % SEAT.length]; }
+      if (!k.on) { k.on = true; k.el.style.display = 'block'; }
+      k.el.style.opacity = String(Math.min(1, q.t));
+      k.el.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px) translate(-50%, -100%)`;
+    }
+    for (; mi < this.marks2.length; mi++) { const k = this.marks2[mi]; if (k.on) { k.on = false; k.el.style.display = 'none'; } }
+  }
+
   update(dt: number): void {
     const g = this.g, inv = g.inv, st = g.stats;
+    this.social.tick(dt);
+    this.updateSocial(dt);
+    this.chat.update(dt);
+    this.roster.update(dt);
     if (inv.rev !== this.rev || inv.sel !== this.sel) {
       const selChanged = inv.sel !== this.sel;
       this.rev = inv.rev; this.sel = inv.sel;

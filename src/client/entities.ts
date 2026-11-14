@@ -6,13 +6,15 @@
 // present, with the same rules the host flies them by.
 import { DIMS } from '../data/dims';
 import { MOB_LIST, type MobDef, PROJECTILES } from '../data/mobs';
-import { BOSS_KINDS, EXTRAPOLATE, GHOST_SECONDS, INTERP_LOCAL, INTERP_MAX, INTERP_MIN, MF_ATK, MF_FLEE, MF_FRESH, MF_GROUND, MF_HURT, MF_TP, PF_TP,
-  SNAP_EVERY, SNAP_KEEP } from '../net/protocol';
+import { BLOCKS } from '../data/blocks';
+import { BOSS_KINDS, EXTRAPOLATE, GHOST_SECONDS, INTERP_LOCAL, INTERP_MAX, INTERP_MIN, MF_ATK, MF_FLEE, MF_FRESH, MF_GROUND, MF_HURT, MF_TP, PF_DEAD, PF_GROUND, PF_HURT,
+  PF_SLEEP, PF_SNEAK, PF_SWING_MASK, PF_SWING_SHIFT, PF_TP, PF_WATER, type PlayerInfo, SNAP_EVERY, SNAP_KEEP } from '../net/protocol';
 import { decodeSnapshot, type SnapBoss, type Snapshot } from '../net/snapshot';
 import type { BoxBatch } from '../render/batches';
 import { DropRender, DropView } from '../render/dropView';
 import type { ItemModels } from '../render/itemModel';
 import { type BossView, type MobHost, MobRender, MobView } from '../render/mobView';
+import { HURT_T, PlayerRender, PlayerView, SWING_T } from '../render/playerView';
 import { ProjView, renderProjs } from '../render/projView';
 import { FXM, floorNear, groundY } from '../sim/boss';
 import { STEP } from '../sim/clock';
@@ -27,16 +29,10 @@ import type { Session } from './session';
 const TELEGRAPH: Record<string, number> = { charge: 0xff5a3a, slam: 0xffb03a, volley: 0x9ad0ff, spiral: 0xd0a0ff, rain: 0xff5a3a, ring: 0xffe06a, summon: 0x9aff6a, teleport: 0xffffff };
 
 export interface EntityHost extends MobHost { dim: number }
+export { PlayerView };
 
-/** Another player as the snapshots show it, at the moment the creatures are drawn at. `flags` are the PF_ bits. */
-export class PlayerView {
-  active = false; slot = 0;
-  x = 0; y = 0; z = 0; px = 0; py = 0; pz = 0; yaw = 0; pitch = 0;
-  flags = 0; hp = 1; dig = 0;
-  /** Horizontal speed, from the snapshots around the moment drawn (blocks per second). */
-  moving = 0;
-  hw = 0.3; h = 1.8;
-}
+/** Blocks a walking body covers per footstep, as the local body's stride counts them. */
+const STEP_LEN = 2.2;
 
 const TAU = Math.PI * 2;
 /** Snapshot ticks per millisecond of the client's clock. */
@@ -140,13 +136,22 @@ export class EntityStore implements Bodies, Ghosts {
   readonly drops: DropView[] = [];
   readonly mobRender: MobRender;
   readonly dropRender: DropRender;
+  readonly playerRender: PlayerRender;
+  /** What the roster says of a slot: name, held item, armour. Set by whoever keeps the roster; without it bodies are bare. */
+  info: (slot: number) => PlayerInfo | undefined = () => undefined;
   /** The client's clock in milliseconds: what snapshot arrivals and round trips are timed with. */
   clock: () => number = () => performance.now();
   private net: Net | null = null;
   /** Places a boss has marked for a strike: owner id, x, z, seconds left, and whether it arrived during this tick. */
   private marks: { id: number; x: number; z: number; t: number; fresh: boolean }[] = [];
 
-  constructor(private g: EntityHost, models: ItemModels) { this.mobRender = new MobRender(g); this.dropRender = new DropRender(models); }
+  constructor(private g: EntityHost, models: ItemModels) {
+    this.mobRender = new MobRender(g); this.dropRender = new DropRender(models); this.playerRender = new PlayerRender(models);
+    // the game puts the drops' group in the scene; held items ride in it so that they need no place of their own there
+    this.dropRender.group.add(this.playerRender.group);
+  }
+  /** The view of the player in `slot`, while one is in view. */
+  player(slot: number): PlayerView | null { const tr = this.net?.players.get(slot); return tr ? tr.v : null; }
 
   /** The first boss in view, for the boss bar and the music. */
   boss(): MobView | null { for (const m of this.mobs) if (m.active && m.boss) return m; return null; }
@@ -247,7 +252,7 @@ export class EntityStore implements Bodies, Ghosts {
     for (const q of s.players) {
       if (q.slot === net.slot) continue;
       let tr = net.players.get(q.slot);
-      if (!tr) { tr = new PlayerTrack(this.freePlayer()); tr.v.active = true; tr.v.slot = q.slot; net.players.set(q.slot, tr); }
+      if (!tr) { tr = new PlayerTrack(this.freePlayer()); Object.assign(tr.v, new PlayerView()); tr.v.active = true; tr.v.slot = q.slot; net.players.set(q.slot, tr); }
       tr.push(s.tick, q.x, q.y, q.z, q.yaw, q.pitch, q.flags, q.hp, q.dig, null);
     }
     for (const q of s.mobs) {
@@ -291,7 +296,7 @@ export class EntityStore implements Bodies, Ghosts {
         tr.v.active = false; net.mobs.delete(id);
       }
     }
-    for (const tr of net.players.values()) if (tr.n) this.placePlayer(tr, rt);
+    for (const tr of net.players.values()) if (tr.n) this.placePlayer(tr, rt, dt);
     this.flyProjs(dt);
     this.flyDrops(dt);
     this.effects(dt);
@@ -338,14 +343,37 @@ export class EntityStore implements Bodies, Ghosts {
     if (this.g.world.ready(Math.floor(v.x), Math.floor(v.z))) this.mobRender.sampleLight(v, jump && v.ls < 0 ? 1 : Math.min(1, dt * 10));
   }
 
-  private placePlayer(tr: PlayerTrack, rt: number): void {
-    const v = tr.v, o = sample(tr, rt, pose), f = tr.f[o.a];
-    const jump = !tr.placed || ((f ^ tr.lf) & PF_TP) !== 0;
-    v.px = v.x; v.py = v.y; v.pz = v.z;
+  private placePlayer(tr: PlayerTrack, rt: number, dt: number): void {
+    const v = tr.v, o = sample(tr, rt, pose), f = tr.f[o.a], lf = tr.lf;
+    const jump = !tr.placed || ((f ^ lf) & PF_TP) !== 0;
+    v.px = v.x; v.py = v.y; v.pz = v.z; v.pyaw = v.yaw; v.ppitch = v.pitch; v.pby = v.by; v.pcrouch = v.crouch; v.plie = v.lie;
     v.x = o.x; v.y = o.y; v.z = o.z; v.yaw = o.yaw; v.pitch = o.pitch; v.moving = Math.hypot(o.vx, o.vz);
     v.flags = f; v.hp = tr.hp[o.a]; v.dig = tr.dig[o.a];
-    if (jump) { v.px = v.x; v.py = v.y; v.pz = v.z; }
+    v.anim += v.moving * dt * 2.0;
+    // the body turns after the head: at once while walking, else only once the head has turned past 50 degrees
+    const d = wrap(v.yaw - v.by), lim = v.moving > 0.4 ? 0 : 0.87;
+    if (Math.abs(d) > lim) v.by += (d - Math.sign(d) * lim) * Math.min(1, dt * (v.moving > 0.4 ? 10 : 6));
+    const seq = (f & PF_SWING_MASK) >> PF_SWING_SHIFT;
+    if (v.swingSeq >= 0 && seq !== v.swingSeq) v.swing = SWING_T; else v.swing = Math.max(0, v.swing - dt);
+    v.swingSeq = seq;
+    v.hurt = f & PF_HURT && tr.placed && !(lf & PF_HURT) ? HURT_T : Math.max(0, v.hurt - dt);
+    v.crouch += ((f & PF_SNEAK ? 1 : 0) - v.crouch) * Math.min(1, dt * 14);
+    v.lie += ((f & PF_SLEEP ? 1 : 0) - v.lie) * Math.min(1, dt * 6);
+    v.deadT = f & PF_DEAD ? (v.deadT < 0 ? 0 : v.deadT + dt) : -1;
+    if (jump) { v.px = v.x; v.py = v.y; v.pz = v.z; v.pyaw = v.yaw; v.ppitch = v.pitch; v.by = v.pby = v.yaw; v.crouch = v.pcrouch = f & PF_SNEAK ? 1 : 0; v.lie = v.plie = f & PF_SLEEP ? 1 : 0; }
     tr.lf = f; tr.placed = true;
+    const w = this.g.world;
+    if (!w.ready(Math.floor(v.x), Math.floor(v.z))) return;
+    this.playerRender.sampleLight(w, v, jump && v.ls < 0 ? 1 : Math.min(1, dt * 10));
+    // footsteps, once a stride, as the local body sounds its own
+    const sn = Math.floor(v.anim / (STEP_LEN * 2.0) + 0.5);
+    if (sn !== v.stepN) {
+      v.stepN = sn;
+      if (f & PF_GROUND && !(f & PF_WATER) && v.moving > 0.4 && !jump) {
+        const below = w.getBlock(Math.floor(v.x), Math.floor(v.y - 0.2), Math.floor(v.z)), b = BLOCKS[below];
+        if (below && b) this.g.audio.play('step_' + b.sound, f & PF_SNEAK ? 0.15 : 0.4, 1, [v.x, v.y, v.z]);
+      }
+    }
   }
 
   /** The entity events of a connection's `fx` (the rest are FxPlay's): projectiles and drops start, change and end here,
@@ -483,6 +511,8 @@ export class EntityStore implements Bodies, Ghosts {
 
   render(batch: BoxBatch, alpha: number, time: number): void {
     this.mobRender.render(batch, this.mobs, alpha, time);
+    this.playerRender.render(batch, this.players, alpha, time, this.info, this.g.world, this.mobRender.shadows, this.g.gfx.dayAmt);
+    this.mobRender.shadows.end();
     renderProjs(batch, this.projs, this.g.world, alpha);
   }
   renderDrops(alpha: number): void { this.dropRender.render(this.drops, alpha); }
