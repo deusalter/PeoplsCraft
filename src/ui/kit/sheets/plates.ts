@@ -23,11 +23,11 @@ export const platesSheet: Sheet = {
       x: 0, y: 0, heading: 20, place: 'Yavas', night: { n: 3, of: 8 },
       marks: [{ kind: 'bed', deg: -30 }, { kind: 'guide', deg: 52 }, { kind: 'friend', seat: 3, deg: -62 }, { kind: 'fell', deg: 170 }],
     }));
-    kids.push(readout({ cx: 91, y: 26, icon: 'ore', name: 'Iron Ore', line: 'Needs a stone pick', refusal: true }));
-    kids.push(readout({ cx: 91, y: 52, icon: 'log', name: 'Oak Log', line: 'Any axe will do', able: true }));
-    kids.push(readout({ cx: 91, y: 78, icon: 'haunch', name: 'Tama', life: 0.6 }));
+    kids.push(readout({ cx: 91, y: 23, icon: 'ore', name: 'Iron Ore', line: 'Needs a stone pick', refusal: true }));
+    kids.push(readout({ cx: 91, y: 51, icon: 'log', name: 'Oak Log', line: 'Any axe will do', able: true }));
+    kids.push(readout({ cx: 91, y: 79, icon: 'haunch', name: 'Tama', life: 0.6 }));
     // Name tags, pings and the marks of the compass.
-    kids.push(salt(196, 0, 'Tags, pings, marks'));
+    kids.push(salt(222, 0, 'Tags, pings, marks'));
     kids.push(nameTag({ cx: 226, y: 14, name: seat(3).name, seat: 3, life: seat(3).life }));
     kids.push(nameTag({ cx: 300, y: 14, name: 'Kammār' }));
     kids.push(ping({ cx: 360, y: 14, seat: 5, metres: 40 }));
