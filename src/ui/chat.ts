@@ -32,6 +32,8 @@ export class ChatView {
   private rows: { el: HTMLElement; n: number }[] = [];
   private sent: string[] = []; private back = -1;
   private open_ = false;
+  /** performance.now() of the last close: a window blur that closed the line is still "typing" to whoever asks just after. */
+  closedAt = -1e9;
 
   constructor(parent: HTMLElement, private social: Social, private host: ChatHost) {
     const r = this.root = el('div', '#chat', parent);
@@ -71,7 +73,7 @@ export class ChatView {
   }
   close(): void {
     if (!this.open_) return;
-    this.open_ = false;
+    this.open_ = false; this.closedAt = performance.now();
     this.input.style.display = 'none'; this.input.blur();
     this.host.closed();
     this.draw();
