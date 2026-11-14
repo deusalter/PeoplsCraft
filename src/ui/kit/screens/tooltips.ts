@@ -17,6 +17,9 @@ const ROW: Stack[] = [
   { key: 'wardens_aegis', n: 1 }, { key: 'bog_pearl', n: 999 }, { key: 'salve', n: 7 },
 ];
 
+/** The crate: a row of nine slots 8 in from every edge but the title's, so that the last slot never meets the bevel. */
+const CRATE_W = 8 + 9 * 18 + 8, CRATE_H = 16 + 18 + 8;
+
 const COMPARE = [
   { text: '+3 over Hide Trousers', c: 'growth.lt' as const },
   { text: '-4% speed: the hide set is broken', c: 'blood.lt' as const },
@@ -55,16 +58,16 @@ function build(ui: Ui): Node {
   hand ??= new Hand({ row: store(9, Object.fromEntries(ROW.map((s, i) => [i, s]))) });
   if (!bench || bench.ui !== ui) bench = new Bench(hand, ui);
   const b = bench;
-  const wx = Math.floor((ui.w - 176) / 2), wy = 6;
+  const wx = Math.floor((ui.w - CRATE_W) / 2), wy = 6;
   const row = slab({
-    x: 0, y: 0, w: 176, h: 36, ramp: 'timber', title: 'Supply Crate',
+    x: 0, y: 0, w: CRATE_W, h: CRATE_H, ramp: 'timber', title: 'Supply Crate',
     kids: [stackGrid(b, { store: 'row', x: 8, y: 16, cols: 9, rows: 1, ramp: 'timber', each: (i) => ({ tip: () => tipOf(hand!.get({ store: 'row', i }) ?? ROW[i]) }) })],
   });
   // The specimens flow in rows under the slab; the block's tip is raised at the corner, as the pointer would place it.
   // The plain thing and the named old thing stand in the first column, the one that compares beside them when there
   // is room; the block's tip is raised at the corner, as the pointer would place it.
   const kids: Node[] = [];
-  const y0 = wy + 36 + 6;
+  const y0 = wy + CRATE_H + 6;
   const plain = tipOf(ROW[0]), oldOne = tipOf(ROW[2]), cmp = tipOf(ROW[4]);
   kids.push(...specimen(4, y0, 'A plain thing', plain));
   kids.push(...specimen(4, y0 + 12 + tipBox(plain).h + 6, 'A named old thing', oldOne));
@@ -83,7 +86,7 @@ function build(ui: Ui): Node {
     x: 0, y: 0, w: ui.w, h: ui.h, takes: true,
     on: { down: () => { hand!.dropHeld(); b.after(); } },
     paint: (s) => s.wash(0, 0, ui.w, ui.h, 'root.0', 2),
-    kids: [...kids, { x: wx, y: wy, w: 176, h: 36, takes: true }, { ...row, x: wx, y: wy }],
+    kids: [...kids, { x: wx, y: wy, w: CRATE_W, h: CRATE_H, takes: true }, { ...row, x: wx, y: wy }],
   };
 }
 
