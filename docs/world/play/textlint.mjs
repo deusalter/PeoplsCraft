@@ -22,8 +22,8 @@
 //   must       a word the entry requires is in the text (a townsperson's first line says peopl)
 //   old-name   no old name from names.json, with or without an English plural
 //   spelling   every name of a born tongue spelled and capitalised as names.json has it, with no English plural
-//   banned     none of the banned words of README rules 6, 9 to 13, 16, 20 and 21, nor what plan.md H bans for the voice; outside a
-//              born or sand mouth, nothing on the surfaces of 4.13 says a stone is lit
+//   banned     none of the banned words of README rules 6, 9 to 13, 16, 20 and 21, nor what plan.md H bans for the voice; nothing in
+//              the voices label, sight and note says a stone is lit, on any surface
 //   pattern    none of the banned turns of sentence (a count of the dead, a set-up knocked down, a placeholder name)
 //
 // No dependencies. Node 18 or later.
@@ -67,16 +67,18 @@ const BANNED_SURFACE = {
   'banner': [['4.10: no text says a stone is lit by a kill; a banner says no light at all', ['light']]],
   'eight.': [['README rule 19: the eight are animals: they do not speak, guard, watch or wait for anyone', ['speaks', 'spoke', 'guards', 'guard', 'watches', 'awaits', 'waits', 'remembers', 'judges', 'welcomes', 'greets', 'her', 'hers', 'his', 'him', 'she', 'he']]],
 };
-// Where the strings of 4.13 live (banners, the eight, item descriptions, the journal): no text but a born or a sand mouth says a
-// stone is lit (4.10, 8.10). Lit, relit and rekindled are refused outright there; light, as a word, in any sentence that names a stone.
-// Born and sand mouths may say lit, because to them it means held (5.2).
-const STONE_LIT_SURFACES = ['banner', 'eight.', 'item.desc', 'task.'];
+// No text but a born or a sand mouth says a stone is lit (4.10, 8.10, plan H.2). The check runs on every entry whose voice is label,
+// sight or note, whatever its surface: lit, relit and rekindled are refused outright, and light, as a word, in any sentence that names
+// a stone. Born and sand mouths may say lit, because to them it means held (5.2).
+const STONE_LIT_VOICES = ['label', 'sight', 'note'];
 const STONE_LIT = ['4.10: no text says a stone is lit by a kill', ['lit', 'relit', 'rekindled', 'rekindle', 'relight', 'relights', 'unlit']];
 const STONE_WORD = /\b(stones?|altars?|cairns?|housings?|base)\b/i;
 const LIGHT_WORD = /\b(light|lights|lighted|lighting)\b/i;
 // The baits: the born's verbs for them belong only in a born mouth (4.2). Checked on item.desc of these keys.
 const BAIT_KEYS = ['verdant_idol', 'sunken_lure', 'warden_bell', 'spore_censer', 'storm_kite', 'prism_lens', 'eclipse_mask', 'cairn_key'];
-const BAIT_VERBS = ['4.2: every bait is laid on its stone; wake, call, ring, burn, focus, wear and open are the born\'s account', ['wake', 'call', 'ring', 'burn', 'focus', 'wear', 'open', 'offer', 'summon', 'challenge']];
+// `forms` makes the regular inflections (flies, flying, opened); the irregular ones are listed after the verbs.
+const BAIT_VERBS = ['4.2: every bait is laid on its stone; wake, call up, ring, burn, fly, focus, wear and open are the born\'s account', ['wake', 'call', 'ring', 'burn', 'fly', 'focus', 'wear', 'open', 'offer', 'summon', 'challenge',
+  'woke', 'woken', 'rang', 'rung', 'burnt', 'flew', 'flown', 'wore', 'worn']];
 // Turns of sentence, whatever the words.
 const PATTERNS = [
   ['README rule 12: the dead are never counted', /\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|hundred|hundreds|thousand|thousands|dozen|dozens|score|scores|countless|numberless)\s+(?:\w+\s+)?(dead|deaths|corpses|bodies|graves|killed|slain|fallen|lost|lives)\b/i],
@@ -212,7 +214,7 @@ export function lint(surfaces, names, files, only = null) {
       // the command line answers with the words a player types, which are code
       const lists = e.surface === 'cmd' ? [] : [ALL, VOICE[e.voice], ...SURF.filter(([p]) => e.surface.startsWith(p) && !(p === 'eight.' && e.voice === 'born')).map(([, m]) => m)];
       if (e.surface === 'item.desc' && BAIT_KEYS.includes(e.key)) lists.push(BAIT);
-      const litHere = e.voice !== 'born' && e.voice !== 'sand' && STONE_LIT_SURFACES.some((p) => e.surface.startsWith(p));
+      const litHere = STONE_LIT_VOICES.includes(e.voice);
       if (litHere) lists.push(LIT);
       const told = new Set();
       for (const w of body.match(WORD) ?? []) {
@@ -247,14 +249,18 @@ function selftest() {
     'eight.line:k': ent('eight.line', 'k', 'sight', 60, { assign: 'creatures' }),
     'task.how:l': ent('task.how', 'l', 'label', 160),
     'task.said:m': ent('task.said', 'm', 'born', 130),
+    'codex.read:n': ent('codex.read', 'n', 'note', 160, { assign: 'sites' }),
+    'item.desc:storm_kite': ent('item.desc', 'storm_kite', 'note', 80, { assign: 'items-b' }),
   } };
   const good = {
     'system.json': { 'toast:a': 'The pack is full.', 'toast:b': '{name} has moved in.', 'banner:c': 'Packs come up at dusk', 'fall:d': 'The drop was too long for the body.',
       'task.how:l': 'Lay the key on the stone. Lamps stand round the base.', 'task.said:m': 'A stone is lit while one of us sits at it, peopl.' },
     'people.json': { 'folk.housed:e': ['Put it on the table, away from the pot.', 'I buy anything, peopl.'], 'fire.say:f': ['Nothing of ours draws.'], 'folk.meet:e': 'You have a room and a light, peopl. I will hold here.' },
-    'items-b.json': { 'item.desc:g': 'A tooth of Maruhar. Harder than its plates.', 'item.desc:warden_bell': 'Lay it on a Kankāl Altar. Kankāl comes up to it.' },
+    'items-b.json': { 'item.desc:g': 'A tooth of Maruhar. Harder than its plates.', 'item.desc:warden_bell': 'Lay it on a Kankāl Altar. Kankāl comes up to it.',
+      'item.desc:storm_kite': 'Cloth and feather round a bar, laid on its stone.' },
     'creatures.json': { 'eight.intro:h': 'Roots come up through the paving.', 'eight.line:k': 'It goes back down into the base.' },
-    'items-a.json': { 'gear.desc:j': 'Flint on a shaft, fletched with grouse feather.' }, 'sites.json': { 'site.sight:i': 'Single dressed stones run out from the shore and stop.' },
+    'items-a.json': { 'gear.desc:j': 'Flint on a shaft, fletched with grouse feather.' }, 'sites.json': { 'site.sight:i': 'Single dressed stones run out from the shore and stop.',
+      'codex.read:n': 'Iron bars lay in the floor, so born hunters failed here, it seems.' },
   };
   const run = (change) => {
     const f = JSON.parse(JSON.stringify(good)); const raw = new Map();
@@ -308,8 +314,14 @@ function selftest() {
     ['banned', 'a journal line that says a kill lights a stone (task.how, 4.10)', (f) => { f['system.json']['task.how:l'] = 'Kill it and the stone is lit.'; }, '4.10'],
     ['banned', 'a journal line that says a kill lights the stones, as a verb (task.how, 4.10)', (f) => { f['system.json']['task.how:l'] = 'Kill it to light the stones again.'; }, '4.10'],
     ['banned', 'an item line that says a stone is relit (item.desc, 4.10)', (f) => { f['items-b.json']['item.desc:g'] = 'The cairns are relit with it.'; }, '4.10'],
+    ['banned', 'a codex step that says a stone is lit (codex.read, H.3)', (f) => { f['sites.json']['codex.read:n'] = 'Since the kill the stone is lit.'; }, '4.10'],
+    ['banned', 'a first sight of a site that says a stone is lit (site.sight, H.2)', (f) => { f['sites.json']['site.sight:i'] = 'Since the kill the stone is lit.'; }, '4.10'],
+    ['banned', 'a toast that says a stone is lit (toast, H.1)', (f) => { f['system.json']['toast:a'] = 'The stone is lit.'; }, '4.10'],
+    ['banned', 'a codex step that puts light on a stone, as a word (codex.read)', (f) => { f['sites.json']['codex.read:n'] = 'Since the kill there is light on the stone.'; }, '4.10'],
     ['banned', 'a line at a fall that writes a death (rule 20)', (f) => { f['system.json']['fall:d'] = 'The drop killed the body.'; }],
     ['banned', 'a bait described with a born verb (ring)', (f) => { f['items-b.json']['item.desc:warden_bell'] = 'Ring it at a Kankāl Altar.'; }],
+    ['banned', 'a bait described with a born verb (fly)', (f) => { f['items-b.json']['item.desc:storm_kite'] = 'Fly it over the stone on a windy day.'; }, '4.2'],
+    ['banned', 'a bait described with a born verb, irregular (flown)', (f) => { f['items-b.json']['item.desc:storm_kite'] = 'It is flown over the stone.'; }, '4.2'],
     ['banned', 'a great feeder given a sex and a will (rule 19)', (f) => { f['creatures.json']['eight.intro:h'] = 'It guards the stone.'; }],
     ['banned', 'first light outside a born mouth', (f) => { f['system.json']['toast:a'] = 'Come back at first light.'; }, 'first light'],
     ['pattern', 'a count of the dead (rule 12)', (f) => { f['people.json']['folk.housed:e'][0] = 'We lost three dead at that stone.'; }],

@@ -74,7 +74,7 @@
  "beast.habit:rustbound": "One that came from a nest goes no more than ten strides from it. It throws its rust from twelve strides.",
  "beast.once:rustbound": "A Barbed Arrow came out of one in a Sealed Store. It had eaten the harness and arrows stored there. The born say it was posted there.",
 
- "beast.sight:sporeling": "The hollow is full of them: fungus caps up to the knee, lit from inside, that hop about.",
+ "beast.sight:sporeling": "The hollow is full of them: fungus caps up to the knee, glowing from inside, that hop about.",
  "beast.kill:sporeling": "Spore sacs, and sometimes the mushroom itself. It has no body of its own beyond the cap it forms in.",
  "beast.habit:sporeling": "Every Kavak near enough to hear comes for whoever strikes one of them.",
  "beast.once:sporeling": "One left a Glowing Mushroom where it died in the hollow. It was the cap it had formed in.",
@@ -164,7 +164,7 @@
  "beast.habit:m_shade": "The Jatuk has no throw. It strikes by touching the feeder, and strikes again almost at once.",
  "beast.once:m_shade": "A Jatuk flew straight through the wall of a Sealed Store to reach a Nihirakka on the other side.",
 
- "beast.sight:m_mycelid": "Teal is the colour of Tala Ore, and the cap that formed on the Tala Totem is that teal. It is lit and small, with a dark band round it.",
+ "beast.sight:m_mycelid": "Teal is the colour of Tala Ore, and the cap that formed on the Tala Totem is that teal. It is small and glows, with a dark band round it.",
  "beast.kill:m_mycelid": "The feeder it killed lay on the ground like any other kill, with its own remains in it. We boiled that kill down as usual.",
  "beast.habit:m_mycelid": "One hand carries one Chattak at a time, or two with a Whistle or a worn piece. When one more forms than the hand allows, the first is gone.",
  "beast.once:m_mycelid": "When its bearer fell deep in the hollow, the little cap was gone at once.",
@@ -174,7 +174,7 @@
  "beast.habit:m_zephyr": "Blows from feeders pass through a Setasalaha. Nothing we have seen has hurt one.",
  "beast.once:m_zephyr": "A Setasalaha went for a Vihanga that was stooping on its bearer, and the Vihanga took no notice of it and came on.",
 
- "beast.sight:m_shardling": "It looks like a Sakal made small: a lit splinter, pale pink. It formed on the raw remains bound to the bones of the Patik Totem.",
+ "beast.sight:m_shardling": "It looks like a Sakal made small: a glowing splinter, pale pink. It formed on the raw remains bound to the bones of the Patik Totem.",
  "beast.kill:m_shardling": "A Sakal fell to it among the spires. It hits as hard as Patik, the metal of its totem head.",
  "beast.habit:m_shardling": "However far behind it is left, the Sakalak is beside its bearer again at once, without crossing the ground between.",
  "beast.once:m_shardling": "A Sakalak and a wild Sakal met among the spires. The small one went for the big one as it goes for any feeder.",
@@ -184,7 +184,7 @@
  "beast.habit:m_moon": "For all its four legs, the Harinak keeps to the air like the rest. Rock and walls do not stop it on the way to a feeder.",
  "beast.once:m_moon": "On the dark night a Harinak went for the Chandasāvak at our walls, as it would for any other feeder.",
 
- "beast.sight:m_cairn": "By the Cairn Lamp, a lamp taken from the housing of the Cairn, hangs a point of yellow light. It is larger than the point off the Hīrak Totem.",
+ "beast.sight:m_cairn": "A point of yellow light hangs by the lamp at the head of this totem. That lamp was taken from the housing of the Cairn. The point is larger than the one off the Hīrak Totem.",
  "beast.kill:m_cairn": "A Silahādak went down to it beside a Cairn. Its blows are the hardest of any that form on a totem.",
  "beast.habit:m_cairn": "Dīpik moves faster than any other kind that forms on a totem, faster even than a Harinak.",
  "beast.once:m_cairn": "Dīpik went for a Silahādak that was coming up out of the broken base of a Cairn.",
