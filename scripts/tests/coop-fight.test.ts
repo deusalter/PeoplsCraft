@@ -2,6 +2,8 @@
 // Sim with several players and no network: each test names the rule and uses the document's own numbers.
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { SEA } from '../../src/core/constants';
+import { BIOME } from '../../src/data/biomes';
 import { B } from '../../src/data/blocks';
 import { BOSSES } from '../../src/data/mobs';
 import { onAtk } from '../../src/sim/actions';
@@ -19,14 +21,15 @@ import { type BlockEnt, EditMaps } from '../../src/sim/voxels';
 
 const GROUND = 64, STEP = 1 / 60;
 const NO_SOURCE: ChunkSource = { request() {}, cancel() {}, poll: () => [], pending: 0, dispose() {} };
-/** Flat stone up to y = 63 under a full sky, nothing giving light. */
+/** Flat stone up to y = 63 under a full sky, nothing giving light; with `sea`, water from there up to sea level. */
 class Flat implements RealmStore {
   onChange: RealmStore['onChange'] = null;
   cells = new Map<string, number>();
-  getBlock(x: number, y: number, z: number): number { return this.cells.get(`${x},${y},${z}`) ?? (y >= 0 && y < GROUND ? B.stone : 0); }
+  bio = 0; sea = false;
+  getBlock(x: number, y: number, z: number): number { return this.cells.get(`${x},${y},${z}`) ?? (y >= 0 && y < GROUND ? B.stone : this.sea && y >= GROUND && y <= SEA ? B.water : 0); }
   ready(): boolean { return true; }
   topY(): number { return GROUND - 1; }
-  biomeAt(): number { return 0; }
+  biomeAt(): number { return this.bio; }
   setBlock(x: number, y: number, z: number, id: number): boolean { this.cells.set(`${x},${y},${z}`, id); return true; }
   getEnt(): BlockEnt | null { return null; }
   setEnt(x: number, y: number, z: number, kind: string, data: unknown): BlockEnt { return { x, y, z, kind, data }; }
@@ -37,14 +40,14 @@ class Flat implements RealmStore {
   areaReady(): boolean { return true; }
   touch(): void {}
 }
-interface Rig { sim: Sim; realm: Realm; ev: [Scope, Fx][]; saves: number }
+interface Rig { sim: Sim; realm: Realm; store: Flat; ev: [Scope, Fx][]; saves: number }
 function rig(clock = 0.2): Rig {
   const store = new Flat(), ev: [Scope, Fx][] = [];
   const world: WorldRecord = {
     format: 2, id: 'w', name: 'Test', seed: 7, seedText: '7', created: 0, played: 0, owner: null, palettes: [], names: {},
     state: { clock, tick: 0, rnd: 12345, flags: [], quest: 0, events: { a: null, k: 0, g: 0, l: -10 }, homes: [], worldSpawn: [0, 0], gates: [], summons: [], owed: {} },
   };
-  const r = { ev, saves: 0 } as Rig;
+  const r = { ev, saves: 0, store } as Rig;
   const sink: Sink = { emit: (to, e) => { ev.push([to, e]); }, send: () => {}, broadcast: () => {} };
   r.sim = new Sim(world, { cheats: true, maxPlayers: 8, solo: false, manual: true }, { sink, chunks: NO_SOURCE, edits: new EditMaps(new MemStorage(), []), store: () => store, log: () => {}, requestSave: () => { r.saves++; } });
   r.realm = r.sim.realms[0];
@@ -229,6 +232,63 @@ test('7.2: no creature appears within 20 blocks of any player, and the realm cap
   assert.ok(mobs.count((m) => m.def.hostile) >= 150, 'and it was reached');
 });
 
+const within = (r: Rig, p: SimPlayer, f: (m: Mob) => boolean): number =>
+  r.realm.mobs.count((m) => f(m) && Math.hypot(m.x - p.body.x, m.y - p.body.y, m.z - p.body.z) < 110);
+
+test('7.2: the passive cap is 9 within 110 blocks, times the same 1 + 0.5 for each other active player within 48', () => {
+  const r = rig(0.2), mobs = r.realm.mobs;
+  r.store.bio = BIOME.plains; mobs.hostileCap = 0;
+  const a = play(r, 'a', 0.5, 0.5), passive = (m: Mob): boolean => !m.def.hostile;
+  for (let i = 0; i < 9; i++) mobs.spawn('woolback', 60.5 + i, GROUND, 60.5);
+  for (let i = 0; i < 300; i++) trySpawn(r.realm, a);
+  assert.equal(within(r, a, passive), 9, 'alone: 9 is the cap');
+  play(r, 'b', 30.5, 0.5);
+  for (let i = 0; i < 400; i++) trySpawn(r.realm, a);
+  const n = within(r, a, passive);
+  assert.ok(n >= 14 && n <= 13 + 4, `with one other near the cap is 13.5 (a group may pass it by 3): ${n}`);
+});
+
+test('7.2: the realm passive cap is 120, wherever the creatures stand', () => {
+  const r = rig(0.2), mobs = r.realm.mobs;
+  r.store.bio = BIOME.plains; mobs.hostileCap = 0; mobs.passiveCap = 1000;
+  const a = play(r, 'a', 0.5, 0.5), passive = (m: Mob): boolean => !m.def.hostile;
+  const far: Mob[] = [];
+  for (let i = 0; i < 120; i++) far.push(mobs.spawn('woolback', 400.5 + (i % 20) * 2, GROUND, 400.5 + Math.floor(i / 20) * 2)!);
+  for (let i = 0; i < 300; i++) trySpawn(r.realm, a);
+  assert.equal(mobs.count(passive), 120, 'full: nothing more appears');
+  mobs.remove(far[0]);
+  for (let i = 0; i < 300; i++) trySpawn(r.realm, a);
+  const n = mobs.count(passive);
+  assert.ok(n > 120 && n <= 119 + 4, `one under it: one group more and no more: ${n}`);
+});
+
+test('7.2: fish are capped at 6 within 110 blocks, beside the passive cap', () => {
+  const r = rig(0.2), mobs = r.realm.mobs;
+  r.store.sea = true; mobs.hostileCap = 0; mobs.passiveCap = 0;
+  const a = play(r, 'a', 0.5, 0.5), fish = (m: Mob): boolean => m.def.ai === 'fish';
+  const school: Mob[] = [];
+  for (let i = 0; i < 6; i++) school.push(mobs.spawn('glimmerfin', 60.5 + i, SEA - 1, 60.5)!);
+  for (let i = 0; i < 600; i++) trySpawn(r.realm, a);
+  assert.equal(within(r, a, fish), 6, 'six: none more though the passive cap is 0');
+  mobs.remove(school[0]);
+  for (let i = 0; i < 600; i++) trySpawn(r.realm, a);
+  const n = within(r, a, fish);
+  assert.ok(n > 6 && n <= 5 + 5, `five: one school more: ${n}`);
+});
+
+test('7.2: with a boss within 96 blocks the hostile cap is 2', () => {
+  const r = rig(0.6), mobs = r.realm.mobs;
+  mobs.passiveCap = 0;
+  const a = play(r, 'a', 0.5, 0.5), hostile = (m: Mob): boolean => m.def.hostile && !m.boss;
+  const boss = mobs.spawn(BOSSES[0].key, 95.5, GROUND, 0.5)!;
+  for (let i = 0; i < 400; i++) trySpawn(r.realm, a);
+  const n = within(r, a, hostile);
+  assert.ok(n >= 1 && n <= 1 + 3, `a boss 95 away: 2 (a group may pass it by 2): ${n}`);
+  boss.x = 97.5;
+  for (let i = 0; i < 400; i++) trySpawn(r.realm, a);
+  assert.ok(within(r, a, hostile) >= 14, 'a boss 97 away: the cap of 14 again');
+});
+
 // ---- 7.3 ----
 
 test('7.3: the reach of a blow widens with the creature\'s speed times half the round trip plus 0.15', () => {
@@ -298,6 +358,33 @@ test('7.4: boss loot: every participant and every player near gets a separate ro
   assert.ok(c2.mail.some((it) => it.k === 'heartroot')); assert.equal(r.sim.shared.owed.c, undefined);
 });
 
+test('7.4: a boss death pays every active player within 64 blocks of the boss or of its altar, participant or not', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5);
+  const m = boss1(r, a);                              // the boss at (0.5, 6.5), its altar at (0, 0)
+  const byAltar = play(r, 'b', 0, -63.5), byBoss = play(r, 'c', 0.5, 70.3);
+  const pastAltar = play(r, 'd', 0, -64.5), pastBoss = play(r, 'e', 0.5, 71);
+  const away = play(r, 'f', 0, -40.5); away.stalled = true;
+  for (const p of [a, byAltar, byBoss, pastAltar, pastBoss, away]) p.modes.god = true;
+  assert.deepEqual([...m.boss!.parts], ['a']);
+  r.realm.mobs.hurt(m, 1e7, 0, 1, 0, false, a);
+  assert.equal(m.active, false);
+  const paid = (p: SimPlayer): boolean => p.stats.xp > 0 || p.stats.level > 1;
+  assert.ok(paid(byAltar) && owned(r, 'b', 'heartroot') > 0, '63.5 from the altar');
+  assert.ok(paid(byBoss) && owned(r, 'c', 'heartroot') > 0, '63.8 from the boss');
+  for (const p of [pastAltar, pastBoss, away]) { assert.equal(paid(p), false, p.id); assert.equal(owned(r, p.id, 'heartroot'), 0); }
+});
+
+test('7.4: the drop pool holds 480; a full one gives up its oldest', () => {
+  const r = rig(), drops = r.realm.drops;
+  for (let i = 0; i < 480; i++) drops.spawn(i * 2 + 0.5, GROUND + 0.5, 0.5, { k: 'stick', n: 1 }, 0, 0, 0);
+  assert.equal(drops.alive, 480);
+  for (const d of drops.list) d.age = d.x;
+  drops.spawn(0.5, GROUND + 0.5, 30.5, { k: 'flint', n: 1 }, 0, 0, 0);
+  assert.equal(drops.alive, 480);
+  assert.ok(drops.list.some((d) => d.active && d.it.k === 'flint'));
+  assert.ok(!drops.list.some((d) => d.active && d.x === 479 * 2 + 0.5), 'the oldest went');
+});
+
 test('7.4: owned drops answer to their owner; a parked owner\'s go to its mail, delivered with the pickup line; shared ones to the first in reach with room', () => {
   const r = rig(), a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 0.6, 0.5);
   r.realm.drops.spawn(0.5, GROUND + 0.5, 0.5, { k: 'stick', n: 2 }, 0, 0, 0, 0, 'b');
@@ -356,10 +443,10 @@ test('7.9: a rise of n applies at once, a fall only after n has been lower for 1
 });
 
 test('7.9: participants: the summoner, those within 32 at the summon, anyone hurting it or hurt by it; leaving the realm or saying bye ends it', () => {
-  const r = rig(), a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 30.5, 0.5), c = play(r, 'c', 0.5, 50.5);
-  for (const p of [a, b, c]) p.modes.god = true;
+  const r = rig(), a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 31.8, 0), c = play(r, 'c', 0.5, 50.5), e = play(r, 'e', 0, -32.3);
+  for (const p of [a, b, c, e]) p.modes.god = true;
   const m = boss1(r, a), parts = m.boss!.parts;
-  assert.deepEqual([...parts].sort(), ['a', 'b']);
+  assert.deepEqual([...parts].sort(), ['a', 'b'], '31.8 from the altar is within 32, 32.3 is not');
   assert.equal(r.saves, 1); assert.deepEqual(r.sim.shared.summons, [{ n: 1, item: 'verdant_idol', by: 'a', dim: 0, altar: [0, GROUND - 1, 0] }]);
   r.realm.mobs.hurt(m, 1, 0, 1, 0, false, c);
   assert.ok(parts.has('c'));
@@ -377,6 +464,84 @@ test('7.9: participants: the summoner, those within 32 at the summon, anyone hur
   assert.ok(!parts.has('b'), 'left the realm');
   partLeft(r.sim, c);
   assert.ok(!parts.has('c'), 'said bye');
+});
+
+test('7.9: an attack\'s cooldown is divided by 1 + 0.08 x (n - 1)', () => {
+  const cds = (players: number): number[] => {
+    const r = rig(), ps = ([['a', 0.5], ['b', 3.5], ['c', -3.5]] as const).slice(0, players).map(([id, x]) => play(r, id, x, 0.5));
+    for (const p of ps) p.modes.god = true;
+    const m = boss1(r, ps[0]), out: number[] = [];
+    let was = false;
+    run(r, 60 * 90, () => {
+      if (was && !m.boss!.atk) out.push(m.boss!.cd);
+      was = !!m.boss!.atk;
+      m.hp = m.maxHp;
+    });
+    assert.equal(m.boss!.n, players);
+    return out;
+  };
+  const [lo, hi] = BOSSES[0].boss!.phases[0].cd;
+  for (const n of [1, 3]) {
+    const div = 1 + 0.08 * (n - 1), l = cds(n);
+    assert.ok(l.length > 20, `${n}: ${l.length} attacks`);
+    for (const cd of l) assert.ok(cd >= lo / div - 1e-9 && cd <= hi / div + 1e-9, `${n}: ${cd} outside [${lo}, ${hi}] / ${div}`);
+    assert.ok(Math.max(...l) > hi / div - 0.2 && Math.min(...l) < lo / div + 0.2, `${n}: the whole range is drawn`);
+  }
+});
+
+/** Boss damage is counted by the tick a player was hurt at; the damage never kills, and the half-second of grace is lifted. */
+function sturdy(...ps: SimPlayer[]): Map<SimPlayer, number> {
+  const hits = new Map<SimPlayer, number>();
+  for (const p of ps) { p.stats.hp = 1e9; hits.set(p, 0); }
+  return hits;
+}
+function count(r: Rig, hits: Map<SimPlayer, number>, grace = false): void {
+  for (const [p, n] of hits) { if (p.hurtTick === r.sim.tick) hits.set(p, n + 1); if (!grace) p.stats.hurtT = 0; p.stats.hp = 1e9; }
+}
+/** Run one attack of the boss's first phase to its end, with contact damage off. */
+function attack(r: Rig, m: Mob, t: string, each: () => void): void {
+  const b = m.boss!;
+  b.atk = BOSSES.find((d) => d.key === m.def.key)!.boss!.phases[0].attacks.find((x) => x.t === t)!; b.t = 0; b.step = 0;
+  for (let i = 0; i < 600 && b.atk; i++) run(r, 1, () => { m.atkCd = 1e9; each(); });
+  assert.equal(b.atk, null, `${t} ended`);
+}
+
+test('7.1: a slam hits every target within its radius, each once, at the impact', () => {
+  const r = rig(), a = play(r, 'a', 4.5, 6.5), b = play(r, 'b', -3.5, 6.5), c = play(r, 'c', 0.5, 10.5), d = play(r, 'd', 0.5, -0.3);
+  const m = boss1(r, a), hits = sturdy(a, b, c, d);
+  run(r, 1, () => { m.atkCd = 1e9; });
+  m.tp = a;
+  attack(r, m, 'slam', () => { m.x = 0.5; m.z = 6.5; m.vx = m.vz = 0; count(r, hits); });
+  assert.deepEqual([...hits].map(([p, n]) => [p.id, n]), [['a', 1], ['b', 1], ['c', 1], ['d', 0]], 'radius 6: d is 6.8 away');
+});
+
+test('7.1: a charge hits whoever stands in its path, not only the one it is aimed at', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 22.5), b = play(r, 'b', 0.5, 13.5), c = play(r, 'c', 8.5, 13.5);
+  const m = boss1(r, a), hits = sturdy(a, b, c);
+  run(r, 1, () => { m.atkCd = 1e9; });
+  m.tp = a;
+  attack(r, m, 'charge', () => count(r, hits, true));
+  assert.equal(m.tp, a);
+  assert.ok(hits.get(b)! > 0, 'b, in the path');
+  assert.equal(hits.get(c), 0, 'c, beside it');
+});
+
+test('7.1: a burrower surfacing under its target hits every target over it', () => {
+  const r = rig(), m = r.realm.mobs.spawn(BOSSES[1].key, 0.5, GROUND, 8.5)!;
+  m.boss!.altar = [0, GROUND - 1, 0];
+  const a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 1.5, 0.5), c = play(r, 'c', 6.5, 0.5), hits = sturdy(a, b, c);
+  run(r, 1, () => { m.atkCd = 1e9; });
+  m.tp = a;
+  attack(r, m, 'burrow', () => count(r, hits, true));
+  assert.ok(hits.get(a)! > 0 && hits.get(b)! > 0, JSON.stringify([...hits].map(([p, n]) => [p.id, n])));
+  assert.equal(hits.get(c), 0);
+});
+
+test('7.1: a boss\'s touch hurts every target it touches', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 4.8), b = play(r, 'b', 2.2, 6.5), c = play(r, 'c', 5.5, 6.5);
+  const m = boss1(r, a), hits = sturdy(a, b, c);
+  run(r, 1, () => { m.x = 0.5; m.z = 6.5; m.atkCd = 0; m.boss!.cd = 1e9; count(r, hits); });
+  assert.deepEqual([...hits].map(([p, n]) => [p.id, n]), [['a', 1], ['b', 1], ['c', 0]]);
 });
 
 test('7.9: the target is chosen among valid targets when an attack is selected: the nearest with probability 0.6', () => {
