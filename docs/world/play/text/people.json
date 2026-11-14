@@ -54,11 +54,11 @@
   "I sell one piece of each kind to a peopl. A second of the same does nothing when worn.",
   "If you get into a Sealed Store, bring out the small things as well as the bars.",
   "Hold a piece out to me and I can tell you which store it came from.",
-  "I know what a piece does by holding it.",
+  "One piece of mine needs a part of Jalit. When the smith has Jalit to spare, I can sell it.",
   "The old pieces were made by hands with a skill that nobody has now, I think."
  ],
  "folk.housed:runescribe": [
-  "I cut the lines of a staff as I cut a hearthstone's. On a staff they run to the crystal at the head.",
+  "Where to cut is learned by the hand. Nobody can tell it to you.",
   "A bad cut leaks into the arm, and the arm tires sooner for the same work.",
   "My teacher had me cut slab after slab before one of mine carried a night's holding.",
   "I held one of those recall stones all night once, and it did nothing for me.",
@@ -79,7 +79,7 @@
   "While the burrower lived nothing else came up on the sand.",
   "Everything I sell, a march took from a store and could not burn.",
   "The old at the fires say another burrower will come onto the sand if the stones there are left alone.",
-  "I know when a march will come and what it will go for."
+  "Some stores in the sand country are already broken. Ask me which before you walk out to one."
  ],
 
  "folk.stage:wayfinder.1": [
@@ -173,7 +173,7 @@
   "You can go Under now. Bring me what grows there and I can make the Greater Salve and the Greater Tonic."
  ],
  "folk.stage:apothecary.4": [
-  "Lit caps from Under make a broth that eases the arm, so bring me more of them."
+  "Glowing caps from Under make a broth that eases the arm, so bring me more of them."
  ],
  "folk.stage:apothecary.5": [
   "The fruit from past the second gate closes a wound a little. Bring me one to try."
@@ -414,7 +414,7 @@
   "That came three hearths to get here."
  ],
  "folk.buy:smith": [
-  "I made it myself, at the anvil.",
+  "Every edge I sell was drawn at my own anvil.",
   "Keep the edge off stone harder than it is."
  ],
  "folk.buy:apothecary": [
@@ -439,36 +439,36 @@
  ],
 
  "folk.sell:wayfinder": [
-  "I will take it, peopl, and give you little for it.",
-  "Food goes in the crates of the old houses, for the next walker."
+  "It is worth little to a walker, who carries only what the road needs.",
+  "Arrows and planks I can sell on at any hearth."
  ],
  "folk.sell:provisioner": [
-  "Cheap, peopl. I carry it two hearths on before it sells.",
-  "Put it on the table by the door."
+  "Cheap, peopl. A hearth further on will pay more for it than I do.",
+  "Meat goes on my back to the next hearth."
  ],
  "folk.sell:smith": [
-  "I can put an iron piece back in the fire and get a bar out of it.",
-  "I weigh it for the metal in it."
+  "Iron pieces go back in my fire and come out as bars.",
+  "Gold I take at any weight. It bends cold, and bends again."
  ],
  "folk.sell:apothecary": [
-  "Fruit and caps go into the salves.",
+  "Caps from Under go into the stronger salve.",
   "Mushrooms and fibre as well, if you have them."
  ],
  "folk.sell:tinker": [
   "Let me hold it a while before I weigh the lees.",
-  "I pay more for small pieces than for bars."
+  "Small pieces fetch more from me than bars do."
  ],
  "folk.sell:runescribe": [
-  "Crystal from deep rock. I can cut to that.",
-  "Bring me fibre as well."
+  "Crystal from deep rock. My lines run to it.",
+  "Fibre too, to lay round the crystal."
  ],
  "folk.sell:beastcaller": [
-  "I work with bone and raw remains.",
+  "Bone and raw remains are my trade. Carved bone needs both.",
   "Bring me Shade Flesh after every dusk."
  ],
  "folk.sell:deserter": [
   "I pay little lees for it, peopl.",
-  "I take Mūda off a beaten march as well."
+  "Mūda as well. Every beaten march leaves some on the sand."
  ],
 
  "folk.short:wayfinder": "Bring the rest of the lees, peopl, and it is yours.",
@@ -480,13 +480,13 @@
  "folk.short:beastcaller": "There is not enough lees in that.",
  "folk.short:deserter": "Beat off a march and you will have the Mūda for it.",
 
- "folk.leave:wayfinder": "Set a new bed in the room, peopl, and the next walker on the road will sit down in it.",
+ "folk.leave:wayfinder": "Set a new bed in the room, peopl, for the next walker on the road to sit down in.",
  "folk.leave:provisioner": "There is nothing to sit on through the night. I will sell the coal further down the road.",
  "folk.leave:smith": "The anvil is yours, peopl. Bring bars to my next hearth if you want them worked.",
  "folk.leave:apothecary": "My salves are packed. Holders at other hearths have arms that need seeing to.",
- "folk.leave:tinker": "The Joining Bench stays where you built it. The walkers will hear of it from me.",
+ "folk.leave:tinker": "Your Joining Bench is the first I have seen. Other walkers will hear of it from me.",
  "folk.leave:runescribe": "A broken bed is no seat for the night. Build the room up again and send for me.",
- "folk.leave:beastcaller": "Nothing holds this ground tonight, peopl, and the raw remains in my box would draw them.",
+ "folk.leave:beastcaller": "Nothing holds this ground tonight. My box of raw remains would draw them.",
  "folk.leave:deserter": "No fire of ours will take me back. Tonight I hold in an empty house.",
 
  "folk.extra:deserter.burrower": "The burrower took our people while we lived on its sand. They were in it when you boiled it down.",
