@@ -39,7 +39,7 @@ export const CHAT: ChatLine[] = [
   { text: 'The bell is rung, and something pale comes up.' },
   { seat: 2, from: seat(2).name, text: 'on the north wall' },
   { seat: 3, from: seat(3).name, text: 'anyone got a salve' },
-  { text: 'It turns, throwing pale matter in spirals.' },
+  { boss: 'Kankāl', text: 'turns, throwing pale matter in spirals.' },
   { seat: 8, from: seat(8).name, text: 'keep it off the brazier side, the floor there is cracked and I am not going down that hole again tonight' },
   { seat: 6, from: seat(6).name, text: 'coming from the Yavas with arrows' },
 ];
@@ -65,7 +65,10 @@ export interface HudOpts {
   prompt?: boolean;
   /** The Guide's step and the toasts; not drawn while the roster is held, which would cover half of them. */
   notices?: boolean;
-  /** The chat entry is open along the bottom: the pickups, "Saved" and the toasts' floor stand 14 higher, clear of it. */
+  /**
+   * The chat entry is open along the bottom. It stops 100 short of the stage's right edge, clear of the pickups and
+   * "Saved", which therefore stay where they stand: lifted over a full-width entry, the corner jumped as chat opened.
+   */
   entry?: boolean;
 }
 
@@ -115,7 +118,6 @@ export function chatBottom(stageW: number, stageH: number): number {
 }
 
 export function hud(ui: Ui, o: HudOpts): Node[] {
-  const lift = o.entry ? 14 : 0;
   const st = ui.layout.stage;
   const W = st.w, H = st.h, cx = Math.floor(W / 2);
   const narrow = W < 400;
@@ -170,7 +172,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     const tx = R(4 + TOAST_W);
     const clash = o.boss && tx < L(cx + 91 + 4);
     let ty = clash ? Math.max(BOSS2_Y + 22 + 4, stepY + TRACKER_H + 4) : stepY + TRACKER_H + 4;
-    const floor = (narrow ? 150 : H - 54 - lift) - 2;
+    const floor = (narrow ? 150 : H - 54) - 2;
     for (const t of o.notices === false ? [] : toasts.slice(0, TOAST_MOST)) {
       const h = toastHeight(t);
       if (ty + h > floor) break;
@@ -182,9 +184,9 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   if (!first) {
     const feed: [string, number][] = [['+3 Rubble (12)', 0], ['+1 Bone (7)', 0], ['+2 Shade Flesh (6)', 1], ['+1 Kankāl Bell', 2]];
     const lines = feed.slice(narrow ? 1 : 0);
-    const y0 = narrow ? 150 - lift : H - 54 - lift;
+    const y0 = narrow ? 150 : H - 54;
     lines.forEach(([t, g], i) => out.push(rightLine(R(4), y0 + i * 10, t, GRADES[g].dark, TEXT)));
-    out.push(rightLine(R(4), H - 12 - lift, 'Saved', 'salt', TEXT));
+    out.push(rightLine(R(4), H - 12, 'Saved', 'salt', TEXT));
   }
 
   if (o.chat === true && !first) {

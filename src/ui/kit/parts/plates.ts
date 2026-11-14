@@ -170,6 +170,8 @@ export interface ChatLine {
   /** A player's line: their seat and name; a line from the server or the world has none and is drawn in grey after the cairn. */
   seat?: number;
   from?: string;
+  /** A line of the world about a great feeder: its name leads, in blood.lt, and the rest is violet.lt after it. */
+  boss?: string;
   text: string;
 }
 
@@ -196,9 +198,24 @@ export const CHAT_INDENT = 8;
 interface Run { text: string; c: Colour; pad?: number }
 interface Row { indent: number; runs: Run[] }
 
-/** A chat line's rows, wrapped: the name in its colour, a colon in `root.4`, 3 units, the text in salt. */
+/** After a speaker's colon one space of the face (4) and its gap: at 3 the name, colon and first word ran together. */
+const AFTER_COLON = 5;
+
+/** A chat line's rows, wrapped: the name in its colour, a colon in `root.4`, a space, the text in salt. */
 function chatRows(l: ChatLine, at: number): Row[] {
   const more = (text: string, c: Colour): Row[] => wrap(text, at - CHAT_INDENT).map((w) => ({ indent: CHAT_INDENT, runs: [{ text: w.text, c }] }));
+  if (l.boss) {
+    // A great feeder's line is the world's, so it keeps the cairn, but its name leads in the boss strip's colour and
+    // the line runs in violet, so that it is told from a crew line by its name and from the server's grey by both.
+    const head = measure('{cairn}') + 2 + measure(l.boss) + 4 + TEXT.gap;
+    const first = wrap(l.text, at - head);
+    const rest = first.slice(1).map((w) => w.text).join(' ');
+    return [{ indent: 0, runs: [
+      { text: '{cairn}', c: 'root.4' },
+      { text: l.boss, c: 'blood.lt', pad: 2 - TEXT.gap },
+      { text: first[0]?.text ?? '', c: 'violet.lt', pad: 4 },
+    ] }, ...(rest ? more(rest, 'violet.lt') : [])];
+  }
   if (!l.from) {
     // The world's own lines carry the cairn and no colon, in grey, so that none is read as a player's line gone wrong.
     const head = measure('{cairn}') + 2;
@@ -206,9 +223,9 @@ function chatRows(l: ChatLine, at: number): Row[] {
     const rest = first.slice(1).map((w) => w.text).join(' ');
     return [{ indent: 0, runs: [{ text: '{cairn}', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'root.4', pad: 2 - TEXT.gap }] }, ...(rest ? more(rest, 'root.4') : [])];
   }
-  const head = measure(l.from) + 1 + measure(':') + 3;
+  const head = measure(l.from) + 1 + measure(':') + AFTER_COLON;
   const first = wrap(l.text, at - head);
-  const rows: Row[] = [{ indent: 0, runs: [{ text: l.from, c: SEATS[(l.seat ?? 8) - 1] }, { text: ':', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'salt', pad: 3 - TEXT.gap }] }];
+  const rows: Row[] = [{ indent: 0, runs: [{ text: l.from, c: SEATS[(l.seat ?? 8) - 1] }, { text: ':', c: 'root.4' }, { text: first[0]?.text ?? '', c: 'salt', pad: AFTER_COLON - TEXT.gap }] }];
   const rest = first.slice(1).map((w) => w.text).join(' ');
   if (rest) rows.push(...more(rest, 'salt'));
   return rows;

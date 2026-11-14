@@ -1,5 +1,6 @@
 // Chat, open (section 6): twelve lines over the HUD, ending where closed chat ends, and the entry along the bottom of
-// the stage, 2 units above its edge, over the hotbar, as the tradition puts it. Enter
+// the stage, 2 units above its edge, over the hotbar, as the tradition puts it, stopping 100 short of the stage's right
+// edge so that the pickups and "Saved" keep their place. Enter
 // sends and closes; Esc closes and keeps the text; Up and Down walk through what was sent; a line that starts with /
 // is a command and its answer comes back as a line from the server. The crew list is not drawn while chat is open.
 import { measure } from '../font/measure';
@@ -101,7 +102,7 @@ function build(ui: Ui): Node {
   const shown = st.back ? st.lines.slice(0, -st.back) : st.lines;
   const bottom = chatBottom(stage.w, stage.h), wrapAt = chatWrap(stage.w);
   const lines = chat({ x: 0, bottom, lines: shown, open: true, wrap: wrapAt });
-  const W = stage.w - 8;
+  const W = stage.w - 104;
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
     kids: [
