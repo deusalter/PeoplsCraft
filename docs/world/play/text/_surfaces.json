@@ -538,6 +538,18 @@
    "why": "a hash of the simulation's state, for comparing two runs: a developer readout"
   },
   {
+   "file": "src/net/host.ts",
+   "line": 409,
+   "text": "'no steps yet'",
+   "why": "the reply of the tickstats command before the first step: a developer readout of step times, given only where commands are on, like simhash"
+  },
+  {
+   "file": "src/net/host.ts",
+   "line": 411,
+   "text": "return `steps ${n}  p50 ${q(0.5)}",
+   "why": "the reply of the tickstats command, the step times and the save time: a developer readout, given only where commands are on, like simhash"
+  },
+  {
    "file": "src/sim/cheats.ts",
    "line": 93,
    "text": "out.push(`${cx},${cz}:",
