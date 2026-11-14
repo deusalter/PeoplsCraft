@@ -166,8 +166,32 @@ All eleven are taken, and so is the tree of the `bloomvale` row, which makes twe
 *Found.* The saw, and the floor: black, cold, and unmarked by the people who sank a shaft to cut it.
 
 **`hearth`**, in every house of every `village`. Cause: 6.11, 1.5.
-*Made of.* One `wardstone` in the floor of each house, in place of the plank: the middle cell of the row against the wall opposite the door. In the terms of `house()` that is `(x - sx (hw - 1), y, z - sz (hd - 1))`, between the crate and the lamp, which stand at the two ends of that row one cell higher. In one house of eight, when `hash01(hx, 239, hz, seed) < 0.125` for the house's middle `(hx, hz)`, the cell under that stone is `ward_core`.
-*Placed.* By `house()`, for every house. Villages already standing in a saved world keep what they have: only chunks made from now on carry the stone.
+*Made of.* One `wardstone` in the floor of each house, in place of the plank: the middle cell of the row against the wall opposite the door. In the terms of `house()`, where `sx`, `sz` point out of the door, that is `(x - sx (hw - 1), y, z - sz (hd - 1))`, between the crate and the lamp, which stand at the two ends of that row one cell higher. In one house of eight, when `hash01(x, 239, z, seed) < 0.125` for the house's middle `(x, z)` (the `hx`, `hz` of the village build), the cell under that stone, at `y - 1`, is `ward_core` in place of `cobble`.
+*The seed.* `house()` gains a last argument, `seed: number`. The `village` build takes the `seed` its `StructType.build` is already handed (`structures.ts:258`), as `build(w, x, y, z, r, cl, seed)`, and passes it to each `house()` call. Nothing else in `house()` changes its calls to `r`, so every other cell of a village stays where it was.
+*The workbench or bedroll moves.* Today it stands at `(x - sx, y + 1, z - sz)`. Where `hw - 1 = 1` on a door on x, or `hd - 1 = 1` on a door on z, that cell is the hearthstone's column, so the furnishing would stand on the stone. Where the size along the door is 3 and across it 2, it stands in front of the stone, and with the crate, the lamp and the back wall it closes the stone in. So in every house it stands instead in the middle row, one cell to the side of the line from the door to the stone: `(x, y + 1, z + 1)` for a door on x (face 0 or 1) and `(x + 1, y + 1, z)` for a door on z (face 2 or 3). The `r() < 0.5` draw that picks workbench or bedroll stays where it is. That cell is inside in every size, off the back row, off the door line, and touches neither the crate nor the lamp. The line from the door to the stone is then open at `y + 1` and `y + 2` in every house, so a walker or a player reaches the stone on foot.
+*Every house.* `hw` and `hd` are each 2 or 3 (`structures.ts:96`). Face 0 has the door at `+x`, 1 at `-x`, 2 at `+z`, 3 at `-z`.
+
+| Face | Size `hw` x `hd` | Door | Hearthstone, at `y` | Crate, at `y + 1` | Lamp, at `y + 1` | Workbench or bedroll, at `y + 1` |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | 2 x 2 | `(x + 2, z)` | `(x - 1, z)` | `(x - 1, z - 1)` | `(x - 1, z + 1)` | `(x, z + 1)` |
+| 0 | 2 x 3 | `(x + 2, z)` | `(x - 1, z)` | `(x - 1, z - 2)` | `(x - 1, z + 2)` | `(x, z + 1)` |
+| 0 | 3 x 2 | `(x + 3, z)` | `(x - 2, z)` | `(x - 2, z - 1)` | `(x - 2, z + 1)` | `(x, z + 1)` |
+| 0 | 3 x 3 | `(x + 3, z)` | `(x - 2, z)` | `(x - 2, z - 2)` | `(x - 2, z + 2)` | `(x, z + 1)` |
+| 1 | 2 x 2 | `(x - 2, z)` | `(x + 1, z)` | `(x + 1, z - 1)` | `(x + 1, z + 1)` | `(x, z + 1)` |
+| 1 | 2 x 3 | `(x - 2, z)` | `(x + 1, z)` | `(x + 1, z - 2)` | `(x + 1, z + 2)` | `(x, z + 1)` |
+| 1 | 3 x 2 | `(x - 3, z)` | `(x + 2, z)` | `(x + 2, z - 1)` | `(x + 2, z + 1)` | `(x, z + 1)` |
+| 1 | 3 x 3 | `(x - 3, z)` | `(x + 2, z)` | `(x + 2, z - 2)` | `(x + 2, z + 2)` | `(x, z + 1)` |
+| 2 | 2 x 2 | `(x, z + 2)` | `(x, z - 1)` | `(x - 1, z - 1)` | `(x + 1, z - 1)` | `(x + 1, z)` |
+| 2 | 2 x 3 | `(x, z + 3)` | `(x, z - 2)` | `(x - 1, z - 2)` | `(x + 1, z - 2)` | `(x + 1, z)` |
+| 2 | 3 x 2 | `(x, z + 2)` | `(x, z - 1)` | `(x - 2, z - 1)` | `(x + 2, z - 1)` | `(x + 1, z)` |
+| 2 | 3 x 3 | `(x, z + 3)` | `(x, z - 2)` | `(x - 2, z - 2)` | `(x + 2, z - 2)` | `(x + 1, z)` |
+| 3 | 2 x 2 | `(x, z - 2)` | `(x, z + 1)` | `(x - 1, z + 1)` | `(x + 1, z + 1)` | `(x + 1, z)` |
+| 3 | 2 x 3 | `(x, z - 3)` | `(x, z + 2)` | `(x - 1, z + 2)` | `(x + 1, z + 2)` | `(x + 1, z)` |
+| 3 | 3 x 2 | `(x, z - 2)` | `(x, z + 1)` | `(x - 2, z + 1)` | `(x + 2, z + 1)` | `(x + 1, z)` |
+| 3 | 3 x 3 | `(x, z - 3)` | `(x, z + 2)` | `(x - 2, z + 2)` | `(x + 2, z + 2)` | `(x + 1, z)` |
+
+The door, crate and lamp columns are what `house()` builds today, given here so the table can be checked against it. Test: for every face and size, built on flat ground, the hearthstone cell is `wardstone`, the cell above it is air, the furnishing cell holds a `workbench` or `bedroll`, and a walk from the door to the stone along the door line meets nothing solid at `y + 1` or `y + 2`. Over 800 houses about one in eight has `ward_core` under the stone.
+*Placed.* By `house()`, for every house. Villages already standing in a saved world keep what they have: only chunks made from now on carry the stone and the moved furnishing.
 *Found.* The core. Set down beside the floor it is the same stuff, and an arrival can see it.
 
 ## B. The eight killing floors
