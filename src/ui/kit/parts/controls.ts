@@ -2,7 +2,7 @@ import { CHECK, HANDLE } from '../art/controls';
 import { measure } from '../font/measure';
 import type { Live, Node, Ui } from '../node';
 import type { Surface } from '../surface';
-import { tone } from '../palette';
+import { type Ramp, tone } from '../palette';
 import { type Force, type Host, lv, ring, sunk } from './common';
 
 const HANDLE_W = 8;
@@ -105,7 +105,8 @@ export function checkbox(o: CheckOpts): Node {
     on: { click: () => o.onToggle?.(!o.on) },
     paint: (s, live) => {
       const l = lv(live, o.force);
-      sunk(s, 0, 0, 12, 12, o.host);
+      // Off on a slab, the box is an empty hollow in the slot floor's tone; only a box that is on is dark.
+      sunk(s, 0, 0, 12, 12, o.host, o.on || dark ? 'root.1' : tone(o.host as Ramp, 'sh'));
       if (l.hover || l.focus) ring(s, 1, 1, 10, 10, 'salt');
       if (o.on) s.map(CHECK, 2, 2);
       if (o.label) s.text(o.label, 15, 1, dark ? 'salt' : 'ink', dark);

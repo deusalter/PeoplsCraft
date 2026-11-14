@@ -1170,25 +1170,25 @@ A sunk dark field, 14 tall in a window and 20 tall in the form of a full-screen 
 
 ### 5.10 Checkbox
 
-12 by 12, with the edges of a well. On: the check mark in `salt`, 7 by 6 and two units thick, at 2, 2, with its shadow of `root.0` one unit right and down like any letter on dark; a tick one unit thin in a dark box was too faint a difference between on and off. Hovered or focused: a frame of `salt` inside. Its label is ink on the slab, cell at x + 15, y + 1.
+12 by 12, with the edges of a well. Off: its floor is the slab's slot floor (`sh`), an empty hollow like a slot; a box filled with `root.1` while off read at a glance as filled, which is to say on. On: the floor is `root.1` and on it the check mark in `salt`, 7 by 6 and two units thick, at 2, 2, with its shadow of `root.0` one unit right and down like any letter on dark; a tick one unit thin in a dark box was too faint a difference between on and off. Hovered or focused: a frame of `salt` inside. Its label is ink on the slab, cell at x + 15, y + 1.
 
 ```
      0         1         2     
      01234567890123456789012345
   0  KKKKKKKKKKK...KKKKKKKKKKK.
-  1  KkkkkkkkkkkW..KkkkkkkkkkkW
-  2  KkkkkkkkWkkW..KkkkkkkkkkkW
-  3  KkkkkkkWWKkW..KkkkkkkkkkkW
-  4  KkWkkkWWKKkW..KkkkkkkkkkkW
-  5  KkWWkWWKKkkW..KkkkkkkkkkkW
-  6  KkkWWWKKkkkW..KkkkkkkkkkkW
-  7  KkkkWKKkkkkW..KkkkkkkkkkkW
-  8  KkkkkKkkkkkW..KkkkkkkkkkkW
-  9  KkkkkkkkkkkW..KkkkkkkkkkkW
- 10  KkkkkkkkkkkW..KkkkkkkkkkkW
+  1  KkkkkkkkkkkW..KSSSSSSSSSSW
+  2  KkkkkkkkWkkW..KSSSSSSSSSSW
+  3  KkkkkkkWWKkW..KSSSSSSSSSSW
+  4  KkWkkkWWKKkW..KSSSSSSSSSSW
+  5  KkWWkWWKKkkW..KSSSSSSSSSSW
+  6  KkkWWWKKkkkW..KSSSSSSSSSSW
+  7  KkkkWKKkkkkW..KSSSSSSSSSSW
+  8  KkkkkKkkkkkW..KSSSSSSSSSSW
+  9  KkkkkkkkkkkW..KSSSSSSSSSSW
+ 10  KkkkkkkkkkkW..KSSSSSSSSSSW
  11  .WWWWWWWWWWW...WWWWWWWWWWW
 ```
-`. nothing  k root.1  K root.0  W salt`
+`. nothing  k root.1  K root.0  W salt  S clay.sh`. On a dark plate or the ground tile both floors are `root.1`, the box being a hole in the dark either way.
 
 ### 5.11 Slider
 
