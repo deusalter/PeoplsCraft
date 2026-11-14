@@ -11,6 +11,7 @@ import { join, resolve } from 'node:path';
 import { type LagProxy, startLagProxy } from '../lagproxy';
 import abuse from '../scenarios/abuse';
 import basic from '../scenarios/basic';
+import crew from '../scenarios/crew';
 import type { Bot } from './bot';
 
 export interface Stats {
@@ -39,7 +40,7 @@ export interface Ctx {
   alive(): boolean;
 }
 type Scenario = (ctx: Ctx) => Promise<void>;
-const SCENARIOS: Record<string, Scenario> = { basic, abuse };
+const SCENARIOS: Record<string, Scenario> = { basic, abuse, crew };
 
 const root = resolve('.'), out = resolve('out/scenario'), pad = resolve('.claude/mp-work/pad/scenarios');
 
