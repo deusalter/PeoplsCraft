@@ -67,7 +67,7 @@
  ],
  "folk.housed:beastcaller": [
   "Your small one stays by you for the Tama flesh on the bone.",
-  "Do not bring it inside my walls. Unsalted is food, and I sit beside a pot.",
+  "Do not bring it inside my walls. Unsalted remains bring feeders, and I sit beside a pot.",
   "If you find a nest in the old stonework, tell me what kind was in it before you break it.",
   "A second one will stay for the whistle. They come to the sound.",
   "The other holders do not like my trade, because what I carry is food to feeders.",
@@ -372,7 +372,7 @@
  "folk.idle:provisioner": [
   "Buying or selling?",
   "I have meat and arrows if you are going out.",
-  "Somebody two hearths on is short of salt."
+  "I have coal for your fires."
  ],
  "folk.idle:smith": [
   "Bring me ore I have not seen.",
@@ -439,12 +439,12 @@
  ],
 
  "folk.sell:wayfinder": [
-  "Somebody down the road will want that.",
-  "It goes in my pack for the next hearth."
+  "I will take it, peopl, and give you little for it.",
+  "Food goes in the crates of the old houses, for the next walker."
  ],
  "folk.sell:provisioner": [
-  "Cheap, peopl. It has to be carried two hearths on.",
-  "There is a hearth on the road short of that."
+  "Cheap, peopl. I carry it two hearths on before it sells.",
+  "Put it on the table by the door."
  ],
  "folk.sell:smith": [
   "I can put an iron piece back in the fire and get a bar out of it.",
@@ -456,7 +456,7 @@
  ],
  "folk.sell:tinker": [
   "Let me hold it a while before I weigh the lees.",
-  "I will find a buyer for that on the road."
+  "I pay more for small pieces than for bars."
  ],
  "folk.sell:runescribe": [
   "Crystal from deep rock. I can cut to that.",
@@ -467,8 +467,8 @@
   "Bring me Shade Flesh after every dusk."
  ],
  "folk.sell:deserter": [
-  "A walker will buy that off me for lees.",
-  "It is worth little to me, peopl."
+  "I pay little lees for it, peopl.",
+  "I take Mūda off a beaten march as well."
  ],
 
  "folk.short:wayfinder": "Bring the rest of the lees, peopl, and it is yours.",
