@@ -1,6 +1,6 @@
 // The world map (section 6, World map): a stone slab with a tab for each place the crew can chart, the chart in a well
 // that pans and zooms by whole steps, the known places in a list, and Travel where the world allows a crossing.
-import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_LIT, MAP_SHALLOWS, MAP_SHORE, MAP_TEXTURE, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW, type Texture } from '../art/chart';
+import { ALTAR_MARK, GATE_MARK, MAP_HEIGHT, MAP_LIT, MAP_SHALLOWS, MAP_SHORE, MAP_TEXTURE, MAP_TONES, type MapKind, MOUTH_MARK, OWN_ARROW, ROCK, type Texture } from '../art/chart';
 import { HEADS } from '../art/heads';
 import { COMPASS_MARKS, PING } from '../art/marks';
 import { SILHOUETTES } from '../art/silhouettes';
@@ -43,6 +43,13 @@ export interface MapView {
 
 // The chart is 168 square so that the list beside it is 120 wide and a handle of sixteen is not cut.
 const W = 312, H = 212, CW = 168, CH = 168, ZOOMS = [8, 4, 2], LIST_X = 184, LIST_W = 120;
+/**
+ * A sealed store is a few rooms: its chart steps 4, 2 and 1.5 strides to the unit, and opens at the closest, where the
+ * plan of what has been entered fills about seven tenths of the well. At the ground's closest, 2, it sat small in the
+ * middle of an empty field.
+ */
+const STORE_ZOOMS = [4, 2, 1.5];
+const zoomsOf = (t: ChartTab): number[] => (t === 'ground' ? ZOOMS : STORE_ZOOMS);
 /** The zoom buttons, 16 square, the last ending at the chart well's right edge. */
 const ZB = 16, ZOOM_Y = 191, ZOOM_IN_X = 8 + CW + 2 - ZB, ZOOM_OUT_X = ZOOM_IN_X - ZB - 2;
 const TABS: { key: ChartTab; icon: string; name: string }[] = [
@@ -217,8 +224,9 @@ function paintMarks(s: Surface, v: MapView): void {
 function paintStore(s: Surface, v: MapView): void {
   const z = v.zoom;
   const [ox, oy] = unitOf(v, 0, 0);
-  // Not the ground tile: the menus behind stand on it, and a chart drawn on it could not be told from them.
-  s.fill(0, 0, CW, CH, 'root.1');
+  // Not the ground tile: the menus behind stand on it, and a chart drawn on it could not be told from them. The rock
+  // is fixed to the store, so it moves with the plan as it pans.
+  s.tile(ROCK, 0, 0, CW, CH, -ox, -oy);
   const t = z <= 2 ? 2 : 1, P = t === 2 ? 8 : 4;
   // A margin round the chart so that a wall just outside it still shades what is inside.
   const M = t + 2, gw = CW + 2 * M, gh = CH + 2 * M;
@@ -313,6 +321,7 @@ function storeAt(v: MapView, ex: number, ey: number): string {
 export const mapScreen: Screen<MapView> = (v, ui) => {
   firstFocus(ui, 'map', null);
   const ground = v.tab === 'ground';
+  const zooms = zoomsOf(v.tab);
   const place = v.places[v.chosen];
   let from = { ...v.centre };
   const hover = { x: 0, z: 0, on: false, friend: null as Place | null, what: '' };
@@ -387,8 +396,8 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
         s.text(cut(t, ZOOM_OUT_X - 12), 0, 0, hover.on ? 'ink' : 'ink.faded');
       },
     },
-    button({ id: 'map.out', x: ZOOM_OUT_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '-', disabled: v.zoom === ZOOMS[0], onPress: () => v.onZoom(-1), tip: zoomTip(v.zoom === ZOOMS[0] ? 'Farthest' : 'Farther') }),
-    button({ id: 'map.in', x: ZOOM_IN_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '+', disabled: v.zoom === ZOOMS[ZOOMS.length - 1], onPress: () => v.onZoom(1), tip: zoomTip(v.zoom === ZOOMS[ZOOMS.length - 1] ? 'Closest' : 'Closer') }),
+    button({ id: 'map.out', x: ZOOM_OUT_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '-', disabled: v.zoom === zooms[0], onPress: () => v.onZoom(-1), tip: zoomTip(v.zoom === zooms[0] ? 'Farthest' : 'Farther') }),
+    button({ id: 'map.in', x: ZOOM_IN_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '+', disabled: v.zoom === zooms[zooms.length - 1], onPress: () => v.onZoom(1), tip: zoomTip(v.zoom === zooms[zooms.length - 1] ? 'Closest' : 'Closer') }),
     well({
       id: 'map.places', x: LIST_X, y: 18, w: LIST_W, h: 130, rowH: 16, host: 'stone', ui, rows, chosen: rowAt.indexOf(v.chosen),
       onChoose: (k) => {
@@ -463,16 +472,16 @@ function sample(name: string, title: string, tab: ChartTab): NamedScreen {
     ground: { places: PLACES },
     store: { places: [...STORE_PLACES, ...PLACES.filter((p) => p.seat !== STORE.at.seat)], here: STORE_PLACES.length },
   };
-  const st = { tab, zoomI: { ground: 1, store: 2 } as Record<ChartTab, number>, centre: { ground: { x: ME.x, z: ME.z }, store: { x: 90, z: 40 } } as Record<ChartTab, { x: number; z: number }>, chosen: { ground: 0, store: 0 } as Record<ChartTab, number>, pings: [...PINGS], cooledFrom: 3, cool: 12 };
+  const st = { tab, zoomI: { ground: 1, store: 2 } as Record<ChartTab, number>, centre: { ground: { x: ME.x, z: ME.z }, store: { x: 92, z: 44 } } as Record<ChartTab, { x: number; z: number }>, chosen: { ground: 0, store: 0 } as Record<ChartTab, number>, pings: [...PINGS], cooledFrom: 3, cool: 12 };
   return {
     name, title, world: true,
     build: (ui: Ui) => mapScreen({
-      tab: st.tab, zoom: ZOOMS[st.zoomI[st.tab]], centre: st.centre[st.tab], ...lists[st.tab], chosen: st.chosen[st.tab], pings: st.pings,
+      tab: st.tab, zoom: zoomsOf(st.tab)[st.zoomI[st.tab]], centre: st.centre[st.tab], ...lists[st.tab], chosen: st.chosen[st.tab], pings: st.pings,
       // The stone stands at its cooling for the page's first three seconds, so that a shot holds still, then counts down.
       cooling: (t) => Math.max(0, st.cool - Math.max(0, t - st.cooledFrom)),
       onTab: (t) => { st.tab = t; ui.invalidate(); },
       onPan: (x, z) => { st.centre[st.tab] = { x: Math.round(x), z: Math.round(z) }; ui.invalidate(); },
-      onZoom: (d) => { st.zoomI[st.tab] = Math.max(0, Math.min(ZOOMS.length - 1, st.zoomI[st.tab] + d)); ui.invalidate(); },
+      onZoom: (d) => { st.zoomI[st.tab] = Math.max(0, Math.min(zoomsOf(st.tab).length - 1, st.zoomI[st.tab] + d)); ui.invalidate(); },
       onChoose: (i) => { st.chosen[st.tab] = i; ui.invalidate(); },
       onPing: (x, z) => { st.pings = [...st.pings.filter((p) => p.seat !== 1), { seat: 1, x: Math.round(x), z: Math.round(z) }]; ui.invalidate(); },
       onTravel: (p) => { ME.x = p.x - 4; ME.z = p.z + 6; st.centre.ground = { x: ME.x, z: ME.z }; st.cool = 30; st.cooledFrom = ui.t; ui.invalidate(); },

@@ -119,3 +119,40 @@ export const MAP_TEXTURE: Partial<Record<MapKind, Texture>> = {
 
 /** The line of surf along a shore: the unit of the shallows that touches the land. */
 export const MAP_SHORE: Colour = 'clay.lt';
+
+/**
+ * Rock not yet entered, behind a sealed store's plan: a 16 by 16 tile of rough stones of uneven size and stepped
+ * outline, each a face of `root.1` with a lip of `root.2` along its top and left where the light falls, and a joint of
+ * `root.0` along its bottom and right. It is darker than the ground tile of the menus, laid as rubble and not in
+ * courses, so that the chart is never read as one of them; a flat field of root.1 left the plan floating in a void.
+ */
+const ROCK_STONES = [
+  'AAAAAAABBBBBBBBB',
+  'AAAAAAABBBBBBBBB',
+  'AAAAAAABBBBBBBBB',
+  'AAAAAAABBBBBBBBB',
+  'AAAAAAABBBBBBBBB',
+  'CCCAAAABBBBBBBBB',
+  'CCCCCCCDDDDDDBBB',
+  'CCCCCCCDDDDDDDDD',
+  'CCCCCCCDDDDDDDDD',
+  'CCCCCCCDDDDDDDDD',
+  'CCCCCCCDDDDDDDDD',
+  'EEEEECCDDDDDDDDD',
+  'EEEEEEEEEEFFFFFF',
+  'EEEEEEEEEEFFFFFF',
+  'EEEEEEEEEEFFFFFF',
+  'EEEEEEEEEEFFFFFF',
+];
+
+function rockRows(): string[] {
+  const n = ROCK_STONES.length;
+  const at = (x: number, y: number) => ROCK_STONES[((y % n) + n) % n][((x % n) + n) % n];
+  return ROCK_STONES.map((row, y) => [...row].map((c, x) => {
+    if (at(x + 1, y) !== c || at(x, y + 1) !== c) return 'K';
+    if (at(x - 1, y) !== c || at(x, y - 1) !== c) return 'j';
+    return 'k';
+  }).join(''));
+}
+
+export const ROCK = pixmap({ rows: rockRows(), key: { K: 'root.0', j: 'root.2', k: 'root.1' } }, 'rock');
