@@ -1,7 +1,6 @@
-// The shop (section 6): what one householder sells under the Buy tab, what was sold to them this visit under Sell
-// back, and the pack to sell from. A row buys
-// one, Shift and a press buys ten; Shift and a press on a pack slot sells the stack, and a thing worth keeping asks
-// for the same press again within two and a half seconds.
+// The shop (section 6): what one householder sells under the Buy tab; under Sell, what was sold to them this visit,
+// to buy back, with the pack to sell from. A row buys one lot, Shift and a press buys ten; Shift and a press on a pack
+// slot sells the stack, and a thing worth keeping asks for the same press again within two and a half seconds.
 import { count, measure, rightX } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { Node, TipLine, Ui } from '../node';
@@ -14,7 +13,8 @@ import { Bench, overWorld, packBlock, place } from './play/common';
 import { Hand, store } from './play/hand';
 import type { NamedScreen } from './index';
 
-interface Good { key: string; price: number; mod?: string }
+/** `per` is how many come in one lot at `price`; left out, one. */
+interface Good { key: string; price: number; mod?: string; per?: number }
 
 interface Keeper {
   name: string;
@@ -32,7 +32,7 @@ const KEEPERS: Record<string, Keeper> = {
     name: 'Kammār', says: 'Iron lifts with a stone pick, and Hīrak does not.',
     token: false, lees: 12, muda: 0,
     goods: [
-      { key: 'iron_bar', price: 14 }, { key: 'coal', price: 4 }, { key: 'barbed_arrow', price: 3 }, { key: 'iron_bracer', price: 90 },
+      { key: 'iron_bar', price: 14 }, { key: 'coal', price: 4, per: 4 }, { key: 'barbed_arrow', price: 3, per: 8 }, { key: 'iron_bracer', price: 90 },
       { key: 'gold_bar', price: 40 }, { key: 'lantern', price: 12 }, { key: 'cinder_bar', price: 70 }, { key: 'umbrite_bar', price: 140 },
     ],
     sold: [{ key: 'stone_sword', price: 3, n: 1 }],
@@ -89,7 +89,7 @@ function buy(st: State, g: Good, n: number, fromSold: boolean): boolean {
   let bought = 0;
   for (let i = 0; i < n; i++) {
     if (purse(k) < g.price) break;
-    if (st.hand.into({ key: g.key, n: 1, mod: g.mod }, ['pack', 'bar'])) break;
+    if (st.hand.into({ key: g.key, n: fromSold ? 1 : g.per ?? 1, mod: g.mod }, ['pack', 'bar'])) break;
     if (k.token) k.muda -= g.price; else k.lees -= g.price;
     bought++;
     if (fromSold) {
@@ -103,11 +103,11 @@ function buy(st: State, g: Good, n: number, fromSold: boolean): boolean {
 
 interface Row { id: string; good: Good; sold?: boolean; n?: number }
 
-/** Rows the well shows at once. */
-const WELL_ROWS = 6;
+/** Rows the well shows at once: five, so that the line saying what a press does stands under it. */
+const WELL_ROWS = 5;
 
 /**
- * The shop's well: rows 18 tall, the price at the right with its mark. Under Sell back each row is a thing sold this
+ * The shop's well: rows 18 tall, the price at the right with its mark. Under Sell each row is a thing sold this
  * visit, at what was paid for it and with the turned arrow before the price.
  */
 function goodsWell(st: State, ui: Ui): Node {
@@ -140,12 +140,15 @@ function goodsWell(st: State, ui: Ui): Node {
         const price = (can ? '' : '{cross} ') + (r.sold ? '{back} ' : '') + priceText(k, g.price);
         const px = rightX(price, rw - 3);
         s.text(price, px, 4, can ? 'salt' : 'blood.lt', true);
-        let name = stackName(st0);
-        if (r.n && r.n > 1) name += ` (${r.n})`;
-        s.text(cut(name, px - 5 - 20), 20, 4, GRADES[stackGrade(st0)].dark, true);
+        // How many a press brings (or how many wait to be bought back) follows the name in grey, as "Arrow ×8".
+        const many = r.sold ? r.n ?? 1 : g.per ?? 1;
+        const tail = many > 1 ? ` ×${many}` : '';
+        const name = cut(stackName(st0), px - 5 - 20 - measure(tail));
+        s.text(name, 20, 4, GRADES[stackGrade(st0)].dark, true);
+        if (tail) s.text(tail, 20 + measure(name), 4, 'root.4', true);
       },
       tip: () => {
-        const extra: TipLine[] = [{ text: can ? `${priceText(k, g.price)} each` : `${priceText(k, g.price)}: you carry ${count(purse(k))}`, c: can ? 'growth.lt' : 'blood.lt' }];
+        const extra: TipLine[] = [{ text: can ? `${priceText(k, g.price)} ${(g.per ?? 1) > 1 && !r.sold ? `for ${g.per}` : 'each'}` : `${priceText(k, g.price)}: you carry ${count(purse(k))}`, c: can ? 'growth.lt' : 'blood.lt' }];
         return stackTip(st0, r.sold ? '{lmb} buy one back   Shift {lmb} buy ten back' : '{lmb} buy one   Shift {lmb} buy ten', extra);
       },
       on: {
@@ -210,6 +213,9 @@ function sell(st: State, store: string, i: number): void {
 }
 
 const SLAB_W = 176, SLAB_H = 227;
+const TAB_NAMES = ['buy', 'sell'];
+/** Under the well: what a press does here, with the mouse marks the Patterns panel uses. */
+const LEGEND = ['{lmb} buy one   Shift {lmb} buy ten', 'Shift {lmb} in the pack sells'];
 
 function build(ui: Ui, id: string): Node {
   const st = open(id);
@@ -219,8 +225,9 @@ function build(ui: Ui, id: string): Node {
   const purseText = k.token ? `${count(k.muda)} {muda}` : `${count(k.lees)} {lees}`;
   const main: Node[] = [
     { x: rightX(purseText, 168), y: 6, w: measure(purseText), h: 10, paint: (s) => { s.text(purseText, 0, 0, 'ink'); } },
-    { x: 8, y: 6, w: measure(k.name) + 1, h: 10, takes: true, tip: () => ({ lines: [{ text: k.name, c: 'salt' }, { text: k.says, c: 'root.4' }], delay: 0.4 }) },
+    { x: 8, y: 6, w: measure(`${k.name}, ${TAB_NAMES[st.tab]}`) + 1, h: 10, takes: true, tip: () => ({ lines: [{ text: k.name, c: 'salt' }, { text: k.says, c: 'root.4' }], delay: 0.4 }) },
     goodsWell(st, ui),
+    { x: 8, y: 113, w: 160, h: 10, paint: (s) => { s.text(cut(LEGEND[st.tab], 160), 0, 0, 'ink.faded'); } },
     ...packBlock(b, 'clay', 132, 143, {
       each: (store, i) => {
         const s = st.hand.stores[store][i];
@@ -234,12 +241,12 @@ function build(ui: Ui, id: string): Node {
     }),
   ];
   const tabs: TabSpec[] = [
-    { id: 'shop.tab.buy', icon: thing(k.goods[0].key).icon, name: 'Buy' },
-    { id: 'shop.tab.back', icon: k.sold[0] ? thing(k.sold[0].key).icon : 'pack', name: 'Sell back' },
+    { id: 'shop.tab.buy', icon: 'coin', name: 'Buy' },
+    { id: 'shop.tab.back', icon: 'pack', name: 'Sell' },
   ];
   const win = place(ui, SLAB_W, SLAB_H);
   return overWorld(ui, win, [tabbedSlab({
-    id: 'shop.slab', x: 0, y: 0, w: SLAB_W, h: SLAB_H, ramp: 'clay', title: k.name, titleRoom: measure(purseText) + 8, kids: main,
+    id: 'shop.slab', x: 0, y: 0, w: SLAB_W, h: SLAB_H, ramp: 'clay', title: `${k.name}, ${TAB_NAMES[st.tab]}`, titleRoom: measure(purseText) + 8, kids: main,
     edge: 'left', tabs, chosen: st.tab, onTab: (i) => { st.tab = i; ui.cue('tab'); ui.invalidate(); },
   })], {
     outside: () => { st.hand.dropHeld(); b.after(); },

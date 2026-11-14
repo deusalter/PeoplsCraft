@@ -2751,17 +2751,18 @@ Size 176 by 227, with two tabs standing 21 out of its left edge. Material: clay.
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | H0 | slab | 0 | 0 | 176 | 227 | clay slab |
-| T1 | tab | -21 | 0 | 24 | 24 | "Buy": the keeper's first good as its icon; chosen when the shop opens |
-| T2 | tab | -18 | 23 | 24 | 24 | "Sell back": the icon of the last thing sold this visit, or the pack |
-| H1 | text | 8 | 6 | 80 | 10 | the keeper's name; its tooltip gives what they say, in root.4 |
+| T1 | tab | -21 | 0 | 24 | 24 | "Buy": a fired jar of lees, the coin mark (`coin` among the tab marks); chosen when the shop opens. An item on a tab said nothing of what the tab switched between |
+| T2 | tab | -18 | 23 | 24 | 24 | "Sell": the pack mark |
+| H1 | text | 8 | 6 | 96 | 10 | the keeper's name and the chosen tab's name: "Kammār, buy", "Kammār, sell"; its tooltip gives what they say, in root.4 |
 | H2 | text | 104 | 6 | 64 | 10 | the one coin this keeper takes, right-aligned to x 168: "12 {lees}", or "38 {muda}" when the Deserter deals. Two purses side by side, one a mark and one a word, left the buyer to guess which the shop took |
-| H4 | well | 8 | 18 | 160 | 110 | dark well of six list rows 18 tall, scroll track at its right: icon, name in the colour of its grade, price right-aligned with the same mark as H2. Under Sell back each row is a thing sold this visit at what was paid for it, its price led by `{back}`; with nothing sold the well says "Nothing sold yet. Shift {lmb} a thing in the pack to sell it." in root.4. A grey heading row among the goods read as a thing that could not be bought |
+| H4 | well | 8 | 18 | 160 | 92 | dark well of five list rows 18 tall, scroll track at its right: icon, name in the colour of its grade, then how many one press brings in root.4 when more than one ("Barbed Arrow ×8", the price being for the lot), price right-aligned with the same mark as H2. Under Sell each row is a thing sold this visit at what was paid for it, its price led by `{back}`; with nothing sold the well says "Nothing sold yet. Shift {lmb} a thing in the pack to sell it." in root.4. A grey heading row among the goods read as a thing that could not be bought |
+| H3 | text | 8 | 113 | 160 | 10 | what a press does, in ink.faded with the mouse marks: under Buy "{lmb} buy one   Shift {lmb} buy ten", under Sell "Shift {lmb} in the pack sells". With no line and no button, pressing a row was an affordance nothing told of |
 | H5 | text | 8 | 132 | 40 | 10 | "Pack" |
 | H6 | button | 138 | 129 | 30 | 12 | "Sort" |
 | H7 | slots | 8 | 143 | 162 | 54 | the pack, nine by three |
 | H8 | slots | 8 | 201 | 162 | 18 | the hotbar row, four units below the pack |
 
-- **Shows.** What one householder sells, under Buy; what was sold to them this visit, to buy back, under Sell back; and the pack to sell from. A price the buyer cannot meet is drawn in blood.lt after a `{cross}`; its icon and its name in the colour of its grade stay as they are, so that the grade and the price are read apart. A silhouette means only a thing not yet seen (the codex), never one that cannot be bought.
+- **Shows.** What one householder sells, under Buy; what was sold to them this visit, to buy back, under Sell; and the pack to sell from. A price the buyer cannot meet is drawn in blood.lt after a `{cross}`; its icon and its name in the colour of its grade stay as they are, so that the grade and the price are read apart. A silhouette means only a thing not yet seen (the codex), never one that cannot be bought.
 - **Clickable.** A row buys one; shift and click buys ten. Shift and click on a pack slot sells the stack; a thing of grade Island or higher, a bait or a Recall Stone asks for the same click again within two and a half seconds (the slot takes the refusal frame and the tooltip says "Again to sell").
 - **Keys.** Tab walks: the two tabs, rows, pack, hotbar, "Sort". Up and Down move along the rows and scroll the well. Enter buys.
 - **First.** Focus on the first row.
