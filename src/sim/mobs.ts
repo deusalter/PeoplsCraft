@@ -3,12 +3,12 @@ import { T_LIQUID } from '../data/blocks';
 import { DIMS } from '../data/dims';
 import { MOB_LIST, MobDef, mob as mobDef } from '../data/mobs';
 import { ID_MAX } from '../net/protocol';
-import { type BossState, bossTick, newBossState } from './boss';
+import { type BossState, bossTick, endFight, newBossState } from './boss';
 import { dayAmount } from './clock';
 import { BURST } from './fx';
 import { onMobKilled } from './loot';
 import { Body, boxFree, moveBody, newRayHit, raycast } from './physics';
-import { hurtPlayer, type SimPlayer } from './player';
+import { active, hurtPlayer, type SimPlayer } from './player';
 import type { Realm } from './realm';
 import { standSpot } from './rules';
 import { trySpawn } from './spawn';
@@ -29,9 +29,12 @@ export class Mob implements Body {
   tpn = 0;
   /** Record id of a minion's owner. */
   owner: string | null = null;
-  /** The player this creature is dealing with this tick. */
+  /** The player this creature is after (7.1), null when it is after nobody. A boss's is its target (7.9). */
   tp: SimPlayer | null = null;
+  /** Seconds the target stays fixed on the player who last hurt it. */
   tpT = 0;
+  /** A shade's last sun-burn test, made every 15 ticks (7.8). */
+  burn = false;
   /** Damage taken, by the record id of the player who dealt it. */
   hitBy = new Map<string, number>();
   /** Record id of the player whose spawn attempt made it. */
@@ -39,6 +42,17 @@ export class Mob implements Body {
 }
 
 export const POOL = 320;
+/** Re-choosing a target every this many ticks; switching only to a player nearer than this share of the current distance;
+ *  the current target kept out to this multiple of the aggro distance; the seconds a blow fixes the target (7.1). */
+export const RETARGET = 15, SWITCH = 0.75, KEEP = 1.5, HURT_LOCK = 4;
+/** Touch damage is tested against every target this close (7.1). */
+const TOUCH_R = 4;
+/** Distance to the nearest player of the realm, whatever its state: despawning is measured by it. */
+function nearestAny(realm: Realm, x: number, y: number, z: number): number {
+  let bd = Infinity;
+  for (const p of realm.players) { const b = p.body, d = Math.hypot(b.x - x, b.y - y, b.z - z); if (d < bd) bd = d; }
+  return bd;
+}
 const ray = newRayHit();
 const DEF_INDEX = new Map<MobDef, number>(MOB_LIST.map((d, i) => [d, i]));
 /** Index of a creature kind in MOB_LIST, the form it takes in events. */
@@ -56,6 +70,7 @@ export class MobSim {
   /** Creatures stand still and nothing spawns (a test scene). */
   frozen = false;
   private found: Mob[] = [];
+  private tg: SimPlayer[] = [];
 
   constructor(private realm: Realm) { for (let i = 0; i < POOL; i++) this.list.push(new Mob()); }
 
@@ -85,8 +100,33 @@ export class MobSim {
     }
   }
   /** Take a creature out of the world without a death: how 0 despawned, 2 a boss withdrew. */
-  remove(m: Mob, how = 0): void { if (!m.active) return; m.active = false; this.realm.sim.sink.emit({ dim: this.realm.dim }, ['md', m.id, how]); }
-  clear(keepMinions = false): void { for (const m of this.list) if (m.active && !(keepMinions && m.def.ai === 'minion')) m.active = false; }
+  remove(m: Mob, how = 0): void { if (!m.active) return; if (m.boss) endFight(this.realm, m, 'removed'); m.active = false; this.realm.sim.sink.emit({ dim: this.realm.dim }, ['md', m.id, how]); }
+  /** Every creature gone at once (the realm is suspended, or a command). A boss among them ends its fight by the refund rule. */
+  clear(keepMinions = false): void {
+    for (const m of this.list) if (m.active && !(keepMinions && m.def.ai === 'minion')) { if (m.boss) endFight(this.realm, m, 'removed'); m.active = false; }
+  }
+  /** Active, alive, shown, of this realm: the players a creature may be after. */
+  isTarget(p: SimPlayer): boolean { return p.dim === this.realm.dim && !p.parked && active(p) && !p.stats.dead && !p.modes.hidden; }
+  /** 7.1: keep the current target unless a candidate is closer than SWITCH of its distance or it stopped being one; the
+   *  player who last hurt the creature stays its target for HURT_LOCK seconds. */
+  private aim(m: Mob): void {
+    if (m.tp && !this.isTarget(m.tp)) { m.tp = null; m.tpT = 0; }
+    if (m.tp && m.tpT > 0) return;
+    if (m.age > 0 && (this.realm.sim.tick + m.id) % RETARGET !== 0) return;
+    const d = m.def, aggro = d.aggro ?? (d.ai === 'ranged' || d.ai === 'flyer' ? 18 : 16);
+    let best: SimPlayer | null = null, bd = aggro;
+    for (const q of this.tg) {
+      if (!this.isTarget(q)) continue;
+      const dd = Math.hypot(q.body.x - m.x, q.body.y - m.y, q.body.z - m.z);
+      if (dd < bd) { bd = dd; best = q; }
+    }
+    const cur = m.tp;
+    if (cur) {
+      const cd = Math.hypot(cur.body.x - m.x, cur.body.y - m.y, cur.body.z - m.z);
+      if (cd <= aggro * KEEP && !(best && best !== cur && bd < SWITCH * cd)) return;
+    }
+    m.tp = best;
+  }
   count(pred: (m: Mob) => boolean): number { let n = 0; for (let i = 0, l = this.list; i < this.hi; i++) if (l[i].active && pred(l[i])) n++; return n; }
   bosses(): Mob[] { const l = this.found; l.length = 0; for (let i = 0; i < this.hi; i++) { const m = this.list[i]; if (m.active && m.boss) l.push(m); } return l; }
   /** The first live boss, or null. */
@@ -113,7 +153,11 @@ export class MobSim {
     if (m.def.ai === 'npc') { m.hurt = 0.2; return; }
     const dmg = Math.max(1, Math.round(raw - m.def.def * 0.5));
     m.hp -= dmg; m.hurt = 0.22; m.flee = 5;
-    if (by) m.hitBy.set(by.id, (m.hitBy.get(by.id) ?? 0) + dmg);
+    if (by) {
+      m.hitBy.set(by.id, (m.hitBy.get(by.id) ?? 0) + dmg);
+      if (m.boss) { m.boss.parts.add(by.id); m.boss.hitAt.set(by.id, realm.sim.tick); }
+      else if (this.isTarget(by)) { m.tp = by; m.tpT = HURT_LOCK; }
+    }
     const kr = 1 - (m.def.knockRes ?? 0), kl = Math.hypot(kx, kz) || 1;
     m.kbx += (kx / kl) * knock * kr; m.kbz += (kz / kl) * knock * kr;
     if (kr > 0.3 && m.onGround) m.vy = 4.5;
@@ -123,28 +167,32 @@ export class MobSim {
     realm.burst(BURST.mobHit, m.x, m.y + m.h * 0.6, m.z, defIndex(m.def));
     if (m.hp <= 0) this.kill(m, by);
   }
-  private kill(m: Mob, by: SimPlayer | null): void {
+  private kill(m: Mob, _by: SimPlayer | null): void {
     const realm = this.realm;
     m.active = false;
     realm.sound('mobdie', 0.7, m.def.voice ?? 1, m.x, m.y, m.z);
     realm.sim.sink.emit({ dim: realm.dim }, ['md', m.id, 1]);
     // rewards are paid now, so leaving mid-animation cannot lose the kill
-    onMobKilled(realm, m, by);
+    onMobKilled(realm, m);
   }
 
   // ---- simulation ----
   tick(dt: number): void {
     const realm = this.realm, sim = realm.sim, w = realm, rnd = sim.rnd, time = sim.time;
     if (this.frozen) return;
+    const tg = this.tg; tg.length = 0; for (const q of realm.targets()) tg.push(q);
     // `hi` is read again on every pass: a creature called up during the loop still gets this tick
     for (let i = 0, l = this.list; i < this.hi; i++) {
       const m = l[i];
       if (!m.active) continue;
-      // a minion deals with its owner, everything else with whoever is closest
-      const pl = m.def.ai === 'minion' ? (m.owner ? sim.players.get(m.owner) ?? null : null) : realm.closest(m.x, m.y, m.z);
-      if (!pl || pl.dim !== realm.dim) { if (m.def.ai === 'minion') this.remove(m); continue; }
-      m.tp = pl;
-      const p = pl.body, px = m.x, pz = m.z;
+      const d = m.def;
+      // a minion deals with its owner, everything else with the player it is after
+      let owner: SimPlayer | null = null;
+      if (d.ai === 'minion') {
+        owner = m.owner ? sim.players.get(m.owner) ?? null : null;
+        if (!owner || owner.parked || owner.dim !== realm.dim || owner.stats.dead) { this.remove(m); continue; }
+      } else if (d.ai !== 'boss') this.aim(m);
+      const pl = owner ?? (d.ai === 'boss' || d.ai === 'fish' || d.ai === 'npc' ? null : m.tp), p = pl ? pl.body : null, px = m.x, pz = m.z;
       // a spawner may turn a creature before its first tick
       if (m.age === 0) m.ry = m.yaw;
       m.age += dt;
@@ -153,21 +201,22 @@ export class MobSim {
       if (m.atkCd > 0) m.atkCd -= dt;
       if (m.flee > 0) m.flee -= dt;
       if (m.talk > 0) m.talk -= dt;
-      const dx = p.x - m.x, dz = p.z - m.z, dy = p.y - m.y, dist = Math.hypot(dx, dz), d3 = Math.hypot(dist, dy);
-      const d = m.def;
-      // despawn rules
+      if (m.tpT > 0) m.tpT -= dt;
+      const dx = p ? p.x - m.x : 0, dz = p ? p.z - m.z : 0, dy = p ? p.y - m.y : 0, dist = p ? Math.hypot(dx, dz) : Infinity, d3 = Math.hypot(dist, dy);
+      // despawn rules, by the nearest player of the realm, so creatures around a player who is away stay
+      const dn = nearestAny(realm, m.x, m.y, m.z);
       if (!m.boss && d.ai !== 'npc' && d.ai !== 'minion') {
-        if (d3 > 110 || (d3 > 56 && m.age > 40 && rnd() < dt * 0.1)) { this.remove(m); continue; }
+        if (dn > 110 || (dn > 56 && m.age > 40 && rnd() < dt * 0.1)) { this.remove(m); continue; }
       }
       if (!w.ready(Math.floor(m.x), Math.floor(m.z))) continue;
       { let a = m.yaw - m.ry; a -= Math.round(a / 6.2832) * 6.2832; m.ry += a * Math.min(1, dt * (m.boss ? 6 : 12)); }
+      if (d.ai === 'boss') { bossTick(realm, m, dt); continue; }
       let wx = 0, wz = 0, speed = d.speed, wantJump = false, fly = false, vyWant = 0;
-      const dead = pl.stats.dead;
 
       switch (d.ai) {
         case 'passive': {
           m.timer -= dt;
-          if (m.flee > 0) { wx = -dx; wz = -dz; speed *= 1.7; }
+          if (m.flee > 0 && p) { wx = -dx; wz = -dz; speed *= 1.7; }
           else {
             if (m.timer <= 0) { m.timer = 3 + rnd() * 6; const a = rnd() * 6.283, r = rnd() < 0.35 ? 0 : 2 + rnd() * 6; m.tx = m.x + Math.cos(a) * r; m.tz = m.z + Math.sin(a) * r; }
             wx = m.tx - m.x; wz = m.tz - m.z; speed *= 0.5;
@@ -179,7 +228,7 @@ export class MobSim {
           m.timer -= dt;
           const night = sim.isNight() || this.pressure > 0;
           const hx = m.home ? m.home[0] + 0.5 : m.x, hz = m.home ? m.home[2] + 0.5 : m.z;
-          if (m.talk > 0) { m.yaw = Math.atan2(dx, dz); break; }
+          if (m.talk > 0) { const t = this.talker(m); if (t) m.yaw = Math.atan2(t.body.x - m.x, t.body.z - m.z); break; }
           if (m.timer <= 0) { m.timer = 4 + rnd() * 7; const a = rnd() * 6.283, r = night ? rnd() * 1.5 : 1 + rnd() * 7; m.tx = hx + Math.cos(a) * r; m.tz = hz + Math.sin(a) * r; }
           wx = m.tx - m.x; wz = m.tz - m.z; speed *= 0.7;
           if (Math.hypot(wx, wz) < 0.6) { wx = 0; wz = 0; }
@@ -187,7 +236,7 @@ export class MobSim {
           break;
         }
         case 'melee': case 'hopper': {
-          const chase = !dead && d3 < (d.aggro ?? 16) && !pl.modes.hidden;
+          const chase = !!p;
           if (chase) { wx = dx; wz = dz; } else { m.timer -= dt; if (m.timer <= 0) { m.timer = 3 + rnd() * 5; const a = rnd() * 6.283; m.tx = m.x + Math.cos(a) * 5; m.tz = m.z + Math.sin(a) * 5; } wx = m.tx - m.x; wz = m.tz - m.z; speed *= 0.45; if (Math.hypot(wx, wz) < 0.5) wx = wz = 0; }
           if (d.ai === 'hopper') {
             m.hop -= dt;
@@ -196,8 +245,7 @@ export class MobSim {
           break;
         }
         case 'ranged': {
-          const see = !dead && d3 < (d.aggro ?? 18);
-          if (see) {
+          if (pl && p) {
             const want = d.range ?? 10;
             if (dist > want * 0.85) { wx = dx; wz = dz; } else if (dist < want * 0.4) { wx = -dx; wz = -dz; }
             m.yaw = Math.atan2(dx, dz);
@@ -212,8 +260,7 @@ export class MobSim {
         }
         case 'flyer': {
           fly = true;
-          const see = !dead && d3 < (d.aggro ?? 18);
-          if (see) {
+          if (pl && p) {
             const ranged = !!d.proj, hover = ranged ? 4 : 0.6 + Math.sin(m.age * 1.3 + m.id) * 1.2;
             const want = ranged ? (d.range ?? 9) * 0.75 : 0;
             if (dist > want + 1) { wx = dx; wz = dz; } else if (dist < want - 2) { wx = -dx; wz = -dz; } else { wx = -dz; wz = dx; speed *= 0.5; }
@@ -239,6 +286,9 @@ export class MobSim {
         }
         case 'minion': {
           fly = true;
+          // an owner who is away leaves its minions waiting where they are
+          if (!pl!.online || pl!.stalled) { m.vx = m.vy = m.vz = 0; m.moving = 0; continue; }
+          const p = pl!.body;
           if (!m.target || !m.target.active || Math.hypot(m.target.x - p.x, m.target.z - p.z) > 24) m.target = this.nearestHostile(p.x, p.y + 1, p.z, 18);
           const t = m.target;
           let gx: number, gy: number, gz: number;
@@ -252,19 +302,15 @@ export class MobSim {
           if (el > 0.2) m.yaw = Math.atan2(ex, ez);
           if (t && el < t.hw + 0.9 && m.atkCd <= 0) {
             m.atkCd = 0.55; m.atk = 0.2;
-            const crit = rnd() < pl.stats.d.crit;
-            this.hurt(t, m.minionDmg * pl.stats.dmgMult('summon') * (crit ? 2 : 1), ex, ez, 3, crit, pl);
+            const crit = rnd() < pl!.stats.d.crit;
+            this.hurt(t, m.minionDmg * pl!.stats.dmgMult('summon') * (crit ? 2 : 1), ex, ez, 3, crit, pl);
           }
           m.moving = Math.hypot(m.vx, m.vz); m.anim += dt * 8;
           continue;
         }
-        case 'boss': {
-          bossTick(realm, m, dt);
-          break;
-        }
       }
 
-      if (d.ai !== 'boss') {
+      {
         const wl = Math.hypot(wx, wz);
         if (wl > 0.01) { wx /= wl; wz /= wl; m.yaw = Math.atan2(wx, wz); }
         const tvx = wx * speed, tvz = wz * speed;
@@ -287,23 +333,36 @@ export class MobSim {
         const kd = Math.max(0, 1 - 6 * dt); m.kbx *= kd; m.kbz *= kd;
         m.moving = Math.hypot(m.x - px, m.z - pz) / dt;
         m.anim += m.moving * dt * 2.4 + (fly ? dt * 4 : 0);
-        // touch damage
-        if (d.hostile && d.dmg > 0 && !d.proj && !dead && m.atkCd <= 0 && Math.abs(dx) < m.hw + p.hw + 0.25 && Math.abs(dz) < m.hw + p.hw + 0.25 && p.y < m.y + m.h + 0.2 && p.y + p.h > m.y - 0.2) {
-          m.atkCd = d.rate ?? 1; m.atk = 0.3;
-          hurtPlayer(sim, pl, d.dmg * m.dmgMul, m.x, m.z, d.name, m);
+        // touch damage, on every target in reach of the body
+        if (d.hostile && d.dmg > 0 && !d.proj && m.atkCd <= 0) {
+          let hit = false;
+          for (const q of this.tg) {
+            const b = q.body;
+            if (Math.abs(b.x - m.x) > TOUCH_R || Math.abs(b.z - m.z) > TOUCH_R || !this.isTarget(q)) continue;
+            if (Math.abs(b.x - m.x) < m.hw + b.hw + 0.25 && Math.abs(b.z - m.z) < m.hw + b.hw + 0.25 && b.y < m.y + m.h + 0.2 && b.y + b.h > m.y - 0.2) { hit = true; hurtPlayer(sim, q, d.dmg * m.dmgMul, m.x, m.z, d.name, m); }
+          }
+          if (hit) { m.atkCd = d.rate ?? 1; m.atk = 0.3; }
         }
-        // shades come apart in direct sun
-        if ((d.key === 'gloomshade' || d.key === 'moonspawn') && dayAmount(sim.shared.clock, realm.dim) > 0.75 && DIMS[realm.dim].hasSky && realm.light.sky(Math.floor(m.x), Math.floor(m.y + 1), Math.floor(m.z)) >= 14 && !m.event) {
-          m.hp -= dt * m.maxHp * 0.25; m.hurt = 0.1;
-          if (m.hp <= 0) { m.active = false; sim.sink.emit({ dim: realm.dim }, ['md', m.id, 1]); continue; }
+        // shades come apart in direct sun; the light is looked at every RETARGET ticks, staggered by id
+        if (d.key === 'gloomshade' || d.key === 'moonspawn') {
+          if ((sim.tick + m.id) % RETARGET === 0) m.burn = !m.event && DIMS[realm.dim].hasSky && dayAmount(sim.shared.clock, realm.dim) > 0.75 && realm.light.sky(Math.floor(m.x), Math.floor(m.y + 1), Math.floor(m.z)) >= 14;
+          if (m.burn) {
+            m.hp -= dt * m.maxHp * 0.25; m.hurt = 0.1;
+            if (m.hp <= 0) { m.active = false; sim.sink.emit({ dim: realm.dim }, ['md', m.id, 1]); continue; }
+          }
         }
         if (m.y < -10) this.remove(m);
-        if (d.hostile && d3 < 20 && rnd() < dt * 0.06) realm.sound('growl', 0.5, d.voice ?? 1, m.x, m.y, m.z);
+        if (d.hostile && dn < 20 && rnd() < dt * 0.06) realm.sound('growl', 0.5, d.voice ?? 1, m.x, m.y, m.z);
       }
     }
     this.spawnT -= dt;
     if (this.spawnT <= 0) { this.spawnT = 0.35; for (const pl of realm.players) trySpawn(realm, pl); }
     while (this.hi > 0 && !this.list[this.hi - 1].active) this.hi--;
+  }
+  /** The player trading with a townsperson. */
+  private talker(m: Mob): SimPlayer | null {
+    for (const q of this.realm.players) if (q.window && q.window.mode === 'shop' && q.window.mob === m.id) return q;
+    return null;
   }
   canSee(m: Mob, pl: SimPlayer): boolean {
     const p = pl.body, ox = m.x, oy = m.y + m.h * 0.8, oz = m.z, dx = p.x - ox, dy = p.y + p.eye - oy, dz = p.z - oz, l = Math.hypot(dx, dy, dz) || 1;
