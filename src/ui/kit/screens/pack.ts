@@ -3,6 +3,7 @@
 // panels leave the sides and the main slab carries three side tabs: Pack, Body, Making.
 import { FRAMED_PLATE } from '../art/slab';
 import { clock, count, measure, rightX } from '../font/measure';
+import { SMALL } from '../font/face';
 import { cut } from '../font/wrap';
 import type { Node, Ui } from '../node';
 import { frameWell } from '../parts/well';
@@ -36,6 +37,8 @@ interface PackState {
   lees: number;
   bodyTab: number;
   narrowTab: number;
+  /** The attribute whose "+" is under the pointer: its next value and what it changes below are shown before it is spent. */
+  preview: number | null;
 }
 
 const ATTRS = ['Strength', 'Agility', 'Vitality', 'Arm'];
@@ -98,7 +101,7 @@ function sample(kind: 'mid' | 'empty' | 'full'): PackState {
     attrs: kind === 'empty' ? [0, 0, 0, 0] : [6, 3, 5, 2],
     points: kind === 'empty' ? 0 : 3,
     lees: kind === 'empty' ? 0 : 1240,
-    bodyTab: 0, narrowTab: 0,
+    bodyTab: 0, narrowTab: 0, preview: null,
   };
 }
 
@@ -112,19 +115,19 @@ function materialTones(s: Stack | null): Tones {
 }
 
 /** The seven totals of the body panel, from what is worn and carried in the trinket slots. */
-function totals(st: PackState): [string, string][] {
+function totals(st: PackState, attrs = st.attrs): [string, string][] {
   const worn = [...st.hand.stores.wear, ...st.hand.stores.trinket].filter((s): s is Stack => !!s);
   const def = worn.reduce((a, s) => a + (thing(s.key).def ?? 0) + (s.mod === 'warding' ? 2 : 0), 0) + (worn.some((s) => s.key === 'iron_bracer') ? 3 : 0);
   const melee = worn.some((s) => s.key === 'warriors_band') ? 8 : 0;
   const ironSet = st.hand.stores.wear.every((s) => s?.key.startsWith('iron_melee'));
   return [
     ['Defence', String(def + (ironSet ? 4 : 0))],
-    ['Melee', `+${melee + st.attrs[0] * 2 + (ironSet ? 8 : 0)}%`],
-    ['Ranged', `+${st.attrs[1] * 2}%`],
-    ['Crystal-work', `+${st.attrs[3] * 2}%`],
+    ['Melee', `+${melee + attrs[0] * 2 + (ironSet ? 8 : 0)}%`],
+    ['Ranged', `+${attrs[1] * 2}%`],
+    ['Crystal-work', `+${attrs[3] * 2}%`],
     ['Totem', '+0%'],
-    ['Critical', `${4 + st.attrs[1]}%`],
-    ['Speed', `+${st.attrs[1]}%`],
+    ['Critical', `${4 + attrs[1]}%`],
+    ['Speed', `+${attrs[1]}%`],
   ];
 }
 
@@ -133,11 +136,13 @@ const BODY_W = 136, BODY_H = 166;
 
 /**
  * The body panel's own parts, from its top left, as the wide pack and the narrow Body tab both lay them. The level and
- * its practice strip share a row; the practice in numbers is the strip's tooltip.
+ * its practice strip share a row, the practice in figures under the strip's right end; the words are its tooltip.
+ * Every figure of the panel ends on one column, F, and the "+" buttons stand 2 clear of it in the 12 to its right,
+ * which are kept whether there are points or not, so the figures never move or hang mid-panel.
  */
 function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
   const out: Node[] = [];
-  const R = narrow ? 96 : BODY_W - 8, plusX = R - 12;
+  const R = narrow ? 96 : BODY_W - 8, F = R - 12;
   // A handle too long for the panel is cut and given whole in the title's tooltip; the panel has no row to spare for
   // a second line above the level.
   const title = ink(8, 6, st.name, 'ink', R - 8);
@@ -146,21 +151,33 @@ function bodyParts(st: PackState, ui: Ui, narrow: boolean): Node[] {
   out.push(ink(8, 17, lvl));
   const sx = 8 + measure(lvl) + 6;
   const pr = `${count(st.practice[0])} of ${count(st.practice[1])} to level ${st.level + 1}`;
-  out.push({ ...strip({ x: sx, y: 19, w: R - sx, f: st.practice[0] / st.practice[1], tones: ['growth.lt', 'growth', 'growth.dk'], segments: Math.max(1, Math.round((R - sx) / 8)), thin: true }), takes: true, tip: () => ({ lines: [{ text: 'Practice', c: 'growth.lt' }, { text: pr, c: 'root.4' }], delay: 0.2 }) });
+  out.push({ ...strip({ x: sx, y: 17, w: R - sx, f: st.practice[0] / st.practice[1], tones: ['growth.lt', 'growth', 'growth.dk'], segments: Math.max(1, Math.round((R - sx) / 8)), thin: true }), takes: true, tip: () => ({ lines: [{ text: 'Practice', c: 'growth.lt' }, { text: pr, c: 'root.4' }], delay: 0.2 }) });
+  // The small face has no lower case, so the figures are joined by a slash and not by "of", which it would set in capitals.
+  out.push(inkRight(R, 23, `${st.practice[0]}/${st.practice[1]}`, 'ink.faded', SMALL));
+  const next = st.preview !== null && st.points > 0 ? st.attrs.map((v, k) => (k === st.preview ? v + 1 : v)) : null;
   ATTRS.forEach((a, i) => {
-    const y = 28 + i * 12;
+    const y = 29 + i * 12;
     // The name is the hover target for what a point raises, so a word like "Arm" is never left unexplained.
     out.push({ ...ink(8, y + 1, a), id: `body.attr.${i}`, takes: true, tip: () => ({ lines: [{ text: a, c: 'salt' }, ...ATTR_RAISES[i].map((t) => ({ text: t, c: 'root.4' as const }))], delay: 0.2 }) });
-    out.push(inkRight(plusX - 4, y + 1, String(st.attrs[i])));
-    if (st.points > 0) out.push(plusButton({ id: `body.plus.${i}`, x: plusX, y, size: 11, ramp: 'clay', onPress: () => { st.attrs[i]++; st.points--; ui.cue('press'); ui.invalidate(); } }));
+    const v = String(st.attrs[i]);
+    if (next && st.preview === i) {
+      const to = ` {right} ${next[i]}`;
+      out.push(inkRight(F - measure(to), y + 1, v), inkRight(F, y + 1, to, 'growth.dk'));
+    } else out.push(inkRight(F, y + 1, v));
+    if (st.points > 0) {
+      const plus = plusButton({ id: `body.plus.${i}`, x: F + 3, y, size: 10, ramp: 'clay', onPress: () => { st.attrs[i]++; st.points--; ui.cue('press'); ui.invalidate(); } });
+      plus.on = { ...plus.on, enter: () => { st.preview = i; ui.invalidate(); }, leave: () => { if (st.preview === i) { st.preview = null; ui.invalidate(); } } };
+      out.push(plus);
+    }
   });
-  if (st.points > 0) out.push(ink(8, 77, `${st.points} to spend`));
+  if (st.points > 0) out.push(ink(8, 78, `${st.points} to spend`));
   const rows = totals(st);
+  const after = next ? totals(st, next) : rows;
   if (narrow) {
-    rows.forEach(([k, v], i) => { out.push(ink(100, 16 + i * 10, k, 'ink.faded', 68 - measure(v) - 4)); out.push(inkRight(168, 16 + i * 10, v)); });
+    rows.forEach(([k, v], i) => { out.push(ink(100, 16 + i * 10, k, 'ink.faded', 68 - measure(v) - 4)); out.push(inkRight(168, 16 + i * 10, after[i][1], after[i][1] !== v ? 'growth.dk' : 'ink')); });
   } else {
     out.push(cutLine(8, 89, R - 8, 'clay'));
-    rows.forEach(([k, v], i) => { out.push(ink(8, 92 + i * 10, k, 'ink.faded', R - 8 - measure(v) - 4)); out.push(inkRight(R, 92 + i * 10, v)); });
+    rows.forEach(([k, v], i) => { out.push(ink(8, 92 + i * 10, k, 'ink.faded', F - 8 - measure(v) - 4)); out.push(inkRight(F, 92 + i * 10, after[i][1], after[i][1] !== v ? 'growth.dk' : 'ink')); });
   }
   return out;
 }

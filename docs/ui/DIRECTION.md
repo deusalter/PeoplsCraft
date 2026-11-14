@@ -2358,11 +2358,11 @@ The pack is the main slab, 176 by 182, with one row of tabs standing 21 above it
 | S0 | slab | 0 | 0 | 136 | 166 | body panel, plain, no tabs of its own |
 | S1 | text | 8 | 6 | 120 | 10 | the player's name; one too long for 120 is cut with "…" and its tooltip gives it whole with the level under it |
 | S2 | text | 8 | 17 | 40 | 10 | "Level 14" in ink |
-| S3 | strip | 52 | 19 | 76 | 5 | practice strip, thin, from 6 after the level to x 128, a segment to 8 units; the practice in numbers ("320 of 900 to level 15") is its tooltip |
-| S4 | rows | 8 | 28 | 120 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; each name's tooltip says in two grey lines what a point raises ("+2% crystal-work and totem harm", "+6 arm per point"), so that a word of the game's own such as Arm is never left to be guessed; value right-aligned to x 112; while there are points, a clay button "+" 11 by 11 at x 116 at the top of each row, so that one clear unit parts each from the next |
-| S5 | text | 8 | 77 | 120 | 10 | "3 to spend", only while there are points |
+| S3 | strip | 52 | 17 | 76 | 5 | practice strip, thin, from 6 after the level to x 128, its top on the level's cap line, a segment to 8 units; under it at y 23 the practice in figures, "320/900" in the small face in `ink.faded`, its last column on the strip's last (the small face has no lower case, and "of" set in it would be capitals); in words ("320 of 900 to level 15") it is the strip's tooltip. A strip with no figure did not say how far the next level was |
+| S4 | rows | 8 | 29 | 120 | 48 | four rows 12 tall: Strength, Agility, Vitality, Arm; each name's tooltip says in two grey lines what a point raises ("+2% crystal-work and totem harm", "+6 arm per point"), so that a word of the game's own such as Arm is never left to be guessed; value right-aligned to x 116, the one column every figure of the panel ends on; the 12 units from x 117 to 128 are a gutter kept whether there are points or not, so that with none the figures do not hang mid-panel apart from the totals; while there are points, a clay button "+" 10 by 10 at x 119 at the top of each row, 2 clear of the figures. While the pointer is on a "+", the row shows what one press makes, "6 {right} 7" with the arrow and the new figure in `growth.dk`, and each total below that the point would change is written at its new value in `growth.dk`, so a point is never spent blind |
+| S5 | text | 8 | 78 | 120 | 10 | "3 to spend", only while there are points |
 | S6 | rule | 8 | 89 | 120 | 2 | cut line |
-| S7 | rows | 8 | 92 | 120 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 128: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
+| S7 | rows | 8 | 92 | 120 | 70 | seven rows 10 tall, label in faded ink, value in ink right-aligned to x 116 with the attributes' figures: Defence, Melee, Ranged, Crystal-work, Totem, Critical, Speed |
 | M0 | slab | 135 | 0 | 176 | 182 | main slab |
 | M1 | text | 143 | 6 | 40 | 10 | "Pack" |
 | M2 | button | 273 | 3 | 30 | 12 | "Sort": merges and orders the pack, leaves the hotbar |

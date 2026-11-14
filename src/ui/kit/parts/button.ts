@@ -138,7 +138,7 @@ export function smallButton(o: Omit<ButtonOpts, 'w'> & { w?: number }, measureLa
 }
 
 /** The square button that adds, 12 by 12 or, on a stat's row of 12, 11 by 11 so that a column of them keeps a unit apart. */
-export function plusButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'> & { size?: 11 | 12 }): Node {
+export function plusButton(o: Omit<ButtonOpts, 'w' | 'h' | 'label'> & { size?: 10 | 11 | 12 }): Node {
   const n = o.size ?? 12;
   return button({ ...o, w: n, h: n, label: '+' });
 }
