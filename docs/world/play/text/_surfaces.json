@@ -339,7 +339,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 40
+   "entries": 41
   },
   "bed": {
    "about": "Answer of a bed or a room when it is checked",
@@ -381,7 +381,7 @@
    "voice": "label",
    "limit": 40,
    "assign": "system",
-   "entries": 38
+   "entries": 40
   },
   "win": {
    "about": "Titles, buttons and hints in the windows",
@@ -430,7 +430,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 75
+   "entries": 76
   },
   "key": {
    "about": "What a control does, in the list of controls",
@@ -611,6 +611,13 @@
    "line": 67,
    "text": "'event raid|moon|ashen'",
    "why": "a developer command's usage line (main)",
+   "branch": "main"
+  },
+  {
+   "file": "src/main.ts",
+   "line": 131,
+   "text": "new Error('the simulation runs on the server')",
+   "why": "the rejection of the developer tools' ask on a joined client (main): it reaches only a developer's console, never a player",
    "branch": "main"
   },
   {
@@ -15324,10 +15331,11 @@
    "slots": [
     "{n}"
    ],
-   "note": "the distance under the compass marker, below 1000, and the distance to another player in the list held open by Tab (src/ui/roster.ts, main); {n} is a whole number",
+   "note": "the distance under the compass marker, below 1000, the distance to another player in the list held open by Tab (src/ui/roster.ts, main), and the distance on a ping marker in the world (src/ui/hud.ts, main); {n} is a whole number",
    "at": [
     "src/ui/hud.ts:230",
-    "src/ui/roster.ts:45 (main)"
+    "src/ui/roster.ts:45 (main)",
+    "src/ui/hud.ts:413 (main)"
    ]
   },
   "hud:dodged": {
@@ -15430,6 +15438,19 @@
    "voice": "label",
    "limit": 40,
    "assign": "system"
+  },
+  "hud:ping.unnamed": {
+   "surface": "hud",
+   "key": "ping.unnamed",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 413,
+   "now": "Ping",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "note": "stands in place of the name on a ping marker in the world when the ping carries no name; the loader writes the name, a comma and a space, and then hud:dist.m",
+   "branch": "main"
   },
   "hud:roster.alone": {
    "surface": "hud",
@@ -15535,6 +15556,23 @@
    "voice": "label",
    "limit": 40,
    "assign": "system"
+  },
+  "hud:tag.state": {
+   "surface": "hud",
+   "key": "tag.state",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 67,
+   "now": "{name} · {state}",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "slots": [
+    "{name}",
+    "{state}"
+   ],
+   "note": "the name tag over another player who is away, in a bed, fallen or still loading; {state} is filled from hud:roster.state.away, .asleep, .fallen and .loading by key, as in the list of players, and the bare key is never written",
+   "branch": "main"
   },
   "item.desc:aether_bar": {
    "surface": "item.desc",
@@ -17564,6 +17602,28 @@
    "voice": "label",
    "limit": 40,
    "assign": "system"
+  },
+  "menu:game_name": {
+   "surface": "menu",
+   "key": "game_name",
+   "needs": [],
+   "file": "src/game.ts",
+   "line": 181,
+   "now": "PEOPLS CRAFT",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "slots": [
+    "{title}"
+   ],
+   "note": "the heading of the loading box and of the join, wait and error boxes; the text is the slot alone, and the loader fills {title} with the name of GAME_TITLE in names.json, written in capitals as the menu headings are, so the name is never written in a text file",
+   "at": [
+    "src/game.ts:181",
+    "src/game.ts:368",
+    "src/main.ts:40",
+    "src/main.ts:54",
+    "src/main.ts:61"
+   ]
   },
   "menu:head.controls": {
    "surface": "menu",
@@ -22331,6 +22391,25 @@
    "voice": "label",
    "limit": 90,
    "assign": "system"
+  },
+  "toast:kill_coins": {
+   "surface": "toast",
+   "key": "kill_coins",
+   "needs": [],
+   "file": "src/sim/loot.ts",
+   "line": 17,
+   "now": "+{n}c",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the coins a kill gives, floated up over the creature for the player they go to (src/client/fxplay.ts draws it through hud.floater); the same words as toast:coins",
+   "at": [
+    "src/sim/loot.ts:17",
+    "src/sim/loot.ts:64 (main)"
+   ]
   },
   "toast:last_footing": {
    "surface": "toast",

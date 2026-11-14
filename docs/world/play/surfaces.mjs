@@ -612,6 +612,8 @@ L('toast', 'recipe_here', OPS, 'That recipe cannot be laid out here');
 L('toast', 'not_enough', OPS, "'Not enough '", { now: 'Not enough {thing}' });
 L('toast', 'last_footing', PLY, 'You are back on the last footing.', { voice: 'sight' });
 L('toast', 'coins', ACT, '`+${coins} coins`', { now: '+{n} coins' });
+L('toast', 'kill_coins', 'src/sim/loot.ts', '+${coins}c', { now: '+{n}c', voice: 'label', alsoAt: [['src/sim/loot.ts', '+${c}c']],
+  note: 'the coins a kill gives, floated up over the creature for the player they go to (src/client/fxplay.ts draws it through hud.floater); the same words as toast:coins' });
 L('toast', 'bed_place', ACT, 'A bedroll marks your place only on the living ground.');
 L('toast', 'no_rest', ACT, 'You cannot rest with enemies near.');
 L('toast', 'bed_set', ACT, 'Spawn point set.');
@@ -703,9 +705,14 @@ L('hud', 'level', HUD, 'Lv ${st.level}', { now: 'Lv {n}', alsoAt: [[ROSTER, 'Lv 
 L('hud', 'dodged', PLY, "'Dodged'", { now: 'Dodged', note: 'a word that floats up over a player when a blow does no harm' });
 L('hud', 'coords', HUD, 'X ${x}  Y ${y}  Z ${z}  ·  ${Math.floor(min / 60)}', { now: 'X {x}  Y {y}  Z {z}  ·  {h}:{mm}', voice: 'label',
   note: 'the line of position and time of day under the compass; {h} is the hour and {mm} the minutes in two digits. The font has no middle dot: the code writes the line as the text gives it' });
-L('hud', 'dist.m', HUD, "' m'", { now: '{n} m', limit: 16, alsoAt: [[ROSTER, 'me.z))} m`']],
-  note: 'the distance under the compass marker, below 1000, and the distance to another player in the list held open by Tab (src/ui/roster.ts, main); {n} is a whole number' });
+L('hud', 'dist.m', HUD, "' m'", { now: '{n} m', limit: 16, alsoAt: [[ROSTER, 'me.z))} m`'], [HUD, '${d} m`']],
+  note: 'the distance under the compass marker, below 1000, the distance to another player in the list held open by Tab (src/ui/roster.ts, main), and the distance on a ping marker in the world (src/ui/hud.ts, main); {n} is a whole number' });
 L('hud', 'dist.km', HUD, "' km'", { now: '{n} km', limit: 24, note: 'the distance under the compass marker from 1000 on; {n} is the distance in thousands, with one decimal' });
+// the name tag over another player, and the label of a ping: put on main by the multiplayer job
+LM('hud', 'tag.state', HUD, '${name} · ${st}', { now: '{name} · {state}', limit: 40,
+  note: 'the name tag over another player who is away, in a bed, fallen or still loading; {state} is filled from hud:roster.state.away, .asleep, .fallen and .loading by key, as in the list of players, and the bare key is never written' });
+LM('hud', 'ping.unnamed', HUD, "q.name || 'Ping'", { now: 'Ping', limit: 16,
+  note: 'stands in place of the name on a ping marker in the world when the ping carries no name; the loader writes the name, a comma and a space, and then hud:dist.m' });
 // the eight points of the compass strip, in the order of COMPASS_NAMES (every other one is drawn small)
 for (const [k, now] of [['n', 'N'], ['ne', 'NE'], ['e', 'E'], ['se', 'SE'], ['s', 'S'], ['sw', 'SW'], ['w', 'W'], ['nw', 'NW']])
   L('hud', 'compass.' + k, HUD, "['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']", { now, limit: 3, note: 'a point of the compass strip at the top of the screen; one to three letters' });
@@ -830,6 +837,8 @@ L('tip', 'src.any_in', SRC, "'any '", { now: 'any {tag}', limit: 30, note: 'a ki
   if (![...entries.keys()].some((k) => k.startsWith('stat:'))) fail(`${WIN}: no bonus names were read from STAT_TEXT`);
 }
 // ---- menus ----
+L('menu', 'game_name', G, '<h1>PEOPLS CRAFT</h1>', { now: 'PEOPLS CRAFT', voice: 'label', limit: 24, alsoIn: [MAIN], slots: ['{title}'],
+  note: 'the heading of the loading box and of the join, wait and error boxes; the text is the slot alone, and the loader fills {title} with the name of GAME_TITLE in names.json, written in capitals as the menu headings are, so the name is never written in a text file' });
 L('menu', 'title.sub', MENU, 'a voxel sandbox of lost lights', { limit: 48, note: 'the line under the title; no light is lost or won in this world (8.11)' });
 for (const [k, text] of [['paused', 'PAUSED'], ['controls', 'CONTROLS'], ['settings', 'SETTINGS'], ['resume', 'Resume'], ['settings_btn', 'Settings'], ['controls_btn', 'Controls'], ['back', 'Back'],
   ['quit', 'Save and quit to title'], ['saving', 'Saving...'], ['saved', 'Progress saved'], ['save_late', 'Could not save just now'], ['new_world', 'New world'], ['begin', 'Begin'], ['delete', 'Delete'],
@@ -933,6 +942,7 @@ const NEVER_SHOWN_TEXT = [
   // on main, put there by the multiplayer job: looked for in main when this tree lacks it, and marked branch main
   [CH, "'flag <name>'", 'a developer command\'s usage line (main)'],
   [CH, "'event raid|moon|ashen'", 'a developer command\'s usage line (main)'],
+  [MAIN, "new Error('the simulation runs on the server')", 'the rejection of the developer tools\' ask on a joined client (main): it reaches only a developer\'s console, never a player'],
   [SOC, "?? 'Elsewhere'", 'the fallback of realmName (main) for a place number DIMS lacks; DIMS has the three places 0 to 2 and a player is only ever in one of them, so the fallback is never reached'],
 ];
 const neverShown = NEVER_SHOWN_TEXT.map(([file, needle, why]) => {
