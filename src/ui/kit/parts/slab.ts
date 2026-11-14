@@ -1,5 +1,4 @@
-import { CHIP, CUT, DRESSING_CELL, FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB, cellHash } from '../art/slab';
-import { measure } from '../font/measure';
+import { DRESSING_CELL, LONG_PEBBLE, PEBBLE, FRAMED_PLATE, NAMED_PLATE, PLATE, SLAB, cellHash } from '../art/slab';
 import { cut } from '../font/wrap';
 import type { Node } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
@@ -16,7 +15,8 @@ export interface SlabOpts {
   kids?: Node[];
 }
 
-const CLEAR = 2;
+/** How far a pebble stands from every part, every line of text and the slab's edges. */
+const CLEAR = 3;
 
 /**
  * The rectangles a stone face must keep clear of chisel marks, from the slab's top left: every node that paints,
@@ -30,22 +30,27 @@ function parts(kids: Node[] | undefined, ox: number, oy: number, out: number[][]
 }
 
 /**
- * The chisel marks of a stone face (5.1): the face is cut into cells of 14, and each cell holds one mark or none, a
- * chip or a cut, at a place of its own within it, so that there is no row, column or rhythm to read. A mark is drawn
- * only where all of it stands 2 clear of every part and every line of text.
+ * The pebbles of a stone face (5.1): the face is cut into cells of 24, and each cell holds one pebble or none, round or
+ * long, at a place of its own within it, so that there is no row, column or rhythm to read. A pebble is set only where
+ * all of it stands 3 clear of every part, every line of text and the slab's edges. Specks of one and two units over
+ * the whole face, touching titles and slots, read as noise laid on for texture.
  */
 function dress(s: Surface, w: number, h: number, keep: number[][]): void {
   const fx = 3, fy = 3, fw = w - 6, fh = h - 6, C = DRESSING_CELL;
   const clear = (x: number, y: number) =>
-    x >= fx + 1 && y >= fy + 1 && x < fx + fw - 1 && y < fy + fh - 1 &&
+    x >= fx + CLEAR && y >= fy + CLEAR && x < fx + fw - CLEAR && y < fy + fh - CLEAR &&
     keep.every(([rx, ry, rw, rh]) => x < rx - CLEAR || y < ry - CLEAR || x >= rx + rw + CLEAR || y >= ry + rh + CLEAR);
+  const roles = { 1: 'hi', 2: 'lt', 4: 'sh' } as const;
   for (let j = 0; j * C < fh; j++) for (let i = 0; i * C < fw; i++) {
     const r = cellHash(i, j, 0);
-    if (r % 100 >= 55) continue;
-    const m = (r >>> 8) % 3 === 0 ? CUT : CHIP;
-    const mx = fx + i * C + ((r >>> 12) % (C - 3)), my = fy + j * C + ((r >>> 20) % (C - 2));
-    if (!m.every(([dx, dy]) => clear(mx + dx, my + dy))) continue;
-    for (const [dx, dy, role] of m) s.fill(mx + dx, my + dy, 1, 1, tone('stone', role));
+    if (r % 100 >= 60) continue;
+    const m = (r >>> 8) % 3 === 0 ? LONG_PEBBLE : PEBBLE;
+    const mw = m[0].length, mh = m.length;
+    const mx = fx + i * C + ((r >>> 12) % (C - mw)), my = fy + j * C + ((r >>> 20) % (C - mh));
+    if (!(clear(mx, my) && clear(mx + mw - 1, my) && clear(mx, my + mh - 1) && clear(mx + mw - 1, my + mh - 1))) continue;
+    m.forEach((row, dy) => [...row].forEach((ch, dx) => {
+      if (ch !== '.') s.fill(mx + dx, my + dy, 1, 1, tone('stone', roles[ch as '1' | '2' | '4']));
+    }));
   }
 }
 
@@ -58,7 +63,8 @@ export function slab(o: SlabOpts): Node {
     paint: (s) => {
       s.nine(SLAB, 0, 0, w, h, ramp);
       if (ramp === 'stone') {
-        const keep: number[][] = title ? [[8, 6, measure(title) + 1, 10]] : [];
+        // The title's whole row stays bare: a pebble beside a title read as a speck stuck to it.
+        const keep: number[][] = title ? [[0, 6, w, 10]] : [];
         parts(node.kids, 0, 0, keep);
         dress(s, w, h, keep);
       }

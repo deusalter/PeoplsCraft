@@ -15,16 +15,16 @@ export const SLAB = coded([
 ], 'slab', [3, 3, 3, 3]);
 
 /**
- * The chisel marks of a stone face (5.1), lit from the top left. Each is a pit: its walls that face down or right,
- * turned from the light, in `sh`, and the lip it throws up on its far side in `lt`. Two shapes: a chip 2 by 2 and a
- * cut 3 by 1 with its lip under it.
+ * The pebbles set in a stone face (5.1), lit from the top left: a stone standing proud of the face, `hi` at its top
+ * left corner, `lt` over the rest of its top, `sh` along its bottom and right where it throws its shade. Two shapes, a
+ * round one 3 by 3 and a long one 4 by 3. A `.` is the face.
  */
-export type Mark = readonly (readonly [number, number, 'sh' | 'lt'])[];
-export const CHIP: Mark = [[0, 0, 'sh'], [1, 0, 'sh'], [0, 1, 'sh'], [1, 1, 'lt']];
-export const CUT: Mark = [[0, 0, 'sh'], [1, 0, 'sh'], [2, 0, 'sh'], [1, 1, 'lt'], [2, 1, 'lt']];
+export type Mark = readonly string[];
+export const PEBBLE: Mark = ['12.', '224', '.44'];
+export const LONG_PEBBLE: Mark = ['122.', '2224', '.444'];
 
-/** The face is scattered in cells of this many units; a cell holds one mark or none, at a place of its own. */
-export const DRESSING_CELL = 14;
+/** The face is set in cells of this many units; a cell holds one pebble or none, at a place of its own. */
+export const DRESSING_CELL = 24;
 
 /** A whole number from 0 to 2^32 for a cell, the same on every paint, unlike its neighbours'. */
 export function cellHash(i: number, j: number, k: number): number {
