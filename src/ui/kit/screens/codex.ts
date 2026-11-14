@@ -1,7 +1,8 @@
 // The codex and bestiary (section 6, Codex and bestiary): what the crew has met, shared by everyone on the server. The
 // left page is a grid of entries sunk in the page; the right tells the chosen one, step by step of what is known.
 import { SLOT } from '../art/slot';
-import { measure, rightX } from '../font/measure';
+import { SMALL } from '../font/face';
+import { centreX, measure, rightX } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { KeyEv, Live, Node, Screen } from '../node';
 import { type Section as BookSection, BOOK_H, BOOK_TABS, BOOK_W, PAGE_BOTTOM, PAGE_TEXT, book, pageHeading } from '../parts/book';
@@ -83,20 +84,41 @@ function steps(e: Entry, creature: boolean, top: number): Node {
   };
 }
 
-/** A row of slots on a page, each with its thing's name for a tooltip; at most seven fit the page. */
-function slotRow(y: number, keys: string[]): Node[] {
-  return keys.slice(0, 7).map((k, i) => {
+/** Cells of a page's grid of things: seven to a line, two lines at most. */
+const GRID_COLS = 7, GRID_LINES = 2;
+
+/** How tall the grid of `n` things stands. */
+const gridH = (n: number) => Math.min(GRID_LINES, Math.ceil(n / GRID_COLS)) * 18;
+
+/**
+ * Things on a page as a grid of slots with no gap, seven to a line and wrapping, each with its thing's name for a
+ * tooltip. Past two lines the last cell says how many more in the small face ("+5") and names them in its tooltip. A
+ * single row of seven filled the page's width and had nowhere to put an eighth.
+ */
+function slotGrid(y: number, keys: string[]): Node[] {
+  const room = GRID_COLS * GRID_LINES;
+  const over = keys.length > room;
+  const shown = over ? keys.slice(0, room - 1) : keys;
+  const cell = (i: number) => ({ x: (i % GRID_COLS) * 18, y: y + Math.floor(i / GRID_COLS) * 18, w: 18, h: 18, takes: true });
+  const floor = (s: Surface, live: Live) => { s.nine(SLOT, 0, 0, 18, 18, 'clay'); s.fill(1, 1, 16, 16, live.hover ? 'clay.face' : 'clay.sh'); };
+  const out: Node[] = shown.map((k, i) => {
     const t = THINGS.get(k);
     return {
-      x: i * 18, y, w: 18, h: 18, takes: true,
+      ...cell(i),
       tip: () => ({ lines: [{ text: t?.name ?? k, c: 'salt' as const }] }),
-      paint: (s: Surface, live: Live) => {
-        s.nine(SLOT, 0, 0, 18, 18, 'clay');
-        s.fill(1, 1, 16, 16, live.hover ? 'clay.face' : 'clay.sh');
-        if (t) s.icon(t.icon, 1, 1);
-      },
+      paint: (s: Surface, live: Live) => { floor(s, live); if (t) s.icon(t.icon, 1, 1); },
     };
   });
+  if (over) {
+    const rest = keys.slice(room - 1);
+    const label = `+${rest.length}`;
+    out.push({
+      ...cell(room - 1),
+      tip: () => ({ lines: rest.slice(0, 8).map((k) => ({ text: THINGS.get(k)?.name ?? k, c: 'root.4' as const })).concat(rest.length > 8 ? [{ text: `and ${rest.length - 8} more`, c: 'root.4' }] : []) }),
+      paint: (s: Surface, live: Live) => { floor(s, live); s.text(label, centreX(label, 1, 16, SMALL), 7, 'ink', false, SMALL); },
+    });
+  }
+  return out;
 }
 
 /** The first thing that answers a pattern's want: `#planks` is shown as the oak's planks. */
@@ -155,7 +177,7 @@ function rightPage(e: Entry | undefined, creature: boolean): Node[] {
     const row = (title: string, keys: string[]) => {
       kids.push(inkLine(0, y, PW, keys.length ? title : `${title}: nothing yet`, 'ink.faded'));
       y += 11;
-      if (keys.length) { kids.push(...slotRow(y, keys)); y += 22; } else y += 3;
+      if (keys.length) { kids.push(...slotGrid(y, keys)); y += gridH(keys.length) + 4; } else y += 3;
     };
     row('Used in', u.into);
     row('Made from', u.from);
