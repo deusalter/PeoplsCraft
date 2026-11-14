@@ -22,6 +22,8 @@ export class Proj {
   by: string | null = null;
   /** The `seq` of the `fire` message that caused it, 0 when none did. */
   cseq = 0;
+  /** Id of the boss that fired it, 0 for any other shot: a player it hits joins that boss's fight (7.9). */
+  src = 0;
   knock = 3; crit = false; hit = new Set<number>();
 }
 const hit = newRayHit();
@@ -62,7 +64,7 @@ export class ProjSim {
     if (this.wrapped) while (this.byId(id)) id = id >= ID_MAX ? 1 : id + 1;
     if (id >= ID_MAX) { this.nextId = 1; this.wrapped = true; } else this.nextId = id + 1;
     p.active = true; p.id = id; p.def = d; p.x = x; p.y = y; p.z = z; p.vx = (dx / l) * sp; p.vy = (dy / l) * sp; p.vz = (dz / l) * sp;
-    p.life = d.life; p.dmg = dmg; p.player = !!by; p.by = by ? by.id : null; p.cseq = cseq; p.style = style; p.knock = knock; p.crit = crit; p.hit.clear();
+    p.life = d.life; p.dmg = dmg; p.player = !!by; p.by = by ? by.id : null; p.cseq = cseq; p.style = style; p.knock = knock; p.crit = crit; p.hit.clear(); p.src = 0;
     let how = -1;
     for (let t = lead; t > 1e-6 && how < 0; t -= STEP) how = this.step(p, Math.min(STEP, t));
     // the shooter is told which of their shots this is; everyone else learns of it by interest
@@ -92,12 +94,16 @@ export class ProjSim {
         if (p.def.pierce && p.hit.size < 3) p.hit.add(r.m.id); else { stop = r.t; dead = true; how = 2; }
       }
     } else {
+      // every target of the realm; a player who is away, loading or dead is not in the way of a shot
       let who: SimPlayer | null = null;
-      for (const q of realm.players) {
+      for (const q of realm.targets()) {
         const pl = q.body, t = rayBox(p.x, p.y, p.z, dx, dy, dz, pl.x - pl.hw - 0.12, pl.y - 0.05, pl.z - pl.hw - 0.12, pl.x + pl.hw + 0.12, pl.y + pl.h + 0.05, pl.z + pl.hw + 0.12, stop);
         if (t >= 0) { who = q; stop = t; }
       }
-      if (who) { hurtPlayer(sim, who, p.dmg, p.x - dx, p.z - dz, 'a projectile', null, 4); dead = true; how = 2; }
+      if (who) {
+        hurtPlayer(sim, who, p.dmg, p.x - dx, p.z - dz, 'a projectile', null, 4); dead = true; how = 2;
+        if (p.src && who.hurtTick === sim.tick) { const b = realm.mobs.byId(p.src); if (b && b.boss) b.boss.parts.add(who.id); }
+      }
     }
     p.x += dx * stop; p.y += dy * stop; p.z += dz * stop;
     return dead ? how : -1;
