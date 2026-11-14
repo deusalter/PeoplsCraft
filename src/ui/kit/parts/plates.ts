@@ -44,7 +44,7 @@ function along(deg: number, heading: number): number {
  */
 export function compass(o: CompassOpts): Node {
   return {
-    x: o.x, y: o.y, w: COMPASS_W, h: 21,
+    x: o.x, y: o.y, w: COMPASS_W, h: o.place ? 21 : 24,
     paint: (s) => {
       s.nine(PLATE, 0, 0, COMPASS_W, 12);
       const mid = 90;
@@ -77,9 +77,12 @@ export function compass(o: CompassOpts): Node {
       s.unclip();
       s.fill(mid, 1, 2, 2, 'salt');
       s.fill(mid, 9, 2, 2, 'salt');
+      // Alone, the night is centred 2 under the strip, so that it reads as the compass's and not as the right end of
+      // the readout under it; beside a place it stands at the right.
       const nw = o.night ? measure(o.night) + 8 : 0;
       if (o.place) s.text(cut(o.place, COMPASS_W - 2 - nw), 1, 13, 'salt', true);
-      if (o.night) s.text(o.night, rightX(o.night, COMPASS_W - 2), 13, 'salt', true);
+      if (o.night && o.place) s.text(o.night, rightX(o.night, COMPASS_W - 2), 13, 'salt', true);
+      else if (o.night) s.text(o.night, centreX(o.night, 0, COMPASS_W), 14, 'salt', true);
     },
   };
 }

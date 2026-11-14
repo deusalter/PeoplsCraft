@@ -74,8 +74,10 @@ export interface HudOpts {
   entry?: boolean;
 }
 
+/** The top of what stands under the compass: 4 under the night centred beneath it. */
+const CENTRE_Y = 28;
 /** The second boss bar or event strip: 12 under the first one's strip. */
-const BOSS2_Y = 26 + 20 + 12;
+const BOSS2_Y = CENTRE_Y + 20 + 12;
 /** From one status frame to the next: the frame of 18 and 4 clear. */
 const STATUS_PITCH = 22;
 
@@ -153,14 +155,14 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   // What stands in the centre column under the compass's line, which the toast must keep 4 clear of.
   let centre: Node | null = null;
   if (o.boss) {
-    centre = { x: L(cx - 91), y: 26, w: 182, h: BOSS2_Y + 22 - 26 };
-    out.push(bossBar({ x: L(cx - 91), y: 26, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
+    centre = { x: L(cx - 91), y: CENTRE_Y, w: 182, h: BOSS2_Y + 22 - CENTRE_Y };
+    out.push(bossBar({ x: L(cx - 91), y: CENTRE_Y, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
     out.push(bossBar({ x: L(cx - 91), y: BOSS2_Y, name: 'Night raid', f: 0.4, event: 'blood' }));
   } else if (o.look) {
     const lk = o.look;
     const said = lk.ore ? oreLine(lk.ore, first ? null : BAR[0]?.key ?? null) : { line: lk.line, refusal: false };
     // What E does is the plate's third row, so that E can only mean the one thing the readout names.
-    centre = readout({ cx: L(cx), y: 26, icon: lk.icon, name: lk.name, life: lk.life, hostile: lk.hostile, use: o.prompt !== false ? lk.use : undefined, ...said });
+    centre = readout({ cx: L(cx), y: CENTRE_Y, icon: lk.icon, name: lk.name, life: lk.life, hostile: lk.hostile, use: o.prompt !== false ? lk.use : undefined, ...said });
     out.push(centre);
   }
 
@@ -175,18 +177,15 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
       { frame: 'growth' as Colour, icon: 'ingot', title: 'Smelt iron', line: 'A step of the Guide' },
       { frame: GRADES[2].frame, icon: 'warden_bell', title: 'Kankāl Bell', line: 'Found in a Sealed Store' },
     ].slice(0, o.notices === false ? 0 : TOAST_MOST);
-    // The toast is handed in at the top right corner, its right edge on the stage's: at y 0 where it stands 4 clear of
-    // the compass's column, else under the compass's line, and the status frames and the Guide's step come down under
-    // it while it shows. Where what stands under the compass (the strips of a great feeder, a wide readout) reaches
-    // within 4 of it, it stands 4 under that instead, and the frames and the step keep their place at the top.
+    // The status frames keep the top right corner and the Guide's step stands 4 under their times, whether or not a
+    // toast shows; toasts come in under the step at the stage's right edge. Handed in at the top, the toast pushed the
+    // frames down 32 or more and back, and the corner rearranged itself between one moment and the next. Where what
+    // stands under the compass (a great feeder's strips, a wide readout) reaches the toast's column, the toast stands
+    // 4 under it.
     const tx = R(TOAST_W);
-    let statusY = lowY, ty = 0;
-    if (toasts.length) {
-      const th = toasts.reduce((a, t) => a + toastHeight(t) + TOAST_GAP, -TOAST_GAP);
-      if (tx >= L(cx + 91 + 4)) { ty = 0; statusY = th + 4; }
-      else if (!centre || centre.x + centre.w + 4 <= tx) { ty = 26; statusY = ty + th + 4; }
-      else ty = Math.max(centre.y + centre.h + 4, lowY + 28 + TRACKER_H + 4);
-    }
+    const statusY = lowY;
+    let ty = statusY + 28 + TRACKER_H + 4;
+    if (centre && centre.x + centre.w + 4 > tx) ty = Math.max(ty, centre.y + centre.h + 4);
     // Left to right in the order the pack's States tab lists them, so the two never disagree; 4 clear between frames,
     // so that their times never run together.
     const n = BODY_STATES.length;

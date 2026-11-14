@@ -200,7 +200,7 @@ Upper on dark is the mid green `growth`, not `growth.lt`: with the light green i
 | HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at with the prompt as its third row: centred on the stage, measured down from its top edge |
 | HUD, top left | The crew |
 | HUD, left, above the pips | Chat |
-| HUD, top right | The toast in the corner while one shows; the status frames under it, and the Guide's present step on one line under them |
+| HUD, top right | The status frames in the corner, always; the Guide's present step on one line under them; a toast slid in under the step while one shows |
 | HUD, right | Pickups, then "Saved" at the bottom right corner |
 | HUD, centre | Crosshair |
 | Above everything | The tooltip, then the held stack, then the pointer |
@@ -2271,12 +2271,12 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | H1 | compass | 122 | 2 | 182 | 12 | compass strip |
-| H2 | text | 122 | 15 | 182 | 10 | under it, text face with shadow: "Night 3 of 8" at the right; the place as "x -104  y 64  z 2210" at the left only while the setting Coordinates is on (it is off at first) |
-| H3 | boss | 122 | 26 | 182 | 20 | boss bar: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it 12 below the first strip, at y 58. Two at most |
-| H4 | readout | 150 | 26 | 126 | 24 | what you look at, 40 tall with the row of what E does; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
+| H2 | text | 122 | 16 | 182 | 10 | under it, text face with shadow: "Night 3 of 8" centred 2 under the strip, so that it is the compass's line and not the right end of the readout under it. While the place is shown, the night stands at the right of y 15 and the place as "x -104  y 64  z 2210" at the left only while the setting Coordinates is on (it is off at first) |
+| H3 | boss | 122 | 28 | 182 | 20 | boss bar, 4 under the night's line: name row, then the strip. A world event (Night raid, Sand March, Amāvassa) takes the same form with a thin strip and stacks under it 12 below the first strip, at y 60. Two at most |
+| H4 | readout | 150 | 28 | 126 | 24 | what you look at, 40 tall with the row of what E does; centred; it stands where the boss bar stands and is not drawn while a boss bar or an event strip is up (not drawn in the wireframe) |
 | H5 | party | 4 | 4 | 12 | 125 | the crew folded to heads (5.24): one row 18 tall to each friend online, up to seven: the head 10 by 10 in its outline of `root.0`, a life strip 12 by 4 one clear unit under it; no names |
-| H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 22, from the right edge leftward, the time left under each in the small face; while a toast shows in the corner they stand 4 under it |
-| H7 | toast | 267 | 26 | 160 | 32 | one toast, a clay slab 160 by 32 (42 when the second line wraps), sliding in from the right for 5 s, docked in the top right corner with its right edge on the stage's: at y 26 on this stage, under the compass's line, with the status frames and the step under it; at y 0 on a stage of 510 or more. While a boss bar is up its strips reach within 4 of it, so it stands 4 under the second strip, at y 84, and the frames keep their place |
+| H6 | status | 323 | 4 | 100 | 25 | status frames 18 square, pitch 22, from the right edge leftward, the time left under each in the small face. They never move for a toast: handed in above them, a toast pushed them down 32 units and back up, and the corner rearranged itself between moments |
+| H7 | toast | 267 | 48 | 160 | 32 | one toast, a clay slab 160 by 32 (42 when the second line wraps), sliding in from the right for 5 s, its right edge on the stage's, 4 under the Guide's step (y 48 here). Where what stands under the compass reaches within 4 of its column (a boss bar's strips on this stage) it stands 4 under that instead, at y 86 |
 | H8 | tracker | 323 | 32 | 100 | 12 | the present step of the Guide folded to one line 28 under the top of the status frames, moving with them, right-aligned: the step mark and the step in salt, the count in root.4 ("Smelt iron  2 of 3"), on one strip of the chat wash a unit wider than the text all round, no frame; the chapter and where to go are in the journal |
 | H9 | feed | 327 | 186 | 96 | 40 | pickups: lines 10 tall, newest lowest, right-aligned: "+3 Rubble (12)" in the grade's colour with its shadow, each on its own strip of the chat wash 10 tall reaching 2 past its words on each side, the strips ending 4 from the stage's edge. Bare on the world, a green line on noon grass showed only its shadow |
 | H10 | text | 396 | 228 | 27 | 10 | "Saved", text face, for two seconds |
@@ -2297,7 +2297,7 @@ On a stage 427 by 240. A part in the left third keeps its distance from the stag
 - **Keys.** 1 to 9 and the wheel choose a hotbar cell. Enter or T opens chat. Tab holds the roster open. V sets a ping. E, G and M open the pack, the journal and the map.
 - **First.** A new arrival sees the hotbar empty with its first cell chosen, ten life pips, ten hunger pips, ten arm pips, the compass, and the first step of the Guide at the right.
 - **Floating numbers** over a struck creature are the text face with shadow, `salt` for a blow, `ember.hi` for a critical one with an exclamation mark after it, `growth.lt` for mending. They rise by whole units and are cut after 0.85 s.
-- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; the Guide's step stands under the status frames at y 54; a toast takes the corner at y 26 and the frames and the step come down under it, or it stands under the strips while a boss bar is up; pickups stand above the arm row, three lines at most, from y 150.
+- **Narrow stage.** On a stage under 400 wide the crew and the status frames start at y 26, under the compass; the Guide's step stands under the status frames at y 54; a toast stands 4 under the step, or under the strips while a boss bar is up; pickups stand above the arm row, three lines at most, from y 150.
 - **A blow from a side** shows as a wedge 9 by 5 of `blood` with a `root.0` outline, 40 units from the centre toward the side it came from, in one of eight directions, for 1 s.
 
 ### Pack, with the body panel and the patterns made by hand
