@@ -126,7 +126,7 @@ const modifiers = [], rarities = [];
   while ((m = mr.exec(t))) modifiers.push({ key: m[1], name: m[2], line: lineAt(t, m.index) });
   const ra = /export const RARITY = \[([\s\S]*?)\];/.exec(t);
   if (!ra) fail(`${F_ITEMS}: RARITY was not found`);
-  else { const rr = /name: '([^']+)'/g; let i = 0; while ((m = rr.exec(ra[1]))) rarities.push({ key: String(i++), name: m[1], line: lineAt(t, ra.index) }); }
+  else { const rr = /name: '([^']+)'/g; let i = 0; while ((m = rr.exec(ra[1]))) rarities.push({ key: String(i++), name: m[1], line: lineAt(t, ra.index + ra[0].indexOf(ra[1]) + m.index) }); }
 
   // hand-written items: calls of mat / add / summon / acc that start a line
   const call = /^(mat|add|summon|acc)\(/gm;
@@ -223,8 +223,8 @@ if (dims.length !== 3) fail(`${F_DIMS}: expected three places, found ${dims.leng
 const attrs = [], buffs = [];
 {
   const t = src(F_STATS), a = /export const ATTR_DESC[^{]*\{([\s\S]*?)\n\};/.exec(t), b = /export const BUFFS\b[^=]*=\s*\{([\s\S]*?)\n\};/.exec(t);
-  if (!a) fail(`${F_STATS}: ATTR_DESC was not found`); else for (const m of a[1].matchAll(new RegExp(`(\\w+): ${STR}`, 'g'))) attrs.push({ key: m[1], desc: lit(m[2]), line: lineAt(t, a.index + m.index) });
-  if (!b) fail(`${F_STATS}: BUFFS was not found`); else for (const m of b[1].matchAll(/(\w+): \{ name: '([^']+)'/g)) buffs.push({ key: m[1], name: m[2], line: lineAt(t, b.index + m.index) });
+  if (!a) fail(`${F_STATS}: ATTR_DESC was not found`); else for (const m of a[1].matchAll(new RegExp(`(\\w+): ${STR}`, 'g'))) attrs.push({ key: m[1], desc: lit(m[2]), line: lineAt(t, a.index + a[0].indexOf(a[1]) + m.index) });
+  if (!b) fail(`${F_STATS}: BUFFS was not found`); else for (const m of b[1].matchAll(/(\w+): \{ name: '([^']+)'/g)) buffs.push({ key: m[1], name: m[2], line: lineAt(t, b.index + b[0].indexOf(b[1]) + m.index) });
 }
 const stations = [...(/STATION_NAMES[^{]*\{([^}]*)\}/.exec(src(F_RECIPES))?.[1] ?? '').matchAll(/(\w+): '([^']+)'/g)].map((m) => ({ key: m[1], name: m[2] }));
 const lootTables = [...src(F_LOOT).matchAll(/^\s+(\w+): \{ rolls:/gm)].map((m) => m[1]);
@@ -287,6 +287,7 @@ const SURFACES = {
   'hud':          { about: 'Short words on the HUD', voice: 'label', limit: 40, assign: 'system' },
   'win':          { about: 'Titles, buttons and hints in the windows', voice: 'label', limit: 150, assign: 'system' },
   'tip':          { about: 'Lines the tooltip writes from numbers', voice: 'label', limit: 70, assign: 'system' },
+  'tag.name':     { about: 'Name of a kind of ingredient, which fills {tag} in "Any {tag}"', voice: 'label', limit: 20, assign: 'system' },
   'stat':         { about: 'Name of a bonus, as "+8% <name>"', voice: 'label', limit: 26, assign: 'system' },
   'attr.desc':    { about: 'What an attribute point gives', voice: 'label', limit: 80, assign: 'system' },
   'state.desc':   { about: 'What a state of the body is, under its name in the list of states', voice: 'note', limit: 70, assign: 'system' },
@@ -497,9 +498,10 @@ function formIn(t, needle) { return [`'${needle.replace(/'/g, "\\'")}'`, `"${nee
 /**
  * Find a literal in a file. Returns { line, now, at }. `now` defaults to the text looked for. `line` is the first line it is on;
  * `at` lists every place it is written, as "file:line", in this file and in each of `alsoIn`, when there is more than one. The loader
- * replaces the literal at every place `at` lists (plan.md J step 4).
+ * replaces the literal at every place `at` lists (plan.md J step 4). `alsoAt` gives [file, needle] pairs: the same words written by
+ * other code in another form, each place of which is added to `at`.
  */
-function find(file, needle, now, alsoIn = []) {
+function find(file, needle, now, alsoIn = [], alsoAt = []) {
   const t = src(file), form = formIn(t, needle);
   if (!form) { fail(`${file}: the text "${needle}" is no longer there`); return { line: null, now: now ?? needle }; }
   const at = allAt(t, form).map((i) => `${file}:${lineAt(t, i)}`);
@@ -510,11 +512,17 @@ function find(file, needle, now, alsoIn = []) {
     if (!g) { fail(`${f}: the text "${needle}" is no longer there`); continue; }
     for (const i of allAt(u, g)) at.push(`${f}:${lineAt(u, i)}${tag}`);
   }
+  // the same words written by other code, in another form (a concatenation where the first place has a template, or the like)
+  for (const [f, n] of alsoAt) {
+    const u = src(f), g = formIn(u, n);
+    if (!g) { fail(`${f}: the text "${n}" is no longer there`); continue; }
+    for (const i of allAt(u, g)) at.push(`${f}:${lineAt(u, i)}`);
+  }
   return { line: lineAt(t, t.indexOf(form)), now: now ?? needle, ...(at.length > 1 ? { at } : {}) };
 }
 /** One literal sentence: surface, key, file, the text to look for, and what to record as the present text when it differs. */
 function L(surface, key, file, needle, o = {}) {
-  add(surface, key, { file, ...find(file, needle, o.now, o.alsoIn), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note, empty: o.empty, slots: o.slots });
+  add(surface, key, { file, ...find(file, needle, o.now, o.alsoIn, o.alsoAt), needs: o.needs, voice: o.voice, limit: o.limit, lines: o.lines, note: o.note, empty: o.empty, slots: o.slots });
 }
 /**
  * A literal the multiplayer job has put on `main` and this tree does not have yet. When the text is in this tree's file it is an
@@ -585,7 +593,7 @@ L('toast', 'gate_ground', GATE, 'Place the gate on the ground.');
 L('toast', 'gate_space', GATE, 'The gate needs a clear space 4 wide and 5 tall.');
 L('toast', 'pack_full', PLY, 'Inventory full');
 L('toast', 'no_room', OPS, 'No room in your pack');
-L('toast', 'worn_twice', OPS, 'Already wearing one: a second adds nothing');
+L('toast', 'worn_twice', OPS, 'Already wearing one: a second adds nothing', { alsoIn: [RULES] });
 L('toast', 'recipe_here', OPS, 'That recipe cannot be laid out here');
 L('toast', 'not_enough', OPS, "'Not enough '", { now: 'Not enough {thing}' });
 L('toast', 'last_footing', PLY, 'You are back on the last footing.', { voice: 'sight' });
@@ -593,7 +601,7 @@ L('toast', 'coins', ACT, '`+${coins} coins`', { now: '+{n} coins' });
 L('toast', 'bed_place', ACT, 'A bedroll marks your place only on the living ground.');
 L('toast', 'no_rest', ACT, 'You cannot rest with enemies near.');
 L('toast', 'bed_set', ACT, 'Spawn point set.');
-L('toast', 'folk_ground', ACT, 'Townsfolk settle only on the living ground.');
+L('toast', 'folk_ground', ACT, 'Townsfolk settle only on the living ground.', { alsoIn: [NPC] });
 L('toast', 'bed_gone', TRV, 'Your bedroll is gone. Returned to the world spawn.');
 L('toast', 'no_land', TRV, 'No land within reach. Build outward from the gate.');
 L('toast', 'restarted', G, 'Server restarted');
@@ -670,7 +678,7 @@ L('prompt', 'resume', MENU, 'Click to resume');
 L('hud', 'no_arrows', HUD, '  ·  no arrows', { now: '  ·  no arrows' });
 L('hud', 'hungry', HUD, 'HUNGRY ${foodI} / 20', { now: 'HUNGRY {n} / 20' });
 L('hud', 'saved', HUD, "'Saved'", { now: 'Saved' });
-L('hud', 'coins', HUD, '${inv.coins} coins', { now: '{n} coins' });
+L('hud', 'coins', HUD, '${inv.coins} coins', { now: '{n} coins', alsoAt: [[WIN, "inv.coins + ' coins'"]], note: 'the coins on the HUD, and the same words at the head of the inventory window' });
 L('hud', 'level', HUD, 'Lv ${st.level}', { now: 'Lv {n}' });
 L('hud', 'dodged', PLY, "'Dodged'", { now: 'Dodged', note: 'a word that floats up over a player when a blow does no harm' });
 L('hud', 'coords', HUD, 'X ${x}  Y ${y}  Z ${z}  ·  ${Math.floor(min / 60)}', { now: 'X {x}  Y {y}  Z {z}  ·  {h}:{mm}', voice: 'label',
@@ -684,7 +692,7 @@ for (const [k, now] of [['n', 'N'], ['ne', 'NE'], ['e', 'E'], ['se', 'SE'], ['s'
   // the words of the buff line under each active state: STAT_WORDS in the HUD, joined by buffLine() after a number
   const t = src(HUD), a = /const STAT_WORDS[^{]*\{([^}]*)\}/.exec(t);
   if (!a) fail(`${HUD}: STAT_WORDS was not found`);
-  else for (const m of a[1].matchAll(/(\w+): '([^']+)'/g)) add('hud', 'buff.' + m[1], { file: HUD, line: lineAt(t, a.index + m.index), now: m[2], limit: 24,
+  else for (const m of a[1].matchAll(/(\w+): '([^']+)'/g)) add('hud', 'buff.' + m[1], { file: HUD, line: lineAt(t, a.index + a[0].indexOf(a[1]) + m.index), now: m[2], limit: 24,
     note: 'the word after a number in the line under an active state on the HUD, as "+6 defense"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words' });
   if (![...entries.keys()].some((k) => k.startsWith('hud:buff.'))) fail(`${HUD}: no words were read from STAT_WORDS`);
 }
@@ -717,6 +725,8 @@ L('win', 'forge.heat', WIN, 'Heat: fuel left in the fire', { limit: 50 });
 L('win', 'forge.smelts', WIN, "'Smelts: '", { now: 'Smelts: {list}', limit: 16 });
 L('win', 'shop.hint', WIN, 'Shift-click an item in your pack to sell the stack. Sold items can be bought back until you leave. Shift-click Buy for up to 10.');
 L('win', 'shop.coins', WIN, 'Your coins: <b>${inv.coins}</b>', { now: 'Your coins: {n}', limit: 30 });
+L('win', 'shop.price_coins', WIN, "cur === 'coins' ? 'c' : 'tokens'", { now: '{n} c', limit: 16, note: 'the price on a row of a shop that is paid in coins; {n} is the price' });
+L('win', 'shop.price_tokens', WIN, "cur === 'coins' ? 'c' : 'tokens'", { now: '{n} tokens', limit: 16, note: 'the price on a row of a shop that is paid in tokens; {n} is the price' });
 L('win', 'pack.keys', WIN, 'Shift-click: move · Right-click: half · Double-click: gather · 1-9: to hotbar · Q: drop', { limit: 100 });
 L('win', 'back_to', WIN, "'Back to '", { now: 'Back to {window}', limit: 30 });
 L('win', 'stats.level', WIN, 'Level ${st.level} · ${st.xp}/${st.xpNeeded()} xp', { now: 'Level {n} · {xp}/{need} xp', limit: 40 });
@@ -740,7 +750,7 @@ for (const [k, why] of [['codex.none', 'shown in the codex before anything is kn
 for (const [k, needle, now] of [
   ['slot_empty', ' slot is empty', '{slot} slot is empty'], ['set_completes', 'Completes set: ', 'Completes set: {bonus}'], ['set_breaks', 'Breaks set: ', 'Breaks set: {bonus}'],
   ['cmp_damage', "${dd} damage</div>", '{n} damage'], ['cmp_dps', "${dp} damage per second</div>", '{n} damage per second'], ['worn', 'Already worn: a second one adds nothing', null],
-  ['no_difference', 'No difference', null], ['sell_stack', 'sell stack for ${sellPrice(s.k) * s.n} coins', 'Shift-click: sell stack for {n} coins'], ['to_chest', "'move to chest'", 'Shift-click: move to chest'],
+  ['no_difference', 'No difference', null], ['compared', 'Compared with ${esc(itemName(other))}', 'Compared with {name}'], ['sell_stack', 'sell stack for ${sellPrice(s.k) * s.n} coins', 'Shift-click: sell stack for {n} coins'], ['to_chest', "'move to chest'", 'Shift-click: move to chest'],
   ['to_forge', "'load into forge'", 'Shift-click: load into forge'], ['equip', "'equip'", 'Shift-click: equip'], ['to_pack', "'move to backpack'", 'Shift-click: move to backpack'],
   ['to_hotbar', "'move to hotbar'", 'Shift-click: move to hotbar'], ['take', "'take'", 'Shift-click: take'], ['take_half', 'Right-click: take half', null],
   ['damage', "damage${wpn.minion ? ' per hit' : ''}", '{n} {style} damage'], ['rate', 'attacks per second · ${dps} damage per second', '{rate} attacks per second · {dps} damage per second'],
@@ -764,8 +774,16 @@ for (const [k, needle, now, note] of [['src.smelt', "'Smelt '", 'Smelt {item}', 
   ['src.station', "'Craft at the '", 'Craft at the {station}', null], ['src.mine', "'Mine '", 'Mine {block}', '{block} is the block that drops it'],
   ['src.dropped', "'Dropped by '", 'Dropped by {name}', '{name} is a creature'], ['src.dropped_great', "(mb.boss ? 'the ' : '')", 'Dropped by the {name}', '{name} is one of the eight'],
   ['src.sold', "'Sold by the '", 'Sold by the {name}', '{name} is a townsperson'], ['src.chests', 'Found in chests', null, null], ['src.world', 'Found in the world', null, null],
-  ['src.any', "'Any '", 'Any {tag}', '{tag} is a kind of ingredient (any log, any planks); the same words are written in the recipe tooltip of src/ui/windows.ts']])
-  L('tip', k, SRC, needle, { now: now ?? needle, note: note ?? undefined });
+  ['src.any', "'Any '", 'Any {tag}', '{tag} is a kind of ingredient, filled from tag.name:<tag>; the same words head an ingredient line of the recipe tooltip of src/ui/windows.ts, also listed in at']])
+  L('tip', k, SRC, needle, { now: now ?? needle, note: note ?? undefined, alsoIn: k === 'src.any' ? [WIN] : undefined });
+L('tip', 'src.any_in', SRC, "'any '", { now: 'any {tag}', limit: 30, note: 'a kind of ingredient inside a line, as the {item} of tip:src.smelt when a smelt takes any log; {tag} is filled from tag.name:<tag>' });
+{
+  // the kinds of ingredient: the '#' keys of the recipes and smelts, shown after "Any"
+  const t = src(F_RECIPES), seen = new Map();
+  for (const m of t.matchAll(/'#(\w+)'/g)) if (!seen.has(m[1])) seen.set(m[1], lineAt(t, m.index));
+  if (!seen.size) fail(`${F_RECIPES}: no kind of ingredient ('#' key) was read`);
+  for (const [k, line] of seen) add('tag.name', k, { file: F_RECIPES, line, now: k, note: 'fills {tag} of tip:src.any and tip:src.any_in; the key itself is never shown' });
+}
 {
   const t = src(F_ITEMS);
   for (const [k, needle, now] of [['set.hide', '+1 defense, +4% speed', null], ['set.melee', '% melee damage, +${2 + ti} defense', '+{pct}% melee damage, +{n} defense'],
@@ -780,7 +798,7 @@ for (const [k, needle, now, note] of [['src.smelt', "'Smelt '", 'Smelt {item}', 
   // the names of bonuses: STAT_TEXT in the inventory window
   const t = src(WIN), a = /const STAT_TEXT[^{]*\{([\s\S]*?)\n\};/.exec(t);
   if (!a) fail(`${WIN}: STAT_TEXT was not found`);
-  else for (const m of a[1].matchAll(/(\w+): \['([^']+)', (?:true|false)\]/g)) add('stat', m[1], { file: WIN, line: lineAt(t, a.index + m.index), now: m[2] });
+  else for (const m of a[1].matchAll(/(\w+): \['([^']+)', (?:true|false)\]/g)) add('stat', m[1], { file: WIN, line: lineAt(t, a.index + a[0].indexOf(a[1]) + m.index), now: m[2] });
   if (![...entries.keys()].some((k) => k.startsWith('stat:'))) fail(`${WIN}: no bonus names were read from STAT_TEXT`);
 }
 // ---- menus ----
@@ -820,7 +838,7 @@ LM('menu', 'back_title', MAIN, 'Back to the title', { limit: 28, note: 'the butt
   const t = src(MENU), a = /const KEYS: \[string, string\]\[\] = \[([\s\S]*?)\]\];/.exec(t);
   if (!a) fail(`${MENU}: KEYS was not found`);
   else for (const m of (a[1] + ']').matchAll(/\['([^']+)', '([^']+)'\]/g)) {
-    const k = m[2].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), line = lineAt(t, a.index + m.index);
+    const k = m[2].toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, ''), line = lineAt(t, a.index + a[0].indexOf(a[1]) + m.index);
     add('key', k, { file: MENU, line, now: m[2], note: 'for ' + m[1] });
     // the first word of the pair: the key or button, in the left column of the list
     add('key', 'press.' + k, { file: MENU, line, now: m[1], note: 'the key or button for key:' + k + ', in the left column of the list of controls' });
@@ -877,6 +895,7 @@ const NEVER_SHOWN_TEXT = [
   [CH, "'creative ' + p.modes.creative", 'a developer toggle answering with its own name and true or false'],
   [CH, "'god ' + p.modes.god", 'a developer toggle answering with its own name and true or false'],
   [CH, "'freeze ' + on", 'a developer toggle answering with its own name and true or false'],
+  [ACT, "'summoning item'", 'fallback when no item has use summon<n>; every altar has a bait in src/data/items.ts, so eight.line:altar_waits always names one'],
 ];
 const neverShown = NEVER_SHOWN_TEXT.map(([file, needle, why]) => {
   const t = src(file), i = t.indexOf(needle);

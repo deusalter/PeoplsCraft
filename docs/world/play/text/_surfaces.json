@@ -388,14 +388,21 @@
    "voice": "label",
    "limit": 150,
    "assign": "system",
-   "entries": 65
+   "entries": 67
   },
   "tip": {
    "about": "Lines the tooltip writes from numbers",
    "voice": "label",
    "limit": 70,
    "assign": "system",
-   "entries": 58
+   "entries": 60
+  },
+  "tag.name": {
+   "about": "Name of a kind of ingredient, which fills {tag} in \"Any {tag}\"",
+   "voice": "label",
+   "limit": 20,
+   "assign": "system",
+   "entries": 2
   },
   "stat": {
    "about": "Name of a bonus, as \"+8% <name>\"",
@@ -578,6 +585,12 @@
    "line": 78,
    "text": "'freeze ' + on",
    "why": "a developer toggle answering with its own name and true or false"
+  },
+  {
+   "file": "src/sim/actions.ts",
+   "line": 277,
+   "text": "'summoning item'",
+   "why": "fallback when no item has use summon<n>; every altar has a bait in src/data/items.ts, so eight.line:altar_waits always names one"
   }
  ],
  "entries": {
@@ -588,7 +601,7 @@
     "attr:agi"
    ],
    "file": "src/sim/stats.ts",
-   "line": 8,
+   "line": 9,
    "now": "+1.5% ranged damage, +0.5% critical chance and +0.4% speed per point",
    "voice": "label",
    "limit": 80,
@@ -601,7 +614,7 @@
     "attr:arc"
    ],
    "file": "src/sim/stats.ts",
-   "line": 10,
+   "line": 11,
    "now": "+2% crystal-work and totem damage, +6 mana per point",
    "voice": "label",
    "limit": 80,
@@ -614,7 +627,7 @@
     "attr:str"
    ],
    "file": "src/sim/stats.ts",
-   "line": 7,
+   "line": 8,
    "now": "+2% melee damage and +1% mining speed per point",
    "voice": "label",
    "limit": 80,
@@ -627,7 +640,7 @@
     "attr:vit"
    ],
    "file": "src/sim/stats.ts",
-   "line": 9,
+   "line": 10,
    "now": "+6 health and +0.25 defense per point",
    "voice": "label",
    "limit": 80,
@@ -15030,6 +15043,11 @@
    "assign": "system",
    "slots": [
     "{n}"
+   ],
+   "note": "the coins on the HUD, and the same words at the head of the inventory window",
+   "at": [
+    "src/ui/hud.ts:283",
+    "src/ui/windows.ts:293"
    ]
   },
   "hud:compass.e": {
@@ -16605,7 +16623,7 @@
    "key": "debug_overlay",
    "needs": [],
    "file": "src/ui/menus.ts",
-   "line": 34,
+   "line": 35,
    "now": "Debug overlay",
    "voice": "label",
    "limit": 28,
@@ -16653,7 +16671,7 @@
    "key": "hide_hud",
    "needs": [],
    "file": "src/ui/menus.ts",
-   "line": 34,
+   "line": 35,
    "now": "Hide HUD",
    "voice": "label",
    "limit": 28,
@@ -16677,7 +16695,7 @@
    "key": "inventory_and_crafting",
    "needs": [],
    "file": "src/ui/menus.ts",
-   "line": 33,
+   "line": 34,
    "now": "Inventory and crafting",
    "voice": "label",
    "limit": 28,
@@ -16761,7 +16779,7 @@
    "key": "press.debug_overlay",
    "needs": [],
    "file": "src/ui/menus.ts",
-   "line": 34,
+   "line": 35,
    "now": "F3",
    "voice": "label",
    "limit": 28,
@@ -16809,7 +16827,7 @@
    "key": "press.hide_hud",
    "needs": [],
    "file": "src/ui/menus.ts",
-   "line": 34,
+   "line": 35,
    "now": "F1",
    "voice": "label",
    "limit": 28,
@@ -16833,7 +16851,7 @@
    "key": "press.inventory_and_crafting",
    "needs": [],
    "file": "src/ui/menus.ts",
-   "line": 33,
+   "line": 34,
    "now": "E",
    "voice": "label",
    "limit": 28,
@@ -18359,7 +18377,7 @@
     "rarity:0"
    ],
    "file": "src/data/items.ts",
-   "line": 48,
+   "line": 49,
    "now": "",
    "voice": "note",
    "limit": 90,
@@ -18373,7 +18391,7 @@
     "rarity:1"
    ],
    "file": "src/data/items.ts",
-   "line": 48,
+   "line": 49,
    "now": "",
    "voice": "note",
    "limit": 90,
@@ -18387,7 +18405,7 @@
     "rarity:2"
    ],
    "file": "src/data/items.ts",
-   "line": 48,
+   "line": 49,
    "now": "",
    "voice": "note",
    "limit": 90,
@@ -18401,7 +18419,7 @@
     "rarity:3"
    ],
    "file": "src/data/items.ts",
-   "line": 48,
+   "line": 49,
    "now": "",
    "voice": "note",
    "limit": 90,
@@ -18415,7 +18433,7 @@
     "rarity:4"
    ],
    "file": "src/data/items.ts",
-   "line": 48,
+   "line": 50,
    "now": "",
    "voice": "note",
    "limit": 90,
@@ -18429,7 +18447,7 @@
     "rarity:5"
    ],
    "file": "src/data/items.ts",
-   "line": 48,
+   "line": 50,
    "now": "",
    "voice": "note",
    "limit": 90,
@@ -18443,7 +18461,7 @@
     "rarity:6"
    ],
    "file": "src/data/items.ts",
-   "line": 48,
+   "line": 50,
    "now": "",
    "voice": "note",
    "limit": 90,
@@ -19118,7 +19136,7 @@
    "key": "def",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 23,
+   "line": 24,
    "now": "defense",
    "voice": "label",
    "limit": 26,
@@ -19140,7 +19158,7 @@
    "key": "dodge",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 25,
+   "line": 26,
    "now": "dodge chance",
    "voice": "label",
    "limit": 26,
@@ -19151,7 +19169,7 @@
    "key": "hp",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 23,
+   "line": 24,
    "now": "maximum health",
    "voice": "label",
    "limit": 26,
@@ -19162,7 +19180,7 @@
    "key": "jump",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 24,
+   "line": 25,
    "now": "jump height",
    "voice": "label",
    "limit": 26,
@@ -19228,7 +19246,7 @@
    "key": "melee",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 22,
+   "line": 23,
    "now": "melee damage",
    "voice": "label",
    "limit": 26,
@@ -19250,7 +19268,7 @@
    "key": "minions",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 24,
+   "line": 25,
    "now": "minion slot",
    "voice": "label",
    "limit": 26,
@@ -19272,7 +19290,7 @@
    "key": "ranged",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 22,
+   "line": 23,
    "now": "ranged damage",
    "voice": "label",
    "limit": 26,
@@ -19338,7 +19356,7 @@
    "key": "thorns",
    "needs": [],
    "file": "src/ui/windows.ts",
-   "line": 25,
+   "line": 26,
    "now": "damage reflected",
    "voice": "label",
    "limit": 26,
@@ -19351,7 +19369,7 @@
     "buff:dawn"
    ],
    "file": "src/sim/stats.ts",
-   "line": 15,
+   "line": 17,
    "now": "",
    "voice": "note",
    "limit": 70,
@@ -19365,7 +19383,7 @@
     "buff:fed"
    ],
    "file": "src/sim/stats.ts",
-   "line": 14,
+   "line": 16,
    "now": "",
    "voice": "note",
    "limit": 70,
@@ -19379,7 +19397,7 @@
     "buff:ironbark"
    ],
    "file": "src/sim/stats.ts",
-   "line": 13,
+   "line": 14,
    "now": "",
    "voice": "note",
    "limit": 70,
@@ -19393,12 +19411,36 @@
     "buff:swift"
    ],
    "file": "src/sim/stats.ts",
-   "line": 13,
+   "line": 15,
    "now": "",
    "voice": "note",
    "limit": 70,
    "assign": "system",
    "planned": true
+  },
+  "tag.name:log": {
+   "surface": "tag.name",
+   "key": "log",
+   "needs": [],
+   "file": "src/data/recipes.ts",
+   "line": 52,
+   "now": "log",
+   "voice": "label",
+   "limit": 20,
+   "assign": "system",
+   "note": "fills {tag} of tip:src.any and tip:src.any_in; the key itself is never shown"
+  },
+  "tag.name:planks": {
+   "surface": "tag.name",
+   "key": "planks",
+   "needs": [],
+   "file": "src/data/recipes.ts",
+   "line": 15,
+   "now": "planks",
+   "voice": "label",
+   "limit": 20,
+   "assign": "system",
+   "note": "fills {tag} of tip:src.any and tip:src.any_in; the key itself is never shown"
   },
   "task.how:aether": {
    "surface": "task.how",
@@ -21130,6 +21172,20 @@
     "{n}"
    ]
   },
+  "tip:compared": {
+   "surface": "tip",
+   "key": "compared",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 568,
+   "now": "Compared with {name}",
+   "voice": "label",
+   "limit": 70,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ]
+  },
   "tip:craft_anywhere": {
    "surface": "tip",
    "key": "craft_anywhere",
@@ -21627,7 +21683,26 @@
    "slots": [
     "{tag}"
    ],
-   "note": "{tag} is a kind of ingredient (any log, any planks); the same words are written in the recipe tooltip of src/ui/windows.ts"
+   "note": "{tag} is a kind of ingredient, filled from tag.name:<tag>; the same words head an ingredient line of the recipe tooltip of src/ui/windows.ts, also listed in at",
+   "at": [
+    "src/data/sources.ts:30",
+    "src/ui/windows.ts:623"
+   ]
+  },
+  "tip:src.any_in": {
+   "surface": "tip",
+   "key": "src.any_in",
+   "needs": [],
+   "file": "src/data/sources.ts",
+   "line": 15,
+   "now": "any {tag}",
+   "voice": "label",
+   "limit": 30,
+   "assign": "system",
+   "slots": [
+    "{tag}"
+   ],
+   "note": "a kind of ingredient inside a line, as the {item} of tip:src.smelt when a smelt takes any log; {tag} is filled from tag.name:<tag>"
   },
   "tip:src.chests": {
    "surface": "tip",
@@ -21929,7 +22004,11 @@
    "now": "Townsfolk settle only on the living ground.",
    "voice": "label",
    "limit": 90,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/sim/actions.ts:419",
+    "src/sim/npcs.ts:90"
+   ]
   },
   "toast:folk_leaves": {
    "surface": "toast",
@@ -22301,7 +22380,11 @@
    "now": "Already wearing one: a second adds nothing",
    "voice": "label",
    "limit": 90,
-   "assign": "system"
+   "assign": "system",
+   "at": [
+    "src/sim/invops.ts:239",
+    "src/sim/rules.ts:68"
+   ]
   },
   "walker.say:dark": {
    "surface": "walker.say",
@@ -22926,6 +23009,36 @@
    "voice": "label",
    "limit": 150,
    "assign": "system"
+  },
+  "win:shop.price_coins": {
+   "surface": "win",
+   "key": "shop.price_coins",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 431,
+   "now": "{n} c",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the price on a row of a shop that is paid in coins; {n} is the price"
+  },
+  "win:shop.price_tokens": {
+   "surface": "win",
+   "key": "shop.price_tokens",
+   "needs": [],
+   "file": "src/ui/windows.ts",
+   "line": 431,
+   "now": "{n} tokens",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the price on a row of a shop that is paid in tokens; {n} is the price"
   },
   "win:shop.tokens": {
    "surface": "win",
