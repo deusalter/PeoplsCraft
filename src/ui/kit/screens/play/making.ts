@@ -5,7 +5,7 @@ import type { Ramp } from '../../palette';
 import { coded } from '../../pixmap';
 import { measure } from '../../font/measure';
 import { checkbox, field } from '../../parts/controls';
-import { LOCK, paintCount } from '../../parts/slot';
+import { LOCK, paintMakes } from '../../parts/slot';
 import { slab } from '../../parts/slab';
 import { tabbedSlab } from '../../parts/tabs';
 import { TRACK_W, paintThumb } from '../../parts/well';
@@ -192,7 +192,7 @@ function cellWell(o: PanelOpts, list: Pattern[], station: Station, here: boolean
         else if (live.focus) ring(s, 1, 1, 16, 16, 'salt');
         // A pattern the pack cannot afford is flat in root.4 with the lock where its count would stand: under a half
         // wash its icon differed from a makeable one only a little in brightness on the dark floor.
-        if (makeable) { s.icon(thing(p.out).icon, 1, 1); paintCount(s, p.n, 16, 16); }
+        if (makeable) { s.icon(thing(p.out).icon, 1, 1); paintMakes(s, p.n); }
         else { s.icon(thing(p.out).icon, 1, 1, 'flat', 'root.4'); s.map(LOCK, 10, 10); }
       },
       tip: () => patternTip(b.hand, p, here && fitsGrid, station),

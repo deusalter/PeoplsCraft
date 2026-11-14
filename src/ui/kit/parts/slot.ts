@@ -2,7 +2,7 @@ import { SILHOUETTES, type SilhouetteName } from '../art/silhouettes';
 import { DARK_SLOT, LARGE_SLOT_SIZE, SLOT, SLOT_SIZE } from '../art/slot';
 import { coded } from '../pixmap';
 import { SMALL } from '../font/face';
-import { rightX } from '../font/measure';
+import { measure, rightX } from '../font/measure';
 import type { Handlers, Live, Node, Tip } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
 import type { Surface } from '../surface';
@@ -50,6 +50,22 @@ export function paintCount(s: Surface, n: number, right: number, bottom: number,
   const t = whole >= 1000 ? `${Math.min(999, Math.floor(whole / 1000))}k` : String(whole);
   if (t.length < 3 && whole < 1000) s.text(t, rightX(t, right), bottom - 7, c, true);
   else s.text(t, rightX(t, right, SMALL), bottom - 4, c, true, SMALL);
+}
+
+/**
+ * How many one making of a pattern gives, in a cell of a pattern list: the small face in root.4 on a badge cut as the
+ * lock's (5.4), over the floor's bottom right corner where the lock of an unaffordable pattern stands. Drawn as a
+ * stack's count, a pattern read as a thing already owned; bare grey digits a unit in vanished into grey icons.
+ */
+export function paintMakes(s: Surface, n: number): void {
+  if (n <= 1) return;
+  const t = String(Math.trunc(n));
+  const w = measure(t, SMALL) + 4, x = 17 - w;
+  s.fill(x + 1, 10, w - 2, 1, 'root.0');
+  s.fill(x, 11, w, 5, 'root.0');
+  s.fill(x + 1, 16, w - 2, 1, 'root.0');
+  s.fill(x + 1, 11, w - 2, 5, 'root.1');
+  s.text(t, x + 2, 11, 'root.4', true, SMALL);
 }
 
 const FRAME: Record<Exclude<SlotMark, 'locked'>, Colour> = { accepts: 'growth', refused: 'blood', chosen: 'salt', wanting: 'blood' };
