@@ -362,10 +362,13 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
         head(s, m.seat, 5, y, m.life <= 0);
         s.text(cut(m.name, 110), NAME, y, 'salt', true);
         paintLife(s, NAME, y + 11, LIFE_W, m.life);
-        s.text(cut(m.place, 70), PLACE, y, 'root.4', true);
+        // The column is bare names, as "Yavas" is: "a Sealed Store" is written without its article.
+        s.text(cut(m.place.replace(/^(a|an|the) /, ''), 70), PLACE, y, 'root.4', true);
         const lv = String(m.level);
         s.text(lv, rightX(lv, LEVEL_R), y, 'growth.lt', true);
         if (m.self) s.text('here', rightX('here', DIST_R), y, 'root.4', true);
+        // With the link gone the last distance is stale, so it is not written beside the cross.
+        else if (m.bars <= 0) s.text('?', rightX('?', DIST_R), y, 'root.4', true);
         else if (m.metres !== undefined) {
           const d = `${count(m.metres)} m`;
           s.text(d, rightX(d, DIST_R), y, 'salt', true);
