@@ -384,9 +384,17 @@ The table gives, for each creature, whether the habit of chapter 7 is in play af
 | `ashen_raider` | No. Write: a fighter with a blade | One dies during `raid`. A few follow the dusk packs in (7.4) |
 | `ashen_hexer` | Yes: he stands off and throws from 13 strides | A `mana_crystal` that is a drop of `ashen_hexer` is picked up. It was taken from a store on the way, for the fire (7.4) |
 | `siege_brute` | No. Write: the biggest of them, slow, hard to knock back | One comes up on a march after half its fighters have come up (D.2). He comes late (7.4). Nothing here counts the dead |
-| the nine on a totem | No. Write: it stays by the hand that carries its food and goes for feeders | The bearer falls while one of that look is out. It is gone when the bearer goes down (7.5) |
+| the nine on a totem | No. Write: it stays by the hand that carries its food and goes for feeders | The bearer falls while one of that look is out: `onDeath` (`src/sim/player.ts:142`) removes an active small feeder of that look owned by the bearer. It is gone when the bearer goes down (7.5). The text of all nine tells that fall, each with the place it was seen |
 
-`eight.once`, one event each: `b_colossus`, it charges a player who stands behind one of the six oaks; `b_maw`, a `dune_mite` is on the floor before the animal comes up; `b_warden`, it is killed while `gloomshade` it drew are still up; `b_sporemother`, a `sporeling` forms where a piece of cap landed; `b_regent`, the bait is laid within sight of a player holding a `storm_plume`; `b_luminarch`, a `shardling` forms on the floor at the last change; `b_hart`, it goes back down at dawn (C, row 11); `b_sovereign`, a player stands on the base after the kill.
+`eight.once`, one event each. Each is decided by the host in `src/sim/boss.ts` (or, for the bait and the base, where the line names), at the moment named, from what the animal and the players are doing then. "Brought up by the animal" means a creature its `summon` attack or the `enter` of a phase spawned, which `boss.ts` marks with `s.event = true` (line 242).
+- `b_colossus`: the `charge` attack begins its wind-up (`case 'charge'`, the step where `b.step` goes from 0 to 1), and the trunk column of one of the six posts of that `arena1` (the columns `ringOf(6, 11, ...)` gives round the origin, B) lies within 1 stride, across the ground, of the segment from the animal's middle to its target's feet, between the two ends.
+- `b_maw`: the animal comes up out of the sand at the end of a `burrow` attack (the step where `b.step` goes from 1 to 2 and the eruption is drawn) while a `dune_mite` brought up by the animal in this fight is still active. Every fight that reaches its second phase has some, since that phase opens with four.
+- `b_warden`: it is killed while a `gloomshade` brought up by the animal in this fight is still active.
+- `b_sporemother`: its `summon` attack brings up at least one `sporeling` while a player is within 12 strides of the animal.
+- `b_regent`: the bait is laid while a player whose held slot holds a `storm_plume` is within 16 strides of the stone with no opaque block between, the same test as `sight` above.
+- `b_luminarch`: the `enter` of its last phase (below 0.25) brings up at least one `shardling`.
+- `b_hart`: it goes back down at dawn (C, row 11).
+- `b_sovereign`: after `boss:8` is set, a player's feet stand on a `cairn_base` cell of an `arena8`, the cell under the feet holding `cairn_base`.
 
 Bestiary entries for the three fighters are entries about people. They say what was seen and what a fallen fighter carried. They never count anyone (rule 12), and no step of theirs opens on a count of their dead (D.2).
 
@@ -757,6 +765,7 @@ Every name shown comes from `names.json`. This plan adds things with no name the
 | `ground:floor`, `ground:set`, `ground:way`, `ground:light`, `ground:moon`, `ground:ward`, `ground:hosts`, `ground:mouth` | The Floor, Set Ground, The Way, Light, The Moon, House Ward, Hosts, The Mouth | Codex headings |
 | `matter:lees`, `matter:salt`, `matter:remains`, `matter:great_remains` | Lees, Salt, Raw Remains, Great Remains | Codex headings. `matter:gold` and `matter:crystal` take the names of `gold_bar` and `mana_crystal` |
 | `old:made_bait`, `old:old_bed` | Made Bait, Old Bedroll | Codex headings |
+| kinds of ingredient `#log`, `#planks` | log, planks | The words after "Any" in a tooltip, `tag.name:log` and `tag.name:planks` (J step 4). Written in lower case, inside a line |
 
 ## J. Order of work
 
