@@ -7,6 +7,7 @@ import { clock, rightX } from '../font/measure';
 import type { Node, Ui } from '../node';
 import { ring, sunk } from '../parts/common';
 import { paintSlot } from '../parts/slot';
+import { PRICE_IN, paintPrice } from '../parts/well';
 import { plate, slab } from '../parts/slab';
 import { FRAMED_PLATE } from '../art/slab';
 import { ICONS } from '../sample/play-icons';
@@ -41,10 +42,10 @@ function shopRow(y: number, w: number, icon: string, name: string, colour: 'salt
   return {
     x: 1, y, w, h: 18,
     paint: (s) => {
-      s.icon(icon, 1, 1, can ? 'full' : 'flat', 'root.4');
-      const px = rightX(price, w - 3);
-      s.text(price, px, 4, can ? 'salt' : 'blood.lt', true);
-      s.text(name, 20, 4, can ? colour : 'root.4', true);
+      s.icon(icon, 1, 1);
+      const [fig, mk] = price.split(' ');
+      paintPrice(s, fig, mk, w - PRICE_IN, 4, can);
+      s.text(name, 20, 4, colour, true);
     },
   };
 }
@@ -52,7 +53,7 @@ function shopRow(y: number, w: number, icon: string, name: string, colour: 'salt
 function build(ui: Ui): Node {
   const kids: Node[] = [];
 
-  const salt: Node = { x: 8, y: 18, w: 18, h: 18, paint: (s) => { paintSlot(s, { ramp: 'clay' }, REST); s.draw(SALT, 1, 1, { flat: 'clay.sh' }); } };
+  const salt: Node = { x: 8, y: 18, w: 18, h: 18, paint: (s) => { paintSlot(s, { ramp: 'clay' }, REST); s.draw(SALT, 1, 1, { flat: 'clay.dk' }); } };
   kids.push(slab({
     x: 0, y: 0, w: 156, h: 84, ramp: 'clay', title: 'Salt, and cells',
     kids: [

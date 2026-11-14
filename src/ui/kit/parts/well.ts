@@ -1,4 +1,4 @@
-import { centreX, count, rightX } from '../font/measure';
+import { centreX, count, measure, rightX } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Live, Node, Tip, Ui } from '../node';
 import { type Colour, type Ramp, tone } from '../palette';
@@ -44,6 +44,20 @@ export function paintRow(s: Surface, r: RowSpec, w: number, live: Live, chosen: 
     right = x - 5;
   }
   s.text(cut(r.name, right - 20 + 1), 20, ty, off ? 'root.4' : r.colour ?? 'salt', true);
+}
+
+/** A price in a well's row is right-aligned this far from the row's end, which is the scroll track when one stands. */
+export const PRICE_IN = 6;
+
+/**
+ * A price on a dark row, right-aligned to `right`: the figure, then its coin mark. One that cannot be paid has its
+ * figure in blood.lt and its mark greyed, and no cross before it, which beside "×8" read as "times".
+ */
+export function paintPrice(s: Surface, figure: string, mark: string, right: number, y: number, can: boolean): void {
+  const all = `${figure} ${mark}`;
+  const x = rightX(all, right);
+  s.text(figure, x, y, can ? 'salt' : 'blood.lt', true);
+  s.text(mark, x + measure(all) - measure(mark), y, can ? 'salt' : 'root.4', true);
 }
 
 export interface WellOpts {

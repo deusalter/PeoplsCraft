@@ -390,13 +390,13 @@ tofu   lees     check    cross  right  left   up     down   step  shield   lmb  
 
 muda     back     cairn    bed      skull
 .......  .......  .......  .......  .......
-.#####.  ..#....  ...##..  ..###..  .#####.
-##...##  .##....  ..###..  .#...#.  #######
-#..#..#  #######  .......  #.....#  ##.#.##
-#.###.#  .##...#  .#####.  #..#..#  ##.#.##
-#..#..#  ..#...#  .......  #.###.#  #######
-##...##  ......#  #######  #.###.#  .#####.
-.#####.  ..#####  #######  #######  .#.#.#.
+#######  ..#....  ...##..  ..###..  .#####.
+#.....#  .##....  ..###..  .#...#.  #######
+#.###.#  #######  .......  #.....#  ##.#.##
+#.#.#.#  .##...#  .#####.  #..#..#  ##.#.##
+#.###.#  ..#...#  .......  #.###.#  #######
+#.....#  ......#  #######  #.###.#  .#####.
+#######  ..#####  #######  #######  .#.#.#.
 .......  .......  .......  .......  .......
 .......  .......  .......  .......  .......
 7        7        7        7        7
@@ -424,7 +424,7 @@ muda     back     cairn    bed      skull
 | `{bed}` | 7 |
 | `{skull}` | 7 |
 
-`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a ring with a cross struck in it, written after a number as `{lees}` is. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{bed}` is a fire under an arch: in a furnace's list of works it stands at the right of each work that only that furnace's bed can do. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence. `{skull}` stands before the name of a creature that attacks, on the readout (5.27), in that name's `blood.lt`.
+`{tofu}` is drawn for any character the face lacks; chat may contain any. `{lees}` is a jar: the mark for coin wherever coin is counted. `{muda}` is the Deserter's stamped token, a square of glass with a square seal struck in it, written after a number as `{lees}` is. A ring with a cross in it was a disc beside the jar and read at a glance as the same coin. `{back}` is a turned arrow: the mark of a thing that can be bought back. `{cairn}` is three stones stacked: the mark before a line the world or the server speaks in chat. `{bed}` is a fire under an arch: in a furnace's list of works it stands at the right of each work that only that furnace's bed can do. `{lmb}`, `{rmb}`, `{mmb}` are the mouse with one button filled. `{step}` marks the present step of the Guide. `{shield}` marks defence. `{skull}` stands before the name of a creature that attacks, on the readout (5.27), in that name's `blood.lt`.
 
 **Shadow.** Text on a dark plate, on the ground tile, on a button or on the world has a shadow: the same glyphs one unit right and one unit down in `root.0`, drawn first. Text on a light face (a slab, a page, a key cap) has none. The shadow is always `root.0` and never a darker copy of the text's colour, so that the palette stays closed.
 
@@ -2744,7 +2744,7 @@ Size 176 by 227, with two tabs standing 21 out of its left edge. Material: clay.
 | T1 | tab | -21 | 0 | 24 | 24 | "Buy": a fired jar of lees, the coin mark (`coin` among the tab marks); chosen when the shop opens. An item on a tab said nothing of what the tab switched between |
 | T2 | tab | -18 | 23 | 24 | 24 | "Sell": the pack mark |
 | H1 | text | 8 | 6 | 96 | 10 | the keeper's name and the chosen tab's name: "Kammār, buy", "Kammār, sell"; its tooltip gives what they say, in root.4 |
-| H2 | text | 104 | 6 | 64 | 10 | the one coin this keeper takes, right-aligned to x 168: "12 {lees}", or "38 {muda}" when the Deserter deals. Two purses side by side, one a mark and one a word, left the buyer to guess which the shop took |
+| H2 | text | 104 | 6 | 64 | 10 | the one coin this keeper takes, right-aligned to x 168: "12 {lees}", or "38 {muda}" when the Deserter deals; its tooltip names the coin ("Mūda", then "The one coin the Deserter takes" in root.4), so that the purse and every price carry the mark alone and the word is not needed beside it. Two purses side by side, one a mark and one a word, left the buyer to guess which the shop took |
 | H4 | well | 8 | 18 | 160 | 92 | dark well of five list rows 18 tall, scroll track at its right: icon, name in the colour of its grade, then how many one press brings in root.4 when more than one ("Barbed Arrow ×8", the price being for the lot), price right-aligned with the same mark as H2. Under Sell each row is a thing sold this visit at what was paid for it, its price led by `{back}`; with nothing sold the well says "Nothing sold yet. Shift {lmb} a thing in the pack to sell it." in root.4. A grey heading row among the goods read as a thing that could not be bought |
 | H3 | text | 8 | 113 | 160 | 10 | what a press does, in ink.faded with the mouse marks: under Buy "{lmb} buy one   Shift {lmb} buy ten", under Sell "Shift {lmb} in the pack sells". With no line and no button, pressing a row was an affordance nothing told of |
 | H5 | text | 8 | 132 | 40 | 10 | "Pack" |
@@ -2752,7 +2752,7 @@ Size 176 by 227, with two tabs standing 21 out of its left edge. Material: clay.
 | H7 | slots | 8 | 143 | 162 | 54 | the pack, nine by three |
 | H8 | slots | 8 | 201 | 162 | 18 | the hotbar row, four units below the pack |
 
-- **Shows.** What one householder sells, under Buy; what was sold to them this visit, to buy back, under Sell; and the pack to sell from. A price the buyer cannot meet is drawn in blood.lt after a `{cross}`; its icon and its name in the colour of its grade stay as they are, so that the grade and the price are read apart. A silhouette means only a thing not yet seen (the codex), never one that cannot be bought.
+- **Shows.** What one householder sells, under Buy; what was sold to them this visit, to buy back, under Sell; and the pack to sell from. A price the buyer cannot meet has its figure in blood.lt and its coin mark greyed in `root.4`, with no `{cross}` before it: beside "×8" a cross before "14" read as "times 14", or as a close glyph. Every price is right-aligned 6 units from the scroll track (from the well's inner edge when no track stands). Its icon and its name in the colour of its grade stay as they are, so that the grade and the price are read apart. A silhouette means only a thing not yet seen (the codex), never one that cannot be bought.
 - **Clickable.** A row buys one; shift and click buys ten. Shift and click on a pack slot sells the stack; a thing of grade Island or higher, a bait or a Recall Stone asks for the same click again within two and a half seconds (the slot takes the refusal frame and the tooltip says "Again to sell").
 - **Keys.** Tab walks: the two tabs, rows, pack, hotbar, "Sort". Up and Down move along the rows and scroll the well. Enter buys.
 - **First.** Focus on the first row.
@@ -3879,7 +3879,7 @@ Taken where the direction is silent, in its spirit. Builders may rely on them.
 
 **Pips.** A half pip is the full pip's five lit columns beside the empty pip's other four. The rows that fill from the right take the lit columns on the right, but the pips themselves are not turned, so their light still comes from the top left.
 
-**Small choices.** A hit turns the crosshair into four ticks two units long, outlined like the cross. A banner's text is clipped inside its frame so that a descender's shadow cannot notch it. A node's ranks stand on a scrap of `root.0` so that a link passing under them does not run through the figures. The roster writes the level as a bare number and a distance with an `M`. The silhouette in a hovered slot is drawn in `sh`, on the hovered floor of `lt`. A row that cannot be used draws its icon flat in `root.4`, except in the shop, where a good out of reach keeps its icon and its grade and only its price, in blood after a `{cross}`, says so. A password field draws its dots at a pitch of 4. A toast's first line takes the light tone of its frame (`growth.lt` for growth, `blood.lt` for blood, salt for `root.4`, a grade's frame as it is). The thumb of a track sunk in a slab is the slider's handle cut to 6 wide, its grip in the third column.
+**Small choices.** A hit turns the crosshair into four ticks two units long, outlined like the cross. A banner's text is clipped inside its frame so that a descender's shadow cannot notch it. A node's ranks stand on a scrap of `root.0` so that a link passing under them does not run through the figures. The roster writes the level as a bare number and a distance with an `M`. The silhouette in a hovered slot is drawn in `sh`, on the hovered floor of `lt`. A row that cannot be used draws its icon flat in `root.4`, except in the shop, where a good out of reach keeps its icon and its grade and only its price, its figure in blood and its mark greyed, says so. A password field draws its dots at a pitch of 4. A toast's first line takes the light tone of its frame (`growth.lt` for growth, `blood.lt` for blood, salt for `root.4`, a grade's frame as it is). The thumb of a track sunk in a slab is the slider's handle cut to 6 wide, its grip in the third column.
 
 **Sheets and pictures.** The kit page's sheets of parts are `parts`, `parts-controls`, `parts-gauges`, `parts-hud`, `parts-plates`, `parts-book` and `parts-icons`; `uishot --screen parts` takes them all. The mock screens use 24 sample items drawn in the palette (`mock/icons.ts`); the interface's own marks, for tabs that open a page and for the states of a slot, are in `art/icons.ts`.
 

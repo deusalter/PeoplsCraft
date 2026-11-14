@@ -879,13 +879,13 @@ export const ICONS: Record<string, PixelMap> = {
     '................',
     '................',
   ]),
-  // A cuff that narrows to the wrist, its mouth open at the top, two straps and a buckle.
+  // A cuff that narrows to the wrist, two straps and a buckle. Open at the top it read as a bucket.
   iron_bracer: icon('iron_bracer', [
     '................',
     '................',
     '...KKKKKKKKKK...',
-    '..KGzzzzzzzzJK..',
-    '..KAAAAAGGGHMK..',
+    '..KAAAAAAAGHJK..',
+    '..KAGGGGGHHJMK..',
     '..KAGHHHHHHJMK..',
     '..KttttttootUK..',
     '..KAGHHHHooJMK..',

@@ -7,7 +7,7 @@ import type { Node, TipLine, Ui } from '../node';
 import { GRADES } from '../palette';
 import { ring, sunk } from '../parts/common';
 import { type TabSpec, tabbedSlab } from '../parts/tabs';
-import { ROW_H, TRACK_W, paintThumb } from '../parts/well';
+import { PRICE_IN, ROW_H, TRACK_W, paintPrice, paintThumb } from '../parts/well';
 import { type Stack, stackGrade, stackName, stackTip, thing } from '../sample/play-items';
 import { Bench, overWorld, packBlock, place } from './play/common';
 import { Hand, store } from './play/hand';
@@ -82,7 +82,8 @@ function precious(s: Stack): boolean {
 }
 
 function purse(k: Keeper): number { return k.token ? k.muda : k.lees; }
-function priceText(k: Keeper, n: number): string { return k.token ? `${count(n)} {muda}` : `${count(n)} {lees}`; }
+function mark(k: Keeper): string { return k.token ? '{muda}' : '{lees}'; }
+function priceText(k: Keeper, n: number): string { return `${count(n)} ${mark(k)}`; }
 
 function buy(st: State, g: Good, n: number, fromSold: boolean): boolean {
   const k = st.k;
@@ -134,12 +135,12 @@ function goodsWell(st: State, ui: Ui): Node {
         if (b.refused(r.id)) ring(s, 0, 0, rw, ROW_H, 'blood');
         else if (live.hover && can) s.fill(0, 0, rw, ROW_H, 'root.2');
         if (live.focus) ring(s, 0, 0, rw, ROW_H, 'salt');
-        // A price out of reach is told by the price alone, in blood after a cross: the icon and the name keep their
-        // look and grade, and a silhouette is kept for what has not been seen.
+        // A price out of reach is told by the price alone: the icon and the name keep their look and grade, and a
+        // silhouette is kept for what has not been seen.
         s.icon(thing(g.key).icon, 1, 1);
-        const price = (can ? '' : '{cross} ') + (r.sold ? '{back} ' : '') + priceText(k, g.price);
-        const px = rightX(price, rw - 3);
-        s.text(price, px, 4, can ? 'salt' : 'blood.lt', true);
+        const figure = (r.sold ? '{back} ' : '') + count(g.price);
+        const px = rightX(`${figure} ${mark(k)}`, rw - PRICE_IN);
+        paintPrice(s, figure, mark(k), rw - PRICE_IN, 4, can);
         // How many a press brings (or how many wait to be bought back) follows the name in grey, as "Arrow ×8".
         const many = r.sold ? r.n ?? 1 : g.per ?? 1;
         const tail = many > 1 ? ` ×${many}` : '';
@@ -224,7 +225,12 @@ function build(ui: Ui, id: string): Node {
   // Only what this keeper takes is shown, so the purse and every price carry the same mark.
   const purseText = k.token ? `${count(k.muda)} {muda}` : `${count(k.lees)} {lees}`;
   const main: Node[] = [
-    { x: rightX(purseText, 168), y: 6, w: measure(purseText), h: 10, paint: (s) => { s.text(purseText, 0, 0, 'ink'); } },
+    {
+      x: rightX(purseText, 168), y: 6, w: measure(purseText), h: 10, takes: true,
+      paint: (s) => { s.text(purseText, 0, 0, 'ink'); },
+      // The mark is named where it is counted, so that the purse and every price can carry the mark alone.
+      tip: () => ({ lines: [{ text: k.token ? 'Mūda' : 'Lees', c: 'salt' }, { text: k.token ? 'The one coin the Deserter takes' : `The coin ${k.name} takes`, c: 'root.4' }], delay: 0.4 }),
+    },
     { x: 8, y: 6, w: measure(`${k.name}, ${TAB_NAMES[st.tab]}`) + 1, h: 10, takes: true, tip: () => ({ lines: [{ text: k.name, c: 'salt' }, { text: k.says, c: 'root.4' }], delay: 0.4 }) },
     goodsWell(st, ui),
     { x: 8, y: 113, w: 160, h: 10, paint: (s) => { s.text(cut(LEGEND[st.tab], 160), 0, 0, 'ink.faded'); } },
