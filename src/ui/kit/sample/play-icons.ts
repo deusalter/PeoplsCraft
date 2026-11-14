@@ -26,41 +26,105 @@ function swapped(src: PixelMap | string[], swap: string, name: string): PixelMap
   return icon(name, rows.map((r) => [...r].map((ch) => to.get(ch) ?? ch).join('')));
 }
 
-const BLOCK = [
+// Blocks are 14 by 14 in the 16 by 16 cell, outlined in root.0 with the corners left out, a unit of light along the
+// top and left and of shade along the bottom and right, and a texture that is the block's own: flat squares with a
+// few dots read as swatches of colour, and a cross of joints read as a window.
+const RUBBLE = [
   '................',
-  '.KKKKKKKKKKKKKK.',
-  'KAAGGGGGGGGGGGHK',
-  'KAGGGHHGGGGGHHJK',
-  'KGGHHHJGGGGHHJMK',
-  'KGHHJJMzGGHHJJMK',
-  'KGHJJMMzGHHJJMMK',
-  'KHzzzzzzHJJMMMzK',
-  'KGGGGHHGGGzzzzzK',
-  'KGGHHHJGGGHHHJMK',
-  'KGHHJJMGGHHJJMMK',
-  'KHHJJMMzGHJJMMzK',
-  'KHJJMMMzHJJMMMzK',
-  'KMzzzzzzMzzzzzzK',
-  '.KKKKKKKKKKKKKK.',
+  '..KKKKKKKKKKKK..',
+  '.KGGGGHJGGGGGHK.',
+  '.KGHHHJMGHHHHJK.',
+  '.KGHHHJMGHHHHJK.',
+  '.KHJJJMMHHHHHJK.',
+  '.KJMGGHMMHJJJzK.',
+  '.KGGHHHHMMMMMzK.',
+  '.KGHHHHJMGGGGHK.',
+  '.KHJJJJMGHHHHJK.',
+  '.KJMMMMHHHHHHJK.',
+  '.KGGGGHMHHHHHJK.',
+  '.KGHHHHHMGHHHJK.',
+  '.KHJJJJJzHJJJJK.',
+  '..KKKKKKKKKKKK..',
   '................',
 ];
 
-const SMOOTH = [
+/** Stone as two tooled courses whose joints do not line up. */
+const STONE = [
   '................',
-  '.KKKKKKKKKKKKKK.',
-  'KAAGGGGGGGGGGGHK',
-  'KAGGGGGGGGGGGHJK',
-  'KGGGHGGGGGGGGHJK',
-  'KGGGGGGGGHGGGHJK',
-  'KGGGGGGGGGGGGHJK',
-  'KGGHGGGGGGGGGHJK',
-  'KGGGGGGGGGGHGHJK',
-  'KGGGGGHGGGGGGHJK',
-  'KGGGGGGGGGGGGHJK',
-  'KGHGGGGGGGHGGHJK',
-  'KGGGGGGGGGGGGHJK',
-  'KHJJJJJJJJJJJJMK',
-  '.KKKKKKKKKKKKKK.',
+  '..KKKKKKKKKKKK..',
+  '.KAAAAAAHMAAAHK.',
+  '.KAHHHHHJMGHHJK.',
+  '.KAHHHHHJMGHHJK.',
+  '.KAHHHHHJMGHHJK.',
+  '.KHJJJJJJMHJJJK.',
+  '.KMMMMMMMMMMMMK.',
+  '.KAGHMGGGGGGGHK.',
+  '.KAHJMGHHHHHHJK.',
+  '.KAHJMGHHHHHHJK.',
+  '.KAHJMGHHHHHHJK.',
+  '.KAHJMGHHHHHHJK.',
+  '.KHJJMHJJJJJJJK.',
+  '..KKKKKKKKKKKK..',
+  '................',
+];
+
+/** Sand in ripples set in staggered rows, each a lit crest over its shaded trough; two alone near the top read as eyes. */
+const SAND = [
+  '................',
+  '..KKKKKKKKKKKK..',
+  '.KeeeeeeeeeeeTK.',
+  '.KeffffffffffTK.',
+  '.KeeeefffeeefTK.',
+  '.KeTTtfffTTtfTK.',
+  '.KeffffffffffTK.',
+  '.KefffeeeffeeTK.',
+  '.KefffTTtffTTTK.',
+  '.KeffffffffffTK.',
+  '.KeeeeffeeeffTK.',
+  '.KeTTtffTTtffTK.',
+  '.KeffeeefffffTK.',
+  '.KTTTTTTTTTTTTK.',
+  '..KKKKKKKKKKKK..',
+  '................',
+];
+
+/** Clay laid in beds, each bed's foot shaded over the lit top of the next, wet at its lit corner. */
+const CLAY = [
+  '................',
+  '..KKKKKKKKKKKK..',
+  '.KLLLLLLLLLLLSK.',
+  '.KLFFFFFFFFFFSK.',
+  '.KLFWFFFFFFFFSK.',
+  '.KLFFFFFFFFFFSK.',
+  '.KLSSSSSFFFFFSK.',
+  '.KLLLLLLSSSSSSK.',
+  '.KLFFFFFLLLLLSK.',
+  '.KLFFFFFFFFFFSK.',
+  '.KLSSSFFFFFSSSK.',
+  '.KLLLLSSSSSLLSK.',
+  '.KLFFFLLLLLFFSK.',
+  '.KSSSSSSSSSSSSK.',
+  '..KKKKKKKKKKKK..',
+  '................',
+];
+
+/** Soil with clods in staggered rows, each lit on its top over a shaded foot, and a pebble. */
+const DIRT = [
+  '................',
+  '..KKKKKKKKKKKK..',
+  '.KTTTTTTTTTTTXK.',
+  '.KTtttttTTttGXK.',
+  '.KTTTttttXXtJXK.',
+  '.KTtXXtttttttXK.',
+  '.KTtttttttTTtXK.',
+  '.KTttTTttttXXXK.',
+  '.KTtttXXtttttXK.',
+  '.KTttttttttttXK.',
+  '.KTTTtttTTtttXK.',
+  '.KTtXXtttXXTTXK.',
+  '.KTtttttttttXXK.',
+  '.KXXXXXXXXXXXXK.',
+  '..KKKKKKKKKKKK..',
   '................',
 ];
 
@@ -514,12 +578,12 @@ export const ICONS: Record<string, PixelMap> = {
   cloud_bottle: swapped(ITEMS.tonic, 'rWRbqB', 'cloud_bottle'),
   raw_meat: swapped(ITEMS.haunch, 'afOruR', 'raw_meat'),
   hide_cap: swapped(ITEMS.helm, 'AeGfHTJtMUzX', 'hide_cap'),
-  cobble: icon('cobble', BLOCK),
-  stone: icon('stone', SMOOTH),
-  deepstone: swapped(BLOCK, 'AHGJHMJzMkzK', 'deepstone'),
-  sand: swapped(SMOOTH, 'AyGoHOJuMu', 'sand'),
-  clay: swapped(SMOOTH, 'AWGLHFJSMD', 'clay'),
-  dirt: swapped(BLOCK, 'AfGTHtJUMXzX', 'dirt'),
+  cobble: icon('cobble', RUBBLE),
+  stone: icon('stone', STONE),
+  deepstone: swapped(STONE, 'AHGJHMJzMk', 'deepstone'),
+  sand: icon('sand', SAND),
+  clay: icon('clay', CLAY),
+  dirt: icon('dirt', DIRT),
   bricks: swapped(ITEMS.brick, 'AaGaHOJuMuzL', 'bricks'),
   // A pane, not a block seen whole: cyan edges lit from the top left round a dark sheet, two salt glints in its lit corner.
   glass: icon('glass', [
