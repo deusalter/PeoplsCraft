@@ -45,7 +45,7 @@ export const hudSheet: Sheet = {
     // Banner and the boss bar at the top centre.
     kids.push(banner({ x: 0, y: 198, frame: 'root.4', colour: 'blood.lt', title: 'Night raid', line: 'Hold the hearth till first light' }));
     kids.push(banner({ x: 0, y: 226, frame: 'violet.lt', title: 'Amāvassa', line: 'The dark night of the round' }));
-    kids.push(bossBar({ x: 200, y: 0, name: 'The Sand Hound', f: 0.58, was: 0.66, marks: [0.5, 0.25] }));
+    kids.push(bossBar({ x: 200, y: 0, name: 'Maruhar', f: 0.58, was: 0.66, marks: [0.5, 0.25] }));
     kids.push(bossBar({ x: 200, y: 26, name: 'Sand March', f: 0.7, event: 'blood' }));
     kids.push(bossBar({ x: 200, y: 50, name: 'Amāvassa', f: 0.35, event: 'violet' }));
     // Toasts: a step of the Guide, a thing found, a warning, plain; the last still sliding in.
