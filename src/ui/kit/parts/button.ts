@@ -60,13 +60,20 @@ function bevel(s: Surface, w: number, h: number, light: Colour, light2: Colour |
 }
 
 /**
- * The frame of a button the keys are on and the pointer is not: the outline in runs of two, `salt` then `root.0`,
- * counted from each corner, so that focus is never read as the solid `salt` of a hovered button.
+ * The mark of the button the keys are on and the pointer is not: a wedge 3 by 5 pointing at the label, its point 4
+ * units left of it so that its shadow stands 2 clear of the first letter. It stands inside the button, since half
+ * buttons stand only 4 apart and one outside would fall on the next.
  */
-function dashedOutline(s: Surface, w: number, h: number): void {
-  outline(s, 0, 0, w, h, 'root.0');
-  for (let i = 1; i < w - 1; i++) if (((i - 1) >> 1) % 2 === 0) { s.fill(i, 0, 1, 1, 'salt'); s.fill(w - 1 - i, h - 1, 1, 1, 'salt'); }
-  for (let j = 1; j < h - 1; j++) if (((j - 1) >> 1) % 2 === 0) { s.fill(0, j, 1, 1, 'salt'); s.fill(w - 1, h - 1 - j, 1, 1, 'salt'); }
+const FOCUS_WEDGE = ['#..', '##.', '###', '##.', '#..'];
+
+function focusWedge(s: Surface, x: number, y: number, c: Colour, shadow: boolean): void {
+  FOCUS_WEDGE.forEach((r, j) => {
+    for (let i = 0; i < r.length; i++) {
+      if (r[i] !== '#') continue;
+      if (shadow) s.fill(x + i + 1, y + j + 1, 1, 1, 'root.0');
+    }
+  });
+  FOCUS_WEDGE.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] === '#') s.fill(x + i, y + j, 1, 1, c); });
 }
 
 /**
@@ -78,8 +85,8 @@ function dashedOutline(s: Surface, w: number, h: number): void {
  */
 function paintSlabButton(s: Surface, w: number, h: number, label: string, live: Live, disabled: boolean, ramp: Ramp, warn = false): void {
   const pressed = !disabled && live.down && live.hover;
-  if (!disabled && live.focus && !live.hover) dashedOutline(s, w, h);
-  else outline(s, 0, 0, w, h, 'root.0');
+  // Focus with the pointer elsewhere is a solid salt outline: a dashed one was a browser's focus ring, not a drawn state.
+  outline(s, 0, 0, w, h, !disabled && live.focus && !live.hover ? 'salt' : 'root.0');
   let drop = 0;
   if (disabled) {
     s.fill(1, 1, w - 2, h - 2, tone(ramp, 'sh'));
@@ -101,10 +108,10 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
   if (ramp) { paintSlabButton(s, w, h, label, live, disabled, ramp, warn); return; }
   const pressed = !disabled && live.down && live.hover;
   // Hovered, the outline is solid ember.hi, the colour of the hovered label; with the keys on it and not the pointer,
-  // dashed in salt; pressed into the slab, root.0.
+  // solid salt, the label kept salt and the focus wedge before it; pressed into the slab, root.0.
+  const focused = !disabled && !pressed && !live.hover && live.focus;
   if (!disabled && !pressed && live.hover) outline(s, 0, 0, w, h, warn ? 'blood.lt' : 'ember.hi');
-  else if (!disabled && !pressed && live.focus) dashedOutline(s, w, h);
-  else outline(s, 0, 0, w, h, 'root.0');
+  else outline(s, 0, 0, w, h, focused ? 'salt' : 'root.0');
   const tall = h >= 20;
   let text: Colour = 'salt', shadow = true, drop = 0;
   if (disabled) {
@@ -124,6 +131,7 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
   const t = cut(label, w - 4);
   const tx = centreX(t, 0, w), ty = Math.floor((h - 9) / 2);
   if (tall && !disabled) grain(s, w, h, t, tx, ty, pressed);
+  if (focused && tx - 7 >= 3) focusWedge(s, tx - 7, ty + 2, 'salt', shadow);
   s.text(t, tx + drop, ty + drop, text, shadow);
 }
 
