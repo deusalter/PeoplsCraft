@@ -361,6 +361,25 @@ export const TAB_MARKS: Record<string, PixelMap> = {
     'KftttttttttttttK',
     '.KKKKKKKKKKKKKK.',
   ]),
+  /** A compass in a timber case, its needle north in blood, for the HUD, which carries the compass strip. */
+  compass: mark('compass', [
+    '................',
+    '.....KKKKKK.....',
+    '...KKeffffTKK...',
+    '..KefWWWLLLTtK..',
+    '.KefWLLrRLLLStK.',
+    '.KfWLLLrRLLLStK.',
+    '.KfWLLrrRRLLStK.',
+    '.KfLLLrrRRLSStK.',
+    '.KfSLLLKKLLLStK.',
+    '.KfLLLhhjjSSStK.',
+    '.KTLLLLhjSSSStK.',
+    '.KTLLLLhjSSSttK.',
+    '..KTLLSSSSSttK..',
+    '...KKtttttUKK...',
+    '.....KKKKKK.....',
+    '................',
+  ]),
 };
 
 /** 7 by 7 marks of a state, set at the top right of a slot or a row. */

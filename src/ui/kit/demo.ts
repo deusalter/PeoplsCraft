@@ -291,12 +291,15 @@ const partsScreen: DemoScreen = {
 
 // ---- the index
 
-/** The mark of each family of screens on the index, by the name's first word. */
+/**
+ * The mark of each family of screens on the index, by the name's first word: the screen's own tab mark or the thing it
+ * is opened at, so that no two families share one (a lantern on both the HUD and the journal said they were alike).
+ */
 const FAMILY_ICON: Record<string, string> = {
-  type: 'bounty', parts: 'patterns', sample: 'patterns', chat: 'crew', chest: 'chest', codex: 'codex', controls: 'interface',
-  fall: 'alert', furnace: 'coal', hud: 'guide', join: 'play', joining: 'tinker_bench', journal: 'guide', loading: 'fresh',
-  map: 'map', new: 'fresh', pack: 'pack', pause: 'play', pot: 'tonic', rework: 'ingot', roster: 'crew', settings: 'interface',
-  shop: 'key', skills: 'skills', title: 'picture', tooltips: 'alert', workbench: 'workbench', anvil: 'anvil',
+  type: 'bounty', parts: 'patterns', sample: 'patterns', chat: 'crew', chest: 'chest', codex: 'codex', controls: 'key',
+  fall: 'alert', furnace: 'furnace', hud: 'compass', join: 'play', joining: 'tinker_bench', journal: 'guide', loading: 'fresh',
+  map: 'map', new: 'spade', pack: 'pack', pause: 'states', pot: 'tonic', rework: 'ingot', roster: 'peoples', settings: 'interface',
+  shop: 'coin', skills: 'skills', title: 'picture', tooltips: 'pendant', workbench: 'workbench', anvil: 'anvil',
   lineframe: 'runeloom', worlds: 'turf',
 };
 
