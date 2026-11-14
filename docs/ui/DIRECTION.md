@@ -228,7 +228,7 @@ Two faces, both drawn here, both stored as pixel maps. No other letter appears a
 
 The position of a piece of text is the top left of its cell. A title "at 8, 6" has its capitals from y 7 to y 13.
 
-**Character.** The letters are cut, the way lines are cut in a hearthstone: every stroke is one unit wide and straight, and there is no curve anywhere. A bowl or an arch is a rectangle with two of its corners cut off by one unit, always the same two: the top right and the bottom left. The top left and the bottom right stay square, as if every letter had been cut with one flat chisel held one way. So `o` is square at the top left and bottom right; `n`, `h`, `m` and `r` have flat shoulders that start square from the stem; `u` and `w` are closed square at the bottom right; `b` and `p` end square at the foot of the bowl; `d` and `q` start square at its head. Four capitals with a stem on the left (B, D, P, R) have both free corners cut, so that D and O differ in two units. Diagonals are kept for the letters that are nothing else (A's apex is flat; K, M, N, V, W, X, Y, Z and the slash of 0 use them). Lowercase `m` and `w` are 7 wide so that their counters stay open. The crossbar of A sits low, on row 5. The face has no serif except the head and foot of `I` and the feet of `l` and `1`, which keep the three apart. It is not the face of any other game: do not correct it toward one.
+**Character.** The letters are cut, the way lines are cut in a hearthstone: every stroke is one unit wide and straight, and there is no curve anywhere. A bowl or an arch is a rectangle with two of its corners cut off by one unit, always the same two: the top right and the bottom left. The top left and the bottom right stay square, as if every letter had been cut with one flat chisel held one way. So `o` is square at the top left and bottom right; `n`, `h`, `m` and `r` have flat shoulders that start square from the stem; `u` and `w` are closed square at the bottom right; `b` and `p` end square at the foot of the bowl; `d` and `q` start square at its head. Four capitals with a stem on the left (B, D, P, R) have both free corners cut, so that D and O differ in two units. Diagonals are kept for the letters that are nothing else (A's apex is flat; K, M, N, V, W, X, Y, Z and the slash of 0 use them). Lowercase `m` and `w` are 7 wide so that their counters stay open. The crossbar of A sits low, on row 5. The face has no serif except the head and foot of `I` (the head given up under a macron) and the feet of `l` and `1`, which keep the three apart. It is not the face of any other game: do not correct it toward one.
 
 Capitals:
 
@@ -318,7 +318,7 @@ Capitals with a macron are cut to six rows, 2 to 7, with the macron on row 0 of 
 Ā      Ī    Ū
 .###.  ###  .###.
 .....  ...  .....
-.###.  ###  #...#
+.###.  .#.  #...#
 #...#  .#.  #...#
 #...#  .#.  #...#
 #####  .#.  #...#
@@ -347,11 +347,11 @@ Punctuation:
 
 *      %        #      &      _      <    >    @        ~      ^    |  `  $      ×    …      °
 .....  .......  .....  .....  .....  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
-#.#.#  ##....#  .....  .##..  .....  ...  ...  .#####.  .....  .#.  #  #.  .####  ...  .....  ###
-.###.  #.#..#.  .#.#.  #..#.  .....  ..#  #..  #.....#  .....  #.#  #  .#  #.#..  ...  .....  #.#
-#####  .##.#..  #####  #..#.  .....  .#.  .#.  #.###.#  .##.#  ...  #  ..  #.#..  ...  .....  ###
-.###.  ...#...  .#.#.  .##..  .....  #..  ..#  #.#.#.#  #..#.  ...  #  ..  .###.  #.#  .....  ...
-#.#.#  ..#.##.  #####  #..##  .....  .#.  .#.  #.####.  .....  ...  #  ..  ..#.#  .#.  .....  ...
+.....  ##....#  .....  .##..  .....  ...  ...  .#####.  .....  .#.  #  #.  .####  ...  .....  ###
+#.#.#  #.#..#.  .#.#.  #..#.  .....  ..#  #..  #.....#  .....  #.#  #  .#  #.#..  ...  .....  #.#
+.###.  .##.#..  #####  #..#.  .....  .#.  .#.  #.###.#  .##.#  ...  #  ..  #.#..  ...  .....  ###
+#.#.#  ...#...  .#.#.  .##..  .....  #..  ..#  #.#.#.#  #..#.  ...  #  ..  .###.  #.#  .....  ...
+.....  ..#.##.  #####  #..##  .....  .#.  .#.  #.####.  .....  ...  #  ..  ..#.#  .#.  .....  ...
 .....  .#..#.#  .#.#.  #..#.  .....  ..#  #..  #......  .....  ...  #  ..  ..#.#  #.#  .....  ...
 .....  #....##  .....  .##.#  .....  ...  ...  .#####.  .....  ...  #  ..  ####.  ...  #.#.#  ...
 .....  .......  .....  .....  #####  ...  ...  .......  .....  ...  .  ..  .....  ...  .....  ...
@@ -373,7 +373,7 @@ In each sheet the first line names the glyph, `#` is ink, and the last line is i
 | 6 | q, whose descender ends in a spur to the right on row 9 so that it is never read as g |
 | 7 | M W m w — @ %, whose two rings are each 3 by 3 with the face's cut corners, apart from the diagonal that joins them: at 5 wide its rings were 2 by 2 blocks touching the stroke and "+20%" read as "+20/." |
 
-**Marks.** The macron is 3 units wide on row 0 for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
+**Marks.** The macron is 3 units wide on row 0 for a capital and on row 1 for a lowercase letter, with one empty row under it. Under a macron the capital A, I or U is drawn 6 tall, from row 2; the I under it loses its head serif and keeps its foot, since its macron and a 3-wide head two rows apart read as a doubled bar. `ī` loses its dot to the macron and is 3 wide. `ṭ` is not shown in play today and is drawn so that the codex can show the cutters' words. Any further marked letter is built the same way: a macron as above, a dot under on row 9, an acute as two units rising on rows 0 and 1.
 
 **Symbols.** 18 marks are part of the face and are written in strings by name in braces, as `{lees} 240`. They take the colour of the text round them.
 
