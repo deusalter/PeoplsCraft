@@ -142,7 +142,7 @@ Three rules follow and are used everywhere below.
 | Wash | Colour and strength | In strict mode (section 8) |
 | --- | --- | --- |
 | The dim behind a window | `root.0` at a half | `root.1`, opaque |
-| The dim behind the pause slab | `root.0` at a half, as behind any window | `root.1`, opaque |
+| The dim behind the pause | `root.0` at a half, as behind any window | `root.1`, opaque |
 | The strip under a chat line, a name tag, the prompt and the Guide's step on the HUD | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
@@ -190,7 +190,7 @@ Three rules follow and are used everywhere below.
 | --- | --- |
 | Container windows (pack, chest, stations, shop), book screens, tree, map, settings | Centred on the screen: `x = floor((Vw - w) / 2)`, `y = floor((Vh - h) / 2)`. Tabs above or to the left are not counted in `w` and `h`. The world behind is dimmed |
 | Title, worlds, new world, join, loading | The ground tile over the whole screen; content in a column 200 wide centred on x; y measured from the top of a block 240 tall that is centred on the screen. The world list alone runs its well by the screen's edges and its buttons from the bottom (World list) |
-| Pause | A clay slab 216 by 146 centred over the dimmed world, its buttons in the same column |
+| Pause | No slab: the title, its lines and the buttons in the menus' column of 200 over the dimmed world, the title's cell 40 down the block of 240 |
 | The fall | The same column over the washed world |
 | HUD, bottom centre | Hotbar, practice strip, pips, level, name of the thing in hand: centred on the stage, measured up from its bottom edge |
 | HUD, top centre | Compass, boss bar, event strips, the readout of what is looked at with the prompt as its third row: centred on the stage, measured down from its top edge |
@@ -3330,7 +3330,7 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 ### Pause
 
-Size 427 by 240. Material: a clay slab 216 by 146 over the world under a half of `root.0`, the dim behind any window. Anchor: the slab centred on the screen.
+Size 427 by 240. Material: none. The world under a half of `root.0`, the dim behind any window, and on it the menus' column of 200, centred on x, measured from the top of a block 240 tall centred on the screen, as the tradition's game menu stands.
 
 ```
 +==============================================================================================================================================+
@@ -3342,33 +3342,32 @@ Size 427 by 240. Material: a clay slab 216 by 146 over the world under a half of
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
-"                                   #=======================================================================#                                  "
-"                                   # S0                                                                    #                                  "
-"                                   # "Z1"                                                                  #                                  "
-"                                   # "Z2"                                                                  #                                  "
-"                                   # "Z3"                                                                  #                                  "
-"                                   #                                                                       #                                  "
-"                                   #                                                                       #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   # | Z4 button                                                       |   #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   #                                                                       #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   # | Z5 button                                                       |   #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   #                                                                       #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   # | Z6 button                                                       |   #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   #                                                                       #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   # | Z7 button                                                       |   #                                  "
-"                                   # +-----------------------------------------------------------------+   #                                  "
-"                                   #                                                                       #                                  "
-"                                   #                                                                       #                                  "
-"                                   #=======================================================================#                                  "
 "                                                                                                                                              "
 "                                                                                                                                              "
+"                                     "Z1"                                                                                                     "
+"                                     "Z2"                                                                                                     "
+"                                     "Z3"                                                                                                     "
+"                                     "Z4"                                                                                                     "
+"                                                                                                                                              "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                     | Z5 button                                                       |                                      "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                                                                                                                              "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                     | Z6 button                                                       |                                      "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                                                                                                                              "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                     | Z7 button                                                       |                                      "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                                                                                                                              "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                     | Z8 button                                                       |                                      "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                                                                                                                              "
+"                                     +-----------------------------------------------------------------+                                      "
+"                                     | Z9 button                                                       |                                      "
+"                                     +-----------------------------------------------------------------+                                      "
 "                                                                                                                                              "
 "                                                                                                                                              "
 "                                                                                                                                              "
@@ -3376,20 +3375,23 @@ Size 427 by 240. Material: a clay slab 216 by 146 over the world under a half of
 "                                                                                                                                              "
 +==============================================================================================================================================+
 ```
+
+Drawn on a server, where every row is present. Alone, Z2, Z4 and Z8 are left out and the rows close up.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| S0 | slab | 105 | 47 | 216 | 146 | clay; title at 8, 6: "Paused", on a server "Paused (the world runs on)": the same word, and why the world does not stop. With no Z3 line the slab is 10 shorter |
-| Z1 | text | 113 | 53 | 200 | 10 | the title, ink, no shadow (5.3) |
-| Z2 | text | 113 | 65 | 200 | 10 | the world's name, ink.faded |
-| Z3 | text | 113 | 75 | 200 | 10 | one line: "Saved", "Saving" in ink.faded, or why not in blood.dk; on a server, where it is and who is on, in ink.faded: "spark.local:8420, 8 of 8 here" |
-| Z4 | button | 113 | 93 | 200 | 20 | "Back to the game", 8 under the last line's cell; the buttons stand 4 apart and the last 8 over the slab's foot, as the sides are 8 |
-| Z5 | button | 113 | 117 | 200 | 20 | "Settings" |
-| Z6 | button | 113 | 141 | 200 | 20 | "Controls" |
-| Z7 | button | 113 | 165 | 200 | 20 | "Save and leave"; on a server "Leave" |
-| | | | | | | When the last save failed, Z7 is "Try to save again" and an eighth row stands 24 under it: "Leave without saving", its label `blood.lt` when hovered or pressed in place of `ember.hi`. The slab grows by 24. A door must never promise the save the line above says cannot happen |
+| Z1 | text | 113 | 40 | 200 | 10 | "Paused", `salt` with its shadow, centred on the column |
+| Z2 | text | 113 | 52 | 200 | 10 | on a server only: "The world runs on" in `blood.lt`, centred: the world does not stop, which is a warning. Written into the title as "Paused (the world runs on)" it made a long, odd heading |
+| Z3 | text | 113 | 62 | 200 | 10 | the world's name, `root.4` with its shadow, centred; alone it stands at 52, 12 under the title's cell |
+| Z4 | text | 113 | 72 | 200 | 10 | alone: when it was saved, "Saved 0:42 ago" or "Saving" in `root.4`, or why not in `blood.lt`; on a server: where it is and who is on, in `root.4`: "spark.local:8420, 8 of 8 here" |
+| Z5 | button | 113 | 90 | 200 | 20 | "Back to the game", 8 under the last line's cell; the buttons stand 4 apart |
+| Z6 | button | 113 | 114 | 200 | 20 | "Settings" |
+| Z7 | button | 113 | 138 | 200 | 20 | "Controls" |
+| Z8 | button | 113 | 162 | 200 | 20 | on a server only: "Crew", which opens the roster held open until it is closed, so that the crew can be read without holding Tab |
+| Z9 | button | 113 | 186 | 200 | 20 | "Save and leave"; on a server "Leave" |
+| | | | | | | When the last save failed, the last button is "Try to save again" and another stands 24 under it: "Leave without saving", its label `blood.lt` when hovered or pressed in place of `ember.hi`. A door must never promise the save the line above says cannot happen |
 
-- **Shows.** One clay slab titled like any window, the world and whether it is saved written on it at the top left, and four buttons in a column inside it. Not a bare column of buttons with grey lines centred over it.
+- **Shows.** The title, the world and whether it is saved, in salt and grey over the dimmed world, and the stone buttons in a column under them: no slab. A clay slab behind the stone buttons set two materials against each other and boxed a column that needed no box, which read as a web dialog.
 - **Clickable.** The buttons.
 - **Keys.** Esc goes back to the game. Up, Down, Enter.
 - **First.** Focus on "Back to the game", not drawn until a key moves it: a frame on open reads as a hovered button.
