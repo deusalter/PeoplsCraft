@@ -2644,15 +2644,15 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 #==========================================================#
 #  "P1"                                                    #
 #                                                          #
-#        .----..----.  .----.                              #
-#        |P2  ||    |==|P3  |                              #
-#        '----''----'  '----'                              #
-#            +--+       P6                    .-------.    #
-#            |P4|       ++        ====\       |       |    #
-#            +--+       ||        P11 >       | P7    |    #
-#           .----.      ||        ====/       |       |    #
-#           |P5  |      ||                    '-------'    #
-#           '----'      ++                                 #
+#        .----..----. .----.                               #
+#        |P2  ||    | |P3  |                               #
+#        '----''----' '----'                               #
+#            +--+      "P12"                               #
+#            |P4|       ++                .-------.        #
+#            +--+       ||     ====\      |       |        #
+#           .----.      ||     P11 >      | P7    |        #
+#           |P5  |      ++     ====/      |       |        #
+#           '----'      P6                '-------'        #
 #                                                          #
 #  "P8"                                                    #
 #  .----..----..----..----..----..----..----..----..----.  #
@@ -2671,20 +2671,19 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 #                                                          #
 #==========================================================#
 ```
-
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | P0 | slab | 0 | 0 | 176 | 166 | clay slab |
 | P1 | text | 8 | 6 | 60 | 10 | "Pot" |
 | P2 | slots | 26 | 17 | 36 | 18 | remains to boil down, two slots |
-| P12 | rule | 62 | 25 | 8 | 2 | cut line joining the remains to the salt, the full span between the slots |
-| P3 | slots | 70 | 17 | 18 | 18 | salt |
+| P3 | slots | 66 | 17 | 18 | 18 | salt, 4 clear of the remains and joined to nothing: salt is optional, and a cut line between them read as a joining bench. Empty, it shows a lidded crock (the lid a row clear of the pot) in `dk`; a heap read as a flat triangle |
+| P12 | text | 66 | 36 | | 10 | "Salt" in ink.faded under its slot |
 | P4 | flame | 38 | 36 | 13 | 15 | burn gauge |
 | P5 | slots | 35 | 53 | 18 | 18 | fuel |
-| P6 | gauge | 74 | 36 | 9 | 42 | the water in the pot, under the salt: an upright channel 6 by 31 at 76, 36 (a 1-unit sunken frame round a fill 4 wide) filled in `arm`, which boils down through the night, and 2 under it a drop 9 by 9 in arm blue at 74, 69, so that the gauge is never read as heat. Its tooltip, on the channel and the drop, is "Water" then "It boils down through the night" in grey |
-| P11 | arrow | 97 | 36 | 22 | 15 | the progress arrow (5.13): the night gone, filling from the left; nothing comes out before first light |
-| P7 | bigslot | 128 | 31 | 26 | 26 | lees, as coin |
-| P13 | text | 154 | 61 | | 10 | while nothing boils, why, right-aligned to the slot's right edge in ink.faded: "No remains" or "No fire". The water channel and the salt slot say what they are in their tooltips |
+| P6 | gauge | 70 | 47 | 9 | 31 | the water in the pot, under the salt: an upright channel 6 by 20 at 72, 47 (a 1-unit sunken frame round a fill 4 wide) filled in `arm`, which boils down through the night, and 2 under it a drop 9 by 9 in arm blue at 70, 69, so that the gauge is never read as heat. Its tooltip, on the channel and the drop, is "Water" then "It boils down through the night" in grey |
+| P11 | arrow | 86 | 46 | 22 | 15 | the progress arrow (5.13): the night gone, filling from the left; nothing comes out before first light |
+| P7 | bigslot | 112 | 40 | 26 | 26 | lees, as coin. The working stands in the left 140 units as the furnace's does: with the lees at 128 the arrow ran a long empty track and the remains and what they give sat far apart |
+| P13 | text | 138 | 68 | | 10 | while nothing boils, why, right-aligned to the slot's right edge in ink.faded: "No remains" or "No fire". The water channel and the salt slot say what they are in their tooltips |
 | P8 | text | 8 | 73 | 40 | 10 | "Pack" |
 | P9 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | P10 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |

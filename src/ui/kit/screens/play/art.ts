@@ -3,22 +3,22 @@ import { type PixelMap, pixmap } from '../../pixmap';
 
 function mask(rows: string[], name: string): PixelMap { return pixmap({ rows, key: { '#': 'tint' } }, `silhouette.${name}`); }
 
-/** Salt, for the pot: a heap poured on a board. */
+/** Salt, for the pot: a lidded crock, the lid lifted a row clear so that it reads as a vessel and not as a heap. */
 export const SALT = mask([
   '................',
   '................',
-  '................',
-  '................',
   '.......##.......',
-  '......####......',
   '.....######.....',
   '....########....',
-  '...##########...',
+  '................',
+  '....########....',
+  '.....######.....',
   '...##########...',
   '..############..',
-  '.##############.',
-  '.##############.',
-  '................',
+  '..############..',
+  '..############..',
+  '...##########...',
+  '....########....',
   '................',
   '................',
 ], 'salt');

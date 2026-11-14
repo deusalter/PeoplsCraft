@@ -161,7 +161,7 @@ export function stackSlot(b: Bench, p: Place, o: StackSlotOpts): Node {
         stack: stack ? { icon: thing(stack.key).icon, n: stack.n } : null,
         silhouette: o.silhouette, missing: stack ? undefined : o.missing,
       }, live);
-      if (!stack && o.silMap && o.ramp !== 'dark') s.draw(o.silMap, o.large ? 5 : 1, o.large ? 5 : 1, { flat: tone(o.ramp, live.hover ? 'face' : 'sh') });
+      if (!stack && o.silMap && o.ramp !== 'dark') s.draw(o.silMap, o.large ? 5 : 1, o.large ? 5 : 1, { flat: tone(o.ramp, live.hover ? 'sh' : 'dk') });
     },
     tip: o.tip ?? (() => (stack ? stackTip(stack, o.hint ?? (o.locked !== undefined ? 'none' : 'slot'), o.extra) : null)),
     on: {

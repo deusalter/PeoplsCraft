@@ -7,7 +7,7 @@ import { coded } from '../pixmap';
 import { burnGauge, channel, progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
 import { type Stack, thing } from '../sample/play-items';
-import { Bench, STILL, cutLine, cycle, overWorld, packBlock, place, stackGrid, stackSlot } from './play/common';
+import { Bench, STILL, cycle, overWorld, packBlock, place, stackGrid, stackSlot } from './play/common';
 import { SALT } from './play/art';
 import { Hand, type Place, store } from './play/hand';
 import type { NamedScreen } from './index';
@@ -67,33 +67,35 @@ function build(ui: Ui): Node {
   const boiling = !!h.stores.fuel[0] && h.stores.remains.some((s) => s);
   // A night of the mock passes in four minutes; the gauge fills by whole units from the bottom.
   const night = (t: number) => (boiling ? cycle(t - st.opened + 96, 240, 0.4) : 0);
+  // Laid out as the furnace: the remains with the fire under them, then the arrow and the lees close by. Salt is
+  // optional, so it stands 4 apart with its name under it and no cut line, which would read as a joining bench.
   const main: Node[] = [
     stackGrid(b, { store: 'remains', x: 26, y: 17, cols: 2, rows: 1, ramp: 'clay', each: () => ({ silhouette: 'work', showAccepts: true }) }),
-    cutLine(62, 25, 8, 'clay'),
     stackSlot(b, { store: 'salt', i: 0 }, {
-      x: 70, y: 17, ramp: 'clay', silMap: SALT,
+      x: 66, y: 17, ramp: 'clay', silMap: SALT,
       tip: () => ({ lines: [{ text: 'Salt', c: 'salt' }, { text: 'No salt is dug on this ground yet', c: 'root.4' }] }),
     }),
+    { x: 66, y: 36, w: measure('Salt'), h: 10, paint: (s: Surface) => { s.text('Salt', 0, 0, 'ink.faded'); } },
     burnGauge({ x: 38, y: 36, f: boiling ? 0.7 : 0, ramp: 'clay' }),
     stackSlot(b, { store: 'fuel', i: 0 }, { x: 35, y: 53, ramp: 'clay', silhouette: 'fuel', showAccepts: true }),
     {
-      x: 76, y: 36, w: 6, h: 31,
-      paint: (s, live) => channel({ x: 0, y: 0, len: 31, f: boiling ? 1 - 0.75 * night(live.t) : 0, ramp: 'clay', colour: 'arm', upright: true }).paint!(s, live),
+      x: 72, y: 47, w: 6, h: 20,
+      paint: (s, live) => channel({ x: 0, y: 0, len: 20, f: boiling ? 1 - 0.75 * night(live.t) : 0, ramp: 'clay', colour: 'arm', upright: true }).paint!(s, live),
       anim: boiling && !STILL,
       tip: () => WATER,
     },
-    { x: 74, y: 69, w: 9, h: 9, paint: (s) => s.map(DROP, 0, 0), tip: () => WATER },
+    { x: 70, y: 69, w: 9, h: 9, paint: (s) => s.map(DROP, 0, 0), tip: () => WATER },
     {
-      ...progressArrow({ x: 97, y: 36, f: 0, ramp: 'clay' }),
+      ...progressArrow({ x: 86, y: 46, f: 0, ramp: 'clay' }),
       paint: (s, live) => progressArrow({ x: 0, y: 0, f: night(live.t), ramp: 'clay' }).paint!(s, live),
       anim: boiling && !STILL,
       tip: () => ({ lines: [{ text: 'The night', c: 'salt' }, { text: 'Nothing comes out before first light', c: 'root.4' }], delay: 0.4 }),
     },
-    stackSlot(b, { store: 'out', i: 0 }, { x: 128, y: 31, ramp: 'clay', large: true }),
+    stackSlot(b, { store: 'out', i: 0 }, { x: 112, y: 40, ramp: 'clay', large: true }),
     // An empty arrow alone does not say why nothing boils; the line under the lees says what is missing.
     ...(boiling ? [] : [(() => {
       const why = !h.stores.remains.some((s) => s) ? 'No remains' : 'No fire';
-      return { x: 154 - measure(why) + 1, y: 61, w: measure(why), h: 10, paint: (s: Surface) => { s.text(why, 0, 0, 'ink.faded'); } };
+      return { x: 138 - measure(why) + 1, y: 68, w: measure(why), h: 10, paint: (s: Surface) => { s.text(why, 0, 0, 'ink.faded'); } };
     })()]),
     ...packBlock(b, 'clay', 73, 84, { sort: false }),
   ];
