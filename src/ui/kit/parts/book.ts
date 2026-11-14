@@ -64,13 +64,15 @@ const LEATHER_SHUT: Tones = (r) => ({ hi: 'timber.sh', lt: 'timber.sh', face: 't
  */
 function paintBook(s: Surface): void {
   const w = BOOK_W, h = BOOK_H, b = BLOCK, t = LEATHER;
-  s.fill(1, 0, w - 2, 1, 'root.0'); s.fill(1, h - 1, w - 2, 1, 'root.0');
-  s.fill(0, 1, 1, h - 2, 'root.0'); s.fill(w - 1, 1, 1, h - 2, 'root.0');
-  s.fill(1, 1, w - 2, h - 2, t('face'));
-  s.fill(1, 1, w - 3, 1, t('hi')); s.fill(1, 2, 1, h - 4, t('hi'));
+  // The board's corners step in by two, outline and all, as the worn corner of a bound board and never a slab's.
+  s.fill(2, 0, w - 4, 1, 'root.0'); s.fill(2, h - 1, w - 4, 1, 'root.0');
+  s.fill(0, 2, 1, h - 4, 'root.0'); s.fill(w - 1, 2, 1, h - 4, 'root.0');
+  s.fill(2, 1, w - 4, h - 2, t('face')); s.fill(1, 2, w - 2, h - 4, t('face'));
+  s.fill(2, 1, w - 5, 1, t('hi')); s.fill(1, 2, 1, h - 5, t('hi'));
   s.fill(2, 2, w - 5, 1, t('lt')); s.fill(2, 3, 1, h - 6, t('lt'));
-  s.fill(2, h - 2, w - 3, 1, t('pit')); s.fill(w - 2, 2, 1, h - 4, t('pit'));
-  s.fill(3, h - 3, w - 5, 1, t('sh')); s.fill(w - 3, 3, 1, h - 6, t('sh'));
+  s.fill(3, h - 2, w - 5, 1, t('pit')); s.fill(w - 2, 3, 1, h - 5, t('pit'));
+  s.fill(3, h - 3, w - 6, 1, t('sh')); s.fill(w - 3, 3, 1, h - 6, t('sh'));
+  for (const [x, y] of [[1, 1], [w - 2, 1], [1, h - 2], [w - 2, h - 2]]) s.fill(x, y, 1, 1, 'root.0');
   s.fill(b, b, w - 2 * b, h - 2 * b, 'root.0');
   s.fill(b + 1, b + 1, w - 2 * b - 2, h - 2 * b - 2, 'clay.lt');
   const leaves: Colour[] = ['clay.sh', 'clay.face'];
@@ -81,8 +83,34 @@ function paintBook(s: Surface): void {
     s.fill(p + i, p, 1, y - p, c);
     s.fill(w - p - 1 - i, p, 1, y - p, c);
   });
+  // Each page dips into the binding: a band 3 wide of `clay.face` beside the gutter, one tone and not a ramp.
+  const dip = h - 2 * p - leaves.length;
+  s.fill(GUTTER - 3, p, 3, dip, 'clay.face');
+  s.fill(GUTTER + 3, p, 3, dip, 'clay.face');
   // The pages' columns of the gutter stop at the leaves; the crease runs through them to the outline.
   GUTTER_TONES.forEach((c, i) => s.fill(GUTTER + i, p, 1, h - 2 * p - (c === 'root.0' ? 0 : leaves.length), c));
+  ribbon(s);
+}
+
+/**
+ * The ribbon that keeps the place, 4 wide, from the top of the spine down the gutter to 14 under the block's top, its
+ * tail cut in a notch: `blood` lit on its left in `blood.lt` and shaded on its right in `blood.dk`, outlined in root.0.
+ * It lies in the fold, where no line of a page reaches; laid over the head of the right page it touched the first
+ * word. One ribbon, always the same colour: it says the book lies open, and the tabs say at which section; five
+ * ribbons in five colours were a second way to the sections, told apart by colour alone.
+ */
+function ribbon(s: Surface): void {
+  const x = GUTTER - 1, end = BLOCK + 14;
+  s.fill(x - 1, 0, 6, end + 1, 'root.0');
+  s.fill(x, 1, 1, end - 1, 'blood.lt');
+  s.fill(x + 1, 1, 2, end - 1, 'blood');
+  s.fill(x + 3, 1, 1, end - 1, 'blood.dk');
+  // The notch: the tail's two middle units cut back by two, the outline following them; under it the gutter shows.
+  s.fill(x + 1, end - 2, 2, 1, 'root.0');
+  s.fill(x + 1, end - 1, 1, 2, 'clay.sh');
+  s.fill(x + 2, end - 1, 1, 2, 'root.0');
+  s.fill(x - 1, end, 1, 1, 'clay.face'); s.fill(x + 4, end, 1, 1, 'clay.face');
+  s.fill(x, end, 1, 1, 'root.0'); s.fill(x + 3, end, 1, 1, 'root.0');
 }
 
 /** The journal and the codex (5.19): a book of 298 by 186 opened to two pages, tabs on its top edge, page arrows below. */
