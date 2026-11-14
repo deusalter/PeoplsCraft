@@ -91,7 +91,7 @@ export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live):
   if (dark) s.nine(DARK_SLOT, 0, 0, size, size);
   else s.nine(SLOT, 0, 0, size, size, ramp);
   // The hovered floor is the ramp's light edge, as the tradition's flat white over a slot lifts it.
-  if (o.mark === 'locked') s.fill(1, 1, f, f, dark ? 'root.2' : tone(ramp, 'face'));
+  if (o.mark === 'locked') s.fill(1, 1, f, f, dark ? 'root.3' : tone(ramp, 'face'));
   else if (live.hover) s.fill(1, 1, f, f, dark ? 'root.3' : tone(ramp, 'lt'));
   const framed = (!!o.mark && o.mark !== 'locked') || live.focus;
   if (o.mark && o.mark !== 'locked') ring(s, 1, 1, f, f, FRAME[o.mark]);

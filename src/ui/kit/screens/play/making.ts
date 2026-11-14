@@ -150,18 +150,19 @@ function patternTip(h: Hand, p: Pattern, here: boolean, station: Station): Retur
 }
 
 /**
- * A cell of the pattern list, sunk in the dark well like a slot: `root.0` along its top and left, `root.3` along its
- * bottom and right, a floor of the well's own `root.1`, or `root.2` under the pointer.
+ * A cell of the pattern list, sunk in the dark well like a slot on a dark plate: `root.0` along its top and left,
+ * `root.3` along its bottom and right, a floor of `root.2`, or `root.3` under the pointer. On the well's own `root.1`
+ * a dark thing outlined in `root.0` (a ring, boots, a lantern) lost its silhouette. A place still to fill keeps the
+ * well's floor and a dimmer lower edge, so the filled cells stand forward of it.
  */
 function paintCell(s: Surface, hover: boolean, empty = false, chosen = false): void {
   s.fill(0, 0, 17, 1, 'root.0');
   s.fill(0, 1, 1, 16, 'root.0');
-  // An empty cell keeps a dimmer lower edge, so the filled cells stand forward of the page's empty places.
   s.fill(1, 17, 17, 1, empty ? 'root.2' : 'root.3');
   s.fill(17, 1, 1, 16, empty ? 'root.2' : 'root.3');
   s.fill(17, 0, 1, 1, 'root.1');
   s.fill(0, 17, 1, 1, 'root.1');
-  s.fill(1, 1, 16, 16, chosen ? 'root.3' : hover ? 'root.2' : 'root.1');
+  s.fill(1, 1, 16, 16, empty ? 'root.1' : chosen || hover ? 'root.3' : 'root.2');
 }
 
 /** The cells of the patterns in a dark well, five to a row, moving by whole rows, with a track when they do not fit. */

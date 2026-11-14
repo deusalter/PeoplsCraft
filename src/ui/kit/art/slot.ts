@@ -10,10 +10,13 @@ export const SLOT = coded([
   '311',
 ], 'slot', [1, 1, 1, 1]);
 
-/** A slot on a dark plate (5.4): floor `root.0`, light edge `root.3`. */
+/**
+ * A slot on a dark plate (5.4): `root.0` above and left, a floor of `root.2`, `root.3` below and right. On a floor of
+ * `root.0` a dark thing, outlined in `root.0`, lost its silhouette to the floor.
+ */
 export const DARK_SLOT = coded([
   'KKk',
-  'KKh',
+  'Kjh',
   'khh',
 ], 'slot.dark', [1, 1, 1, 1]);
 
