@@ -45,19 +45,33 @@ export function washedMenu(ui: Ui, id: string, wash: { c: Colour; quarters: 1 | 
 /** The form of a full-screen menu (New world, Join a server): its rows of a label over a field, in table units. */
 export const FORM = {
   /** The screen's title, centred on the column. */
-  titleY: 20,
-  /** The first label; a field stands 10 under its label. */
-  top: 40,
+  titleY: 16,
+  /** The first label's cell. */
+  top: 36,
+  /** From a label's cell to its field: its letters stand 3 clear above the field. */
+  label: 11,
   fieldH: 20,
   /**
-   * From one label to the next: the label (10), the field (20) and 12 between the groups, in which a field's answer is
-   * written straight under it only when there is one. A further 12 kept clear for the answer read as a missing row.
+   * From one label to the next: the label (11), the field (20), the 11 under it that hold a field's answer with its
+   * letters 2 under the field, and 8 more between the groups. With the next label straight under the answer, an answer
+   * read as the label of the field below it.
    */
-  pitch: 42,
+  pitch: 50,
 } as const;
 
-/** Where the buttons of a form of n rows start: the same 12 under the last field as between the groups. */
-export function formButtonsY(rows: number): number { return FORM.top + FORM.pitch * (rows - 1) + 10 + FORM.fieldH + 12; }
+/** The field of row i of a form. */
+export function formFieldY(i: number): number { return FORM.top + i * FORM.pitch + FORM.label; }
+
+/** Where the buttons of a form of n rows start: 17 under the last field, 6 under its answer's cell. */
+export function formButtonsY(rows: number): number { return formFieldY(rows - 1) + FORM.fieldH + 17; }
+
+/**
+ * A label over a field on the ground: `stone.lt` with its shadow, a step quieter than the salt of what is typed in the
+ * field, so that a label and an entered name never read as the same kind of text.
+ */
+export function formLabel(i: number, text: string): Node {
+  return line({ x: COLUMN_X, y: FORM.top + i * FORM.pitch, w: COLUMN_W, text, c: 'stone.lt', shadow: true });
+}
 
 /** The screen's title over a form: centred on the column, salt with its shadow. */
 export function formTitle(text: string): Node {

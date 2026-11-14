@@ -107,9 +107,9 @@ export function paintButton(s: Surface, w: number, h: number, label: string, liv
   const tall = h >= 20;
   let text: Colour = 'salt', shadow = true, drop = 0;
   if (disabled) {
-    s.fill(1, 1, w - 2, h - 3, 'stone.pit');
-    s.fill(1, h - 2, w - 2, 1, 'stone.dk');
-    text = 'root.4'; shadow = false;
+    // Still a slab of stone, two steps darker, its bevel kept and its face bare: flat dark it read as a fourth field.
+    bevel(s, w, h, 'stone.sh', null, 'stone.dk', 'stone.pit', 'stone.pit');
+    text = 'root.4';
   } else if (pressed) {
     // Sunk: shade under the top lip, the light caught on the lower one, the label still lit as hovered and moved a
     // unit down and right with the face.

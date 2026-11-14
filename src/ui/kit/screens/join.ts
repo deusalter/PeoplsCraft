@@ -6,7 +6,7 @@ import type { Colour } from '../palette';
 import { button, paintButton } from '../parts/button';
 import { lv } from '../parts/common';
 import { field } from '../parts/controls';
-import { FORM, formButtonsY, formTitle, groundMenu, line } from '../parts/menu';
+import { FORM, formButtonsY, formFieldY, formLabel, formTitle, groundMenu } from '../parts/menu';
 import { ANSWERS, type ServerAnswer } from '../sample/menus';
 import { firstFieldFocus, go } from './books-common';
 import { CREW, seat } from '../sample/crew';
@@ -35,7 +35,7 @@ const validName = (n: string) => n.length >= 1 && n.length <= 16 && [...n].every
 export const RETRY_WAIT = 5;
 
 /**
- * A line in the 12 kept under a field: bare text with its shadow on the ground, its letters 2 under the field, as a
+ * A line in the 11 kept under a field: bare text with its shadow on the ground, its letters 2 under the field, as a
  * label is. Sunk in a strip of its own it read as a second field, a disabled one.
  */
 function fieldNote(x: number, y: number, text: string, c: Colour): Node {
@@ -57,17 +57,17 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
     n.on = { ...n.on, ...enter };
     return n;
   };
-  // The title is centred at the head; each label stands 10 over its field, and the 12 under each field hold what the
+  // The title is centred at the head; each label stands 11 over its field, and the 12 under each field hold what the
   // server said about it, in blood when it refuses, so an answer is always read next to what it is about. An answer
   // about no one field (the server is full, or here) is about the address.
   const kids = [formTitle('Join a server')];
   const said = (key: 'address' | 'name' | 'password') => (v.answer ? (v.answer.ok || !about ? key === 'address' : about === key) : false);
   const row = (i: number, key: 'address' | 'name' | 'password', label: string, value: string, on: (t: string) => void, extra: Partial<Parameters<typeof field>[0]>) => {
-    const y = FORM.top + i * FORM.pitch;
-    kids.push(line({ x: 113, y, w: 200, text: label, c: 'salt', shadow: true }));
+    const y = formFieldY(i);
+    kids.push(formLabel(i, label));
     const refused = about === key;
-    kids.push(f(`join.${key}`, y + 10, value, on, refused ? { ...extra, show: { refused: true } } : extra));
-    const at = y + 10 + FORM.fieldH + 1;
+    kids.push(f(`join.${key}`, y, value, on, refused ? { ...extra, show: { refused: true } } : extra));
+    const at = y + FORM.fieldH + 1;
     if (said(key)) kids.push(fieldNote(113, at, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
     // Why Join stands disabled, said where the missing thing goes.
     else if (key === 'name' && !v.name) kids.push(fieldNote(113, at, 'Type a name to join', 'root.4'));

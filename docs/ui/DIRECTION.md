@@ -44,11 +44,11 @@ Three rules follow and are used everywhere below.
 | `timber.dk` | `#663d2c` | `U` | silhouettes in an empty timber slot |
 | `timber.pit` | `#402625` | `X` | dark edge in timber |
 | `stone.hi` | `#e4e8dc` | `A` | hottest edge of a stone slab; top row of a hovered button and of a key cap |
-| `stone.lt` | `#c3cab9` | `G` | light edge of a stone slab; top row of a button; face of a key cap |
+| `stone.lt` | `#c3cab9` | `G` | light edge of a stone slab; top row of a button; face of a key cap; the label over a field on the ground |
 | `stone.face` | `#9da695` | `H` | face of a stone slab |
 | `stone.sh` | `#6f7a76` | `J` | button face; inner dark edge in stone; slot floor in stone |
 | `stone.dk` | `#4e585d` | `M` | silhouettes in an empty stone slot; lower edge of a button and of a key cap; the joints of a menu button's face; shade of an open node's link |
-| `stone.pit` | `#323844` | `z` | dark edge in stone; disabled button face; the lip of a block of the ground tile |
+| `stone.pit` | `#323844` | `z` | dark edge in stone; dark edge of a disabled button; the lip of a block of the ground tile |
 | `ink` | `#2b1f2e` | `I` | text on any light face |
 | `ink.faded` | `#5c4c56` | `i` | secondary and disabled text on a light face |
 | `blood.lt` | `#f2785c` | `r` | worse-than lines and refusals on dark; lit top of the life fill |
@@ -107,6 +107,7 @@ Upper on dark is the mid green `growth`, not `growth.lt`: with the light green i
 | --- | --- | --- |
 | Plain text | `salt` | `ink` |
 | The less important line | `root.4` | `ink.faded` |
+| The label over a field of a form on the ground, a step quieter than what is typed | `stone.lt` | not used |
 | A line from the server or the world in chat, after the `{cairn}` mark | `root.4` | not used |
 | A line of the world about a great feeder in chat: its name, then the rest | `blood.lt`, then `violet.lt` | not used |
 | A grade | the table above | the table above |
@@ -896,7 +897,7 @@ Normal and hovered. Hovered: the outline turns `ember.hi`, the light row and col
 ```
 `. nothing  A stone.hi  G stone.lt  J stone.sh  K root.0  M stone.dk  W salt  y ember.hi  z stone.pit`
 
-Pressed and disabled. Pressed (held under the pointer; the label stays `ember.hi`): the outline goes back to `root.0`, as the button is pushed into its slab, and the bevel turns over: the first row and column `stone.pit` with a row and a column of `stone.dk` inside them, the last row and column `stone.lt`, where the lower lip of the sunk face catches the light, and grain and label move one unit down and one right. With a `salt` outline and the label dropped only a unit, pressed was told from hovered by a slightly darker face alone. So pressed never looks like hovered or focused. Disabled: a flat face of `stone.pit` with one row of `stone.dk` at the bottom, label `root.4` with no shadow, no grain.
+Pressed and disabled. Pressed (held under the pointer; the label stays `ember.hi`): the outline goes back to `root.0`, as the button is pushed into its slab, and the bevel turns over: the first row and column `stone.pit` with a row and a column of `stone.dk` inside them, the last row and column `stone.lt`, where the lower lip of the sunk face catches the light, and grain and label move one unit down and one right. With a `salt` outline and the label dropped only a unit, pressed was told from hovered by a slightly darker face alone. So pressed never looks like hovered or focused. Disabled: still a slab of stone two steps darker, its outline and bevel kept: the first row and column `stone.sh`, a bare face of `stone.dk` with no grain and no joints, the last row and column `stone.pit` with a row and a column of `stone.pit` inside them; the label `root.4` with its shadow. A flat face of `stone.pit` was the dark of a text field, and under a form a disabled "Join" read as a fourth, empty field.
 
 ```
      0         1         2         3         4         5         6         7         8         9        
@@ -3255,13 +3256,13 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| N1 | text | 113 | 20 | 200 | 10 | "New world", centred on the column, salt with shadow: the screen's head |
-| N2 | text | 113 | 40 | 60 | 10 | "Name", salt with shadow, 10 over its field |
-| N3 | field | 113 | 50 | 200 | 20 | at most 28 characters; holds "New world", selected |
-| N4 | text | 113 | 82 | 60 | 10 | "Seed", salt with shadow; rows of a form stand 42 apart: label 10, field 20, then 12 between the groups, in which an answer is written straight under its field only when there is one. With 12 more kept clear for an answer that is seldom there, the gap read as a missing row |
-| N5 | field | 113 | 92 | 200 | 20 | at most 32 characters; placeholder "Left empty, one is drawn" |
-| N6 | button | 113 | 124 | 200 | 20 | "Create", 12 under the last field, as between the groups |
-| N7 | button | 113 | 148 | 200 | 20 | "Back", 24 under "Create" |
+| N1 | text | 113 | 16 | 200 | 10 | "New world", centred on the column, salt with shadow: the screen's head |
+| N2 | text | 113 | 36 | 60 | 10 | "Name", `stone.lt` with shadow, 11 over its field so its letters stand 3 clear of it; a step quieter than the salt typed in the field, so a label never reads as an entry |
+| N3 | field | 113 | 47 | 200 | 20 | at most 28 characters; holds "New world", selected |
+| N4 | text | 113 | 86 | 60 | 10 | "Seed", `stone.lt` with shadow; rows of a form stand 50 apart: label 11, field 20, the 11 under the field in which an answer is written with its letters 2 under it, then 8 between the groups. At 42, with the next label straight under the answer, an answer and the label below it read as one group |
+| N5 | field | 113 | 97 | 200 | 20 | at most 32 characters; placeholder "Left empty, one is drawn" |
+| N6 | button | 113 | 134 | 200 | 20 | "Create", 17 under the last field, 6 under the cell of its answer |
+| N7 | button | 113 | 158 | 200 | 20 | "Back", 24 under "Create" |
 
 - **Shows.** Two fields.
 - **Clickable.** Fields and buttons.
@@ -3320,16 +3321,16 @@ Size 427 by 240. Material: ground tile. Anchor: the whole screen.
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| O1 | text | 113 | 20 | 200 | 10 | "Join a server", centred on the column, salt with shadow: the screen's head, not a label |
-| O2 | text | 113 | 40 | 60 | 10 | "Address", salt with shadow, 10 over its field: a label on the ground is text on dark |
-| O3 | field | 113 | 50 | 200 | 20 | host and port; filled in when the page was served by a game server. Fields stand on the darkened ground with no slab under them |
-| O4 | text | 113 | 82 | 60 | 10 | "Name", salt with shadow; rows stand 42 apart, as on New world |
-| O5 | field | 113 | 92 | 200 | 20 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
-| O6 | text | 113 | 124 | 200 | 10 | "Password, if it has one", salt with shadow |
-| O7 | field | 113 | 134 | 200 | 20 | drawn as one 3 by 3 dot to a character |
-| O8 | text | 113 | 71 | 200 | 12 | what the server answered, in the 12 kept under the field it is about (O3b, O5b, O7b): bare text with its shadow on the ground as a label is, its cell 1 under the field so its letters stand 2 under it, cut with `…` at 200, with no box. Sunk in a strip of its own it read as a second field, a disabled one. A refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 7 of 8 here" in root.4, "The server is full" in blood.lt) under the address. While the name is empty and the server has said nothing about it, the line under Name says why Join stands disabled: "Type a name to join" in root.4. Every field keeps its 12 whether a line stands in them or not, so nothing moves when an answer comes or goes; they are the 12 between the groups, so the rows keep their pitch of 42 |
-| O9 | button | 113 | 166 | 200 | 20 | "Join"; disabled until address and name are valid. After "The server is full" it reads "Try again in 5 s" and stands disabled, counting each second down, then "Try again" |
-| O10 | button | 113 | 190 | 200 | 20 | "Back" |
+| O1 | text | 113 | 16 | 200 | 10 | "Join a server", centred on the column, salt with shadow: the screen's head, not a label |
+| O2 | text | 113 | 36 | 60 | 10 | "Address", `stone.lt` with shadow, 11 over its field: a label on the ground is text on dark, a step quieter than what is typed |
+| O3 | field | 113 | 47 | 200 | 20 | host and port; filled in when the page was served by a game server. Fields stand on the darkened ground with no slab under them |
+| O4 | text | 113 | 86 | 60 | 10 | "Name", `stone.lt` with shadow; rows stand 50 apart, as on New world |
+| O5 | field | 113 | 97 | 200 | 20 | one to sixteen of A to Z, a to z, 0 to 9, space, _ and -; any other key is refused with the blood frame for 0.3 s |
+| O6 | text | 113 | 136 | 200 | 10 | "Password, if it has one", `stone.lt` with shadow |
+| O7 | field | 113 | 147 | 200 | 20 | drawn as one 3 by 3 dot to a character |
+| O8 | text | 113 | 68 | 200 | 11 | what the server answered, in the 11 kept under the field it is about (O3b, O5b, O7b): bare text with its shadow on the ground as a label is, its cell 1 under the field so its letters stand 2 under it, cut with `…` at 200, with no box. Sunk in a strip of its own it read as a second field, a disabled one. A refusal about one field ("That name is taken", "Wrong password") under that field in blood.lt, the field framed in blood until it is changed; an answer about the server ("Spark, 7 of 8 here" in root.4, "The server is full" in blood.lt) under the address. While the name is empty and the server has said nothing about it, the line under Name says why Join stands disabled: "Type a name to join" in root.4. Every field keeps its 11 whether a line stands in them or not, so nothing moves when an answer comes or goes, and 8 more stand between the answer's cell and the next label, so the rows keep their pitch of 50 |
+| O9 | button | 113 | 184 | 200 | 20 | "Join", 17 under the last field; disabled until address and name are valid. After "The server is full" it reads "Try again in 5 s" and stands disabled, counting each second down, then "Try again" |
+| O10 | button | 113 | 208 | 200 | 20 | "Back" |
 
 - **Shows.** Address, name, password. The refusals are said plainly: "That name is taken", "Wrong password", "The server is full", "This server runs another version", "No answer".
 - **Clickable.** Fields and buttons.
