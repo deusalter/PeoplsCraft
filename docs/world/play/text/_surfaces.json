@@ -381,7 +381,7 @@
    "voice": "label",
    "limit": 40,
    "assign": "system",
-   "entries": 18
+   "entries": 29
   },
   "win": {
    "about": "Titles, buttons and hints in the windows",
@@ -14885,6 +14885,138 @@
    "limit": 120,
    "assign": "items-a",
    "note": "made by the generator; hardness wood"
+  },
+  "hud:buff.crit": {
+   "surface": "hud",
+   "key": "buff.crit",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "crit",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.def": {
+   "surface": "hud",
+   "key": "buff.def",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "defense",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.hp": {
+   "surface": "hud",
+   "key": "buff.hp",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "health",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.magic": {
+   "surface": "hud",
+   "key": "buff.magic",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "crystal-work",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.mana": {
+   "surface": "hud",
+   "key": "buff.mana",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "mana",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.melee": {
+   "surface": "hud",
+   "key": "buff.melee",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "melee",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.mining": {
+   "surface": "hud",
+   "key": "buff.mining",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "mining",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.ranged": {
+   "surface": "hud",
+   "key": "buff.ranged",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "ranged",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.regen": {
+   "surface": "hud",
+   "key": "buff.regen",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "regen",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.speed": {
+   "surface": "hud",
+   "key": "buff.speed",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "speed",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
+  },
+  "hud:buff.summon": {
+   "surface": "hud",
+   "key": "buff.summon",
+   "needs": [],
+   "file": "src/ui/hud.ts",
+   "line": 32,
+   "now": "totem",
+   "voice": "label",
+   "limit": 24,
+   "assign": "system",
+   "note": "the word after a number in the line under an active state on the HUD, as \"+6 defense\"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words"
   },
   "hud:coins": {
    "surface": "hud",

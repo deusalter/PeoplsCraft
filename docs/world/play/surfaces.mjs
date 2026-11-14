@@ -671,6 +671,14 @@ L('hud', 'coords', HUD, 'X ${x}  Y ${y}  Z ${z}  ·  ${Math.floor(min / 60)}', {
 // the eight points of the compass strip, in the order of COMPASS_NAMES (every other one is drawn small)
 for (const [k, now] of [['n', 'N'], ['ne', 'NE'], ['e', 'E'], ['se', 'SE'], ['s', 'S'], ['sw', 'SW'], ['w', 'W'], ['nw', 'NW']])
   L('hud', 'compass.' + k, HUD, "['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']", { now, limit: 3, note: 'a point of the compass strip at the top of the screen; one to three letters' });
+{
+  // the words of the buff line under each active state: STAT_WORDS in the HUD, joined by buffLine() after a number
+  const t = src(HUD), a = /const STAT_WORDS[^{]*\{([^}]*)\}/.exec(t);
+  if (!a) fail(`${HUD}: STAT_WORDS was not found`);
+  else for (const m of a[1].matchAll(/(\w+): '([^']+)'/g)) add('hud', 'buff.' + m[1], { file: HUD, line: lineAt(t, a.index + m.index), now: m[2], limit: 24,
+    note: 'the word after a number in the line under an active state on the HUD, as "+6 defense"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words' });
+  if (![...entries.keys()].some((k) => k.startsWith('hud:buff.'))) fail(`${HUD}: no words were read from STAT_WORDS`);
+}
 // ---- windows ----
 for (const [k, text] of [['equipment', 'Equipment'], ['book', 'Recipe book'], ['guide', 'Guide'], ['can_make', 'Can make'], ['none_match', 'Nothing here matches'], ['chest', 'Chest'], ['smelting', 'Smelting'],
   ['inventory', 'Inventory'], ['buy_back', 'Buy back'], ['for_sale', 'For sale'], ['buy', 'Buy'], ['take_all', 'Take all'], ['back_crafting', 'Back to crafting']]) L('win', k, WIN, `'${text}'`, { now: text, limit: 24 });
