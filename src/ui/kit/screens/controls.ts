@@ -36,48 +36,20 @@ export interface ControlsView {
   onDone(): void;
 }
 
-const ROW = 16, ROWS_Y = 20, PAD = 8, GAP = 12, AFTER_CAP = 6, MOUSE_W = 9, MOUSE_H = 13;
+const ROW = 16, ROWS_Y = 20, PAD = 8, GAP = 12, AFTER_CAP = 6;
 
 const MOUSE_BUTTONS: Mouse[] = ['left', 'middle', 'right'];
-/** The mouse button's word, in faded ink after the mouse: which half is pressed is a small thing to read alone. */
-const MOUSE_WORD: Record<Mouse, string> = { left: 'Left', right: 'Right', middle: 'Wheel' };
-
 /**
- * A mouse 9 by 13 in the key cap's stone, lit from the top left: two buttons over the palm, split by a seam that holds
- * the wheel. The button it stands for is pressed: filled in ember, its lit edge `ember.lt`, its shaded edge `ember.dk`.
+ * A mouse button's label on its cap: the mouse with that button filled, then its word, both in ink. Drawn as a grey
+ * mouse and a grey word with no cap round them, the three mouse rows looked disabled beside the keys.
  */
-function mouse(x: number, y: number, which: Mouse): Node {
-  return {
-    x, y, w: MOUSE_W, h: MOUSE_H,
-    paint: (s) => {
-      s.fill(2, 0, 5, 1, 'root.0'); s.fill(2, 12, 5, 1, 'root.0');
-      s.fill(1, 1, 1, 1, 'root.0'); s.fill(7, 1, 1, 1, 'root.0');
-      s.fill(1, 11, 1, 1, 'root.0'); s.fill(7, 11, 1, 1, 'root.0');
-      s.fill(0, 2, 1, 9, 'root.0'); s.fill(8, 2, 1, 9, 'root.0');
-      // The two buttons, x 1 to 3 and 5 to 7, rows 1 to 5; row 1 is narrower where the outline rounds.
-      const half = (bx: number, on: boolean) => {
-        const [hi, face, dk] = on ? ['ember.lt', 'ember', 'ember.dk'] as const : ['stone.hi', 'stone.lt', 'stone.sh'] as const;
-        s.fill(bx, 2, 3, 4, face);
-        s.fill(bx === 1 ? 2 : 5, 1, 2, 1, hi);
-        s.fill(bx, 2, 1, 4, hi);
-        s.fill(bx + 1, 5, 2, 1, dk);
-        if (bx === 5) s.fill(7, 2, 1, 4, dk);
-      };
-      half(1, which === 'left');
-      half(5, which === 'right');
-      s.fill(4, 1, 1, 5, 'root.0');
-      s.fill(4, 2, 1, 3, which === 'middle' ? 'ember' : 'stone.dk');
-      s.fill(1, 6, 7, 1, 'root.0');
-      s.fill(1, 7, 7, 4, 'stone.lt');
-      s.fill(1, 7, 1, 4, 'stone.hi');
-      s.fill(7, 7, 1, 4, 'stone.sh');
-      s.fill(2, 11, 5, 1, 'stone.dk');
-    },
-  };
-}
+const MOUSE_LABEL: Record<Mouse, string> = { left: '{lmb} Left', right: '{rmb} Right', middle: '{mmb} Wheel' };
 
-/** The least width a cap needs: its label plus 6, or the mouse with its word 3 after it. */
-function capW(c: Cap): number { return typeof c === 'string' ? measure(c) + 6 : MOUSE_W + 3 + measure(MOUSE_WORD[c.mouse]); }
+/** The label a cap carries. */
+const label = (c: Cap) => (typeof c === 'string' ? c : MOUSE_LABEL[c.mouse]);
+
+/** The least width a cap needs: its label plus 6, and 7 more for the lock of a key that cannot be changed. */
+function capW(c: Cap, fixed = false): number { return measure(label(c)) + 6 + (fixed ? 7 : 0); }
 
 /**
  * The one width of a row's run of caps on this screen, so that every cap stands left-aligned at the same width and the
@@ -85,7 +57,7 @@ function capW(c: Cap): number { return typeof c === 'string' ? measure(c) + 6 : 
  * widest, sharing outline columns, whichever is more. Caps each as wide as their label left the column ragged.
  */
 function runW(rows: Binding[]): number {
-  return Math.max(...rows.map((b) => b.caps.length === 1 ? capW(b.caps[0]) : b.caps.length * Math.max(...b.caps.map(capW)) - (b.caps.length - 1)));
+  return Math.max(...rows.map((b) => b.caps.length === 1 ? capW(b.caps[0], b.fixed) : b.caps.length * Math.max(...b.caps.map((c) => capW(c, b.fixed))) - (b.caps.length - 1)));
 }
 
 /** The width of each of `n` caps sharing outline columns so that together they are `run` wide. */
@@ -151,14 +123,11 @@ export const controlsScreen: Screen<ControlsView> = (v, ui) => {
     b.caps.forEach((c, k) => {
       // The cap being waited for reads "?" until a key is pressed.
       const shown: Cap = listening && listening.cap === k ? '?' : c;
-      if (typeof shown === 'string') kids.push(keycap({ x: at, y: 1, label: shown, w: cw }));
-      else {
-        const word = MOUSE_WORD[shown.mouse];
-        kids.push(mouse(at, 2, shown.mouse), { x: at + MOUSE_W + 3, y: 3, w: measure(word), h: 10, paint: (s) => s.text(word, 0, 0, 'ink.faded') });
-      }
+      kids.push(keycap({ x: at, y: 1, label: label(shown), w: cw, locked: b.fixed }));
       at += cw - 1;
     });
-    const doesC: Colour = clash.length ? 'blood.dk' : b.fixed ? 'ink.faded' : 'ink';
+    // A key that cannot be changed is told by the lock on its cap; what it does stays in ink, as every other row's.
+    const doesC: Colour = clash.length ? 'blood.dk' : 'ink';
     const tip = (): Tip | null => {
       if (listening) return null;
       if (b.fixed) return { lines: [{ text: b.does, c: 'salt' }, { text: 'This key cannot be changed', c: 'root.4' }], delay: 0.4 };
