@@ -106,7 +106,7 @@ export const JOBS: Job[] = [
     ['coal', 'Slow burn', 'Fuel lasts 15% longer'],
     ['ore', 'Rich seams', 'One ore in eight gives two, a rank'],
     ['pick', 'Through to the floor', 'A pick breaks Dressed Stone'],
-    ['brick', 'Raised in a day', 'Blocks set from the hotbar cost nothing one in four'],
+    ['brick', 'Raised in a day', 'One block in four set from the hotbar is free'],
     ['ingot', 'Second smelt', 'A furnace gives one bar in five again'],
   ]),
 ];

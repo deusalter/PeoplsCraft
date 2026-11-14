@@ -1704,49 +1704,49 @@ A page's text area is 126 wide and starts 15 from the book's outer edge and 13 f
 
 The field is a well whose floor is laid with boards and pans under its frame: a tile 96 by 42 of boards 6 tall with a joint of one unit, each a flat face of `timber.pit` with two grain lines of `root.1` 4 to 9 long, the joint and two butt joints a board, placed by a fixed hash, in `root.0`. No board is lit: a `timber.dk` top row on every board made the floor as loud as the nodes, and a locked node's dark was lost in it. It is timber and not the ground tile so that the tree does not read as one more menu.
 
-The field lays its nodes out from a margin of 4 inside its frame; along an axis where all of them fit with that margin they stand centred and the field does not pan that way. Dragging pans by whole units, and on release the pan comes to rest on a whole step of the lattice (or the far end), so that the edge falls 4 before a node and a node at rest is never cut through. Where nodes lie past an edge a chevron says so: a head 5 wide and 3 deep in `salt` outlined in `root.0`, up and down in the right-hand corners, left and right low on the side edges, where a field laid out from the top left leaves room. Nodes are 26 by 26 on a lattice of 40 by 40, each holding a 16 by 16 icon at 5, 5. Three frames: square, cut (its corners cut by 5), spiked (a body 22 by 22 with its corners cut by two, and on each side a spike 4 wide at its foot and 2 at its tip that stands 2 out from the body; no studs or loose units at the corners, which read as stitching). Each is built by the rule for raised shapes: the shape's outer units are outline; the next units in are `hi` where they face up or left and `pit` where they face down or right; the rest is face.
+The field lays its nodes out from a margin of 4 inside its frame; along an axis where all of them fit with that margin they stand centred and the field does not pan that way. Dragging pans by whole units, and on release the pan comes to rest on a whole step of the lattice (or the far end), so that the edge falls 4 before a node and a node at rest is never cut through. Where nodes lie past an edge a small stone button 12 by 12 says so and steps the pan one lattice step that way when pressed: an arrow head 5 wide and 3 deep in `salt` with its `root.0` shadow on the small button's stone, up and down in the right-hand corners, left and right low on the side edges, where a field laid out from the top left leaves room; its tooltip is "More to the right" over "Press, or drag the field". A bare head of salt in a corner, which did nothing when pressed, read as a stray mark. Nodes are 26 by 26 on a lattice of 40 across and 30 down, each holding a 16 by 16 icon at 5, 5. Rows 30 apart let a job's five rows stand whole in a field 154 tall, so that on a wide screen the tree never pans up and down: rows of 40 hid the first row and left a link running off the field's top edge to nothing that could be seen. Three frames, and the shape says the kind: square (a step anyone may take), cut (the job's own skill; its corners cut by 5), spiked (a mark the job ends in: a body 20 by 20 at 3, 3 with eight spikes 3 long, one at the middle of each side, 6 wide at its foot, 4 in the middle and 2 at its tip, and a wedge out of each corner on the diagonal, lit on the top left one and shaded on the bottom right one). A body with one-unit nubs at the middle of each side read as a rounded blob. Each is built by the rule for raised shapes: the shape's outer units are outline; the next units in are `hi` where they face up or left and `pit` where they face down or right; the rest is face. The tone says the state, the shape never does.
 
 ```
      0         1         2         3         4         5         6         7         8 
      0123456789012345678901234567890123456789012345678901234567890123456789012345678901
-  0  .KKKKKKKKKKKKKKKKKKKKKKKK........KKKKKKKKKKKKKKKK...................KK............
-  1  KWWWWWWWWWWWWWWWWWWWWWWWFK......KWWWWWWWWWWWWWWWFK.................KWFK...........
-  2  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFFK.........KKKKKKKWFFFKKKKKKK....
-  3  KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFFK.......KWWWWWWWFFFFWWWWWWFK...
-  4  KWFFFFFFFFFFFFFFFFFFFFFFZK...KWFFFFFFFFFFFFFFFFFFFFFK.....KWFFFFFFFFFFFFFFFFFFFK..
-  5  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFFK....KWFFFFFFFFFFFFFFFFFFZK..
-  6  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
-  7  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
-  8  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
-  9  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
- 10  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
+  0  .KKKKKKKKKKKKKKKKKKKKKKKK........KKKKKKKKKKKKKKKK.......KK..........KK..........KK
+  1  KWWWWWWWWWWWWWWWWWWWWWWWFK......KWWWWWWWWWWWWWWWFK......KWKK.......KWFK.......KKFK
+  2  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFFK......KWWK.....KWFFFK.....KFFK.
+  3  KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFFK.....KWWWKKKKKWFFFFFKKKKKWFZK.
+  4  KWFFFFFFFFFFFFFFFFFFFFFFZK...KWFFFFFFFFFFFFFFFFFFFFFK.....KFFWWWWWFFFFFFWWWWWFZK..
+  5  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFFK.....KWFFFFFFFFFFFFFFFFZK...
+  6  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+  7  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+  8  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+  9  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+ 10  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFFK..
  11  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK...KWFFFFFFFFFFFFFFFFFFFFFK.
  12  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFFK
  13  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK..KFFFFFFFFFFFFFFFFFFFFFFFZK
  14  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK...KFFFFFFFFFFFFFFFFFFFFFZK.
- 15  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
- 16  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
- 17  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
- 18  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
- 19  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
- 20  KWFFFFFFFFFFFFFFFFFFFFFFZK..KFFFFFFFFFFFFFFFFFFFFFFFZK....KWFFFFFFFFFFFFFFFFFFZK..
- 21  KWFFFFFFFFFFFFFFFFFFFFFFZK...KFFFFFFFFFFFFFFFFFFFFFZK.....KFFFFFFFFFFFFFFFFFFFZK..
- 22  KWFFFFFFFFFFFFFFFFFFFFFFZK....KFFFFFFFFFFFFFFFFFFFZK.......KFZZZZZZFFFFZZZZZZZK...
- 23  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KFFFFFFFFFFFFFFFFFZK.........KKKKKKKFFFZKKKKKKK....
- 24  KFZZZZZZZZZZZZZZZZZZZZZZZK......KFZZZZZZZZZZZZZZZK.................KFZK...........
- 25  .KKKKKKKKKKKKKKKKKKKKKKKK........KKKKKKKKKKKKKKKK...................KK............
+ 15  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK....KFFFFFFFFFFFFFFFFFFFZK..
+ 16  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+ 17  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+ 18  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+ 19  KWFFFFFFFFFFFFFFFFFFFFFFZK..KWFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+ 20  KWFFFFFFFFFFFFFFFFFFFFFFZK..KFFFFFFFFFFFFFFFFFFFFFFFZK.....KWFFFFFFFFFFFFFFFFZK...
+ 21  KWFFFFFFFFFFFFFFFFFFFFFFZK...KFFFFFFFFFFFFFFFFFFFFFZK.....KWFZZZZZFFFFFFZZZZZZZK..
+ 22  KWFFFFFFFFFFFFFFFFFFFFFFZK....KFFFFFFFFFFFFFFFFFFFZK.....KWFZKKKKKFFFFFZKKKKKZZZK.
+ 23  KWFFFFFFFFFFFFFFFFFFFFFFZK.....KFFFFFFFFFFFFFFFFFZK......KWFK.....KFFFZK.....KZZK.
+ 24  KFZZZZZZZZZZZZZZZZZZZZZZZK......KFZZZZZZZZZZZZZZZK......KFKK.......KFZK.......KKZK
+ 25  .KKKKKKKKKKKKKKKKKKKKKKKK........KKKKKKKKKKKKKKKK.......KK..........KK..........KK
 ```
 `. nothing  F clay.face  K root.0  W salt  Z clay.pit`
 
 | State | hi | face | pit | Icon |
 | --- | --- | --- | --- | --- |
-| Locked | `root.3` | `root.2` | `root.1` | silhouette in `root.3`, and the slot's lock (5.4), 7 by 7, at 18, 17 (18, 14 on the spiked frame) |
+| Locked | `root.3` | `root.2` | `root.1` | silhouette in `root.3`, and the slot's lock (5.4), 7 by 7, at 18, 17 (15, 14 on the spiked frame, inside its body) |
 | Open (can be taken now) | `stone.lt` | `stone.sh` | `stone.pit` | full |
 | Earned | `salt` | `clay.face` | `clay.pit` | full |
 
-A node with more than one rank shows them as cells 3 by 3, one unit apart, in a strip of `root.0` one unit round them, set into the frame's foot so that the strip's last row is the frame's bottom outline (rows 21 to 25 of square and cut, 18 to 22 of the spiked body), centred; on a locked node it stands at x 4, clear of the lock. A rank taken is `ember`, one to take is `root.2`. The tooltip says "Rank 2 of 3". Lit squares in salt on the outline were tried and read as a row of teeth, and figures needed the second face; ember cells sunk in a dark strip read as a count. The chosen node has the hotbar's selector round it (5.16), 30 by 30.
+A node with more than one rank shows them as cells 3 by 3, one unit apart, in a strip of `root.0` one unit round them, set into the frame's foot so that the strip's last row is the frame's bottom outline (rows 21 to 25 of square and cut, 18 to 22 of the spiked body), centred; on a locked node it stands at x 4, clear of the lock. A rank taken is `ember`, one to take is `root.2`. The tooltip says "Rank 2 of 3". Lit squares in salt on the outline were tried and read as a row of teeth, and figures needed the second face; ember cells sunk in a dark strip read as a count. The chosen node has the hotbar's selector round it (5.16), 30 by 30. The node under the pointer, which the readout under the field then describes, has a ring of `salt` one unit deep round its outline, 28 by 28, so that the name written under the field is always seen against the node it names.
 
-**Links** run only along rows and columns, with square elbows at the midpoint. A link is 2 units wide and lit like a part: a light line one unit wide with `root.0` one unit under it, or to its right where it runs down. The light line is `root.3` to a locked node, `root.4` to an open one, `salt` between two earned ones. The light line runs through the node's centre at 12, 12. Links are drawn under nodes.
+**Links** run only along rows and columns, with square elbows at the midpoint on a whole unit. A link is 2 units wide and two-toned like a cord of the stuff of the nodes it joins: a lit line one unit wide with a shaded line one unit under it, or to its right where it runs down. It takes the tones of the duller of its two ends: `root.3` over `root.1` to a locked node, `stone.lt` over `stone.dk` to an open one, `salt` over `clay.sh` between two earned ones. A light line over `root.0` vanished into the dark boards and read as a one-tone hairline. The light line runs through the node's centre at 12, 12, so that each segment shows from one node's edge to the next and none runs past its last node. Links are drawn under nodes.
 
 ```
      0         1         2         
@@ -1766,7 +1766,7 @@ A node with more than one rank shows them as cells 3 by 3, one unit apart, in a 
  12  ..............................
  13  ..............................
 ```
-`. nothing  K root.0  W salt`
+`. nothing  K root.0  W salt` (between two earned nodes the `K` here is `clay.sh`)
 
 ### 5.21 Ground tile
 
@@ -2932,8 +2932,8 @@ Size 320 by 212 on a wide screen and 260 by 212 on a narrow one, with tabs stand
 | U1 | tab | -21 | 14 | 24 | 24 | side tabs, one to each of the eight of the crew, away or not, at the pitch of 23, a head in their colour; the tooltip is the name and level ("Rook (you), level 14", "Jun, level 3, away"): one's own first and chosen; another's tree is read, not changed |
 | K1 | text | 8 | 6 | W - 166 | 10 | the job: "Melee" |
 | K2 | text | W - 158 | 6 | 150 | 10 | right-aligned to x W - 8: "3 to spend" in growth.dk on one's own tree; on another's, their name cut at 90 and "(read only)", "brackenfoot_1999 (read only)", in ink.faded, so that a long name never runs into the title |
-| K3 | well | 8 | 17 | W - 16 | 156 | the field (5.20): boards, panned by dragging and at rest on whole lattice steps; nodes 26 square on a lattice of 40; links between them |
-| K4 | text | 8 | 175 | W - 16 | 32 | the chosen node on three lines 11 apart: its name in ink with its rank "3 of 3" right-aligned to x W - 8 in faded ink; what a rank does, in ink, cut 48 short of the right edge where Take stands; then the third line, which says first why Take is not there: on a node with every rank taken "Full" in growth.dk; on a locked node "{cross} Needs Deep breath" in blood.dk; with no point to spend "{cross} No points to spend" in blood.dk; otherwise what it needs ("Needs: Deep breath", or "Needs nothing: a first step") in faded ink. A full node that still said what it needed, over a disabled Take, read as locked. A name and a rank alone left the player nothing to choose by. Where no Take stands the lines run the full width |
+| K3 | well | 8 | 17 | W - 16 | 156 | the field (5.20): boards, panned by dragging and at rest on whole lattice steps; nodes 26 square on a lattice of 40 across and 30 down, so that the five rows stand whole; links between them |
+| K4 | text | 8 | 175 | W - 16 | 32 | the node under the pointer, or the chosen node when the pointer is on none, on three lines 11 apart: its name in ink with its kind and rank "Own skill, 3 of 3" right-aligned to x W - 8 in faded ink (the kinds are Step, Own skill and End mark, after the square, cut and spiked frames, so the shapes are learnt as they are read; a legend of shapes in the field had no room clear of the nodes); what a rank does, in ink, cut 48 short of the right edge where Take stands; then the third line, which says first why Take is not there: on a node with every rank taken "Full" in growth.dk; on a locked node "{cross} Needs Deep breath" in blood.dk; with no point to spend "{cross} No points to spend" in blood.dk; otherwise what it needs ("Needs: Deep breath", or "Needs nothing: a first step") in faded ink. A full node that still said what it needed, over a disabled Take, read as locked. A name and a rank alone left the player nothing to choose by. Where no Take stands the lines run the full width |
 | K5 | button | W - 52 | 192 | 44 | 16 | "Take", drawn only when it can be pressed: on one's own tree, on a node that is open and not full, with a point to spend. It is never drawn disabled; the third line of K4 says why it is not there |
 
 - **Shows.** One field to a job. Square frames are steps anyone may take, cut frames are the job's own skills, spiked frames are the three marks a job ends in. Locked is dull, open is stone, earned is clay and salt. The party shows in the side tabs, so that a crew can see who took what.

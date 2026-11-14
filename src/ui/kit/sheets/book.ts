@@ -50,16 +50,16 @@ export const bookSheet: Sheet = {
         { id: 'n.a', col: 0, row: 0, shape: 'square', state: 'earned', icon: 'pick' },
         { id: 'n.b', col: 1, row: 0, shape: 'cut', state: 'earned', icon: 'axe', ranks: [3, 3] },
         { id: 'n.c', col: 3, row: 0, shape: 'square', state: 'open', icon: 'spade' },
-        { id: 'n.d', col: 1, row: 1, shape: 'spiked', state: 'open', icon: 'blade', ranks: [1, 3] },
-        { id: 'n.e', col: 0, row: 2, shape: 'cut', state: 'locked', icon: 'bow' },
-        { id: 'n.f', col: 2, row: 2, shape: 'square', state: 'locked', icon: 'helm' },
-        { id: 'n.g', col: 3, row: 3, shape: 'spiked', state: 'locked', icon: 'crystal' },
-        { id: 'n.h', col: 1, row: 3, shape: 'square', state: 'earned', icon: 'loaf' },
+        { id: 'n.d', col: 1, row: 2, shape: 'spiked', state: 'open', icon: 'blade', ranks: [1, 3] },
+        { id: 'n.e', col: 0, row: 4, shape: 'cut', state: 'locked', icon: 'bow' },
+        { id: 'n.f', col: 2, row: 4, shape: 'square', state: 'locked', icon: 'helm' },
+        { id: 'n.g', col: 3, row: 5, shape: 'spiked', state: 'locked', icon: 'crystal' },
+        { id: 'n.h', col: 1, row: 5, shape: 'square', state: 'earned', icon: 'loaf' },
       ],
       links: [['n.a', 'n.b'], ['n.b', 'n.c'], ['n.b', 'n.d'], ['n.d', 'n.e'], ['n.d', 'n.f'], ['n.f', 'n.g'], ['n.a', 'n.h']],
     }));
-    kids.push(salt(296, 196, 'Square, cut and spiked:'));
-    kids.push(salt(296, 208, 'locked, open, earned'));
+    kids.push(salt(296, 196, 'Shape: step, skill, end mark'));
+    kids.push(salt(296, 208, 'Tone: locked, open, earned'));
     kids.push(titleMark({ cx: 113, y: 214 }));
     kids.push(salt(4, 252, 'The title mark'));
     kids.push({ x: 232, y: 228, w: 64, h: 32, paint: (s) => s.tile(GROUND, 0, 0, 64, 32) });

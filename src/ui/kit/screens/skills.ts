@@ -34,6 +34,8 @@ export interface SkillsView {
 const WIDE_W = 320, NARROW_W = 260, H = 212;
 const FIELD_Y = 17, FIELD_H = 156;
 const SHAPE_SAYS: Record<string, string> = { square: 'a step anyone may take', cut: 'its own skill', spiked: 'a mark it ends in' };
+/** The kind a frame's shape stands for, written before the rank under the field, so the three shapes are learnt as they are read. */
+const SHAPE_KIND: Record<string, string> = { square: 'Step', cut: 'Own skill', spiked: 'End mark' };
 
 function stateOf(job: Job, n: SkillNode, taken: Record<string, number>): NodeState {
   if ((taken[n.id] ?? 0) > 0) return 'earned';
@@ -47,10 +49,13 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
   const me = v.whose === 0;
   const owner = v.crew[v.whose];
   const taken = v.taken(owner.seat);
-  const node = job.nodes.find((n) => n.id === v.chosen) ?? job.nodes[0];
+  const chosenNode = job.nodes.find((n) => n.id === v.chosen) ?? job.nodes[0];
+  // The readout under the field describes the node under the pointer, and the chosen one when the pointer is on none.
+  const node = job.nodes.find((n) => n.id === hovered.id) ?? chosenNode;
   const nodeState = stateOf(job, node, taken);
   const rank = taken[node.id] ?? 0;
-  const canTake = me && v.toSpend > 0 && nodeState !== 'locked' && rank < node.ranks;
+  const chosenState = stateOf(job, chosenNode, taken);
+  const canTake = me && v.toSpend > 0 && chosenState !== 'locked' && (taken[chosenNode.id] ?? 0) < chosenNode.ranks;
   firstFocus(ui, 'skills', null);
 
   const tip = (n: SkillNode, st: NodeState) => (): Tip => ({
@@ -78,7 +83,8 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
   }
 
   const field = tree({
-    id: `sk.field.${job.key}.${owner.seat}`, x: 8, y: FIELD_Y, w: fieldW, h: FIELD_H, host: 'stone', ui, chosen: node.id,
+    id: `sk.field.${job.key}.${owner.seat}`, x: 8, y: FIELD_Y, w: fieldW, h: FIELD_H, host: 'stone', ui, chosen: chosenNode.id, described: node.id,
+    onHover: (id) => { if (hovered.id !== id) { hovered.id = id; ui.invalidate(); } },
     nodes: specs,
     links: job.links,
     onChoose: (id) => { if (id === v.chosen && me) v.onTake(id); else v.onChoose(id); },
@@ -95,7 +101,7 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
     : nodeState === 'locked' ? { text: `{cross} Needs ${needs.join(' or ')}`, c: 'blood.dk' }
     : me && v.toSpend <= 0 ? { text: '{cross} No points to spend', c: 'blood.dk' }
     : { text: needs.length ? `Needs: ${needs.join(' or ')}` : 'Needs nothing: a first step', c: 'ink.faded' };
-  const rankText = `${rank} of ${node.ranks}`;
+  const rankText = `${SHAPE_KIND[node.shape]}, ${rank} of ${node.ranks}`;
   const textW = W - 16, room = canTake ? textW - 48 : textW;
   const by = FIELD_Y + FIELD_H + 2;
   const kids: Node[] = [
@@ -111,7 +117,7 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
       },
     },
     // Take stands only where it can be pressed: on another's tree, on a full node or a locked one, it is not drawn.
-    ...(canTake ? [button({ id: 'sk.take', x: right - 44, y: H - 20, w: 44, h: 16, ramp: 'stone', label: 'Take', onPress: () => v.onTake(node.id) })] : []),
+    ...(canTake ? [button({ id: 'sk.take', x: right - 44, y: H - 20, w: 44, h: 16, ramp: 'stone', label: 'Take', onPress: () => v.onTake(chosenNode.id) })] : []),
   ];
   const at = placeWindow(ui, W, H, 21, 21);
   const top = tabbedSlab({
@@ -139,12 +145,13 @@ export const skillsScreen: Screen<SkillsView> = (v, ui) => {
         if (e.key === 'Escape') { v.onClose(); return true; }
         if (e.key === 'q' || e.key === 'Q') { v.onJob((v.job + v.jobs.length - 1) % v.jobs.length); return true; }
         if (e.key === 'e' || e.key === 'E') { v.onJob((v.job + 1) % v.jobs.length); return true; }
-        if (e.key === 'Enter' && canTake) { v.onTake(node.id); return true; }
+        if (e.key === 'Enter' && canTake) { v.onTake(chosenNode.id); return true; }
       },
     },
   };
 };
 const panned = new Set<string>();
+const hovered: { id: string | null } = { id: null };
 
 // The sample: oneself is Rook in seat 1; points spent here stay spent while the page is open.
 const online = CREW;
