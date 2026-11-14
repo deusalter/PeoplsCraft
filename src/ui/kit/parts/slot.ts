@@ -12,9 +12,11 @@ export interface Stack { icon: string; n: number }
 
 /**
  * What a slot is showing besides its stack: `accepts` the held stack (a frame of growth), `refused` a click (blood, for
- * 0.3 s), `chosen` (salt: the hotbar cell in hand), `locked` (a floor of face: a thing built in that takes nothing).
+ * 0.3 s), `chosen` (salt: the hotbar cell in hand), `locked` (a floor of face: a thing built in that takes nothing),
+ * `wanting` (blood with no badge: an empty cell of a laid pattern, its missing thing's silhouette inside, for as long as
+ * it stays empty; the line under the arrow names what is missing).
  */
-export type SlotMark = 'accepts' | 'refused' | 'chosen' | 'locked';
+export type SlotMark = 'accepts' | 'refused' | 'chosen' | 'locked' | 'wanting';
 
 export interface SlotOpts {
   id?: string;
@@ -50,7 +52,7 @@ export function paintCount(s: Surface, n: number, right: number, bottom: number,
   else s.text(t, rightX(t, right, SMALL), bottom - 4, c, true, SMALL);
 }
 
-const FRAME: Record<Exclude<SlotMark, 'locked'>, Colour> = { accepts: 'growth', refused: 'blood', chosen: 'salt' };
+const FRAME: Record<Exclude<SlotMark, 'locked'>, Colour> = { accepts: 'growth', refused: 'blood', chosen: 'salt', wanting: 'blood' };
 
 // The marks that say a slot's state in shape as well as colour (5.4): a cross for refused and a check for accepts, on
 // a dark badge 7 by 7 over the floor's top right corner so that they read over any icon; the lock, 7 by 7, over the

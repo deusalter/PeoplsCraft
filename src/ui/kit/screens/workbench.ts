@@ -6,7 +6,7 @@ import type { Colour, Ramp } from '../palette';
 import { progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
 import { PATTERNS } from '../sample/play-patterns';
-import type { Stack } from '../sample/play-items';
+import { type Stack, thing } from '../sample/play-items';
 import { Bench, ink, overWorld, packBlock, place, stackGrid } from './play/common';
 import { Hand, store } from './play/hand';
 import { type Grid, type PanelState, type Station, STATION_ICON, STATION_NAME, gridMatch, layOut, recipeControls, recipePanel, resultSlot } from './play/making';
@@ -85,15 +85,22 @@ function build(ui: Ui, id: string): Node {
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
   const b = st.bench, g = st.grid;
   const matched = gridMatch(st.hand, g);
+  // A laid pattern's empty cells: the missing thing's silhouette in a frame of blood, while pieces lie on the grid.
+  const laid = st.hand.stores.grid.some((s) => s);
+  const wanting = (i: number) => !matched && laid && !!g.ghost[i] && !st.hand.stores.grid[i];
   const making: Node[] = [
-    stackGrid(b, { store: 'grid', x: 30, y: 17, cols: 3, rows: 3, ramp: k.ramp, each: (i) => ({ missing: g.ghost[i] ?? undefined }) }),
+    stackGrid(b, { store: 'grid', x: 30, y: 17, cols: 3, rows: 3, ramp: k.ramp, each: (i) => ({ missing: g.ghost[i] ?? undefined, mark: wanting(i) ? 'wanting' : undefined }) }),
     progressArrow({ x: 91, y: 36, f: matched ? 1 : 0, ramp: k.ramp, colour: k.arrow }),
     resultSlot(b, g, 122, 31, k.ramp, true),
   ];
-  // Pieces on the grid that make nothing say why under the arrow: a laid pattern short of a piece, or no join at all.
-  const laid = st.hand.stores.grid.some((s) => s);
-  const short = g.ghost.filter((x, i) => x && !st.hand.stores.grid[i]).length;
-  if (!matched && (laid || short)) making.push(ink(91, 59, short ? (short === 1 ? 'One piece short' : `${short} pieces short`) : 'Nothing joins', 'ink.faded'));
+  // Pieces on the grid that make nothing say why under the arrow, as a refusal: what the laid pattern is short of, or
+  // that nothing joins. In faded ink it read as a caption.
+  const gaps = g.ghost.filter((x, i): x is string => !!x && !st.hand.stores.grid[i]);
+  const kinds = new Set(gaps);
+  const why = !gaps.length ? '{cross} Nothing joins'
+    : kinds.size > 1 ? `{cross} ${gaps.length} pieces short`
+    : `{cross} ${gaps.length > 1 ? `${gaps.length} ` : ''}${thing(gaps[0]).name} short`;
+  if (!matched && laid) making.push(ink(91, 59, why, 'blood.dk', 168 - 91));
   const pack = packBlock(b, k.ramp, 73, 84);
   const outside = () => { st.hand.dropHeld(); b.after(); };
   if (!ui.layout.wide) {
