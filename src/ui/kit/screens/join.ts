@@ -1,5 +1,6 @@
 // Join a server (section 6, Join a server): address, name and password on the ground tile, the server's answer.
 import { TEXT } from '../font/face';
+import { measure } from '../font/measure';
 import { cut } from '../font/wrap';
 import type { Node, Screen } from '../node';
 import type { Colour } from '../palette';
@@ -35,12 +36,15 @@ const validName = (n: string) => n.length >= 1 && n.length <= 16 && [...n].every
 export const RETRY_WAIT = 5;
 
 /**
- * A line in the 11 kept under a field: bare text with its shadow on the ground, its letters 2 under the field, as a
- * label is. Sunk in a strip of its own it read as a second field, a disabled one.
+ * A line in the 11 kept under a field, its letters 2 under the field, with its shadow on a strip of the chat wash 10
+ * tall reaching 2 past its words on each side, as the HUD lays a line on the world. Bare on the bricks of the ground
+ * tile the grey read poorly; sunk in a strip with edges of its own it read as a second field, a disabled one, which a
+ * flat strip only as wide as its words does not.
  */
 function fieldNote(x: number, y: number, text: string, c: Colour): Node {
-  const t = cut(text, 200, TEXT);
-  return { x, y, w: 201, h: 11, paint: (s) => { s.text(t, 0, 0, c, true); } };
+  const t = cut(text, 196, TEXT);
+  const w = measure(t) + 1 + 4;
+  return { x, y, w, h: 11, paint: (s) => { s.wash(0, 0, w, 10, 'root.0', 3); s.text(t, 2, 0, c, true); } };
 }
 
 export const joinScreen: Screen<JoinView> = (v, ui) => {
@@ -68,9 +72,9 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
     const refused = about === key;
     kids.push(f(`join.${key}`, y, value, on, refused ? { ...extra, show: { refused: true } } : extra));
     const at = y + FORM.fieldH + 1;
-    if (said(key)) kids.push(fieldNote(113, at, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
+    if (said(key)) kids.push(fieldNote(111, at, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
     // Why Join stands disabled, said where the missing thing goes.
-    else if (key === 'name' && !v.name) kids.push(fieldNote(113, at, 'Type a name to join', 'root.4'));
+    else if (key === 'name' && !v.name) kids.push(fieldNote(111, at, 'Type a name to join', 'root.4'));
   };
   row(0, 'address', 'Address', v.address, v.onAddress, { limit: 64 });
   row(1, 'name', 'Name', v.name, v.onName, { limit: 16, allow: NAME_CHAR });
@@ -85,6 +89,12 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
         const n = left(live.t);
         const label = !retry ? 'Join' : n > 0 ? `Try again in ${n} s` : 'Try again';
         paintButton(s, 200, 20, label, lv(live), !ok || n > 0);
+        // The wait as a strip 2 tall along the foot of the face, emptying from the right by whole units as the
+        // seconds run, so a disabled countdown is told from a plain disabled button before its words are read.
+        if (retry && n > 0 && v.retryAt !== undefined) {
+          const f = Math.max(0, Math.min(1, (v.retryAt - live.t) / RETRY_WAIT));
+          s.fill(2, 15, Math.round(f * 195), 2, 'ember');
+        }
       },
       on: ok ? { click: () => { if (ready()) v.onJoin(); } } : undefined,
     },
