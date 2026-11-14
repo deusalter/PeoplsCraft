@@ -1,6 +1,6 @@
 // Who is online, shown while Tab is held: name, level, realm, what they are doing, how far. It only shows what
 // client/social.ts holds.
-import { type Social, realmName, stateOf } from '../client/social';
+import { type Social, realmName } from '../client/social';
 
 const STATE: Record<string, string> = { away: 'away', asleep: 'asleep', fallen: 'fallen', loading: 'arriving' };
 
@@ -41,7 +41,7 @@ export class RosterView {
     const grid = document.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:auto auto auto auto;column-gap:14px';
     for (const m of list) {
-      const st = STATE[stateOf(m.flags)] ?? '';
+      const st = STATE[so.state(m)] ?? '';
       const far = m.self ? 'you' : m.dim === so.dim && m.placed ? `${Math.round(Math.hypot(m.x - me.x, m.z - me.z))} m` : '';
       const cells = [m.name, `Lv ${m.level}`, realmName(m.dim) + (st ? ` · ${st}` : ''), far];
       cells.forEach((t, i) => {

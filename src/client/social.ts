@@ -13,6 +13,8 @@ export interface Member extends PlayerInfo {
   x: number; z: number; placed: boolean;
   /** PF_ flags from the newest snapshot that held this player, -1 when none has (out of view, another realm). */
   flags: number;
+  /** Seated but left out of the last `where`: its connection is gone and the host holds its place for the grace (7.9). */
+  lost: boolean;
 }
 /** `chat`: a player's line; `server`: slot 0; `cmd`: a command this client sent; `reply`: the host's answer; `note`: joins,
  *  leaves and realm changes. Lines are kept whole: wrapping is the view's. */
@@ -90,6 +92,9 @@ export class Social {
     m.flags = flags;
   }
 
+  /** What the list says a player is doing: its snapshot state, or away while its connection is gone. */
+  state(m: Member): ReturnType<typeof stateOf> { return m.lost ? 'away' : stateOf(m.flags); }
+
   onWelcome(m: S2COf<'welcome'>): void {
     this.slot = m.you.slot; this.dim = m.dim;
     this.members.clear(); this.pings.length = 0;
@@ -131,6 +136,11 @@ export class Social {
       if (!m) continue;
       m.dim = l[i + 1]; m.x = l[i + 2]; m.z = l[i + 3]; m.placed = true;
     }
+    for (const m of this.members.values()) {
+      let named = m.self;
+      for (let i = 0; !named && i + 3 < l.length; i += 4) if (l[i] === m.slot) named = true;
+      m.lost = !named;
+    }
     this.rosterRev++;
   }
   onPing(slot: number, x: number, y: number, z: number): void {
@@ -147,7 +157,7 @@ export class Social {
   }
   private put(q: PlayerInfo): void {
     const old = this.members.get(q.slot);
-    const m: Member = { ...q, armor: [q.armor[0], q.armor[1], q.armor[2]], self: q.slot === this.slot, x: old?.x ?? 0, z: old?.z ?? 0, placed: old?.placed ?? false, flags: old?.flags ?? -1 };
+    const m: Member = { ...q, armor: [q.armor[0], q.armor[1], q.armor[2]], self: q.slot === this.slot, x: old?.x ?? 0, z: old?.z ?? 0, placed: old?.placed ?? false, flags: old?.flags ?? -1, lost: old?.lost ?? false };
     this.members.set(q.slot, m);
   }
 

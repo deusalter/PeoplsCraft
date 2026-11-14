@@ -3996,6 +3996,19 @@ before the one that sets the bit; the local head-crossing splash has no replicat
 and through pure helpers exported from `ui/hud.ts` (`tagSight`, `tagText`, `tagFill`, `hudKey`, `screenAt`, `pingAt`,
 `TAG_R`, `TAG_LOOK`) that `Hud` itself calls.
 
+D48. Stage 5, integration (4.3, 7.4, 7.9, 7.10). What joining the three lanes needed beyond their own asks.
+(a) 7.9, a lingering player "leaves snapshots": nothing told the others that its link was gone, so the list showed it as
+in play for its 30 s. `where` now goes out while more than one player is seated (online or lingering) and at least one is
+online, not only while more than one is online (D35), and still names only online players; `Social` marks a seated player
+that the last `where` left out as `lost`, and the list shows it `away`, as a stalled body's tag does.
+(b) 7.9, the boot refund: `SimHost.start` moves every `shared.summons` entry into `shared.owed` and awaits one full
+commit before the clock starts, so a server writes it before it listens and a solo world before its first step. A commit
+that fails there leaves the refund in memory for the next save, as any failed commit does.
+(c) 7.4, parking: `Sim.park` mails the player's owned drops in its own realm before it leaves the realm's list, and an
+emptied realm goes through `suspendRealm`, whose `realm.suspend` removes a boss by the refund rule (D45 (a)). Owned drops
+in another realm still ticked go to `mail` within a tick (lane A's `DropSim`). The host's own mailing of parked players'
+drops is gone.
+
 ---
 
 ## 14. Review log

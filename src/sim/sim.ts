@@ -306,11 +306,12 @@ export class Sim {
         const t = this.told.get(p)!, info = playerInfo(p), k = JSON.stringify(info);
         if (k !== t.info) { t.info = k; sink.broadcast({ t: 'pl', upd: [info] }); }
       }
-      if (tick % WHERE_EVERY === 0) {
-        const l: number[] = [];
-        for (const p of this.players.values()) if (p.online) l.push(p.slot, p.dim, Math.round(p.body.x), Math.round(p.body.z));
-        sink.broadcast({ t: 'where', l });
-      }
+    }
+    // a seated player who is not online is left out, which is how the others learn that its link is gone
+    if (tick % WHERE_EVERY === 0 && online > 0 && this.seated() > 1) {
+      const l: number[] = [];
+      for (const p of this.players.values()) if (p.online) l.push(p.slot, p.dim, Math.round(p.body.x), Math.round(p.body.z));
+      sink.broadcast({ t: 'where', l });
     }
     if (this.flagAdd.length || this.flagDel.length) { sink.broadcast({ t: 'flags', add: this.flagAdd, del: this.flagDel }); this.flagAdd = []; this.flagDel = []; }
     if (s.quest !== this.questSent) { this.questSent = s.quest; sink.broadcast({ t: 'quest', index: s.quest }); }
