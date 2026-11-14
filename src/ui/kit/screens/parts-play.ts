@@ -103,7 +103,7 @@ function build(ui: Ui): Node {
       kids: [
         { x: 1, y: 1, w: 158, h: 18, paint: (s) => { s.text('Sold just now', 20, 4, 'root.4', true); } },
         shopRow(19, 158, 'blade', 'Stone Sword', 'salt', '3 {lees}', true),
-        shopRow(37, 158, 'shadow_cloak', 'Dark Cloak', 'violet.lt', '30 Mūda', false),
+        shopRow(37, 158, 'shadow_cloak', 'Dark Cloak', 'violet.lt', '30 {muda}', false),
       ],
     }],
   }));
@@ -116,7 +116,8 @@ function build(ui: Ui): Node {
       s.icon('spore_sac', 1, 1);
       s.text('Spore in a wound', 22, 4, 'salt', true);
       const t = clock(38);
-      s.text(t, rightX(t, 137, SMALL), 6, 'salt', true, SMALL);
+      // Four units stand clear right of the time and its shadow, as round any line in a box.
+      s.text(t, rightX(t, 132, SMALL), 6, 'salt', true, SMALL);
       s.text('A state, in the States tab', 0, 22, 'salt', true);
     },
   });
