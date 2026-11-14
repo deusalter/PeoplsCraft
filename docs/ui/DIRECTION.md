@@ -2408,7 +2408,7 @@ The pack is the main slab, 176 by 182, with one row of tabs standing 21 above it
 
 ### Chest
 
-Size 197 by 172: the slab 176 by 172 and a panel 22 by 42 fastened to its right side. Material: timber. Anchor: centre of the screen, the panel counted.
+Size 229 by 172: the slab 176 by 172 and a panel 54 by 38 fastened to its right side. Material: timber. Anchor: centre of the screen, the panel counted.
 
 ```
 #==========================================================#
@@ -2447,9 +2447,9 @@ Size 197 by 172: the slab 176 by 172 and a panel 22 by 42 fastened to its right 
 | --- | --- | ---: | ---: | ---: | ---: | --- |
 | C0 | slab | 0 | 0 | 176 | 172 | timber slab |
 | C1 | text | 8 | 6 | 40 | 10 | "Chest", or "Supply Crate" |
-| P0 | panel | 175 | 17 | 22 | 42 | a timber panel fastened to the slab's right side beside the chest's slots, sharing its outline column |
-| C2 | button | 178 | 21 | 16 | 16 | "Take all": a stone button carrying a salt arrow pointing down, named by its tooltip |
-| C3 | button | 178 | 39 | 16 | 16 | "Stash", an arrow pointing up: moves out of the pack every kind the chest already holds |
+| P0 | panel | 175 | 17 | 54 | 38 | a timber panel fastened to the slab's right side beside the chest's slots, sharing its outline column |
+| C2 | button | 179 | 21 | 46 | 14 | "Take all", a small timber button with its word on it; its tooltip adds "Into the pack, then the hotbar". Two bare arrows did not say which one emptied the chest and which filled it |
+| C3 | button | 179 | 37 | 46 | 14 | "Stash", 2 under C2: moves out of the pack every kind the chest already holds, as its tooltip says. It is not "Store all": a chest that takes only what it already holds keeps the pack's tools out of it |
 | C4 | button | 138 | 3 | 30 | 12 | "Sort" the chest, the only button in the title row, its right edge 8 in |
 | C5 | slots | 8 | 18 | 162 | 54 | the chest, nine by three |
 | C6 | text | 8 | 76 | 40 | 10 | "Pack" |

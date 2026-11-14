@@ -1,8 +1,7 @@
 // The chest (section 6): twenty-seven slots of timber over the pack, and the buttons that move whole kinds at once.
 import type { Node, Ui } from '../node';
-import { iconButton } from '../parts/button';
+import { button } from '../parts/button';
 import { slab } from '../parts/slab';
-import { coded } from '../pixmap';
 import { Bench, overWorld, packBlock, place, small, stackGrid } from './play/common';
 import { Hand, store } from './play/hand';
 import type { NamedScreen } from './index';
@@ -32,29 +31,8 @@ function sample(): Hand {
   });
 }
 
-const PANEL_W = 22;
-
-/** The marks of the panel's buttons, 7 by 8 in salt with a shadow: out of the chest, down; into it, up. */
-const TAKE = coded([
-  '..WWW...',
-  '..WWWK..',
-  '..WWWK..',
-  'WWWWWWW.',
-  '.WWWWWK.',
-  '..WWWK..',
-  '...WK...',
-  '....K...',
-], 'chest.take');
-const STASH = coded([
-  '...W....',
-  '..WWW...',
-  '.WWWWW..',
-  'WWWWWWW.',
-  '.KWWWKK.',
-  '..WWWK..',
-  '..WWWK..',
-  '...KKK..',
-], 'chest.stash');
+/** The side panel: two small buttons 46 by 14, 4 in from its edges and 2 apart, so each says what it does in words. */
+const PANEL_W = 54, PANEL_H = 38;
 
 let hand: Hand | null = null;
 let bench: Bench | null = null;
@@ -80,12 +58,14 @@ function build(ui: Ui, title: string): Node {
     stackGrid(b, { store: 'chest', x: 8, y: 18, cols: 9, rows: 3, ramp: 'timber' }),
     ...packBlock(b, 'timber', 76, 88),
   ];
-  // Take all and Stash stand on a small panel fastened to the slab's right side, beside the chest's own slots.
+  // Take all and Stash stand on a small panel fastened to the slab's right side, beside the chest's own slots. Bare
+  // arrows on them did not say which way each one moved things.
+  const says = (name: string, line: string) => () => ({ lines: [{ text: name, c: 'salt' as const }, { text: line, c: 'root.4' as const }], delay: 0.4 });
   const panel = slab({
-    x: 175, y: 17, w: PANEL_W, h: 42, ramp: 'timber',
+    x: 175, y: 17, w: PANEL_W, h: PANEL_H, ramp: 'timber',
     kids: [
-      iconButton({ id: 'chest.take', x: 3, y: 4, ramp: 'timber', mark: TAKE, name: 'Take all', says: 'Into the pack, then the hotbar', onPress: () => { takeAll(h); b.after(); } }),
-      iconButton({ id: 'chest.stash', x: 3, y: 22, ramp: 'timber', mark: STASH, name: 'Stash', says: 'Every kind the chest already holds', onPress: () => { stash(h); b.after(); } }),
+      button({ id: 'chest.take', x: 4, y: 4, w: 46, h: 14, ramp: 'timber', label: 'Take all', tip: says('Take all', 'Into the pack, then the hotbar'), onPress: () => { takeAll(h); b.after(); } }),
+      button({ id: 'chest.stash', x: 4, y: 20, w: 46, h: 14, ramp: 'timber', label: 'Stash', tip: says('Stash', 'Every kind the chest already holds'), onPress: () => { stash(h); b.after(); } }),
     ],
   });
   return overWorld(ui, win, [slab({ x: 0, y: 0, w: 176, h: 172, ramp: 'timber', title, titleRoom: 40, kids }), panel], {
