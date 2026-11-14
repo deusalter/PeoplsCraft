@@ -37,7 +37,7 @@ export const iconsSheet: Sheet = {
     kids.push(slab({ x: 305, y: 0, w: 169, h: 42, ramp: 'timber', title: 'On timber', kids: [{ x: -1, y: 0, w: 1, h: 1, kids: row('timber', 18) }] }));
     kids.push(slab({ x: 305, y: 45, w: 169, h: 42, ramp: 'stone', title: 'On stone', kids: [{ x: -1, y: 0, w: 1, h: 1, kids: row('stone', 18) }] }));
     kids.push(plate({ x: 305, y: 90, w: 169, h: 37, kids: [salt(5, 3, 'On dark'), { x: -4, y: 0, w: 1, h: 1, kids: row('dark', 15) }] }));
-    // Tab marks, for tabs and ribbons that open a page.
+    // Tab marks, for tabs that open a page.
     const tabs = Object.keys(TAB_MARKS);
     kids.push(slab({
       x: 0, y: 147, w: 302, h: 18 + Math.ceil(tabs.length / 4) * 20 + 4, ramp: 'stone', title: 'Marks of tabs that open a page',

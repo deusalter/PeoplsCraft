@@ -1603,49 +1603,49 @@ A world event (Night raid, Sand March, Amāvassa) is the same with a thin strip 
 
 ### 5.19 Book
 
-For the journal and the codex. 292 by 180. The cover is a board of leather 4 deep, built as a slab is with its own tones and with nothing more: the outline with its corners left out; a light row and column of `timber.lt` on the top and left; a face of `timber.sh`; a dark row and column of `timber.pit` on the bottom and right, the face on the diagonal where they meet. The block of pages starts 4 in with a line of `root.0` round it; a page is `clay.lt`. The edges of the leaves show three deep along each page's outer side and along the foot of both, `clay.face`, `clay.lt`, `clay.sh` from the outside in, so that the outer bottom corners read as a stack of pages. The gutter is three columns at the middle: the left page's last column `clay.sh`, a crease of `root.0`, and the right page's first column, which is the page's own `clay.lt`. An earlier gutter of 16 columns stepping down to the fold and back, and a board edge of five rows each a step darker, were bands of equal stripes: pillow shading, which this interface refuses.
+For the journal and the codex. 298 by 186. The cover is a board of leather 6 deep inside its outline, built as a slab is (5.1) one step darker than timber, and with nothing more: the outline with its corners left out; a light edge two deep on the top and left, `timber.lt` then `timber.face`; a face of `timber.sh`; a dark edge two deep on the bottom and right, `timber.pit` then `timber.dk`; the face on the two diagonal units where light meets dark. The block of pages starts 7 in with a line of `root.0` round it; a page is `clay.lt`. Under each page the stack of leaves shows two deep along its outer side and along the foot of both, `clay.face` and then `clay.sh` outward, darkening into the outline. The gutter is three columns at the middle: the left page's last column `clay.sh`, a crease of `root.0`, and the right page's first column, which is the page's own `clay.lt`; the two page columns stop at the leaves and the crease runs on through them to the outline. A board 3 deep read as a frame round two panels and not as the boards of a bound book; leaves three deep with a light leaf inside a dark one left that dark line standing 2 in from every page edge, an inset rule. An earlier gutter of 16 columns stepping down to the fold and back, and a board edge of five rows each a step darker, were bands of equal stripes: pillow shading, which this interface refuses.
 
-**Tabs** mark the sections, as on a slab (5.7), cut from the cover's leather: 24 wide at a pitch of 23 along the cover's top edge from its left corner, each carrying the 16 by 16 mark of its section, its name as its tooltip. The open one rises 21 and is joined to the cover, in the cover's tones (a `timber.lt` light edge, `timber.sh` face, `timber.pit` dark edge); the others rise 18, flat `timber.pit` with a light row and column of `timber.sh`, and lighten to `timber.dk` under the pointer. A colour alone never tells the sections apart. The top left corner of the book, its first tab open and its second not:
+**Tabs** mark the sections, as on a slab (5.7), cut from the cover's leather: 24 wide at a pitch of 23 along the cover's top edge from its left corner, each carrying the 16 by 16 mark of its section, its name as its tooltip. The tabs are the book's bookmarks, and the book has no ribbons: five ribbons of five colours hanging from the foot were a second way to the same pages, matched to their tabs by colour alone. The open tab rises 21 and is joined to the cover as a tab joins a slab, in the cover's tones (its light edge `timber.lt` and `timber.face`, its face `timber.sh`, its dark edge `timber.dk` and `timber.pit`); the others rise 18, flat `timber.pit` with a light row and column of `timber.sh`, and lighten to `timber.dk` under the pointer. A colour alone never tells the sections apart. The top left corner of the book, its first tab open and its second not, the marks left out:
 
 ```
      0         1         2         3         4         5
      0123456789012345678901234567890123456789012345678901
   0  .KKKKKKKKKKKKKKKKKKKKKK.............................
   1  KffffffffffffffffffffftK............................
-  2  KfttttttttttttttttttttXK............................
-  3  KftttttttttttttttttttXXKKKKKKKKKKKKKKKKKKKKKKK......
-  4  KftttttttttttttttttttXXKtttttttttttttttttttttXK.....
-  5  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  6  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  7  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  8  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
-  9  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 10  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 11  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 12  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 13  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 14  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 15  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 16  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 17  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 18  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 19  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 20  KftttttttttttttttttttXXKtXXXXXXXXXXXXXXXXXXXXXK.....
- 21  KftttttttttttttttttttXXKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 22  Kfttttttttttttttttttttffffffffffffffffffffffffffffff
- 23  Kftttttttttttttttttttttttttttttttttttttttttttttttttt
- 24  Kftttttttttttttttttttttttttttttttttttttttttttttttttt
- 25  KfttKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
- 26  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 27  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 28  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 29  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 30  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 31  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 32  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
- 33  KfttKFLSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+  2  KfTTTTTTTTTTTTTTTTTTTtXK............................
+  3  KfTttttttttttttttttttUXKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+  4  KfTttttttttttttttttttUXKtttttttttttttttttttttXKttttt
+  5  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+  6  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+  7  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+  8  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+  9  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 10  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 11  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 12  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 13  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 14  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 15  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 16  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 17  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 18  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 19  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 20  KfTttttttttttttttttttUXKtXXXXXXXXXXXXXXXXXXXXXKtXXXX
+ 21  KfTttttttttttttttttttUXKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 22  KfTtttttttttttttttttttffffffffffffffffffffffffffffff
+ 23  KfTttttttttttttttttttTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+ 24  KfTttttttttttttttttttttttttttttttttttttttttttttttttt
+ 25  KfTttttttttttttttttttttttttttttttttttttttttttttttttt
+ 26  KfTttttttttttttttttttttttttttttttttttttttttttttttttt
+ 27  KfTttttttttttttttttttttttttttttttttttttttttttttttttt
+ 28  KfTttttKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK
+ 29  KfTttttKSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 30  KfTttttKSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 31  KfTttttKSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 32  KfTttttKSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
+ 33  KfTttttKSFLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL
 ```
-`. nothing  F clay.face  f timber.lt  K root.0  L clay.lt  S clay.sh  t timber.sh  X timber.pit`
+`. nothing  F clay.face  f timber.lt  K root.0  L clay.lt  S clay.sh  T timber.face  t timber.sh  U timber.dk  X timber.pit`
 
 **Text on a page** is ink. A line that says where to go starts with the compass mark, 9 by 9 in the line's ink, and the words 12 to its right:
 
@@ -1664,52 +1664,37 @@ For the journal and the codex. 292 by 180. The cover is a board of leather 4 dee
 ```
 `. nothing  I ink`
 
-A page's text area is 126 wide and starts 12 from the book's outer edge and 10 from its top; the right page's starts at x 154. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
+A page's text area is 126 wide and starts 15 from the book's outer edge and 13 from its top; the right page's starts at x 157. Headings are plain ink in the text face with a rule of `clay.sh` one unit thick 1 unit under their cell.
 
-**Ribbons.** Every section has a ribbon of its colour, kept here and on its tab and nowhere else, hanging from the book's foot: 6 wide, outlined in `root.0`, its colour with its right column in the colour's dark tone, coming out 12 under the cover's bottom outline and cut in a V; the open section's hangs 4 longer. They hang together, 8 apart, the last starting 16 left of the crease. A ribbon is pressed as its tab is, and names its section in a tooltip. A single stub of ribbon lying in the gutter read as a mark on the spine, not as a bookmark. A ribbon not open, then the open one, from the cover's bottom outline (row 0), which the ribbon covers:
-
-```
-     0         1    
-     01234567890123
-  0  KcccdK..KcccdK
-  1  KcccdK..KcccdK
- ..  (rows 2 to 9 as row 1)
- 10  KcccdK..KcccdK
- 11  KcKKdK..KcccdK
- 12  KK..KK..KcccdK
- 13  ........KcccdK
- 14  ........KcccdK
- 15  ........KcKKdK
- 16  ........KK..KK
-```
-`. nothing  c the section's colour  d its dark tone  K root.0`
-
-**Page arrows**, 16 by 7, in ink at the bottom outer corners of the pages (12 from the outer edge, 161 down from the book's top); `blood.dk` when hovered; not drawn when there is no page that way. Page numbers are in the small face, `ink.faded`, centred under each page, the cell at y 162. A page's text stops at y 158. The bottom right corner with its arrow:
+**Page arrows**, 16 by 7, in ink at the bottom outer corners of the pages (15 from the outer edge, 164 down from the book's top); `blood.dk` when hovered; not drawn when there is no page that way. Page numbers are in the small face, `ink.faded`, centred under each page, the cell at y 165. A page's text stops at y 161. The bottom right corner with its arrow, from x 266 and y 164:
 
 ```
-     0         1         2
-     012345678901234567890123456789
-  0  LLLLLLLLLLLLLILLLLLLLLSLFKttXK
-  1  LLLLLLLLLLLLLIILLLLLLLSLFKttXK
-  2  LLLLIIIIIIIIIIIILLLLLLSLFKttXK
-  3  LLLLIIIIIIIIIIIIILLLLLSLFKttXK
-  4  LLLLIIIIIIIIIIIILLLLLLSLFKttXK
-  5  LLLLLLLLLLLLLIILLLLLLLSLFKttXK
-  6  LLLLLLLLLLLLLILLLLLLLLSLFKttXK
-  7  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
-  8  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
-  9  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
- 10  LLLLLLLLLLLLLLLLLLLLLLSLFKttXK
- 11  SSSSSSSSSSSSSSSSSSSSSSSLFKttXK
- 12  LLLLLLLLLLLLLLLLLLLLLLLLFKttXK
- 13  FFFFFFFFFFFFFFFFFFFFFFFFFKttXK
- 14  KKKKKKKKKKKKKKKKKKKKKKKKKKttXK
- 15  ttttttttttttttttttttttttttttXK
- 16  ttttttttttttttttttttttttttttXK
- 17  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
- 18  KKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
+     0         1         2         3 
+     01234567890123456789012345678901
+  0  LLLLLLLLLLLLILLLLLLLLLFSKttttUXK
+  1  LLLLLLLLLLLLIILLLLLLLLFSKttttUXK
+  2  LLLIIIIIIIIIIIILLLLLLLFSKttttUXK
+  3  LLLIIIIIIIIIIIIILLLLLLFSKttttUXK
+  4  LLLIIIIIIIIIIIILLLLLLLFSKttttUXK
+  5  LLLLLLLLLLLLIILLLLLLLLFSKttttUXK
+  6  LLLLLLLLLLLLILLLLLLLLLFSKttttUXK
+  7  LLLLLLLLLLLLLLLLLLLLLLFSKttttUXK
+  8  LLLLLLLLLLLLLLLLLLLLLLFSKttttUXK
+  9  LLLLLLLLLLLLLLLLLLLLLLFSKttttUXK
+ 10  LLLLLLLLLLLLLLLLLLLLLLFSKttttUXK
+ 11  LLLLLLLLLLLLLLLLLLLLLLFSKttttUXK
+ 12  FFFFFFFFFFFFFFFFFFFFFFFSKttttUXK
+ 13  SSSSSSSSSSSSSSSSSSSSSSSSKttttUXK
+ 14  KKKKKKKKKKKKKKKKKKKKKKKKKttttUXK
+ 15  tttttttttttttttttttttttttttttUXK
+ 16  tttttttttttttttttttttttttttttUXK
+ 17  tttttttttttttttttttttttttttttUXK
+ 18  tttttttttttttttttttttttttttttUXK
+ 19  UUUUUUUUUUUUUUUUUUUUUUUUUUUUUUXK
+ 20  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXK
+ 21  KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.
 ```
-`. nothing  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  t timber.sh  X timber.pit`
+`. nothing  F clay.face  I ink  K root.0  L clay.lt  S clay.sh  t timber.sh  U timber.dk  X timber.pit`
 
 ### 5.20 Tree field, nodes and links
 
@@ -2770,7 +2755,7 @@ Size 176 by 227, with two tabs standing 21 out of its left edge. Material: clay.
 
 ### Journal: the Guide, bounties and standing
 
-Size 292 by 180, with tabs standing 21 above. Material: book (5.19): a leather cover, clay.lt pages. Anchor: centre of the screen. Coordinates are from the book's top left.
+Size 298 by 186, with tabs standing 21 above. Material: book (5.19): a leather cover, clay.lt pages. Anchor: centre of the screen. Coordinates are from the book's top left.
 
 ```
 +-------+
@@ -2810,30 +2795,30 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19): a leather c
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| G0 | book | 0 | 0 | 292 | 180 | the book |
-| G1 | tabs | 0 | -21 | 93 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Guide (the lamp), Bounties (the note), Standing (the banner), Crew (two heads). The open section's ribbon lies in the gutter in its colour: blood, arm, growth, ember |
-| G2 | text | 12 | 10 | 126 | 10 | left page heading: the chapter, as "Iron and Root" |
-| G3 | rule | 12 | 21 | 126 | 1 | rule in clay.sh |
-| G4 | rows | 12 | 24 | 126 | 130 | thirteen step rows 10 tall, the title at 10: done, a `{check}` in `growth.dk` at 1 and the title in faded ink; the present step, the `{step}` wedge at 3 and ink; the next step, ink with no mark; later ones, faded ink with no mark. The chosen row is told by its underline, not by its tone, so that choosing a later step does not make it read as next |
-| G5 | turn | 12 | 161 | 16 | 7 | page back |
-| G6 | text | 68 | 162 | 16 | 6 | page number, small face |
-| G7 | text | 154 | 10 | 126 | 10 | right page heading: the chosen step |
-| G8 | text | 154 | 24 | 126 | 60 | its telling, wrapped to 126, six lines at most |
-| G9 | gauge | 154 | 88 | 126 | 7 | a sunk channel filling in ember, with "3 of 5" right-aligned above it; only for steps that count |
-| G10 | text | 154 | 104 | 126 | 20 | where to: the compass mark (9 by 9, ink) at 0, 0 and the words in ink at 12, saying the thing, then how far and which way: "Vanahar Altar: 212 m east", "Iron ore: 38 m down". A line that ends in up or down has the `{up}` or `{down}` arrow of the text face in place of the compass mark, 2 in, since the compass cannot point straight up or down. Every screen writes a distance as a count and "m", as the HUD and the roster do; "strides" is a word of the tables, not of a readout. It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
-| G11 | text | 154 | 118 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink; three lines at most, or two starting 4 under a where-to of two lines |
-| G12 | turn | 264 | 161 | 16 | 7 | page on |
-| G13 | text | 210 | 162 | 16 | 6 | page number |
+| G0 | book | 0 | 0 | 298 | 186 | the book |
+| G1 | tabs | 0 | -21 | 93 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Guide (the lamp), Bounties (the note), Standing (the banner), Crew (two heads). The tabs are the bookmarks; the book has no ribbons |
+| G2 | text | 15 | 13 | 126 | 10 | left page heading: the chapter, as "Iron and Root" |
+| G3 | rule | 15 | 24 | 126 | 1 | rule in clay.sh |
+| G4 | rows | 15 | 27 | 126 | 130 | thirteen step rows 10 tall, the title at 10: done, a `{check}` in `growth.dk` at 1 and the title in faded ink; the present step, the `{step}` wedge at 3 and ink; the next step, ink with no mark; later ones, faded ink with no mark. The chosen row is told by its underline, not by its tone, so that choosing a later step does not make it read as next |
+| G5 | turn | 15 | 164 | 16 | 7 | page back |
+| G6 | text | 71 | 165 | 16 | 6 | page number, small face |
+| G7 | text | 157 | 13 | 126 | 10 | right page heading: the chosen step |
+| G8 | text | 157 | 27 | 126 | 60 | its telling, wrapped to 126, six lines at most |
+| G9 | gauge | 157 | 91 | 126 | 7 | a sunk channel filling in ember, with "3 of 5" right-aligned above it; only for steps that count |
+| G10 | text | 157 | 107 | 126 | 20 | where to: the compass mark (9 by 9, ink) at 0, 0 and the words in ink at 12, saying the thing, then how far and which way: "Vanahar Altar: 212 m east", "Iron ore: 38 m down". A line that ends in up or down has the `{up}` or `{down}` arrow of the text face in place of the compass mark, 2 in, since the compass cannot point straight up or down. Every screen writes a distance as a count and "m", as the HUD and the roster do; "strides" is a word of the tables, not of a readout. It is the line the crew acts on, so it wraps onto a second line rather than being cut, and is cut with `…` only after that |
+| G11 | text | 157 | 121 | 126 | 30 | what the step gives: practice, and what it opens, in faded ink; three lines at most, or two starting 4 under a where-to of two lines |
+| G12 | turn | 267 | 164 | 16 | 7 | page on |
+| G13 | text | 213 | 165 | 16 | 6 | page number |
 
-- **Shows.** One book shared by the crew. Guide: the order of work, a chapter to a left page, the chosen step on the right. Bounties (to come): the left page lists what householders and the Marujan ask, in rows 20 tall: the thing asked for in a slot at the left; the task on the first line in ink; on the second, in faded ink, how it stands: "open", "taken by you and 1", "taken by 3", "done", or why the crew cannot take it ("needs standing"), so that no row is told apart by a greyed whole or by colour alone. The right page gives the task, who asks, the telling (as many lines as fit above what follows), the pay, who took it (a row 11 apart to each, their head of 10 by 10 in its seat's frame and the name in ink at 13, ", you" after one's own; a third and more counted in a line), and one button, "Take" or "Leave", 60 by 14 at 154, 150, which keeps its place whatever the telling's length. Standing (to come): a page to each people, a sunk channel with five notches for how the crew stands, under it what raises it, what lowers it, and what the next notch opens. Crew: the roster as the left page, a row 12 tall to each: their head (10 by 10 in its seat's frame) at 1, 1, the name at 13, and at the right their level, "you" in faded ink on one's own row, or, for one who is away, "away" in faded ink with the name faded and the head flat in `clay.sh`, so that being away is never told by colour alone; the right page gives the chosen one's head (10 by 10, the face of 8 by 8 in its seat's frame) at 0, 14 with their level and job, where they are, and how far, on three lines beside it at 14; under "Worn" at 48, five slots in a row at 0, 58 for head, body, legs and two trinkets, silhouettes where nothing is worn; under "Bounties taken" at 82, up to three rows 20 apart from 92, each a slot with the thing asked for and two lines, the task in ink and "for" the asker in faded ink.
+- **Shows.** One book shared by the crew. Guide: the order of work, a chapter to a left page, the chosen step on the right. Bounties (to come): the left page lists what householders and the Marujan ask, in rows 20 tall: the thing asked for in a slot at the left; the task on the first line in ink; on the second, in faded ink, how it stands: "open", "taken by you and 1", "taken by 3", "done", or why the crew cannot take it ("needs standing"), so that no row is told apart by a greyed whole or by colour alone. The right page gives the task, who asks, the telling (as many lines as fit above what follows), the pay, who took it (a row 11 apart to each, their head of 10 by 10 in its seat's frame and the name in ink at 13, ", you" after one's own; a third and more counted in a line), and one button, "Take" or "Leave", 60 by 14 at 157, 153, which keeps its place whatever the telling's length. Standing (to come): a page to each people, a sunk channel with five notches for how the crew stands, under it what raises it, what lowers it, and what the next notch opens. Crew: the roster as the left page, a row 12 tall to each: their head (10 by 10 in its seat's frame) at 1, 1, the name at 13, and at the right their level, "you" in faded ink on one's own row, or, for one who is away, "away" in faded ink with the name faded and the head flat in `clay.sh`, so that being away is never told by colour alone; the right page gives the chosen one's head (10 by 10, the face of 8 by 8 in its seat's frame) at 0, 14 with their level and job, where they are, and how far, on three lines beside it at 14; under "Worn" at 48, five slots in a row at 0, 58 for head, body, legs and two trinkets, silhouettes where nothing is worn; under "Bounties taken" at 82, up to three rows 20 apart from 92, each a slot with the thing asked for and two lines, the task in ink and "for" the asker in faded ink.
 - **Clickable.** A step row or a bounty row chooses it. The tabs. The page arrows. "Take".
 - **Keys.** G or Esc closes. Left and Right turn the page. Up and Down move the choice. 1 to 4 pick a tab. Enter presses the page's one button.
 - **First.** Opens at the Guide, at the page of the present step, with that step chosen.
-- **Narrow.** Unchanged: 292 fits 320.
+- **Narrow.** Unchanged: 298 fits 320.
 
 ### Codex and bestiary (to come)
 
-Size 292 by 180, with tabs standing 21 above. Material: book (5.19). Anchor: centre of the screen. Coordinates are from the book's top left.
+Size 298 by 186, with tabs standing 21 above. Material: book (5.19). Anchor: centre of the screen. Coordinates are from the book's top left.
 
 ```
 +-------+
@@ -2873,17 +2858,17 @@ Size 292 by 180, with tabs standing 21 above. Material: book (5.19). Anchor: cen
 
 | | Part | x | y | w | h | What |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| X0 | book | 0 | 0 | 292 | 180 | the book |
-| X1 | tabs | 0 | -21 | 116 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Creatures (a beast's head), Matter (a bar), Places (the map), Peoples (a bust), Old things (the ward core: a dressed stone disc with a blue gem sunk in it, a thing from the section and not a shape). Each section's ribbon hangs from the book's foot in its colour (5.19): blood, ember, growth, arm, violet.lt |
-| X2 | text | 12 | 10 | 126 | 10 | heading of the section, and right-aligned to the page's edge in faded ink how many of its entries are known ("1 of 8") where it stands 6 clear of the heading |
-| X3 | slots | 12 | 24 | 126 | 126 | entry slots sunk in the page (ramp clay, floor clay.sh), seven to a row (four when the spread has eight or fewer, as the eight have), and exactly as many slots as the spread has entries: an empty slot promised more to find than there is. The chosen slot carries a frame of ember 2 deep that stands a unit out of the slot, over its neighbours' edges. Under the last row, 4 below, two lines in ink say what the spread holds ("What lives up here, filled in as met."). A kind not yet seen shows its silhouette: the flat mask of its own 16 by 16 picture in clay.face on the clay.sh floor (clay.lt under the pointer): the picture's body without its root.0 outline (outline units clear of the body on all eight sides, an antenna or a string, stay), with only holes of one unit drawn round on all four sides closed, so legs, ears, tails, wings and the notch at the neck keep their units; no picture's mask may be a convex blob; a kind seen shows its icon |
-| X4 | turn | 12 | 161 | 16 | 7 | page back |
-| X5 | text | 154 | 10 | 126 | 10 | the name, in ink |
-| X6 | text | 154 | 20 | 126 | 20 | whose word the name is and what it means, said as a sentence in faded ink ("The Householders' word for darkness"), wrapped onto a second line when it needs one; left out where the name is the plain word, and what follows moves up |
-| X7 | well | 154 | 32 | 24 | 24 | picture well sunk in the parchment: clay.dk along its top and left, salt along its bottom and right, a floor of clay.face, the 16 by 16 picture at 4, 4; a kind not yet seen stands there as the flat mask of its picture in clay.sh. A dark well on the page clashed with the parchment |
-| X8 | rows | 182 | 32 | 98 | 30 | the facts, one line each, three at most: a label in faded ink and its value in ink ("Found: anywhere", "When: at night", "Drops: Shade Flesh"; for matter "Grade" in the grade's colour and "Burns"). A bare value in blue read as a link that led nowhere |
-| X9 | text | 154 | 66 | 126 | 92 | 4 under the taller of the well and the facts, for matter first "Used in" and "Made from" in faded ink, each over a row of slots in the clay of the page with what it goes into and what it is made of ("Made from: nothing yet" with no row when nothing makes it); then: the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not, to the page's foot at y 158 |
-| X10 | turn | 264 | 161 | 16 | 7 | page on |
+| X0 | book | 0 | 0 | 298 | 186 | the book |
+| X1 | tabs | 0 | -21 | 116 | 21 | tabs of the cover's leather (5.19), pitch 23, each with its mark: Creatures (a beast's head), Matter (a bar), Places (the map), Peoples (a bust), Old things (the ward core: a dressed stone disc with a blue gem sunk in it, a thing from the section and not a shape). The tabs are the bookmarks; the book has no ribbons (5.19) |
+| X2 | text | 15 | 13 | 126 | 10 | heading of the section, and right-aligned to the page's edge in faded ink how many of its entries are known ("1 of 8") where it stands 6 clear of the heading |
+| X3 | slots | 15 | 27 | 126 | 126 | entry slots sunk in the page (ramp clay, floor clay.sh), seven to a row (four when the spread has eight or fewer, as the eight have), and exactly as many slots as the spread has entries: an empty slot promised more to find than there is. The chosen slot carries a frame of ember 2 deep that stands a unit out of the slot, over its neighbours' edges. Under the last row, 4 below, two lines in ink say what the spread holds ("What lives up here, filled in as met."). A kind not yet seen shows its silhouette: the flat mask of its own 16 by 16 picture in clay.face on the clay.sh floor (clay.lt under the pointer): the picture's body without its root.0 outline (outline units clear of the body on all eight sides, an antenna or a string, stay), with only holes of one unit drawn round on all four sides closed, so legs, ears, tails, wings and the notch at the neck keep their units; no picture's mask may be a convex blob; a kind seen shows its icon |
+| X4 | turn | 15 | 164 | 16 | 7 | page back |
+| X5 | text | 157 | 13 | 126 | 10 | the name, in ink |
+| X6 | text | 157 | 23 | 126 | 20 | whose word the name is and what it means, said as a sentence in faded ink ("The Householders' word for darkness"), wrapped onto a second line when it needs one; left out where the name is the plain word, and what follows moves up |
+| X7 | well | 157 | 35 | 24 | 24 | picture well sunk in the parchment: clay.dk along its top and left, salt along its bottom and right, a floor of clay.face, the 16 by 16 picture at 4, 4; a kind not yet seen stands there as the flat mask of its picture in clay.sh. A dark well on the page clashed with the parchment |
+| X8 | rows | 185 | 35 | 98 | 30 | the facts, one line each, three at most: a label in faded ink and its value in ink ("Found: anywhere", "When: at night", "Drops: Shade Flesh"; for matter "Grade" in the grade's colour and "Burns"). A bare value in blue read as a link that led nowhere |
+| X9 | text | 157 | 69 | 126 | 92 | 4 under the taller of the well and the facts, for matter first "Used in" and "Made from" in faded ink, each over a row of slots in the clay of the page with what it goes into and what it is made of ("Made from: nothing yet" with no row when nothing makes it); then: the four steps of what is known (first sight, first kill, many kills, a thing seen once): each a paragraph when known, and one rule in clay.sh when not, to the page's foot at y 161 |
+| X10 | turn | 267 | 164 | 16 | 7 | page on |
 
 - **Shows.** What the crew has met, shared by everyone on the server. Each entry fills in by the four steps of chapter 8.9 of the world bible; a step not reached is a blank rule, never a row of question marks.
 - **Clickable.** Entry slots, tabs, page arrows.

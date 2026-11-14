@@ -1,11 +1,11 @@
-// The journal (section 6, Journal): one book shared by the crew, with ribbons for the Guide, bounties, standing and the
+// The journal (section 6, Journal): one book shared by the crew, with tabs for the Guide, bounties, standing and the
 // crew. The Guide gives a chapter to the left page and the chosen step to the right.
 import { HEADS, HEAD_SIZE } from '../art/heads';
 import type { SilhouetteName } from '../art/silhouettes';
 import { count, measure as measureInk } from '../font/measure';
 import { cut as inkCut } from '../font/wrap';
 import type { KeyEv, Node, Screen } from '../node';
-import { type Ribbon, BOOK_H, BOOK_TABS, BOOK_W, book, pageHeading } from '../parts/book';
+import { type Section, BOOK_H, BOOK_TABS, BOOK_W, book, pageHeading } from '../parts/book';
 import { button } from '../parts/button';
 import { channel } from '../parts/gauges';
 import { paintSlot } from '../parts/slot';
@@ -39,11 +39,11 @@ export interface JournalView {
 }
 
 const SECTIONS: JournalSection[] = ['guide', 'bounties', 'standing', 'crew'];
-const RIBBONS: Ribbon[] = [
-  { id: 'jr.rb.guide', colour: 'blood', dark: 'blood.dk', name: 'Guide', icon: 'guide' },
-  { id: 'jr.rb.bounties', colour: 'arm', dark: 'arm.dk', name: 'Bounties', icon: 'bounty' },
-  { id: 'jr.rb.standing', colour: 'growth', dark: 'growth.dk', name: 'Standing', icon: 'standing' },
-  { id: 'jr.rb.crew', colour: 'ember', dark: 'ember.dk', name: 'Crew', icon: 'crew' },
+const SECTION_TABS: Section[] = [
+  { id: 'jr.rb.guide', name: 'Guide', icon: 'guide' },
+  { id: 'jr.rb.bounties', name: 'Bounties', icon: 'bounty' },
+  { id: 'jr.rb.standing', name: 'Standing', icon: 'standing' },
+  { id: 'jr.rb.crew', name: 'Crew', icon: 'crew' },
 ];
 const PW = 126;
 /** From one taker's row to the next on a bounty's page: a head 10 tall and a unit clear. */
@@ -242,8 +242,8 @@ export const journalScreen: Screen<JournalView> = (v, ui) => {
   const guide = v.section === 'guide';
   const at = centred(ui.w, ui.h, BOOK_W, BOOK_H);
   const bk = book({
-    id: 'jr.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), ribbons: RIBBONS, chosen: si,
-    onRibbon: (i) => { ui.cue('page'); v.onSection(SECTIONS[i]); },
+    id: 'jr.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), sections: SECTION_TABS, chosen: si,
+    onSection: (i) => { ui.cue('page'); v.onSection(SECTIONS[i]); },
     pages: guide ? [v.chapter * 2 + 1, v.chapter * 2 + 2] : undefined,
     prev: guide && v.chapter > 0 ? () => { ui.cue('page'); v.onPage(v.chapter - 1); } : undefined,
     next: guide && v.chapter < v.chapters.length - 1 ? () => { ui.cue('page'); v.onPage(v.chapter + 1); } : undefined,

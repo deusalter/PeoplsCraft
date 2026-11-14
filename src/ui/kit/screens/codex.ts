@@ -4,7 +4,7 @@ import { SLOT } from '../art/slot';
 import { measure, rightX } from '../font/measure';
 import { box, cut } from '../font/wrap';
 import type { KeyEv, Live, Node, Screen } from '../node';
-import { type Ribbon, BOOK_H, BOOK_TABS, BOOK_W, PAGE_BOTTOM, PAGE_TEXT, book, pageHeading } from '../parts/book';
+import { type Section as BookSection, BOOK_H, BOOK_TABS, BOOK_W, PAGE_BOTTOM, PAGE_TEXT, book, pageHeading } from '../parts/book';
 import { ring, sunk } from '../parts/common';
 import { centred } from '../scale';
 import { CODEX, type Entry, type Section } from '../sample/codex';
@@ -25,12 +25,12 @@ export interface CodexView {
   onClose(): void;
 }
 
-const RIBBONS: Ribbon[] = [
-  { id: 'cx.rb.creatures', colour: 'blood', dark: 'blood.dk', name: 'Creatures', icon: 'creatures' },
-  { id: 'cx.rb.matter', colour: 'ember', dark: 'ember.dk', name: 'Matter', icon: 'matter' },
-  { id: 'cx.rb.places', colour: 'growth', dark: 'growth.dk', name: 'Places', icon: 'map' },
-  { id: 'cx.rb.peoples', colour: 'arm', dark: 'arm.dk', name: 'Peoples', icon: 'peoples' },
-  { id: 'cx.rb.old', colour: 'violet.lt', dark: 'violet.dk', name: 'Old things', icon: 'old' },
+const SECTION_TABS: BookSection[] = [
+  { id: 'cx.rb.creatures', name: 'Creatures', icon: 'creatures' },
+  { id: 'cx.rb.matter', name: 'Matter', icon: 'matter' },
+  { id: 'cx.rb.places', name: 'Places', icon: 'map' },
+  { id: 'cx.rb.peoples', name: 'Peoples', icon: 'peoples' },
+  { id: 'cx.rb.old', name: 'Old things', icon: 'old' },
 ];
 const PW = 126, COLS = 7, CELLS = 49;
 /** The picture well: a parchment hollow sunk in the page, the 16 by 16 picture in its middle. */
@@ -187,8 +187,8 @@ export const codexScreen: Screen<CodexView> = (v, ui) => {
   const page = (before + v.spread) * 2 + 1;
   const at = centred(ui.w, ui.h, BOOK_W, BOOK_H);
   const bk = book({
-    id: 'cx.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), ribbons: RIBBONS, chosen: v.section,
-    onRibbon: (i) => { ui.cue('page'); v.onSection(i); },
+    id: 'cx.book', x: at.x, y: Math.max(at.y, BOOK_TABS + 3), sections: SECTION_TABS, chosen: v.section,
+    onSection: (i) => { ui.cue('page'); v.onSection(i); },
     pages: [page, page + 1],
     prev: v.spread > 0 ? () => { ui.cue('page'); v.onSpread(v.spread - 1); } : undefined,
     next: v.spread < sec.spreads.length - 1 ? () => { ui.cue('page'); v.onSpread(v.spread + 1); } : undefined,

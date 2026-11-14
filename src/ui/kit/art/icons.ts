@@ -5,7 +5,7 @@ import { type PixelMap, coded } from '../pixmap';
 
 function mark(name: string, rows: string[]): PixelMap { return coded(rows, `mark.${name}`); }
 
-/** 16 by 16 marks for tabs and ribbons that stand for a page. */
+/** 16 by 16 marks for tabs that stand for a page. */
 export const TAB_MARKS: Record<string, PixelMap> = {
   /** A beast's head, for the creatures of the codex. */
   creatures: mark('creatures', [

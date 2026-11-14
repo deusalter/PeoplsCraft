@@ -23,11 +23,11 @@ export const bookSheet: Sheet = {
     const kids: Node[] = [];
     kids.push(book({
       id: 'book', x: 0, y: 21, chosen: 1, pages: [12, 13],
-      ribbons: [
-        { id: 'rb.guide', colour: 'growth', dark: 'growth.dk', name: 'The Guide', icon: 'guide' },
-        { id: 'rb.bounty', colour: 'blood', dark: 'blood.dk', name: 'Bounties', icon: 'bounty' },
-        { id: 'rb.stand', colour: 'arm', dark: 'arm.dk', name: 'Standing', icon: 'standing' },
-        { id: 'rb.codex', colour: 'ember', dark: 'ember.dk', name: 'Codex', icon: 'codex' },
+      sections: [
+        { id: 'rb.guide', name: 'The Guide', icon: 'guide' },
+        { id: 'rb.bounty', name: 'Bounties', icon: 'bounty' },
+        { id: 'rb.stand', name: 'Standing', icon: 'standing' },
+        { id: 'rb.codex', name: 'Codex', icon: 'codex' },
       ],
       prev: () => {}, next: () => {},
       force: { next: { hover: true } },

@@ -83,13 +83,14 @@ for (const [k, r0] of [['life', 0], ['hunger', 9], ['arm', 20]]) {
 }
 // 5.18 status frame
 compare('status', render(18, 18, (g) => paint(g, mods.statusFrame({ x: 0, y: 0, icon: 'x', good: true, seconds: 999 }))), grab(1508, 0, 18, 0, 18));
-// 5.19 book: the top left corner with its open tab and one not, the gutter with the open section's ribbon, the bottom right
+// 5.19 book: the top left corner with its open tab and one not (its marks left out), and the bottom right corner with
+// its arrow. These two diagrams are found by the sentence that leads into each, not by a line number.
 {
-  const rb = [{ id: 'a', colour: 'blood', dark: 'blood.dk', name: 'a', icon: 'x' }, { id: 'c', colour: 'arm', dark: 'arm.dk', name: 'c', icon: 'x' }];
-  const g = render(292, 201, (g) => paint(g, mods.book({ id: 'b', x: 0, y: 21, ribbons: rb, chosen: 0, next: () => {} })));
-  compare('book top left', g, grab(1546, 0, 36, 0, 52));
-  compare('book gutter', g, grab(1592, 0, 35, 0, 26), 'timber', 136, 21);
-  compare('book bottom right', g, grab(1635, 0, 22, 0, 30), 'timber', 262, 179);
+  const row0 = (lead) => { const at = L.findIndex((l) => l.includes(lead)); return L.findIndex((l, k) => k > at && l.startsWith('  0  ')) + 1; };
+  const sec = [{ id: 'a', name: 'a', icon: 'none' }, { id: 'c', name: 'c', icon: 'none' }, { id: 'd', name: 'd', icon: 'none' }];
+  const g = render(298, 207, (g) => paint(g, mods.book({ id: 'b', x: 0, y: 21, sections: sec, chosen: 0, next: () => {} })), () => null);
+  compare('book top left', g, grab(row0('The top left corner of the book'), 0, 34, 0, 52));
+  compare('book bottom right', g, grab(row0('The bottom right corner with its arrow'), 0, 22, 0, 32), 'timber', 266, 185);
 }
 // 5.25 ping, 5.28 crosshair
 compare('crosshair', render(9, 9, (g) => paint(g, mods.crosshair({ x: 0, y: 0 }))), grab(2098, 0, 9, 0, 9));
