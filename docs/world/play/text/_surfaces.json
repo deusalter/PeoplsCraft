@@ -339,7 +339,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 38
+   "entries": 40
   },
   "bed": {
    "about": "Answer of a bed or a room when it is checked",
@@ -381,7 +381,7 @@
    "voice": "label",
    "limit": 40,
    "assign": "system",
-   "entries": 31
+   "entries": 38
   },
   "win": {
    "about": "Titles, buttons and hints in the windows",
@@ -451,7 +451,14 @@
    "voice": "label",
    "limit": 110,
    "assign": "system",
-   "entries": 19
+   "entries": 21
+  },
+  "chat": {
+   "about": "Notes the chat log adds when someone joins, leaves, takes another name or crosses to another place",
+   "voice": "label",
+   "limit": 60,
+   "assign": "system",
+   "entries": 4
   },
   "site.sight": {
    "about": "One line the first time the crew comes on a kind of site",
@@ -591,6 +598,27 @@
    "line": 277,
    "text": "'summoning item'",
    "why": "fallback when no item has use summon<n>; every altar has a bait in src/data/items.ts, so eight.line:altar_waits always names one"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 66,
+   "text": "'flag <name>'",
+   "why": "a developer command's usage line (main)",
+   "branch": "main"
+  },
+  {
+   "file": "src/sim/cheats.ts",
+   "line": 67,
+   "text": "'event raid|moon|ashen'",
+   "why": "a developer command's usage line (main)",
+   "branch": "main"
+  },
+  {
+   "file": "src/client/social.ts",
+   "line": 53,
+   "text": "?? 'Elsewhere'",
+   "why": "the fallback of realmName (main) for a place number DIMS lacks; DIMS has the three places 0 to 2 and a player is only ever in one of them, so the fallback is never reached",
+   "branch": "main"
   }
  ],
  "entries": {
@@ -4712,6 +4740,76 @@
    "limit": 120,
    "assign": "items-b"
   },
+  "chat:joined": {
+   "surface": "chat",
+   "key": "joined",
+   "needs": [],
+   "file": "src/client/social.ts",
+   "line": 111,
+   "now": "{name} joined",
+   "voice": "label",
+   "limit": 60,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ],
+   "note": "another player has come onto the server",
+   "branch": "main"
+  },
+  "chat:left": {
+   "surface": "chat",
+   "key": "left",
+   "needs": [],
+   "file": "src/client/social.ts",
+   "line": 128,
+   "now": "{name} left",
+   "voice": "label",
+   "limit": 60,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ],
+   "note": "another player has left the server",
+   "branch": "main"
+  },
+  "chat:renamed": {
+   "surface": "chat",
+   "key": "renamed",
+   "needs": [],
+   "file": "src/client/social.ts",
+   "line": 112,
+   "now": "{old} is now {name}",
+   "voice": "label",
+   "limit": 60,
+   "assign": "system",
+   "slots": [
+    "{old}",
+    "{name}"
+   ],
+   "note": "another player has joined again, or is shown, under another name",
+   "at": [
+    "src/client/social.ts:112",
+    "src/client/social.ts:118"
+   ],
+   "branch": "main"
+  },
+  "chat:went": {
+   "surface": "chat",
+   "key": "went",
+   "needs": [],
+   "file": "src/client/social.ts",
+   "line": 117,
+   "now": "{name} went to {place}",
+   "voice": "label",
+   "limit": 60,
+   "assign": "system",
+   "slots": [
+    "{name}",
+    "{place}"
+   ],
+   "note": "{place} is filled from realm:place.<n> by the number of the place, as in realm:compass.in",
+   "branch": "main"
+  },
   "cmd:caps": {
    "surface": "cmd",
    "key": "caps",
@@ -4812,6 +4910,21 @@
     "{key}"
    ]
   },
+  "cmd:gear": {
+   "surface": "cmd",
+   "key": "gear",
+   "needs": [],
+   "file": "src/sim/cheats.ts",
+   "line": 68,
+   "now": "{name} kit",
+   "voice": "label",
+   "limit": 110,
+   "assign": "system",
+   "slots": [
+    "{name}"
+   ],
+   "note": "the answer of gear; {name} is the name of the hardness from names.json"
+  },
   "cmd:healed": {
    "surface": "cmd",
    "key": "healed",
@@ -4844,6 +4957,24 @@
    "voice": "label",
    "limit": 110,
    "assign": "system"
+  },
+  "cmd:located": {
+   "surface": "cmd",
+   "key": "located",
+   "needs": [],
+   "file": "src/sim/cheats.ts",
+   "line": 72,
+   "now": "{key} at {x} {y} {z}",
+   "voice": "label",
+   "limit": 110,
+   "assign": "system",
+   "slots": [
+    "{key}",
+    "{x}",
+    "{y}",
+    "{z}"
+   ],
+   "note": "the answer of locate; {key} is the word typed after locate, and {x} {y} {z} where the nearest one is"
   },
   "cmd:none_found": {
    "surface": "cmd",
@@ -15193,7 +15324,11 @@
    "slots": [
     "{n}"
    ],
-   "note": "the distance under the compass marker, below 1000; {n} is a whole number"
+   "note": "the distance under the compass marker, below 1000, and the distance to another player in the list held open by Tab (src/ui/roster.ts, main); {n} is a whole number",
+   "at": [
+    "src/ui/hud.ts:230",
+    "src/ui/roster.ts:45 (main)"
+   ]
   },
   "hud:dodged": {
    "surface": "hud",
@@ -15278,6 +15413,11 @@
    "assign": "system",
    "slots": [
     "{n}"
+   ],
+   "note": "the level on the HUD, and the level of each player in the list held open by Tab (src/ui/roster.ts, main)",
+   "at": [
+    "src/ui/hud.ts:286",
+    "src/ui/roster.ts:46 (main)"
    ]
   },
   "hud:no_arrows": {
@@ -15290,6 +15430,100 @@
    "voice": "label",
    "limit": 40,
    "assign": "system"
+  },
+  "hud:roster.alone": {
+   "surface": "hud",
+   "key": "roster.alone",
+   "needs": [],
+   "file": "src/ui/roster.ts",
+   "line": 38,
+   "now": "Only you are here",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "note": "the head of the list of players when no one else is on the server",
+   "branch": "main"
+  },
+  "hud:roster.count": {
+   "surface": "hud",
+   "key": "roster.count",
+   "needs": [],
+   "file": "src/ui/roster.ts",
+   "line": 38,
+   "now": "{n} here",
+   "voice": "label",
+   "limit": 40,
+   "assign": "system",
+   "slots": [
+    "{n}"
+   ],
+   "note": "the head of the list of players; {n} is how many are on the server, the player included, and is 2 or more",
+   "branch": "main"
+  },
+  "hud:roster.state.asleep": {
+   "surface": "hud",
+   "key": "roster.state.asleep",
+   "needs": [],
+   "file": "src/ui/roster.ts",
+   "line": 5,
+   "now": "asleep",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "note": "after the place of a player in a bed, in the list of players; the loader joins the place and this word with a comma and a space",
+   "branch": "main"
+  },
+  "hud:roster.state.away": {
+   "surface": "hud",
+   "key": "roster.state.away",
+   "needs": [],
+   "file": "src/ui/roster.ts",
+   "line": 5,
+   "now": "away",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "note": "after the place of a player whose connection is gone and not yet given up, in the list of players; the loader joins the place and this word with a comma and a space",
+   "branch": "main"
+  },
+  "hud:roster.state.fallen": {
+   "surface": "hud",
+   "key": "roster.state.fallen",
+   "needs": [],
+   "file": "src/ui/roster.ts",
+   "line": 5,
+   "now": "fallen",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "note": "after the place of a player who has fallen and not yet risen, in the list of players; the loader joins the place and this word with a comma and a space",
+   "branch": "main"
+  },
+  "hud:roster.state.loading": {
+   "surface": "hud",
+   "key": "roster.state.loading",
+   "needs": [],
+   "file": "src/ui/roster.ts",
+   "line": 5,
+   "now": "arriving",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "note": "after the place of a player whose ground is still loading, in the list of players; the loader joins the place and this word with a comma and a space",
+   "branch": "main"
+  },
+  "hud:roster.you": {
+   "surface": "hud",
+   "key": "roster.you",
+   "needs": [],
+   "file": "src/ui/roster.ts",
+   "line": 45,
+   "now": "you",
+   "voice": "label",
+   "limit": 16,
+   "assign": "system",
+   "note": "stands in the distance column of the list, on the player's own row",
+   "branch": "main"
   },
   "hud:saved": {
    "surface": "hud",
@@ -17389,7 +17623,11 @@
    "voice": "label",
    "limit": 48,
    "assign": "system",
-   "note": "shown while a join is under way",
+   "note": "shown while a join is under way, on the join screen and on the reconnect path of src/main.ts",
+   "at": [
+    "src/ui/menus.ts:249",
+    "src/main.ts:156"
+   ],
    "branch": "main"
   },
   "menu:join.go": {
@@ -22313,6 +22551,51 @@
    "voice": "label",
    "limit": 90,
    "assign": "system"
+  },
+  "toast:resting.many": {
+   "surface": "toast",
+   "key": "resting.many",
+   "needs": [],
+   "file": "src/sim/player.ts",
+   "line": 248,
+   "now": "{names} and {name} are resting ({n}/{m})",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "slots": [
+    "{names}",
+    "{name}",
+    "{n}",
+    "{m}"
+   ],
+   "note": "the same toast when two or more are in a bed; {names} is every name but the last, joined with a comma and a space, and {name} the last",
+   "at": [
+    "src/sim/player.ts:247",
+    "src/sim/player.ts:248"
+   ],
+   "branch": "main"
+  },
+  "toast:resting.one": {
+   "surface": "toast",
+   "key": "resting.one",
+   "needs": [],
+   "file": "src/sim/player.ts",
+   "line": 248,
+   "now": "{name} is resting ({n}/{m})",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "slots": [
+    "{name}",
+    "{n}",
+    "{m}"
+   ],
+   "note": "tickSleep, to everyone on the living ground, when one player is in a bed and not all are; {n} is how many are in a bed and {m} how many the night waits for. The loader writes the whole line through this entry or toast:resting.many",
+   "at": [
+    "src/sim/player.ts:247",
+    "src/sim/player.ts:248"
+   ],
+   "branch": "main"
   },
   "toast:salve_wait": {
    "surface": "toast",

@@ -42,6 +42,8 @@ function src(rel) {
   }
   return cache.get(rel);
 }
+/** The text of a file of this tree, or '' when this tree lacks it: for a file the multiplayer job has put on main, which is then read from main. */
+const here = (rel) => (fs.existsSync(path.join(ROOT, rel)) ? src(rel) : '');
 const lineAt = (text, index) => { let n = 1; for (let i = 0; i < index; i++) if (text.charCodeAt(i) === 10) n++; return n; };
 
 /** Decode one JS string literal ('..', "..", `..`), or return null when the text is not exactly one. */
@@ -295,6 +297,7 @@ const SURFACES = {
   'key':          { about: 'What a control does, in the list of controls', voice: 'label', limit: 28, assign: 'system' },
   'error':        { about: 'What a player is told when a connection, a save or a world fails', voice: 'label', limit: 100, assign: 'system' },
   'cmd':          { about: 'Answers of the command line', voice: 'label', limit: 110, assign: 'system' },
+  'chat':         { about: 'Notes the chat log adds when someone joins, leaves, takes another name or crosses to another place', voice: 'label', limit: 60, assign: 'system' },
   // ---- sites ----
   'site.sight':   { about: 'One line the first time the crew comes on a kind of site', voice: 'sight', limit: 90, assign: 'sites' },
   'codex.seen':   { about: 'Codex: what the crew saw there, or what the thing is in the hand', voice: 'note', limit: 220, assign: 'sites' },
@@ -507,16 +510,18 @@ function find(file, needle, now, alsoIn = [], alsoAt = []) {
   const at = allAt(t, form).map((i) => `${file}:${lineAt(t, i)}`);
   for (const f of alsoIn) {
     // a copy the multiplayer job has put on main and this tree lacks is listed with "(main)" after it
-    let u = src(f), g = formIn(u, needle), tag = '';
+    let u = here(f), g = formIn(u, needle), tag = '';
     if (!g) { const m = mainSrc(f); g = m === null ? null : formIn(m, needle); if (g) { u = m; tag = ' (main)'; } }
     if (!g) { fail(`${f}: the text "${needle}" is no longer there`); continue; }
     for (const i of allAt(u, g)) at.push(`${f}:${lineAt(u, i)}${tag}`);
   }
   // the same words written by other code, in another form (a concatenation where the first place has a template, or the like)
   for (const [f, n] of alsoAt) {
-    const u = src(f), g = formIn(u, n);
+    // as above, a place the multiplayer job has put on main and this tree lacks is listed with "(main)" after it
+    let u = here(f), g = formIn(u, n), tag = '';
+    if (!g) { const m = mainSrc(f); g = m === null ? null : formIn(m, n); if (g) { u = m; tag = ' (main)'; } }
     if (!g) { fail(`${f}: the text "${n}" is no longer there`); continue; }
-    for (const i of allAt(u, g)) at.push(`${f}:${lineAt(u, i)}`);
+    for (const i of allAt(u, g)) at.push(`${f}:${lineAt(u, i)}${tag}`);
   }
   return { line: lineAt(t, t.indexOf(form)), now: now ?? needle, ...(at.length > 1 ? { at } : {}) };
 }
@@ -540,19 +545,28 @@ function mainSrc(file) {
   return mainGit.get(file);
 }
 function LM(surface, key, file, needle, o = {}) {
-  if (formIn(src(file), needle)) { L(surface, key, file, needle, o); return; }
+  if (formIn(here(file), needle)) { L(surface, key, file, needle, o); return; }
   const t = mainSrc(file);
   if (t === null) { fail(`${file}: the text "${needle}" is not in this tree, and main could not be read with git`); return; }
   const form = formIn(t, needle);
   if (!form) { fail(`${file}: the text "${needle}" is in neither this tree nor main`); return; }
   const at = allAt(t, form).map((i) => `${file}:${lineAt(t, i)}`);
+  // `alsoAt` on main: [file, needle] pairs of the same words written in another form, each place of which is added to `at`
+  for (const [f, n] of o.alsoAt ?? []) {
+    const u = mainSrc(f), g = u === null ? null : formIn(u, n);
+    if (!g) { fail(`${f}: the text "${n}" is in neither this tree nor main`); continue; }
+    for (const i of allAt(u, g)) at.push(`${f}:${lineAt(u, i)}`);
+  }
+  // in order of file, as first listed, and of line within a file
+  const files = [...new Set(at.map((a) => a.replace(/:\d+$/, '')))];
+  at.sort((a, b) => files.indexOf(a.replace(/:\d+$/, '')) - files.indexOf(b.replace(/:\d+$/, '')) || +a.split(':').pop() - +b.split(':').pop());
   add(surface, key, { file, line: lineAt(t, t.indexOf(form)), ...(at.length > 1 ? { at } : {}), now: o.now ?? needle, needs: o.needs, voice: o.voice, limit: o.limit, slots: o.slots,
     branch: 'main', note: o.note });
 }
 const G = 'src/game.ts', ACT = 'src/sim/actions.ts', EV = 'src/sim/events.ts', TRV = 'src/sim/travel.ts', NPC = 'src/sim/npcs.ts', PLY = 'src/sim/player.ts',
   GATE = 'src/sim/gates.ts', OPS = 'src/sim/invops.ts', CMB = 'src/client/combat.ts', WIN = 'src/ui/windows.ts', MENU = 'src/ui/menus.ts', HUD = 'src/ui/hud.ts',
   QV = 'src/ui/questView.ts', HOST = 'src/net/host.ts', MAIN = 'src/main.ts', IDB = 'src/storage/idb.ts', CH = 'src/sim/cheats.ts', INVC = 'src/client/invclient.ts',
-  SRC = 'src/data/sources.ts', RULES = 'src/sim/rules.ts', SIM = 'src/sim/sim.ts', WORKER = 'src/net/worker-client.ts';
+  SRC = 'src/data/sources.ts', RULES = 'src/sim/rules.ts', SIM = 'src/sim/sim.ts', WORKER = 'src/net/worker-client.ts', ROSTER = 'src/ui/roster.ts', SOC = 'src/client/social.ts';
 
 // ---- the three attacks ----
 L('banner', 'raid.start', EV, 'A raid gathers in the dark', { needs: ['event:raid'] });
@@ -625,6 +639,10 @@ L('toast', 'no_smelt', RULES, 'That cannot be smelted', { note: 'a refusal shown
 L('toast', 'needs_forge', RULES, "'Needs a '", { now: 'Needs a {forge}', note: '{forge} is the name of the furnace that works the ore' });
 L('toast', 'needs_hotter', RULES, 'hotter forge', { now: 'Needs a hotter forge', note: 'the same refusal when no furnace of the table works the ore' });
 add('toast', 'codex_new', { planned: true, slots: ['{subject}'], note: 'plan D: a step of the codex has opened; {subject} is the name of the subject' });
+LM('toast', 'resting.one', PLY, '${who} resting (${sleepers.length}/${all.length})', { now: '{name} is resting ({n}/{m})', slots: ['{name}', '{n}', '{m}'], alsoAt: [[PLY, "sleepers[0] + ' is'"]],
+  note: 'tickSleep, to everyone on the living ground, when one player is in a bed and not all are; {n} is how many are in a bed and {m} how many the night waits for. The loader writes the whole line through this entry or toast:resting.many' });
+LM('toast', 'resting.many', PLY, '${who} resting (${sleepers.length}/${all.length})', { now: '{names} and {name} are resting ({n}/{m})', slots: ['{names}', '{name}', '{n}', '{m}'], alsoAt: [[PLY, "' and ' + sleepers.at(-1) + ' are'"]],
+  note: 'the same toast when two or more are in a bed; {names} is every name but the last, joined with a comma and a space, and {name} the last' });
 // ---- beds and rooms ----
 L('bed', 'not_enclosed_big', NPC, 'The room is not enclosed (or is larger than 32 blocks across).');
 L('bed', 'not_enclosed', NPC, 'The room is not enclosed.');
@@ -681,11 +699,12 @@ L('hud', 'no_arrows', HUD, '  ·  no arrows', { now: '  ·  no arrows' });
 L('hud', 'hungry', HUD, 'HUNGRY ${foodI} / 20', { now: 'HUNGRY {n} / 20' });
 L('hud', 'saved', HUD, "'Saved'", { now: 'Saved' });
 L('hud', 'coins', HUD, '${inv.coins} coins', { now: '{n} coins', alsoAt: [[WIN, "inv.coins + ' coins'"]], note: 'the coins on the HUD, and the same words at the head of the inventory window' });
-L('hud', 'level', HUD, 'Lv ${st.level}', { now: 'Lv {n}' });
+L('hud', 'level', HUD, 'Lv ${st.level}', { now: 'Lv {n}', alsoAt: [[ROSTER, 'Lv ${m.level}']], note: 'the level on the HUD, and the level of each player in the list held open by Tab (src/ui/roster.ts, main)' });
 L('hud', 'dodged', PLY, "'Dodged'", { now: 'Dodged', note: 'a word that floats up over a player when a blow does no harm' });
 L('hud', 'coords', HUD, 'X ${x}  Y ${y}  Z ${z}  ·  ${Math.floor(min / 60)}', { now: 'X {x}  Y {y}  Z {z}  ·  {h}:{mm}', voice: 'label',
   note: 'the line of position and time of day under the compass; {h} is the hour and {mm} the minutes in two digits. The font has no middle dot: the code writes the line as the text gives it' });
-L('hud', 'dist.m', HUD, "' m'", { now: '{n} m', limit: 16, note: 'the distance under the compass marker, below 1000; {n} is a whole number' });
+L('hud', 'dist.m', HUD, "' m'", { now: '{n} m', limit: 16, alsoAt: [[ROSTER, 'me.z))} m`']],
+  note: 'the distance under the compass marker, below 1000, and the distance to another player in the list held open by Tab (src/ui/roster.ts, main); {n} is a whole number' });
 L('hud', 'dist.km', HUD, "' km'", { now: '{n} km', limit: 24, note: 'the distance under the compass marker from 1000 on; {n} is the distance in thousands, with one decimal' });
 // the eight points of the compass strip, in the order of COMPASS_NAMES (every other one is drawn small)
 for (const [k, now] of [['n', 'N'], ['ne', 'NE'], ['e', 'E'], ['se', 'SE'], ['s', 'S'], ['sw', 'SW'], ['w', 'W'], ['nw', 'NW']])
@@ -698,6 +717,13 @@ for (const [k, now] of [['n', 'N'], ['ne', 'NE'], ['e', 'E'], ['se', 'SE'], ['s'
     note: 'the word after a number in the line under an active state on the HUD, as "+6 defense"; the same thing as the bonus of the same key in a tooltip (stat:*), in as few words' });
   if (![...entries.keys()].some((k) => k.startsWith('hud:buff.'))) fail(`${HUD}: no words were read from STAT_WORDS`);
 }
+// the list of players, shown while Tab is held: put on main by the multiplayer job
+LM('hud', 'roster.alone', ROSTER, 'Only you are here', { note: 'the head of the list of players when no one else is on the server' });
+LM('hud', 'roster.count', ROSTER, '${list.length} here', { now: '{n} here', note: 'the head of the list of players; {n} is how many are on the server, the player included, and is 2 or more' });
+LM('hud', 'roster.you', ROSTER, "m.self ? 'you'", { now: 'you', limit: 16, note: 'stands in the distance column of the list, on the player\'s own row' });
+for (const [k, now] of [['away', 'away'], ['asleep', 'asleep'], ['fallen', 'fallen'], ['loading', 'arriving']])
+  LM('hud', 'roster.state.' + k, ROSTER, "away: 'away', asleep: 'asleep', fallen: 'fallen', loading: 'arriving'", { now, limit: 16,
+    note: { away: 'after the place of a player whose connection is gone and not yet given up', asleep: 'after the place of a player in a bed', fallen: 'after the place of a player who has fallen and not yet risen', loading: 'after the place of a player whose ground is still loading' }[k] + ', in the list of players; the loader joins the place and this word with a comma and a space' });
 // ---- windows ----
 for (const [k, text] of [['equipment', 'Equipment'], ['book', 'Recipe book'], ['guide', 'Guide'], ['can_make', 'Can make'], ['none_match', 'Nothing here matches'], ['chest', 'Chest'], ['smelting', 'Smelting'],
   ['inventory', 'Inventory'], ['buy_back', 'Buy back'], ['for_sale', 'For sale'], ['buy', 'Buy'], ['take_all', 'Take all'], ['back_crafting', 'Back to crafting']]) L('win', k, WIN, `'${text}'`, { now: text, limit: 24 });
@@ -833,7 +859,7 @@ for (const [k, needle, now, note] of [
   ['join.password_maybe', 'Password (if the server has one)', null, 'the empty password field when the server is not known yet'],
   ['join.go', "col, 'Join')", 'Join', 'the button that joins'], ['join.connecting', 'Connecting...', null, 'shown while a join is under way'],
   ['join.cancel', 'Cancel', null, 'gives up a join under way'], ['server_keeps', 'The server keeps this world', null, 'the pause screen on a server, in place of the saving line'],
-]) LM('menu', k, MENU, needle, { now: now ?? needle, limit: 48, note });
+]) LM('menu', k, MENU, needle, { now: now ?? needle, limit: 48, note: k === 'join.connecting' ? note + ', on the join screen and on the reconnect path of src/main.ts' : note, alsoAt: k === 'join.connecting' ? [[MAIN, 'Connecting...']] : undefined });
 LM('menu', 'back_title', MAIN, 'Back to the title', { limit: 28, note: 'the button over the game when a server has closed the connection for good' });
 {
   // the list of controls: the second word of each pair in KEYS
@@ -870,12 +896,18 @@ for (const [k, file, text, note] of [
   ['load_timeout', HOST, 'The world did not finish loading in 2 minutes.', 'the host closes the connection with it; the page shows it on the join screen'],
 ]) LM('error', k, file, text, { note });
 L('error', 'format_newer', IDB, 'is newer than this build', { now: 'world format {n} is newer than this build', note: 'shown after error:world_open' });
+// ---- notes in the chat log: put on main by the multiplayer job (src/client/social.ts adds them; src/ui/chat.ts draws them in italic) ----
+LM('chat', 'joined', SOC, '${q.name} joined', { now: '{name} joined', note: 'another player has come onto the server' });
+LM('chat', 'renamed', SOC, '${was} is now ${q.name}', { now: '{old} is now {name}', alsoAt: [[SOC, '${old.name} is now ${q.name}']], note: 'another player has joined again, or is shown, under another name' });
+LM('chat', 'went', SOC, '${q.name} went to ${realmName(q.dim)}', { now: '{name} went to {place}', note: '{place} is filled from realm:place.<n> by the number of the place, as in realm:compass.in' });
+LM('chat', 'left', SOC, '${old.name} left', { now: '{name} left', note: 'another player has left the server' });
 // ---- the command line ----
 for (const [k, needle, now] of [['help', 'commands: give time tp fly creative god heal level kill spawn boss flag event dim gear locate', null], ['unknown_item', "'unknown item '", 'unknown item {key}'],
   ['unknown_creature', "'unknown creature '", 'unknown creature {key}'], ['full', "'inventory full'", 'inventory full'], ['gave', 'gave ${n} ${a[1]}', 'gave {n} {key}'], ['none_found', "'none found'", 'none found'],
   ['time', "'time set'", 'time set'], ['teleported', "'teleported'", 'teleported'], ['healed', "'healed'", 'healed'], ['level', "'level set'", 'level set'], ['cleared', "'cleared'", 'cleared'],
   ['spawned', "'spawned'", 'spawned'], ['failed', "'failed'", 'failed'], ['flag', "'flag set'", 'flag set'], ['event', "'event started'", 'event started'], ['travelling', "'travelling'", 'travelling'],
-  ['caps', "'caps set'", 'caps set'], ['filled', "'filled'", 'filled']]) L('cmd', k, CH, needle, { now: now ?? needle });
+  ['caps', "'caps set'", 'caps set'], ['filled', "'filled'", 'filled'], ['gear', "' kit'", '{name} kit'], ['located', '${a[1]} at ${o[0]} ${o[1]} ${o[2]}', '{key} at {x} {y} {z}']]) L('cmd', k, CH, needle, { now: now ?? needle,
+  note: k === 'gear' ? 'the answer of gear; {name} is the name of the hardness from names.json' : k === 'located' ? 'the answer of locate; {key} is the word typed after locate, and {x} {y} {z} where the nearest one is' : undefined });
 L('cmd', 'off', SIM, 'Commands are off on this server.', { note: 'the answer to the command line on a server that allows no commands' });
 
 // ---- literals that are never shown to a player in play ----
@@ -898,11 +930,16 @@ const NEVER_SHOWN_TEXT = [
   [CH, "'god ' + p.modes.god", 'a developer toggle answering with its own name and true or false'],
   [CH, "'freeze ' + on", 'a developer toggle answering with its own name and true or false'],
   [ACT, "'summoning item'", 'fallback when no item has use summon<n>; every altar has a bait in src/data/items.ts, so eight.line:altar_waits always names one'],
+  // on main, put there by the multiplayer job: looked for in main when this tree lacks it, and marked branch main
+  [CH, "'flag <name>'", 'a developer command\'s usage line (main)'],
+  [CH, "'event raid|moon|ashen'", 'a developer command\'s usage line (main)'],
+  [SOC, "?? 'Elsewhere'", 'the fallback of realmName (main) for a place number DIMS lacks; DIMS has the three places 0 to 2 and a player is only ever in one of them, so the fallback is never reached'],
 ];
 const neverShown = NEVER_SHOWN_TEXT.map(([file, needle, why]) => {
-  const t = src(file), i = t.indexOf(needle);
+  let t = here(file), i = t.indexOf(needle), branch = null;
+  if (i < 0) { const m = mainSrc(file); const j = m === null ? -1 : m.indexOf(needle); if (j >= 0) { t = m; i = j; branch = 'main'; } }
   if (i < 0) fail(`${file}: the text "${needle}", listed as never shown, is no longer there`);
-  return { file, line: i < 0 ? null : lineAt(t, i), text: needle, why };
+  return { file, line: i < 0 ? null : lineAt(t, i), text: needle, why, ...(branch ? { branch } : {}) };
 });
 
 // ====================================================================================================
