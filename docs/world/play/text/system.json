@@ -144,6 +144,8 @@
  "banner.sub:level": "+2 attribute points. Press E to spend them.",
  "banner.sub:morning": "You wake rested",
  "toast:bed_gone": "Your bedroll is gone. You are back where you first came up.",
+ "toast:bed_lost": "Your bedroll is gone.",
+ "toast:bait_returned": "Your bait is given back.",
  "toast:bed_place": "A bedroll works only on the living ground.",
  "toast:bed_set": "After a fall you will rise at this bedroll.",
  "toast:codex_new": "New in Known: {subject}",

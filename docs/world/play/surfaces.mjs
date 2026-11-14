@@ -603,6 +603,8 @@ L('toast', 'no_rest', ACT, 'You cannot rest with enemies near.');
 L('toast', 'bed_set', ACT, 'Spawn point set.');
 L('toast', 'folk_ground', ACT, 'Townsfolk settle only on the living ground.', { alsoIn: [NPC] });
 L('toast', 'bed_gone', TRV, 'Your bedroll is gone. Returned to the world spawn.');
+LM('toast', 'bed_lost', PLY, 'Your bedroll is gone.', { note: 'tickSleep, once a second: the block of a bed the player has set is no longer a bed. The player stays where they are; toast:bed_gone is the line when they are sent to the spawn' });
+LM('toast', 'bait_returned', 'src/sim/boss.ts', 'The offering is returned to you.', { note: 'refund(): a fight ended unfinished and the bait goes back to the player who laid it, into the pack, or into the mail when the pack is full' });
 L('toast', 'no_land', TRV, 'No land within reach. Build outward from the gate.');
 L('toast', 'restarted', G, 'Server restarted');
 L('toast', 'use_at_altar', CMB, 'Use this at its altar. The guide points the way.');

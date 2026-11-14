@@ -339,7 +339,7 @@
    "voice": "label",
    "limit": 90,
    "assign": "system",
-   "entries": 36
+   "entries": 38
   },
   "bed": {
    "about": "Answer of a bed or a room when it is checked",
@@ -9043,7 +9043,7 @@
    "key": "load_timeout",
    "needs": [],
    "file": "src/net/host.ts",
-   "line": 385,
+   "line": 389,
    "now": "The world did not finish loading in 2 minutes.",
    "voice": "label",
    "limit": 100,
@@ -21928,6 +21928,19 @@
    "limit": 70,
    "assign": "system"
   },
+  "toast:bait_returned": {
+   "surface": "toast",
+   "key": "bait_returned",
+   "needs": [],
+   "file": "src/sim/boss.ts",
+   "line": 93,
+   "now": "The offering is returned to you.",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "note": "refund(): a fight ended unfinished and the bait goes back to the player who laid it, into the pack, or into the mail when the pack is full",
+   "branch": "main"
+  },
   "toast:bed_gone": {
    "surface": "toast",
    "key": "bed_gone",
@@ -21942,6 +21955,19 @@
     "src/sim/travel.ts:30",
     "src/sim/travel.ts:97"
    ]
+  },
+  "toast:bed_lost": {
+   "surface": "toast",
+   "key": "bed_lost",
+   "needs": [],
+   "file": "src/sim/player.ts",
+   "line": 265,
+   "now": "Your bedroll is gone.",
+   "voice": "label",
+   "limit": 90,
+   "assign": "system",
+   "note": "tickSleep, once a second: the block of a bed the player has set is no longer a bed. The player stays where they are; toast:bed_gone is the line when they are sent to the spawn",
+   "branch": "main"
   },
   "toast:bed_place": {
    "surface": "toast",
