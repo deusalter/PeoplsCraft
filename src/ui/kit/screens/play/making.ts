@@ -22,7 +22,7 @@ export const STATION_NAME: Record<Station, string> = {
   hand: 'By hand', workbench: 'Workbench', anvil: 'Anvil', runeloom: 'Line Frame', tinker: 'Joining Bench',
 };
 export const STATION_ICON: Record<Station, string> = {
-  hand: 'patterns', workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker_bench',
+  hand: 'hand', workbench: 'workbench', anvil: 'anvil', runeloom: 'runeloom', tinker: 'tinker_bench',
 };
 /** The one order of the tabs on every making screen, so that each station's tab keeps its place from screen to screen. */
 const ORDER: Station[] = ['hand', 'workbench', 'anvil', 'runeloom', 'tinker'];

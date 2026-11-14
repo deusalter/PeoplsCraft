@@ -161,6 +161,28 @@ export const TAB_MARKS: Record<string, PixelMap> = {
     '................',
   ]),
   /**
+   * A fist closed on a stick, for what is made in the pack's own 2 by 2. The pattern board on that tab said a second list
+   * of patterns, and an open hand is Play's mark in the settings.
+   */
+  hand: mark('hand', [
+    '................',
+    '.............KK.',
+    '............KftK',
+    '...........KftK.',
+    '..........KftK..',
+    '...KKKKKKKKKKK..',
+    '..KLFSLFSLFSLFK.',
+    '..KLFSLFSLFSLFK.',
+    '..KFFSFFSFFSFSK.',
+    '..KLKKKKKKKKFSK.',
+    '..KLLLLLLLLKFSK.',
+    '..KFFFFFFFSKSSK.',
+    '..KSKKKKKKKSSDK.',
+    '.KftKKKKKKKKKK..',
+    'KftK............',
+    'KKK.............',
+  ]),
+  /**
    * A pattern board: a timber plank lit from the top left with nine cells cut into it, a stick laid in two of them.
    * A dark grid in a frame with green dots read as a calculator's screen.
    */
