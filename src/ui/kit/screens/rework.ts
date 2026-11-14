@@ -1,11 +1,13 @@
 // The reworking bench (section 6, to come): the Sealed Bench found in a dungeon, built round the remains of the
 // hollow's strongest. A made piece is put at hazard for a better setting: with the piece, a bar of its metal and fuel
 // in, "Work it" draws its modifier again; the metal stays. A named old thing answers with the refusal frame.
+import { measure } from '../font/measure';
 import type { Node, Ui } from '../node';
+import type { Surface } from '../surface';
 import { button } from '../parts/button';
 import { burnGauge, progressArrow } from '../parts/gauges';
 import { slab } from '../parts/slab';
-import { MODS, type Stack, stackTip, thing } from '../sample/play-items';
+import { MODS, type Stack, stackGrade, stackName, stackTip, thing, gradeColour } from '../sample/play-items';
 import { Bench, STILL, cutLine, overWorld, packBlock, place, stackSlot } from './play/common';
 import { Hand, type Place, store } from './play/hand';
 import type { NamedScreen } from './index';
@@ -74,6 +76,13 @@ function work(st: State, ui: Ui): void {
   ui.invalidate();
 }
 
+/** "Costs 1 Iron Bar, 1 Coal": the bar the piece's metal asks for, or the one laid in, and the fuel laid in. */
+function cost(h: Hand): string {
+  const p = h.stores.piece[0], m = h.stores.metal[0], f = h.stores.fuel[0];
+  const bar = p && metalOf(p.key) ? thing(metalOf(p.key)!).name : m ? thing(m.key).name : 'bar';
+  return `Costs 1 ${bar}, 1 ${f ? thing(f.key).name : 'fuel'}`;
+}
+
 function build(ui: Ui): Node {
   const st = open();
   if (!st.bench || st.bench.ui !== ui) st.bench = new Bench(st.hand, ui);
@@ -83,14 +92,15 @@ function build(ui: Ui): Node {
   const out = h.stores.out[0];
   const main: Node[] = [
     // One row read left to right: the piece, the remains built into the bench, the bar, joined by cut lines, then the
-    // arrow and what comes out. The fire that works it stands under the remains, as under a furnace's ore.
+    // arrow and what comes out. The fire that works it stands under the piece, as under a furnace's ore, which leaves
+    // the width under the remains for what a working costs.
     stackSlot(b, { store: 'piece', i: 0 }, { x: 21, y: 17, ramp: 'stone', silhouette: 'rework', showAccepts: true }),
     cutLine(39, 25, 8, 'stone'),
     stackSlot(b, { store: 'remains', i: 0 }, { x: 47, y: 17, ramp: 'stone', locked: { key: 'queen_spore', n: 1 }, hint: 'Built into the bench' }),
     cutLine(65, 25, 8, 'stone'),
     stackSlot(b, { store: 'metal', i: 0 }, { x: 73, y: 17, ramp: 'stone', silhouette: 'bar', showAccepts: true }),
-    burnGauge({ x: 50, y: 36, f: h.stores.fuel[0] ? 0.8 : 0, ramp: 'stone' }),
-    stackSlot(b, { store: 'fuel', i: 0 }, { x: 47, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
+    burnGauge({ x: 24, y: 36, f: h.stores.fuel[0] ? 0.8 : 0, ramp: 'stone' }),
+    stackSlot(b, { store: 'fuel', i: 0 }, { x: 21, y: 53, ramp: 'stone', silhouette: 'fuel', showAccepts: true }),
     {
       x: 97, y: 19, w: 22, h: 15, anim: st.working >= 0 && !STILL,
       paint: (s, live) => progressArrow({ x: 0, y: 0, f: st.working >= 0 ? (live.t - st.working) / WORK_S : out ? 1 : 0, ramp: 'stone' }).paint!(s, live),
@@ -103,15 +113,19 @@ function build(ui: Ui): Node {
         if (!can || !piece) return null;
         return {
           lines: [
-            { text: thing(piece.key).name, c: 'salt' },
-            { text: piece.mod ? `${MODS[piece.mod].name} is drawn again` : 'A modifier is drawn', c: 'salt' },
-            { text: `The ${thing(METAL[piece.key.split('_')[0]]).name.replace(' Bar', '').toLowerCase()} stays`, c: 'root.4' },
+            { text: stackName(piece), c: gradeColour(stackGrade(piece)) },
+            { text: piece.mod ? `Now ${MODS[piece.mod].name}: a new modifier is drawn` : 'A modifier is drawn', c: 'salt' },
             { text: 'It may come out worse', c: 'blood.lt' },
           ],
         };
       },
     }),
     button({ id: 'rework.work', x: 94, y: 43, w: 60, h: 14, ramp: 'stone', label: 'Work it', disabled: !can || st.working >= 0, onPress: () => work(st, ui) }),
+    // What a working takes and what it gives, written under the button so that it is weighed before it is pressed.
+    ...[
+      { text: cost(h), c: 'ink' as const, y: 59 },
+      { text: 'Rolls a new modifier', c: 'ink.faded' as const, y: 69 },
+    ].map((l) => ({ x: 47, y: l.y, w: measure(l.text), h: 10, paint: (s: Surface) => { s.text(l.text, 0, 0, l.c); } })),
     ...packBlock(b, 'stone', 73, 84, { sort: false }),
   ];
   const win = place(ui, 176, 166);

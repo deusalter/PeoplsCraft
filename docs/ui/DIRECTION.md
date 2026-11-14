@@ -2690,7 +2690,7 @@ Size 176 by 166. Material: clay. Anchor: centre of the screen.
 | P3 | slots | 70 | 17 | 18 | 18 | salt |
 | P4 | flame | 38 | 36 | 13 | 15 | burn gauge |
 | P5 | slots | 35 | 53 | 18 | 18 | fuel |
-| P6 | gauge | 75 | 37 | 7 | 34 | the water in the pot, under the salt: a drop 7 by 7 in arm blue over an upright channel 6 by 26 filled in `arm`, which boils down through the night |
+| P6 | gauge | 74 | 36 | 9 | 42 | the water in the pot, under the salt: an upright channel 6 by 31 at 76, 36 (a 1-unit sunken frame round a fill 4 wide) filled in `arm`, which boils down through the night, and 2 under it a drop 9 by 9 in arm blue at 74, 69, so that the gauge is never read as heat. Its tooltip, on the channel and the drop, is "Water" then "It boils down through the night" in grey |
 | P11 | arrow | 97 | 36 | 22 | 15 | the progress arrow (5.13): the night gone, filling from the left; nothing comes out before first light |
 | P7 | bigslot | 128 | 31 | 26 | 26 | lees, as coin |
 | P13 | text | 154 | 61 | | 10 | while nothing boils, why, right-aligned to the slot's right edge in ink.faded: "No remains" or "No fire". The water channel and the salt slot say what they are in their tooltips |
@@ -3060,16 +3060,17 @@ Size 176 by 166. Material: stone. Anchor: centre of the screen.
 | Q2 | slots | 47 | 17 | 18 | 18 | the remains built in, locked |
 | Q14 | rule | 65 | 25 | 8 | 2 | cut line |
 | Q5 | slots | 73 | 17 | 18 | 18 | a bar of the same metal, bar silhouette |
-| Q6 | flame | 50 | 36 | 13 | 15 | burn gauge, under the remains |
-| Q7 | slots | 47 | 53 | 18 | 18 | fuel |
+| Q6 | flame | 24 | 36 | 13 | 15 | burn gauge, under the piece |
+| Q7 | slots | 21 | 53 | 18 | 18 | fuel |
 | Q8 | arrow | 97 | 19 | 22 | 15 | progress arrow, on the row it reads from |
 | Q9 | bigslot | 128 | 13 | 26 | 26 | the piece as it comes out |
 | Q10 | button | 94 | 43 | 60 | 14 | "Work it", right-aligned with the result; disabled until piece, bar and fuel are in |
+| Q15 | text | 47 | 59 | | 20 | what a working takes and gives, under the remains, so that it is weighed before "Work it" is pressed: "Costs 1 Iron Bar, 1 Coal" (the bar the piece's metal asks for, the fuel laid in) in ink, and 10 under it "Rolls a new modifier" in ink.faded |
 | Q11 | text | 8 | 73 | 40 | 10 | "Pack" |
 | Q12 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
 | Q13 | slots | 8 | 142 | 162 | 18 | the hotbar row, four units below the pack |
 
-- **Shows.** A made piece put at hazard for a better setting. While all three are in, the result slot shows the piece as a silhouette and its tooltip says what may change: the modifier is drawn again, the metal stays. Named old things answer with the refusal frame.
+- **Shows.** A made piece put at hazard for a better setting. While all three are in, the result slot shows the piece as a silhouette and its tooltip names the piece with its present modifier in its grade's colour ("Dull Iron Sword"), then "Now Dull: a new modifier is drawn", then that it may come out worse. Named old things answer with the refusal frame.
 - **Clickable.** Slots and "Work it".
 - **Keys.** As the pack; Enter on "Work it".
 - **First.** Focus on the piece slot.
