@@ -31,7 +31,8 @@ export class Realm implements VoxelWrite, BlockEnts {
   readonly light: LightSource;
   /** What the realm reads and writes its blocks through: its sim chunks, unless the caller of the Sim brought a store of its own. */
   readonly store: RealmStore;
-  blockT = 0;
+  /** Seconds to the next block tick, and block ticks so far. */
+  blockT = 0; blockN = 0;
   /** Players with a station, chest or forge window open, by cell key `x,y,z`. Not saved. */
   readonly viewers = new Map<string, Set<SimPlayer>>();
   private live: SimPlayer[] = [];
@@ -58,7 +59,7 @@ export class Realm implements VoxelWrite, BlockEnts {
   /** Creatures, shots, drops and block ticks. Fluids run after the portal timers of the step (see Sim.step). */
   tick(dt: number): void {
     this.mobs.tick(dt); this.proj.tick(dt); this.drops.tick(dt);
-    this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; tickBlocks(this, 0.25); }
+    this.blockT -= dt; if (this.blockT <= 0) { this.blockT = 0.25; this.blockN++; tickBlocks(this, 0.25); }
   }
   /** Nobody is left here: what lived in this realm is gone. */
   suspend(): void { this.mobs.clear(); this.proj.clear(); this.drops.clear(); this.fluids.clear(); this.viewers.clear(); this.chunks.clear(); }

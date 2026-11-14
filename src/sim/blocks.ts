@@ -85,5 +85,6 @@ function tickForge(realm: Realm, e: BlockEnt, dt: number, quiet = false): void {
   } else { d.prog = 0; d.need = 0; }
   const now = d.burn > 0, id = w.getBlock(e.x, e.y, e.z);
   if (was !== now && (id === B.furnace || id === B.furnace_lit)) w.setBlock(e.x, e.y, e.z, now ? B.furnace_lit : B.furnace, true);
-  if (now && !quiet && sim.rnd() < 0.3) sim.sink.emit({ dim: realm.dim, x: e.x, y: e.y, z: e.z, r: SMOKE_R }, ['p', BURST.forgeSmoke, e.x, e.y, e.z, 0, 0]);
+  // a puff on every other block tick, at most 2 a second (4.6); the draw is made on every tick so the PRNG runs as before
+  if (now && !quiet && sim.rnd() < 0.6 && (realm.blockN & 1) === 0) sim.sink.emit({ dim: realm.dim, x: e.x, y: e.y, z: e.z, r: SMOKE_R }, ['p', BURST.forgeSmoke, e.x, e.y, e.z, 0, 0]);
 }

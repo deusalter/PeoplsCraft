@@ -9,7 +9,7 @@ import { DIG_R, type S2C, type S2COf } from '../../src/net/protocol';
 import {
   ACT_SURPLUS, DIG_SURPLUS, USE_COST, actCost, breakBlock, digNeed, invOp, onAtk, onDig, onEdit, onFire, onItem, onOp, onTalk, onUse, stOf, tickCredits,
 } from '../../src/sim/actions';
-import type { Fx, Scope, Sink } from '../../src/sim/fx';
+import { BURST, type Fx, type Scope, type Sink } from '../../src/sim/fx';
 import { mobDist } from '../../src/sim/mobhit';
 import type { SimPlayer } from '../../src/sim/player';
 import type { RealmStore } from '../../src/sim/realm';
@@ -518,4 +518,18 @@ test('on a manual clock the round trip a client reports reaches no step: the lea
     assert.equal(p.rtt, manual ? 0 : 0.18, manual ? 'a wall-clock round trip on a stepped clock' : 'on its own clock the host leads by it');
     assert.ok(sent.some(([, m]) => m.t === 'rtt' && m.c === 1234), 'the probe is echoed either way');
   }
+});
+
+test('a lit forge puffs smoke at most twice a second (4.6)', () => {
+  const r = rig(), realm = r.sim.realms[0], at: number[] = [];
+  r.store.setBlock(-1, GROUND, 0, B.furnace_lit);
+  const e = r.store.setEnt(-1, GROUND, 0, 'forge', { s: [null, null, null], burn: 1e6, burnMax: 1e6, prog: 0, need: 0, level: 1, rev: 0 });
+  (r.store as unknown as { chunkEnts: (cx: number, cz: number) => BlockEnt[] | null }).chunkEnts = (cx, cz) => (cx === -1 && cz === 0 ? [e] : null);
+  const n0 = r.ev.length;
+  for (let i = 0; i < 6000; i++) {
+    r.sim.tick++; realm.tick(STEP);
+    for (const [, f] of r.ev.splice(n0)) if (f[0] === 'p' && f[1] === BURST.forgeSmoke) at.push(r.sim.tick);
+  }
+  assert.ok(at.length > 0 && at.length <= 200, `${at.length} puffs in 100 s`);
+  for (let i = 1; i < at.length; i++) assert.ok(at[i] - at[i - 1] >= 30, `puffs ${at[i] - at[i - 1]} ticks apart`);
 });
