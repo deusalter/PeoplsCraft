@@ -94,6 +94,9 @@ const PATTERNS = [
 ];
 // Old names that are also ordinary English words: flagged only when written with their capital inside a sentence.
 const PLAIN_OLD = new Set(['Shore', 'Smith', 'Swift', 'Common', 'Uncommon', 'Rare', 'Relic', 'Savage', 'Scout', 'Binder', 'Tinker', 'Radiant', 'Stalwart', 'Menacing', 'Warding', 'Blessed']);
+// Old names of two or more words are refused in any case ("two frost stalkers"), except these, which are also ordinary English phrases:
+// they are flagged only as written, with their capitals.
+const PLAIN_OLD_PHRASES = new Set(['First Light', 'The Long Night', 'Open Sea', 'Guest Bed', 'Grass Block', 'Snowy Grass', 'Sunken Altar', 'Lucky Coin', 'Iron Bracer', 'Living Shard']);
 
 // ---- helpers ---------------------------------------------------------------------------------------
 const fold = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -131,6 +134,8 @@ function readNames(names) {
     if (!o || o === e.name || e.kind === 'text' || e.kind === 'find' || /^\(/.test(o) || current.has(o)) continue;
     olds.push({ old: o, name: e.name, key: e.key });
   }
+  // a current name that differs from an old one only in case stands as written: "the hollow moon" in a born mouth
+  for (const o of olds) o.keep = new Set([...current].filter((c) => c !== o.old && c.toLowerCase() === o.old.toLowerCase()));
   return { olds, born };
 }
 /** The keys at the top of a JSON object, in the order written, so that a key written twice can be found (JSON.parse keeps only the last). */
@@ -196,11 +201,12 @@ export function lint(surfaces, names, files, only = null) {
       for (const o of olds) {
         const single = !/\s/.test(o.old), plain = PLAIN_OLD.has(o.old);
         // an English plural of an old name is the old name: Gloomshades, Wardstones
-        const re = new RegExp(`(^|[^A-Za-zĀāĪīŪū])${esc(o.old)}(?:e?s)?(?![A-Za-zĀāĪīŪū])`, single && !plain ? 'gi' : 'g');
+        const re = new RegExp(`(^|[^A-Za-zĀāĪīŪū])${esc(o.old)}(?:e?s)?(?![A-Za-zĀāĪīŪū])`, (single ? !plain : !PLAIN_OLD_PHRASES.has(o.old)) ? 'gi' : 'g');
         let m;
         while ((m = re.exec(body))) {
           const at = m.index + m[1].length;
           if (plain && (at === 0 || /[.?:]\s*$/.test(body.slice(0, at)))) continue;   // an ordinary word starting a sentence
+          if (o.keep.has(body.slice(at, at + o.old.length))) continue;   // a current name in that case
           bad(file, key, 'old-name', `"${body.slice(at, m.index + m[0].length)}" is the old name of ${o.key}; the name is "${o.name}"`); break;
         }
       }
@@ -298,6 +304,7 @@ function selftest() {
     ['old-name', 'an old name with an English plural (Gloomshades)', (f) => { f['items-b.json']['item.desc:g'] = 'Gloomshades came at dusk.'; }],
     ['old-name', 'an old name with an English plural in lower case (wardstones)', (f) => { f['items-b.json']['item.desc:g'] = 'Two wardstones, set.'; }],
     ['old-name', 'an old name of two words (Guest Bed)', (f) => { f['system.json']['toast:a'] = 'Place a Guest Bed.'; }],
+    ['old-name', 'an old name of two words in lower case (frost stalkers)', (f) => { f['items-b.json']['item.desc:g'] = 'Two frost stalkers came at dusk.'; }],
     ['spelling', 'a born name without its marks (Kankal)', (f) => { f['items-b.json']['item.desc:warden_bell'] = 'Lay it on a Kankal Altar.'; }],
     ['spelling', 'a born name without its capital (tama)', (f) => { f['items-b.json']['item.desc:g'] = 'What a tama leaves in the pot.'; }],
     ['spelling', 'an English plural on a born name (Kinvas)', (f) => { f['items-b.json']['item.desc:g'] = 'Jelly from Kinvas.'; }],
