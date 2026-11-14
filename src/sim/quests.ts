@@ -8,9 +8,10 @@ export class QuestSim {
   private t = 0;
   constructor(private sim: Sim) {}
 
-  /** A step is met when any one player meets it (what a player holds is never summed across players). */
+  /** A step is met by its flag, which the world shares, or by any one online player (7.6): what a player holds is never
+   *  summed across players, and a player who is away does not count. */
   private done(i: number): boolean {
-    const q = QUESTS[i], sim = this.sim, any = (f: (p: SimPlayer) => boolean): boolean => { for (const p of sim.players.values()) if (f(p)) return true; return false; };
+    const q = QUESTS[i], sim = this.sim, any = (f: (p: SimPlayer) => boolean): boolean => { for (const p of sim.players.values()) if (p.online && f(p)) return true; return false; };
     if (q.have) return any((p) => p.inv.count(q.have![0]) >= q.have![1]) || sim.flags.has('had:' + q.key);
     if (q.flag) {
       if (sim.flags.has(q.flag)) return true;
@@ -36,7 +37,7 @@ export class QuestSim {
       const xp = 15 + s.quest * 6;
       sim.sink.emit({ all: true }, ['t', `Guide: ${q.title} ✔  (+${xp} xp)`, '#b8f070']);
       sim.sink.emit({ all: true }, ['s', 'quest', 1, 1]);
-      for (const p of sim.players.values()) gainXp(sim, p, xp);
+      for (const p of sim.players.values()) if (p.online) gainXp(sim, p, xp);
     }
   }
 }

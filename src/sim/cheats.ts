@@ -59,11 +59,12 @@ export function cheat(sim: Sim, p: SimPlayer, cmd: string): string {
     case 'god': p.modes.god = onOff(p.modes.god); return 'god ' + p.modes.god;
     case 'heal': st.hp = st.maxHp; st.hunger = 20; st.mana = st.maxMana; return 'healed';
     case 'level': { const n = num(a[1], 1, 1000, true) ?? 1; st.level = n; st.points += 2 * n; st.recompute(p.inv); return 'level set'; }
-    case 'kill': for (const m of mobs.list) if (m.active && m.def.hostile) mobs.hurt(m, 1e6, 0, 0, 0, false, p); return 'cleared';
+    // the world's hostiles, wherever they are; the caller is credited with those of its own realm
+    case 'kill': for (const r of sim.realms) for (const m of r.mobs.list) if (m.active && m.def.hostile) r.mobs.hurt(m, 1e6, 0, 0, 0, false, r === realm ? p : null); return 'cleared';
     case 'spawn': if (!MOBS.has(a[1])) return 'unknown creature ' + a[1]; return mobs.spawn(a[1], b.x + 3, b.y + 1, b.z) ? 'spawned' : 'failed';
     case 'boss': { const d = BOSSES[(num(a[1], 1, BOSSES.length, true) ?? 1) - 1]; const m = mobs.spawn(d.key, b.x, b.y + 3, b.z + 8); if (m) m.boss!.altar = [b.x, b.y, b.z]; return d.name; }
-    case 'flag': sim.addFlag(a[1]); return 'flag set';
-    case 'event': sim.events.start(a[1] as 'raid'); return 'event started';
+    case 'flag': if (!a[1]) return 'flag <name>'; sim.addFlag(a[1]); return 'flag set';
+    case 'event': if (a[1] !== 'raid' && a[1] !== 'moon' && a[1] !== 'ashen') return 'event raid|moon|ashen'; sim.events.start(a[1]); return 'event started';
     case 'dim': travel(sim, p, (num(a[1], 0, sim.realms.length - 1, true) ?? 0) as 0 | 1 | 2); return 'travelling';
     case 'gear': { const t = TIERS[num(a[1], 0, TIERS.length - 1, true) ?? 2]; for (const k of ['sword', 'pickaxe', 'axe', 'bow', 'staff', 'totem', 'melee_0', 'melee_1', 'melee_2']) if (ITEMS.has(`${t.key}_${k}`)) p.inv.add({ k: `${t.key}_${k}`, n: 1 }); p.inv.add({ k: 'arrow', n: 99 }); p.inv.add({ k: 'salve', n: 10 }); return t.name + ' kit'; }
     case 'locate': {

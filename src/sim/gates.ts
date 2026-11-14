@@ -22,6 +22,47 @@ export function gateHas(g: { x: number; y: number; z: number; alongX: boolean },
   const a = g.alongX ? x - g.x : z - g.z;
   return a >= -1 && a <= 2 && y >= g.y && y <= g.y + 4 && (g.alongX ? z === g.z : x === g.x);
 }
+type GateAt = { x: number; y: number; z: number; alongX: boolean };
+export type GateEntry = GateAt & { kind: 1 | 2; dim: number };
+
+/** True when the cell (x, y, z) holds no part of a body of the realm's players other than `but`. */
+export function cellClear(realm: Realm, x: number, y: number, z: number, but: SimPlayer | null = null): boolean {
+  for (const q of realm.players) {
+    if (q === but) continue;
+    const p = q.body;
+    if (x + 1 > p.x - p.hw && x < p.x + p.hw && y + 1 > p.y && y < p.y + p.h && z + 1 > p.z - p.hw && z < p.z + p.hw) return false;
+  }
+  return true;
+}
+/** Every cell of the gate raised from (x, y, z), as buildGate lays it, with whether it is frame. */
+function forCells(g: GateAt, f: (x: number, y: number, z: number, frame: boolean) => boolean | void): boolean {
+  for (let a = -1; a <= 2; a++) for (let h = 0; h <= 4; h++) {
+    if (f(g.x + (g.alongX ? a : 0), g.y + h, g.z + (g.alongX ? 0 : a), a === -1 || a === 2 || h === 0 || h === 4) === false) return false;
+  }
+  return true;
+}
+/** No body of the realm but `but` stands in a cell of this gate. */
+export function gateClear(realm: Realm, g: GateAt, but: SimPlayer | null): boolean { return forCells(g, (x, y, z) => cellClear(realm, x, y, z, but)); }
+/** The cell in front of a gate that an arrival stands in: on the sill laid with it. */
+export function gateStand(g: GateAt): [number, number, number] { return g.alongX ? [g.x, g.y + 1, g.z + 1] : [g.x + 1, g.y + 1, g.z]; }
+/** All 14 frame cells of a registered gate still hold its frame block (9: records are hints, blocks decide). */
+export function gateIntact(realm: Realm, g: GateEntry): boolean {
+  const frame = g.kind === 1 ? B.hollow_frame : B.rift_frame;
+  return forCells(g, (x, y, z, edge) => !edge || realm.getBlock(x, y, z) === frame);
+}
+/** Registered gates of `kind` in this realm within `r` blocks of a column, nearest first. */
+export function gatesNear(sim: Sim, realm: Realm, kind: number, x: number, z: number, r: number): GateEntry[] {
+  return sim.shared.gates.filter((g) => g.kind === kind && g.dim === realm.dim && Math.hypot(g.x - x, g.z - z) <= r)
+    .sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z));
+}
+/** A portal block of `kind` (either kind when 0) within 2 blocks of a cell. */
+export function portalNear(realm: Realm, kind: number, x: number, y: number, z: number): boolean {
+  for (let dy = -2; dy <= 2; dy++) for (let dz = -2; dz <= 2; dz++) for (let dx = -2; dx <= 2; dx++) {
+    const id = realm.getBlock(x + dx, y + dy, z + dz);
+    if ((kind !== 2 && id === B.hollow_portal) || (kind !== 1 && id === B.rift_portal)) return true;
+  }
+  return false;
+}
 /** Raise a 4x5 gate: frame around a 2x3 sheet of portal. */
 export function buildGate(realm: Realm, kind: number, x: number, y: number, z: number, alongX: boolean): void {
   const frame = kind === 1 ? B.hollow_frame : B.rift_frame, portal = kind === 1 ? B.hollow_portal : B.rift_portal;

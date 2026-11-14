@@ -9,7 +9,7 @@ import type { Sim } from './sim';
 export const npcOf = (mobKey: string): NpcDef | undefined => NPCS.find((n) => n.mob === mobKey);
 
 export class NpcSim {
-  private t = 2;
+  private t = 2; private bodyT = 1;
   constructor(private sim: Sim) { this.sync(); }
   get homes(): Sim['shared']['homes'] { return this.sim.shared.homes; }
 
@@ -51,20 +51,27 @@ export class NpcSim {
     return null;
   }
 
-  /** A newcomer's condition is met when the flag is set and, for a price, some player can show the coins. */
+  /** A newcomer's condition is met when the flag is set and, for a price, some online player can show the coins. */
   private met(n: NpcDef): boolean {
     const sim = this.sim;
     if (n.need.flag && !sim.flags.has(n.need.flag)) return false;
-    if (n.need.coins && !sim.flags.has('npc:' + n.key)) { let rich = false; for (const p of sim.players.values()) if (p.inv.coins >= n.need.coins) rich = true; if (!rich) return false; }
+    if (n.need.coins && !sim.flags.has('npc:' + n.key)) { let rich = false; for (const p of sim.players.values()) if (p.online && p.inv.coins >= n.need.coins) rich = true; if (!rich) return false; }
     return true;
   }
   tick(dt: number): void {
-    this.t -= dt;
-    if (this.t > 0) return;
-    this.t = 5;
-    const sim = this.sim, realm = sim.realms[0], mobs = realm.mobs;
-    if (!realm.players.length) return;
-    // move-ins
+    this.t -= dt; this.bodyT -= dt;
+    const sim = this.sim, realm = sim.realms[0];
+    if (this.t <= 0) {
+      this.t = 5;
+      if (realm.players.length) { this.moveIn(); this.bodyT = 0; }
+    }
+    if (this.bodyT > 0) return;
+    this.bodyT = 1;
+    if (realm.players.length) this.bodies();
+  }
+  /** One newcomer whose condition is met takes a vacant home, if a valid one stands in a ready sim chunk. */
+  private moveIn(): void {
+    const sim = this.sim, realm = sim.realms[0];
     for (const n of NPCS) {
       if (this.homes.some((h) => h.npc === n.key) || !this.met(n)) continue;
       const home = this.homes.find((h) => !h.npc && realm.ready(h.x, h.z) && this.check(h.x, h.y, h.z) === null);
@@ -72,16 +79,20 @@ export class NpcSim {
       home.npc = n.key; sim.addFlag('npc:' + n.key);
       sim.sink.emit({ all: true }, ['n', `${n.name} has moved in`, '', '#b8f070']); sim.sink.emit({ all: true }, ['s', 'quest', 1, 1]);
       this.sync();
-      break;
+      return;
     }
-    // keep each resident's body present while their home is loaded
+  }
+  /** A resident's body exists exactly while its home's chunk is a ready sim chunk (7.7): one that is not simulated would
+   *  stand frozen there. */
+  private bodies(): void {
+    const realm = this.sim.realms[0], mobs = realm.mobs;
     for (const h of this.homes) {
       if (!h.npc) continue;
-      const d = NPCS.find((n) => n.key === h.npc)!;
-      if (!realm.ready(h.x, h.z) || !realm.players.some((p) => Math.hypot(h.x - p.body.x, h.z - p.body.z) <= 90)) continue;
-      if (mobs.list.some((m) => m.active && m.def.key === d.mob)) continue;
-      const q = standSpot(realm, h.x, h.y, h.z), m = mobs.spawn(d.mob, q[0], q[1], q[2]);
-      if (m) m.home = [h.x, h.y, h.z];
+      const d = NPCS.find((n) => n.key === h.npc)!, m = mobs.list.find((q) => q.active && q.def.key === d.mob);
+      if (!realm.ready(h.x, h.z)) { if (m) mobs.remove(m); continue; }
+      if (m) continue;
+      const q = standSpot(realm, h.x, h.y, h.z), s = mobs.spawn(d.mob, q[0], q[1], q[2]);
+      if (s) s.home = [h.x, h.y, h.z];
     }
   }
   /** One-line status for a bed, shown when a player right-clicks it. */
