@@ -10,7 +10,7 @@ import { type Force, lv, outline } from './common';
 export interface ButtonOpts {
   id?: string;
   x: number; y: number;
-  /** The classic button is 200 by 20; half is 98; inside windows 12, 14 or 16 tall and its label plus 10 wide. */
+  /** The classic button is 200 by 20; half is 98; inside windows 14 or 16 tall (12 only for a label with no descender) and its label plus 10 wide. */
   w: number; h?: number;
   label: string;
   /** The ramp of the slab a small button stands on; left out, the button is dressed stone, as on menus. */
@@ -71,7 +71,8 @@ function dashedOutline(s: Surface, w: number, h: number): void {
 
 /**
  * A small button inside a window, in the ramp of the slab it stands on (5.6): a raised piece of that slab, `hi` on its
- * first row and column, `sh` and `dk` on its last, the label in ink. Hovered, its face lightens to `lt`; pressed, the
+ * first row and column, `dk` (`pit` on timber) on its last, the label in ink. One dark unit and not two, so that the
+ * descenders of a 14-tall button end on face and not on its edge. Hovered, its face lightens to `lt`; pressed, the
  * bevel turns over; disabled, it is a flat `sh` with the label faded. A door that loses something has its label in
  * blood.dk, the refusal's tone on a light face.
  */
@@ -86,7 +87,7 @@ function paintSlabButton(s: Surface, w: number, h: number, label: string, live: 
     bevel(s, w, h, tone(ramp, 'dk'), tone(ramp, 'sh'), tone(ramp, 'sh'), tone(ramp, 'face'), null);
     drop = 1;
   } else {
-    bevel(s, w, h, tone(ramp, 'hi'), null, tone(ramp, live.hover ? 'lt' : 'face'), tone(ramp, 'sh'), tone(ramp, 'dk'));
+    bevel(s, w, h, tone(ramp, 'hi'), null, tone(ramp, live.hover ? 'lt' : 'face'), tone(ramp, ramp === 'timber' ? 'pit' : 'dk'), null);
   }
   const t = cut(label, w - 4);
   if (t) s.text(t, centreX(t, 0, w) + drop, Math.floor((h - 9) / 2) + drop, disabled ? 'ink.faded' : warn ? 'blood.dk' : 'ink');

@@ -205,20 +205,20 @@ export function stackGrid(b: Bench, g: GridSpec): Node {
   return { x: g.x, y: g.y, w: g.cols * 18, h: g.rows * 18, kids };
 }
 
-/** A small button of the title row or the pack row: 12 tall, as wide as asked. */
-export function small(id: string, x: number, y: number, w: number, label: string, onPress: () => void, ramp: Ramp, h = 12): Node {
+/** A small button of the title row or the pack row: 14 tall, so a descender clears its lower edge; as wide as asked. */
+export function small(id: string, x: number, y: number, w: number, label: string, onPress: () => void, ramp: Ramp, h = 14): Node {
   return button({ id, x, y, w, h, label, onPress, ramp });
 }
 
 /**
- * The pack under a container's own slots: "Pack" at 8, `labelY`, its "Sort pack" button ending at 168, `labelY - 3`, the
+ * The pack under a container's own slots: "Pack" at 8, `labelY`, its "Sort pack" button ending at 168, `labelY - 4`, the
  * nine by three at 8, `slotsY` and the hotbar row four units below it. The button names its grid: over a chest two
  * buttons both called "Sort" were told apart only by where they stood.
  */
 export function packBlock(b: Bench, ramp: Ramp, labelY: number, slotsY: number, o: { sort?: boolean; each?: (store: string, i: number) => Partial<StackSlotOpts> } = {}): Node[] {
   const out: Node[] = [ink(8, labelY, 'Pack')];
   const sortW = measure('Sort pack') + 10;
-  if (o.sort !== false) out.push(small('pack.sort', 168 - sortW, labelY - 3, sortW, 'Sort pack', () => { b.hand.sort('pack'); b.after(); }, ramp));
+  if (o.sort !== false) out.push(small('pack.sort', 168 - sortW, labelY - 4, sortW, 'Sort pack', () => { b.hand.sort('pack'); b.after(); }, ramp));
   out.push(stackGrid(b, { store: 'pack', x: 8, y: slotsY, cols: 9, rows: 3, ramp, each: o.each ? (i) => o.each!('pack', i) : undefined }));
   out.push(stackGrid(b, { store: 'bar', x: 8, y: slotsY + 58, cols: 9, rows: 1, ramp, each: o.each ? (i) => o.each!('bar', i) : undefined }));
   return out;
