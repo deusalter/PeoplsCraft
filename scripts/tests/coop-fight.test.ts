@@ -87,6 +87,25 @@ test('7.1: the nearest candidate in 3D, kept until another is closer than 0.75 o
   assert.equal(m.tp, b, 'switched');
 });
 
+test('7.1: the target is re-chosen only on ticks where (tick + id) % 15 === 0', () => {
+  const r = rig(), m = r.realm.mobs.spawn('bog_lurker', 0.5, GROUND, 0.5)!;
+  const a = play(r, 'a', 10.5, 0.5), b = play(r, 'b', -14.5, 0.5);
+  run(r, 16, pin(m, 0.5, 0.5));
+  assert.equal(m.tp, a);
+  for (let round = 0; round < 3; round++) {
+    const near = round % 2 ? a : b, far = round % 2 ? b : a;
+    while ((r.sim.tick + 1 + m.id) % 15 !== 1) run(r, 1, pin(m, 0.5, 0.5));
+    put(near, near === a ? 3.5 : -2.5, 0.5); put(far, far === a ? 13.5 : -13.5, 0.5);
+    for (let k = 0; k < 14; k++) {
+      run(r, 1, pin(m, 0.5, 0.5));
+      assert.equal(m.tp, far, `round ${round}: kept on tick ${r.sim.tick}, which is not a retarget tick`);
+    }
+    run(r, 1, pin(m, 0.5, 0.5));
+    assert.equal((r.sim.tick + m.id) % 15, 0);
+    assert.equal(m.tp, near, `round ${round}: switched on the retarget tick ${r.sim.tick}`);
+  }
+});
+
 test('7.1: a target stays one out to 1.5 x aggro, and a stalled, lingering, hidden or dead player is none', () => {
   const r = rig(), m = r.realm.mobs.spawn('bog_lurker', 0.5, GROUND, 0.5)!, aggro = m.def.aggro!;
   const a = play(r, 'a', 10.5, 0.5);
