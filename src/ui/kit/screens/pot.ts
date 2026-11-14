@@ -12,16 +12,20 @@ import { SALT } from './play/art';
 import { Hand, type Place, store } from './play/hand';
 import type { NamedScreen } from './index';
 
-/** The mark over the water channel: a drop, 7 by 7, lit from the top left. */
+/** The mark under the water channel: a drop, 9 by 9, lit from the top left, so the gauge is not read as heat. */
 const DROP = coded([
-  '...K...',
-  '..KbK..',
-  '.KbBBK.',
-  'KbBBBdK',
-  'KBBBBdK',
-  '.KBddK.',
-  '..KKK..',
+  '....K....',
+  '...KbK...',
+  '..KbBBK..',
+  '..KbBBK..',
+  '.KbBBBdK.',
+  '.KbBBBdK.',
+  '.KBBBBdK.',
+  '..KBddK..',
+  '...KKK...',
 ], 'pot.drop');
+
+const WATER = { lines: [{ text: 'Water', c: 'salt' as const }, { text: 'It boils down through the night', c: 'root.4' as const }], delay: 0.4 };
 
 const REMAINS = new Set(['shade_essence', 'chitin', 'gel', 'bone', 'spore_sac', 'raw_meat']);
 
@@ -72,13 +76,13 @@ function build(ui: Ui): Node {
     }),
     burnGauge({ x: 38, y: 36, f: boiling ? 0.7 : 0, ramp: 'clay' }),
     stackSlot(b, { store: 'fuel', i: 0 }, { x: 35, y: 53, ramp: 'clay', silhouette: 'fuel', showAccepts: true }),
-    { x: 75, y: 37, w: 7, h: 7, paint: (s) => s.map(DROP, 0, 0) },
     {
-      x: 76, y: 45, w: 6, h: 26,
-      paint: (s, live) => channel({ x: 0, y: 0, len: 26, f: boiling ? 1 - 0.75 * night(live.t) : 0, ramp: 'clay', colour: 'arm', upright: true }).paint!(s, live),
+      x: 76, y: 36, w: 6, h: 31,
+      paint: (s, live) => channel({ x: 0, y: 0, len: 31, f: boiling ? 1 - 0.75 * night(live.t) : 0, ramp: 'clay', colour: 'arm', upright: true }).paint!(s, live),
       anim: boiling && !STILL,
-      tip: () => ({ lines: [{ text: 'Water in the pot', c: 'salt' }, { text: 'It boils down through the night', c: 'root.4' }], delay: 0.4 }),
+      tip: () => WATER,
     },
+    { x: 74, y: 69, w: 9, h: 9, paint: (s) => s.map(DROP, 0, 0), tip: () => WATER },
     {
       ...progressArrow({ x: 97, y: 36, f: 0, ramp: 'clay' }),
       paint: (s, live) => progressArrow({ x: 0, y: 0, f: night(live.t), ramp: 'clay' }).paint!(s, live),
