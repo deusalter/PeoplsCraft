@@ -318,7 +318,9 @@ Where the stonework, the householders and the sand-country people disagree (2.8)
 ### D.2 The data
 
 - A step is a shared flag: `cx:<subject>.<step>`. A bestiary subject is the creature key (`cx:gelcap.kill`). Other subjects are `<kind>:<key>` (`cx:site:ruin.born`). Flags are in the world's saved state, are sent in `welcome`, and are sent to everyone when one is added (`ARCHITECTURE.md` 3.3, 7.6). Nothing new goes on the wire.
-- Counts of kills are one new field of the shared state, `kills`, from creature key to a number. It is saved with the world and is not sent: only the flag that a count opens is. It counts feeders and the five ordinary animals, and no person.
+- Counts of kills are one new field of the shared state, `kills`, from creature key to a number. It is saved with the world and is not sent: only the flag that a count opens is. It counts feeders and the five ordinary animals, and no person. The eight are counted under their own keys (`b_colossus` to `b_sovereign`), so `eight.habit` opens when the count of a key reaches 3. A feeder killed by a small feeder of a totem is counted twice: under its own key, and under the key of that look (`m_shade`, `m_brazier`, `m_mycelid` and the rest of the nine), which is the count of 10 that opens the look's `habit` (D.3).
+- **Where a site was first seen.** When the host sets `cx:site:<key>.seen` for a site that D.4 opens on a distance from a sight point, it sets with it, once, the flag `cx:site:<key>.at:<rx>,<rz>`: the region of the origin the player came on, `rx = Math.floor(x / (cell * 16))` and `rz = Math.floor(z / (cell * 16))`, with the row's own `cell` and the origin `structAt` draws. For `column` that is the origin before it moves, which stays in its region (it moves at most 6 strides and lies `radius + 2` = 10 inside the edge). For `lamp_row` it is the region of the `cache1` it runs from, which is the same region, since the two rows share their placement. It is a flag like any other: saved with the world, sent in `welcome` and to everyone when it is added. Nothing new goes on the wire. It is never changed and never set a second time. The codex shows nothing for it, since `at` is none of the step names of D.1. D.4 reads it where the evidence is a site seen in a second place.
+- **The day of a first kill.** The host sets `boss:<n>` at each kill (`src/sim/loot.ts:33`). The first time, when the flag was not yet there, it sets with it the flag `bossday:<n>:<d>`, with `d = Math.floor(sim.shared.clock)`, the day of the kill. It is saved and sent like any flag and never changes. A day turns at dawn: the whole part of the clock rises when its fraction passes from 1 to 0, which is the dawn edge of `src/sim/events.ts:47-58`. So the dawn that ends the eighth night after the kill is the first step at which `sim.shared.clock >= d + 8`, wherever in day `d` the kill fell. `eight.loss` of `boss:4` to `boss:8` opens on that step (D.3), and after a restart the host reads `d` from the flag.
 - **Nobody counts the dead people (rule 12).** The three sand-country fighters, `ashen_raider`, `ashen_hexer` and `siege_brute`, are people. `kills` has no entry for them, no step opens on how many of them have died, and no line shows such a number. Two counts in play today count them, and both change. `src/sim/events.ts:43` adds one to `ev.k` for every creature of an attack killed. From step 4 a fighter killed adds nothing. In a `raid` the count is then of feeders. An `ashen` march has no feeders in it, so its count becomes the fighters who have come up: `ev.k` rises by one as each fighter of the march comes up, and the march is beaten off when `ev.k` has reached `ev.g` and no fighter of it is still standing. `docs/multiplayer/ARCHITECTURE.md` 7.5 scales `ev.g` with the players present, and that stands. The rule for `siege_brute` at `events.ts:83` (`ev.k > ev.g * 0.5`) then reads: after half the march has come up. The HUD line of a march (`hud:event.ashen`, `src/client/invclient.ts:96`) shows the name of the march and no number. Test: a bot beats off a march: `kills` holds no key of the three, the HUD line holds no digit, and the march ends beaten off when the last fighter of its count is down.
 - A late joiner receives every flag on joining and opens the codex filled as far as the others have got. That is 7.7's rule.
 - When a step opens, everyone gets the toast `toast:codex_new` with the subject's name.
@@ -337,12 +339,19 @@ The same four events for every creature, and five for the eight.
 | `once` | The event in the table below |
 | `eight.sight` | The animal comes up at its stone |
 | `eight.kill` | `boss:<n>` is set |
-| `eight.loss` | `boss:1`: the first `raid` starts. `boss:2`: the first `ashen` starts. `boss:3`: the first dawn after the first `moon`. The other five: eight nights after the kill |
+| `eight.loss` | `boss:1`: the first `raid` starts. `boss:2`: the first `ashen` starts. `boss:3`: the first dawn after the first `moon`. The other five: the first step at which `sim.shared.clock >= d + 8`, with `d` read from the flag `bossday:<n>:<d>` (D.2), which is the dawn after the eighth night from the kill |
 | `eight.habit` | The third kill of that kind |
 | `eight.once` | See below the table |
 | `eight.said` | `boss:<n>` is set and `wayfinder` is housed |
 
 The table gives, for each creature, whether the habit of chapter 7 is in play after step 4, and the event and the fact for `once`. Where the habit is not in play, `beast.habit` says what the kind does in play today, given in the same cell. Rules marked *added* are one condition each in `src/sim/mobs.ts` and are part of step 4.
+
+**Where a drop or a creature came from.** Six `once` events open on a drop that came off a creature of the kind, and two need a creature that came from a nest. The same items also come from blocks, chests and smelting, so the pickup of the item alone decides nothing. Two fields are added, both kept on the host only.
+
+- `Drop` (`src/sim/drops.ts:11`) gains `src: string | null`. `DropSim.spawn` gains a last argument `src = null`. `src/sim/loot.ts:28`, where a creature's death spawns its drops, passes the creature's key (`m.def.key`). Every other drop has `src` null: a broken block, a chest, a stack a player throws, a gate kit, the drops of the eight (`loot.ts:27`). `spawn` folds a new drop into a stack lying nearby only when the two have the same `src`. A drop *of a kind* is one whose `src` is that kind's key, and its event opens when a player picks it up.
+- `Mob` (`src/sim/mobs.ts:16`) gains `nest: [number, number, number] | null`. The nest tick (`src/sim/blocks.ts:45`) sets it to the nest's cell `[e.x, e.y, e.z]` on the mob it spawns. `MobSim.spawn` sets it to null on every other mob, since the pool reuses its slots. The added rule of `rustbound` measures its 10 strides from that cell.
+- Neither goes on the wire (`daOf` and the creature's events are unchanged) and neither is saved, since no drop and no creature is saved today (`src/sim/storage.ts`). A drop or a creature that lies across a load has `src` or `nest` null and opens nothing.
+- A nest *of a dungeon* is a `brood_nest` whose block entity has the kind `stonegnawer` or `rustbound`, and the nest *of a cache1* one with the kind `mycelid_knight`: only those builds set those kinds (`structures.ts:143` and `:210`). A `ruin` sets only `gloomshade` (`structures.ts:118`).
 
 | Key | Habit in play after step 4 | `once`: the event, and the fact it shows |
 | --- | --- | --- |
@@ -351,29 +360,29 @@ The table gives, for each creature, whether the habit of chapter 7 is in play af
 | `burrowhog` | No. Write: cold woods, crags and snow by day; gone at dusk | One is alive on `snow` or `snowy_grass` in `tundra` or `peaks`. By day it is the only thing out on the snow (3.2) |
 | `dune_skipper` | No. Write: sand and dry grass by day; fast | One is seen in `desert` while `boss:2` is unset. Nothing hostile shared the sand with it by day (7.2, 4.4) |
 | `glimmerfin` | Yes: the shoal keeps together | A player is in water with a hostile creature within 10 strides that has the player as its target. It stopped at the water (3.1) |
-| `gloomshade` | No (step 5: it goes first for the one carrying most lees). Write: everywhere at night and in caves at any time; it walks into lamplight; the sun undoes it | One that came from a `brood_nest` is undone by the sun within 32 strides of a player. A nest puts them out by day and each comes apart at the wall (7.9) |
+| `gloomshade` | No (step 5: it goes first for the one carrying most lees). Write: everywhere at night and in caves at any time; it walks into lamplight; the sun undoes it | One whose `nest` is set is undone by the sun within 32 strides of a player. A nest puts them out by day and each comes apart at the wall (7.9) |
 | `thornling` | Yes, *added*: by day it does not move until a body is within 14 strides | One dies during `raid`. Since the first great kill its packs go for stores at dusk (4.3) |
 | `gelcap` | Yes, *added*: when it first moves, a `tall_grass` on its cell is set to air | `had:idol` is set. Its jelly went into the first bait (4.3) |
 | `bog_lurker` | Yes, *added*: idle on `mud` it is drawn sunk to the head | A `bog_pearl` is picked up. A lump of lees set in mud, which it swallowed (3.2 `swamp`) |
 | `frost_stalker` | No. Write: cold country at night, in ones to threes; it sees a body from 24 strides | One is alive by day within 24 strides of a player. The sun does it no harm (7.3) |
 | `cinder_wisp` | No. Write: it hangs in the air and throws embers from ten strides | One is within 8 strides of `lava` with a player within 20. The same kind is on the sand at night and beside the molten rock at any time (3.3) |
-| `stonegnawer` | No. Write: the commonest thing under the ground, from just over the floor to just under the turf | One dies within 12 strides of a `brood_nest` in a `dungeon`. It has been at the dressed stone (7.3) |
+| `stonegnawer` | No. Write: the commonest thing under the ground, from just over the floor to just under the turf | One dies within 12 strides of a nest of a dungeon (above). It has been at the dressed stone (7.3) |
 | `cave_skitter` | No. Write: small, fast, in packs of two to four | One dies standing on `mycel` on the living ground. It is bodied in fibre and in the thread fungus puts through rock (7.3) |
 | `crag_bat` | No. Write: caves at any time, and the air over the high rock at night | One dies under open sky at night in `crags` or `peaks`. The animal of the caves and of the high air is one animal (7.3) |
-| `rustbound` | Yes, *added*: one that came from a nest does not go more than 10 strides from it | A `barbed_arrow` or an `iron_bar` it dropped is picked up. It ate the stored harness and arrows (7.3) |
-| `sporeling` | Yes, *added*: when one is struck, every `sporeling` within 16 strides takes the striker as its target | A `glowshroom` it dropped is picked up. What lies on the ground is the cap it had formed in (7.1) |
-| `mycelid_knight` | No. Write: two strides tall, slow, hard to knock back | One dies within 12 strides of the nest in a `cache1`. It breeds where the lees was (7.3) |
+| `rustbound` | Yes, *added*: one whose `nest` is set does not go more than 10 strides from that cell | A `barbed_arrow` or an `iron_bar` that is a drop of `rustbound` (above) is picked up. It ate the stored harness and arrows (7.3) |
+| `sporeling` | Yes, *added*: when one is struck, every `sporeling` within 16 strides takes the striker as its target | A `glowshroom` that is a drop of `sporeling` is picked up. What lies on the ground is the cap it had formed in (7.1) |
+| `mycelid_knight` | No. Write: two strides tall, slow, hard to knock back | One dies within 12 strides of the nest of a cache1 (above). It breeds where the lees was (7.3) |
 | `umbral_moth` | Yes: it flies and does not land | `had:kite` is set. Its dust went up on the kite (4.7) |
-| `glowmaw` | No. Write: a fast runner, lit along the back | A `noctrium_ore` it dropped is picked up |
+| `glowmaw` | No. Write: a fast runner, lit along the back | A `noctrium_ore` that is a drop of `glowmaw` is picked up |
 | `rift_ray` | No. Write: in the air over the islands; it stoops | One is within 16 strides of a player and 6 or more pieces lower. It rides under a rim (7.3) |
-| `shardling` | Yes, *added*: it does not move until it has a target | A `prismite_ore` it dropped is picked up. The crystal kinds carry bits of the ore they feed on (6.2) |
-| `aether_wisp` | No. Write: a bright crystal in the air; it throws from twelve strides | A `rift_scale` it dropped is picked up. It had been at a dead ray (7.3) |
+| `shardling` | Yes, *added*: it does not move until it has a target | A `prismite_ore` that is a drop of `shardling` is picked up. The crystal kinds carry bits of the ore they feed on (6.2) |
+| `aether_wisp` | No. Write: a bright crystal in the air; it throws from twelve strides | A `rift_scale` that is a drop of `aether_wisp` is picked up. It had been at a dead ray (7.3) |
 | `moonspawn` | Yes: it does not go down before dawn, and the sun undoes it | One is undone by the sun within 32 strides of a player (7.3) |
 | `lunar_howler` | No. Write: in the air on the dark night only; the fastest thing there is | One is undone by the sun (C, row 10) |
 | `sproutling` | Yes: it goes when its strongest goes | `boss:1`'s animal withdraws while one is up |
 | `dune_mite` | No. Write: it comes off the burrower when the burrower thrashes | `boss:2`'s animal withdraws while one is up |
 | `ashen_raider` | No. Write: a fighter with a blade | One dies during `raid`. A few follow the dusk packs in (7.4) |
-| `ashen_hexer` | Yes: he stands off and throws from 13 strides | A `mana_crystal` he dropped is picked up. It was taken from a store on the way, for the fire (7.4) |
+| `ashen_hexer` | Yes: he stands off and throws from 13 strides | A `mana_crystal` that is a drop of `ashen_hexer` is picked up. It was taken from a store on the way, for the fire (7.4) |
 | `siege_brute` | No. Write: the biggest of them, slow, hard to knock back | One comes up on a march after half its fighters have come up (D.2). He comes late (7.4). Nothing here counts the dead |
 | the nine on a totem | No. Write: it stays by the hand that carries its food and goes for feeders | The bearer falls while one of that look is out. It is gone when the bearer goes down (7.5) |
 
@@ -551,7 +560,7 @@ Before it, a dark night is a night like another. After it, the deep kind is on t
 | The sky | Nothing changes. The moon keeps its round | |
 | The crew's houses | Every townsperson has a line for the first trade after the kill (`folk.stage:<who>.8`). In their mouths the peopls opened the cairn (4.11). Desik says the stones can be lit again, and by lit he means held | step 4, text |
 | The text | The banner is the animal's name and that it has fallen, with nothing under it. No text says a stone is lit (4.10) | in play; text by step 4 |
-| The text | `eight.loss:b_sovereign` opens eight nights after: what the nights are now | step 4 (D) |
+| The text | `eight.loss:b_sovereign` opens at the dawn after the eighth night from the kill, by the flag `bossday:8:<d>` (D.2, D.3): what the nights are now | step 4 (D) |
 | The journal | After the Last: one task that is never met, saying what the crew holds | step 4, text |
 
 *What step 5 builds on it.* A great stone charged with `cairn_heart` and held by a householder for one night (4.10). A pack at every dusk on which no great stone is held. The householder who will sit at a great stone, which is the last thing standing with them opens (5.6). The sealed jar of 6.11. The journal's second list. Step 4 leaves `cairn_heart` with nothing made from it and `end` never met, which is the state those start from.
