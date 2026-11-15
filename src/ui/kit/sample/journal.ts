@@ -88,6 +88,8 @@ export interface Bounty {
   n: number;
   /** The task told in full on the right page. */
   telling: string;
+  /** Where to bring it, with how far and which way, said on its own line under the telling. */
+  where?: string;
   pay: number;
   /** Seats of the crew who took it. */
   took: number[];
@@ -101,13 +103,13 @@ export interface Bounty {
 
 export const BOUNTIES: Bounty[] = [
   { id: 'b.ore', asker: 'Kammār', task: 'Twenty iron ore', icon: 'ore', n: 20, pay: 40, took: [1, 4], carry: 12,
-    telling: 'The smith wants raw ore, not bars: he smelts it himself to his own weight. Bring it to the anvil in the village on the Yavas.' },
+    telling: 'The smith wants raw ore, not bars: he smelts it to his own weight.', where: 'The smithy: 40 m west' },
   { id: 'b.meat', asker: 'Vāhak', task: 'Eight raw meat', icon: 'haunch', n: 8, pay: 24, took: [], carry: 3,
-    telling: 'The provisioner salts meat against the nights the village is shut in. Boar and Sheep both serve.' },
+    telling: 'The provisioner salts meat against the nights the village is shut in. Boar and Sheep both serve.', where: 'Vāhak: 52 m north' },
   { id: 'b.idol', asker: 'Rehakār', task: 'A Vanahar Likeness', icon: 'bait', n: 1, pay: 120, took: [2],
     telling: 'Carved at the workbench from a log, fiber, jelly and a red flower. Rehakār wants one to cut lines on; it is not to be taken to the altar.' },
   { id: 'b.fuel', asker: 'A Marujan fire', task: 'Fuel for a fire', icon: 'coal', n: 32, pay: 0, took: [8],
-    telling: 'Thirty-two coal to the fire in the Kāsa. They pay nothing in lees; their standing with the crew rises by one step.' },
+    telling: 'Thirty-two coal to the fire in the Kāsa. They pay nothing in lees; their standing with the crew rises by one step.', where: 'Marujan fire: 610 m south' },
   { id: 'b.bars', asker: 'Kāru', task: 'Four iron bars', icon: 'ingot', n: 4, pay: 18, took: [3, 5, 6], carry: 4,
     telling: 'For hinges and the frame of a Joining Bench. Kāru moves in once Vanahar has fallen and asks again each dawn.' },
   { id: 'b.crystal', asker: 'Vejja', task: 'Six crystal', icon: 'crystal', n: 6, pay: 75, took: [], barred: 'Needs the second notch with the householders', why: 'needs standing',

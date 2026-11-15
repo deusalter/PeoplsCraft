@@ -172,14 +172,19 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
   const under = b.barred ? 20 : b.took.length ? shown.length * TAKER + (b.took.length > 2 ? 10 : 0) : 0;
   const carried = b.carry !== undefined && !b.barred;
   const carryH = carried ? CARRY_ROW : 0;
-  const telling = para(0, 28, PW, b.telling, 'ink', Math.floor((TAKE_Y - 4 - under - (under ? 2 : 0) - 12 - carryH - 28) / 10));
+  // Where to bring it stands on its own line under the telling, with the compass mark as on the Guide's page, and is
+  // never cut: it is the one thing the reader acts on, and at the end of a cut telling it was the part lost.
+  const whereH = b.where ? box(b.where, PW - 12, 2).lines.length * 10 + 2 : 0;
+  const room = Math.floor((TAKE_Y - 4 - under - (under ? 2 : 0) - 12 - carryH - whereH - 28) / 10);
+  const telling = para(0, 28, PW, wholeSentences(b.telling, PW, room), 'ink', room);
   let y = 28 + telling.h + 2;
   const right: Node[] = [
     pageHeading({ x: 0, y: 0, w: PW, text: inkCut(b.task, PW) }),
     inkLine(0, 14, PW, `Asked by ${b.asker}`, 'ink.faded'),
     telling,
-    inkLine(0, y, PW, b.pay ? `Pays {lees} ${count(b.pay)}` : 'Pays nothing in lees', 'ink'),
   ];
+  if (b.where) { right.push(whereLine(0, y, PW, b.where, 2)); y += whereH; }
+  right.push(inkLine(0, y, PW, b.pay ? `Pays {lees} ${count(b.pay)}` : 'Pays nothing in lees', 'ink'));
   y += 12;
   if (carried) {
     // How near the pack is to the ask: the count in words, then under it a channel 80 long on a row of its own, its
@@ -213,6 +218,19 @@ function bountyPages(v: JournalView): { left: Node[]; right: Node[] } {
   return { left, right };
 }
 
+/**
+ * As much of a telling as fits in `lines`, by whole sentences from its start: a sentence cut short with "…" ended the
+ * telling on half a thought. Only a first sentence that is too long alone is cut.
+ */
+function wholeSentences(text: string, w: number, lines: number): string {
+  const parts = text.split(/(?<=[.!?])\s+/);
+  for (let n = parts.length; n > 1; n--) {
+    const t = parts.slice(0, n).join(' ');
+    if (box(t, w).lines.length <= lines) return t;
+  }
+  return parts[0];
+}
+
 function peoplePage(p: People): Node[] {
   return [
     pageHeading({ x: 0, y: 0, w: PW, text: p.name }),
@@ -242,6 +260,8 @@ function peoplePage(p: People): Node[] {
 /** The crew list's columns: the mark of one's own row at 1, the head at 6, the name 3 past the head. */
 const CREW_HEAD_X = 6;
 const CREW_NAME_X = CREW_HEAD_X + HEAD_SIZE + 3;
+/** The level column, right-aligned to the page's margin: as wide as the widest of "Level" and "away". */
+const LEVEL_COL = Math.max(measureInk('Level'), measureInk('away'));
 
 const WORN_SLOTS: SilhouetteName[] = ['head', 'body', 'legs', 'trinket', 'trinket'];
 
@@ -253,7 +273,9 @@ function crewPages(v: JournalView): { left: Node[]; right: Node[] } {
     // the column before the heads.
     const self = m.seat === v.seat;
     const right = m.online ? String(m.level) : 'away';
-    const name = inkCut(m.name, PW - CREW_NAME_X - measureInk(right) - 4);
+    // Every name is cut at one edge, 6 short of the level column's left (the width of its heading, the widest thing
+    // in it), so the levels stand as a column; cut by each row's own figure, a long name ran into its level.
+    const name = inkCut(m.name, PW - 2 - LEVEL_COL - 6 - CREW_NAME_X);
     left.push(pageRow({
       id: `jr.member.${i}`, x: 0, y: 14 + i * 12, w: PW, h: 12, chosen: i === v.member, onChoose: () => v.onChoose(i),
       paint: (g) => {
