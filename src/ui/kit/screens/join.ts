@@ -36,15 +36,13 @@ const validName = (n: string) => n.length >= 1 && n.length <= 16 && [...n].every
 export const RETRY_WAIT = 5;
 
 /**
- * A line in the 11 kept under a field, its letters 2 under the field, with its shadow on a strip of the chat wash 10
- * tall reaching 2 past its words on each side, as the HUD lays a line on the world. Bare on the bricks of the ground
- * tile the grey read poorly; sunk in a strip with edges of its own it read as a second field, a disabled one, which a
- * flat strip only as wide as its words does not.
+ * A line in the 11 kept under a field, its letters 2 under the field and its first column one in from the field's left
+ * edge, bare on the ground tile with its shadow, as the tradition writes a hint under a field. On a strip of the chat
+ * wash cut to its words it read as a highlighter chip, a web page's alert.
  */
 function fieldNote(x: number, y: number, text: string, c: Colour): Node {
-  const t = cut(text, 196, TEXT);
-  const w = measure(t) + 1 + 4;
-  return { x, y, w, h: 11, paint: (s) => { s.wash(0, 0, w, 10, 'root.0', 3); s.text(t, 2, 0, c, true); } };
+  const t = cut(text, 198, TEXT);
+  return { x, y, w: measure(t) + 1, h: 11, paint: (s) => { s.text(t, 0, 0, c, true); } };
 }
 
 export const joinScreen: Screen<JoinView> = (v, ui) => {
@@ -72,9 +70,9 @@ export const joinScreen: Screen<JoinView> = (v, ui) => {
     const refused = about === key;
     kids.push(f(`join.${key}`, y, value, on, refused ? { ...extra, show: { refused: true } } : extra));
     const at = y + FORM.fieldH + 1;
-    if (said(key)) kids.push(fieldNote(111, at, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
+    if (said(key)) kids.push(fieldNote(114, at, v.answer!.text, v.answer!.ok ? 'root.4' : 'blood.lt'));
     // Why Join stands disabled, said where the missing thing goes.
-    else if (key === 'name' && !v.name) kids.push(fieldNote(111, at, 'Type a name to join', 'root.4'));
+    else if (key === 'name' && !v.name) kids.push(fieldNote(114, at, 'Type a name to join', 'root.4'));
   };
   row(0, 'address', 'Address', v.address, v.onAddress, { limit: 64 });
   row(1, 'name', 'Name', v.name, v.onName, { limit: 16, allow: NAME_CHAR });
