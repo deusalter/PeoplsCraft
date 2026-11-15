@@ -1,10 +1,11 @@
-// Loading (section 6, Loading): the mark, a sunk track 20 under it that fills in ember, and a readout 6 under that.
+// Loading (section 6, Loading): the mark, the HUD's thin strip about 20 under it filling in ember, and its lines 4
+// under that, bare on the tile.
 import type { Screen } from '../node';
-import type { Surface } from '../surface';
 import { TITLE_MARK } from '../art/title';
-import { sunk } from '../parts/common';
+import { GROUND_COURSE } from '../art/ground';
+import { paintStrip } from '../parts/hud';
 import { titleMark } from '../parts/keycap';
-import { groundMenu } from '../parts/menu';
+import { groundMenu, menuOrigin } from '../parts/menu';
 import { LOADING_STEPS } from '../sample/menus';
 import { HERE } from '../sample/crew';
 import { measure, rightX } from '../font/measure';
@@ -25,54 +26,44 @@ export interface LoadingView {
 }
 
 /**
- * The track: a hollow 182 by 7 sunk in the tile, as wide as the hotbar, `root.0` along its top and left and the tile's
- * light edge along its bottom and right, filling in ember over eighteen segments. A thin strip set 3 inside a wider
- * well lost its top edge to the dark courses and read as a hairline.
+ * The track is the HUD's thin strip (5.15), 182 by 5 as the practice strip over the hotbar, its eighteen segments
+ * filling unit by unit in ember. A hollow sunk in the tile with a light foot lost its dark top to the joints and read as
+ * a line in an open bracket with a lone light corner, a sprite like no other in the game.
  */
-const TRACK_W = 182, TRACK_H = 7, SEGMENTS = 18, INNER = TRACK_W - 2;
+const TRACK_W = 182, TRACK_H = 5, SEGMENTS = 18;
 const MARK_Y = 60;
 const TRACK_X = 213 - Math.floor(TRACK_W / 2);
 const TRACK_Y = MARK_Y + TITLE_MARK.h + 20;
-/** The stage's line stands 6 under the track; with "how many are here" under it, both lie on one strip of the chat wash. */
-const LINE_Y = TRACK_Y + TRACK_H + 6;
-
-function paintTrack(s: Surface, f: number): void {
-  // The empty floor is root.1, a step darker than the bricks' faces, so the hollow reads as cut into them.
-  sunk(s, 0, 0, TRACK_W, TRACK_H, 'ground', 'root.1');
-  const n = Math.round(Math.min(1, Math.max(0, f)) * INNER);
-  if (n) {
-    s.fill(1, 1, n, 1, 'ember.lt');
-    s.fill(1, 2, n, TRACK_H - 4, 'ember');
-    s.fill(1, TRACK_H - 2, n, 1, 'ember.dk');
-  }
-  // A cut between two segments is root.0 in the ember and root.2 in the empty floor, where root.0 would not show.
-  for (let k = 1; k < SEGMENTS; k++) {
-    const at = Math.round((k * INNER) / SEGMENTS);
-    s.fill(at, 1, 1, TRACK_H - 2, at <= n ? 'root.0' : 'root.2');
-  }
-}
 
 export const loadingScreen: Screen<LoadingView> = (v, ui) => {
   let high = 0;
   const rows = v.here ? 2 : 1;
+  // The strip stands inside one course, its top on the course's first face row, so that its outline lies on faces all
+  // round and never on a joint, whatever the screen's height.
+  const { dy } = menuOrigin(ui);
+  let shift = (((1 - (TRACK_Y + dy)) % GROUND_COURSE) + GROUND_COURSE) % GROUND_COURSE;
+  if (shift > GROUND_COURSE / 2) shift -= GROUND_COURSE;
+  const trackY = TRACK_Y + shift;
   return groundMenu(ui, 'loading', [
     titleMark({ cx: 213, y: MARK_Y }),
     {
-      x: TRACK_X, y: TRACK_Y, w: TRACK_W, h: TRACK_H, anim: true,
-      paint: (s, live) => { high = Math.max(high, v.done(live.t)); paintTrack(s, high); },
+      x: TRACK_X, y: trackY, w: TRACK_W, h: TRACK_H, anim: true,
+      paint: (s, live) => {
+        high = Math.max(high, v.done(live.t));
+        paintStrip(s, { x: 0, y: 0, w: TRACK_W, f: high, segments: SEGMENTS, thin: true, onGround: true, tones: ['ember.lt', 'ember', 'ember.dk'] }, 0, 0);
+      },
     },
     {
-      // Under the track, a readout as wide as it on a strip of the chat wash: what is being done in salt at its left and
-      // which stage of how many in grey at its right, then on a server how many are here, in grey at the left. Centred
-      // one under the other, each on the bare tile, the grey line was lost on the bricks.
-      x: TRACK_X, y: LINE_Y - 1, w: TRACK_W, h: rows * 10 + 2, anim: true,
+      // 4 under the track, bare on the tile with their shadow as every line on the ground: what is being done in salt at
+      // the track's left end and which stage of how many in grey at its right, then on a server how many are here in
+      // grey. On a strip of wash they read as a pane of dark glass.
+      x: TRACK_X, y: trackY + TRACK_H + 4, w: TRACK_W, h: rows * 10, anim: true,
       paint: (s, live) => {
-        s.wash(0, 0, TRACK_W, rows * 10 + 2, 'root.0', 3);
         const [n, of] = v.stage(live.t);
         const count = `${n} of ${of}`;
-        s.text(cut(v.doing(live.t), TRACK_W - 4 - measure(count) - 8), 2, 1, 'salt', true);
-        s.text(count, rightX(count, TRACK_W - 3), 1, 'root.4', true);
-        if (v.here) s.text(cut(v.here, TRACK_W - 4), 2, 11, 'root.4', true);
+        s.text(cut(v.doing(live.t), TRACK_W - measure(count) - 8), 0, 0, 'salt', true);
+        s.text(count, rightX(count, TRACK_W - 2), 0, 'root.4', true);
+        if (v.here) s.text(cut(v.here, TRACK_W - 2), 0, 10, 'root.4', true);
       },
     },
   ], { on: { key: (e) => { if (e.key === 'Escape') { v.onGiveUp(); return true; } } } });

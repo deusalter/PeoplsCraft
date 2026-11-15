@@ -44,6 +44,8 @@ export const GROUND = pixmap({ rows: build(), key: { K: 'root.0', z: 'stone.pit'
 /** The tile's period, for parts that scroll it. */
 export const GROUND_W = W;
 export const GROUND_H = H;
+/** The height of a course of blocks, its joint on the last row. */
+export const GROUND_COURSE = BH;
 
 function hash(a: number, b: number, c = 0): number {
   let h = (a * 73856093) ^ (b * 19349663) ^ (c * 83492791) ^ 0x5bd1e995;

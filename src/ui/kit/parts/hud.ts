@@ -71,6 +71,11 @@ export interface StripOpts {
   was?: number;
   /** The thin strip is 5 tall with three rows; the strip 7 tall with five. */
   thin?: boolean;
+  /**
+   * Laid on the ground tile, whose blocks are root.2: the unlit floor is root.1 and its segment lines root.2, so the
+   * empty part is not lost in the faces of the blocks round it.
+   */
+  onGround?: boolean;
 }
 
 /**
@@ -91,8 +96,8 @@ export function paintStrip(s: Surface, o: StripOpts, x: number, y: number): void
   s.fill(x + 1, y + h - 1, w - 2, 1, 'root.0');
   s.fill(x, y + 1, 1, rows, 'root.0');
   s.fill(x + w - 1, y + 1, 1, rows, 'root.0');
-  s.fill(x + 1, y + 1, inner, rows, 'root.2');
-  if (!o.thin) s.fill(x + 1, y + 1, inner, 1, 'root.1');
+  s.fill(x + 1, y + 1, inner, rows, o.onGround ? 'root.1' : 'root.2');
+  if (!o.thin && !o.onGround) s.fill(x + 1, y + 1, inner, 1, 'root.1');
   const n = Math.round(Math.min(1, Math.max(0, o.f)) * inner);
   const was = o.was !== undefined ? Math.round(Math.min(1, Math.max(0, o.was)) * inner) : n;
   if (was > n) s.fill(x + 1 + n, y + 1, was - n, rows, 'ember.lt');
@@ -105,7 +110,7 @@ export function paintStrip(s: Surface, o: StripOpts, x: number, y: number): void
   const pitch = (inner + 1) / o.segments;
   for (let k = 1; k < o.segments; k++) {
     const at = Number.isInteger(pitch) ? k * pitch : 1 + Math.round((k * inner) / o.segments) - 1;
-    s.fill(x + at, y + 1, 1, rows, 'root.0');
+    s.fill(x + at, y + 1, 1, rows, o.onGround && at > n ? 'root.2' : 'root.0');
   }
 }
 
