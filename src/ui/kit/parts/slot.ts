@@ -39,8 +39,9 @@ export interface SlotOpts {
 }
 
 /**
- * The stack count (5.4): its last column on `right` and its lowest row on `bottom`. In a slot that is the floor's last
- * column and row, so its shadow falls on the light edge and the icon keeps all it can of its lower right. Two digits
+ * The stack count (5.4): its last column on `right` and its lowest row on `bottom`. In a slot that is one in from the
+ * floor's last column and row, so that its shadow ends on the floor and the light edge stays whole round it: with the
+ * shadow on the edge, the counts of two neighbours ran together and a count read as hanging under its slot. Two digits
  * are the text face; three no longer fit in it and take the small face, as does a count of a thousand or more, written
  * in thousands ("1k", "12k") so that it is never more than three glyphs. 1 is not written.
  */
@@ -120,8 +121,8 @@ export function paintSlot(s: Surface, o: Omit<SlotOpts, 'x' | 'y'>, live: Live):
   const sil: Colour = dark ? (live.hover ? 'root.4' : 'root.3') : tone(ramp, live.hover ? 'sh' : 'dk');
   if (o.stack) {
     s.icon(o.stack.icon, at, at);
-    // Inside a frame the count steps in by two, so that its shadow ends inside the frame and never runs through it.
-    paintCount(s, o.stack.n, size - (framed ? 4 : 2), size - (framed ? 4 : 2));
+    // Inside a frame the count steps in once more, so that its shadow ends inside the frame and never runs through it.
+    paintCount(s, o.stack.n, size - (framed ? 4 : 3), size - (framed ? 4 : 3));
   } else if (o.missing) s.icon(o.missing, at, at, 'flat', sil);
   else if (o.silhouette) s.draw(SILHOUETTES[o.silhouette], at, at, { flat: sil });
   if (o.mark === 'refused') s.map(CROSS, size - 8, 1);
