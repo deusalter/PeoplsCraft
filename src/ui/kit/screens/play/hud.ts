@@ -242,13 +242,13 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   out.push(pips({ x: L(cx - 91), y: H - 42, kind: 'life', now: life[0], max: life[1], mending: !first && !STILL }));
   const practice = first ? 0 : 320 / 900;
   const level = first ? '1' : '14';
-  // The level sits on the practice strip as the tradition sets it: its figures end 1 above the strip, under the feet of
-  // the pips, and each is ringed in root.0, whose lowest ring row lies on the strip's top, so that it reads as the
-  // strip's number. Ending level with the pips' feet it read as a count of life or hunger wedged between the rows.
+  // The level stands over the practice strip, its figures ending level with the pips' feet and each ringed in root.0,
+  // the ring's lowest row 2 clear of the strip's outline. With the ring lying on the strip's top the figures seemed to
+  // stand in the strip; the green and the ring, which no count of life or hunger has, say it is the level.
   // While the strip is empty no level is written: a lone 1 beside an empty strip read as a stray figure.
   const lw = measure(level);
   if (practice > 0) out.push({
-    x: L(cx - Math.floor(lw / 2)) - 1, y: H - 40, w: lw + 2, h: 10,
+    x: L(cx - Math.floor(lw / 2)) - 1, y: H - 42, w: lw + 2, h: 10,
     paint: (s) => {
       for (const [dx, dy] of [[0, 1], [2, 1], [1, 0], [1, 2]]) s.text(level, dx, dy, 'root.0');
       s.text(level, 1, 1, 'growth.lt');
