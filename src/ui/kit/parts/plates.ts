@@ -382,10 +382,10 @@ function head(s: Surface, seat: number, x: number, y: number, fallen = false): v
 }
 
 /** The pitch of the roster's rows, and where the first stands: under the header, its rule and the columns' names. */
-const ROSTER_ROW = 16, ROSTER_TOP = 27;
+const ROSTER_ROW = 16, ROSTER_TOP = 28;
 
 /**
- * The roster (5.24), held open with Tab: a plain dark plate 304 wide, a header, the columns' names in the small face,
+ * The roster (5.24), held open with Tab: a plain dark plate 304 wide, a header, the columns' names in grey,
  * then a row 16 tall for every seat, the away last.
  */
 export function roster(o: { cx: number; y: number; server: string; members: Member[]; seats?: number }): Node {
@@ -404,10 +404,12 @@ export function roster(o: { cx: number; y: number; server: string; members: Memb
       s.text(cut(o.server, ofX - 12), 6, 3, 'salt', true);
       s.text(of, ofX, 3, 'root.4', true);
       s.fill(1, 15, w - 3, 1, 'root.3');
-      // The columns' names, so that a green 14 is read as a level and a word in the last column as how far.
-      s.text('Where', PLACE, 18, 'root.4', true, SMALL);
-      s.text('Lvl', rightX('Lvl', LEVEL_R, SMALL), 18, 'root.4', true, SMALL);
-      s.text('Far', rightX('Far', DIST_R, SMALL), 18, 'root.4', true, SMALL);
+      // The columns' names, so that a green 14 is read as a level and a word in the last column as how far: words in
+      // the text face in sentence case. The small face has capitals only, and "WHERE  LVL  FAR" was the spaced
+      // capitals of a web table's header.
+      s.text('Where', PLACE, 17, 'root.4', true);
+      s.text('Level', rightX('Level', LEVEL_R), 17, 'root.4', true);
+      s.text('How far', rightX('How far', DIST_R), 17, 'root.4', true);
       members.forEach((m, i) => {
         const y = ROSTER_TOP + i * ROSTER_ROW;
         const grey = m.away;
