@@ -90,17 +90,19 @@ function build(ui: Ui, id: string): Node {
   const wanting = (i: number) => !matched && laid && !!g.ghost[i] && !st.hand.stores.grid[i];
   const making: Node[] = [
     stackGrid(b, { store: 'grid', x: 30, y: 17, cols: 3, rows: 3, ramp: k.ramp, each: (i) => ({ missing: g.ghost[i] ?? undefined, mark: wanting(i) ? 'wanting' : undefined }) }),
-    progressArrow({ x: 91, y: 36, f: matched ? 1 : 0, ramp: k.ramp, colour: k.arrow }),
-    resultSlot(b, g, 122, 31, k.ramp, true),
+    progressArrow({ x: 91, y: 34, f: matched ? 1 : 0, ramp: k.ramp, colour: k.arrow }),
+    resultSlot(b, g, 122, 29, k.ramp, true),
   ];
   // Pieces on the grid that make nothing say why under the arrow, as a refusal: what the laid pattern is short of, or
-  // that nothing joins. In faded ink it read as a caption.
+  // that nothing joins. In faded ink it read as a caption. The arrow and the result stand 2 above the grid's middle so
+  // that 3 clear units lie between the line's descenders and Sort pack: at 59 a "y" stood on the button's outline and
+  // the line read as its label spilling over.
   const gaps = g.ghost.filter((x, i): x is string => !!x && !st.hand.stores.grid[i]);
   const kinds = new Set(gaps);
   const why = !gaps.length ? '{cross} Nothing joins'
     : kinds.size > 1 ? `{cross} ${gaps.length} pieces short`
     : `{cross} ${gaps.length > 1 ? `${gaps.length} ` : ''}${thing(gaps[0]).name} short`;
-  if (!matched && laid) making.push(ink(91, 59, why, 'blood.dk', 168 - 91));
+  if (!matched && laid) making.push(ink(91, 56, why, 'blood.dk', 168 - 91));
   const pack = packBlock(b, k.ramp, 73, 84);
   const outside = () => { st.hand.dropHeld(); b.after(); };
   if (!ui.layout.wide) {

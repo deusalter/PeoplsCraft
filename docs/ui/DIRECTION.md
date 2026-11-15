@@ -2507,8 +2507,8 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | B0 | slab | 0 | 0 | 176 | 166 | station slab |
 | B1 | text | 8 | 6 | 80 | 10 | the station's name |
 | B2 | slots | 30 | 17 | 54 | 54 | the three by three grid |
-| B3 | arrow | 91 | 36 | 22 | 15 | progress arrow |
-| B4 | bigslot | 122 | 31 | 26 | 26 | the result, in the large slot (icon at 127, 36) |
+| B3 | arrow | 91 | 34 | 22 | 15 | progress arrow |
+| B4 | bigslot | 122 | 29 | 26 | 26 | the result, in the large slot (icon at 127, 34), 2 above the grid's middle so that the refusal under it keeps 3 units clear of Sort pack |
 | B5 | text | 8 | 73 | 40 | 10 | "Pack" |
 | B6 | button | 112 | 69 | 56 | 14 | "Sort pack" |
 | B7 | slots | 8 | 84 | 162 | 54 | the pack, nine by three |
@@ -2522,7 +2522,7 @@ Size 291 by 166, with tabs standing 21 above. Material: timber for the Workbench
 | T1 to T5 | tab | 175 + 23 i | -21 or -18 | 24 | 24 or 18 | the five stations in one order on every making screen: By hand, Workbench, Anvil, Line Frame, Joining Bench. The one whose patterns are listed is chosen (24 tall); another whose patterns may be read here is a plain tab (18); one whose patterns cannot be read here is drawn flat, a face of `dk` with no light or dark edge and its icon flat in `sh` with the lock of a locked slot at its bottom right (5.7), and its tooltip says "Its patterns are not read here". A tab never moves: when each screen put itself first, the same station stood in a different place on every screen |
 
 - **Shows.** The grid, what it makes, and the patterns of the station. The Line Frame has the same parts; its slab is timber and its arrow fills in arm blue instead of ember, because the work there is line and crystal.
-- **Says why.** While pieces lie on the grid and nothing comes of them, one line stands at 91, 59, under the arrow, as a refusal: `{cross}`, a space and the words in `blood.dk`, the refusal on a light face, cut at 77 wide. It names what a laid pattern lacks, "{cross} Crystal short" ("{cross} 2 Crystal short" for two of one kind, "{cross} 3 pieces short" for several kinds), else "{cross} Nothing joins". Each empty cell the pattern wants keeps the missing thing's silhouette and takes a frame of `blood` one unit deep inside its floor, with no badge, for as long as it stays empty. "One piece short" in `ink.faded` read as a caption and did not say which piece.
+- **Says why.** While pieces lie on the grid and nothing comes of them, one line stands at 91, 56, under the arrow, as a refusal, its descenders ending 3 above Sort pack's outline (at 59 a "y" stood on the outline and the line read as the button's label spilling over): `{cross}`, a space and the words in `blood.dk`, the refusal on a light face, cut at 77 wide. It names what a laid pattern lacks, "{cross} Crystal short" ("{cross} 2 Crystal short" for two of one kind, "{cross} 3 pieces short" for several kinds), else "{cross} Nothing joins". Each empty cell the pattern wants keeps the missing thing's silhouette and takes a frame of `blood` one unit deep inside its floor, with no badge, for as long as it stays empty. "One piece short" in `ink.faded` read as a caption and did not say which piece.
 - **Clickable.** As the pack. A pattern read through another station's tab cannot be laid here; its cell answers with the refusal frame and the line "Made at the Anvil".
 - **Keys.** As the pack.
 - **First.** The first Tab press lands on the search field.
