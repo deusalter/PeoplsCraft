@@ -84,7 +84,7 @@ export interface BossOpts {
   x: number; y: number;
   name: string;
   f: number;
-  /** Where the animal changes, as fractions of its life: two ticks of salt above and below the strip. */
+  /** Where the animal changes, as fractions of its life: a line of salt across the inside of the strip. */
   marks?: number[];
   /** The part just lost, still lit in `ember.lt`. */
   was?: number;
@@ -104,11 +104,12 @@ export function bossBar(o: BossOpts): Node {
       s.text(t, centreX(t, 0, BOSS_W), 0, 'salt', true);
       const tones: [Colour, Colour, Colour] = o.event === 'violet' ? ['violet.lt', 'violet.lt', 'violet.dk'] : ['blood.lt', 'blood', 'blood.dk'];
       paintStrip(s, { x: 0, y: 0, w: BOSS_W, f: o.f, was: o.was, tones, segments: 10, thin }, 0, 13);
+      // Inside the strip only, over its lit or unlit rows: ticks standing 2 out above and below read as stray pixels and
+      // reached into the next bar's name line.
       const h = thin ? 5 : 7;
       for (const m of o.marks ?? []) {
         const x = 1 + Math.round(m * (BOSS_W - 2));
-        s.fill(x, 11, 1, 2, 'salt');
-        s.fill(x, 13 + h, 1, 2, 'salt');
+        s.fill(x, 14, 1, h - 2, 'salt');
       }
     },
   };
