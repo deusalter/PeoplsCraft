@@ -420,8 +420,11 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
         const local = v.here !== undefined && v.chosen < v.here;
         const to = cooling ? `${place.crossing} to ${place.name}` : place.crossing;
         // How far stands on a line of its own, so that a wrap never parts a count from its "m".
-        const b = box(local || place.kind === 'self' ? `${to}.` : to, LIST_W, 2);
-        for (const l of b.lines) s.text(l.text, 0, l.y, 'ink');
+        // No crossing at all is a refusal, as at a station: the cross and the words in blood.dk, the refusal on a light
+        // face. In plain ink under a grey Travel it read as a caption, and the button as one that could be pressed.
+        const said = place.refused ? `{cross} ${to}` : local || place.kind === 'self' ? `${to}.` : to;
+        const b = box(said, LIST_W, 2);
+        for (const l of b.lines) s.text(l.text, 0, l.y, place.refused ? 'blood.dk' : 'ink');
         if (!local && place.kind !== 'self') s.text(cut(way(place), LIST_W), 0, b.lines.length * 10, 'ink');
       },
     },
