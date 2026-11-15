@@ -150,7 +150,7 @@ Upper on dark is the mid green `growth`, not `growth.lt`: with the light green i
 | The strip under a chat line, a name tag, the prompt, the lines under "Paused", the Guide's step, the name of the thing in hand and a pickup on the HUD, and the readout under the loading track | `root.0` at three quarters, so that a grey line reads on a noon sky | `root.1`, opaque |
 | The shade of a cooling item in the hotbar, covering the icon from the top by whole units | `root.0` at a half | `root.1`, opaque |
 | A blow taken: a frame 2 units deep along the stage's edges for 0.2 s | `blood` at three quarters | not drawn |
-| The fall | `blood.pit` at a quarter, a half, then three quarters held. Over the noon sky `blood.dk` at a half read as a lilac wash, which is the violet glow this interface refuses | `blood.pit`, opaque |
+| The fall | `root.0` at a half, then `blood.pit` over it at a quarter and then a half, held. Over the noon sky it comes out a dull maroon (#46383d), red above blue; over a quarter dim the same half of `blood.pit` still came out blue above red (#544b56); `blood.dk` at a half read as a lilac wash (#6f4f6a), which is the violet glow this interface refuses, and `blood.pit` at three quarters as a flat maroon fill with no world under it | `blood.pit`, opaque |
 | Crossing a gate | `violet.dk` at a quarter, a half, three quarters as the crossing fills | `violet.dk`, opaque |
 
 **Later.** The texture pass starts from these ramps. It may add ramps the world needs (leaf, water, sky, the metals). It may not change a value here, and it may not add a tone inside one of these ramps.
@@ -3521,7 +3521,7 @@ Size: as its rows need, 246 by 198 for the game's keys (at least 216 wide, so th
 
 ### The screen at a fall
 
-Size 427 by 240. Material: the world dimmed by a quarter wash of root.0 and over that a half wash of blood.dk, so the scene stays seen through the red (blood.pit at three quarters read as a flat maroon fill with no world under it), and no window: the fall is not a container and the wash is its ground, as in the tradition. Anchor: the column 200 wide, y from the top of the block 240 tall centred on the screen.
+Size 427 by 240. Material: the world dimmed by a half wash of root.0 and over that a half wash of blood.pit, so the scene stays seen through a dull red-brown and never turns violet over the sky (blood.dk at a half read lilac over the noon sky, and blood.pit at three quarters as a flat maroon fill with no world under it), and no window: the fall is not a container and the wash is its ground, as in the tradition. Anchor: the column 200 wide, y from the top of the block 240 tall centred on the screen.
 
 ```
 +==============================================================================================================================================+
@@ -3572,7 +3572,7 @@ Size 427 by 240. Material: the world dimmed by a quarter wash of root.0 and over
 | D1 | raised | 175 | 56 | 78 | 22 | "You fell" in raised letters (5.28), centred on the column, with a flat `root.0` copy of the whole drawing 1 right and 1 down under it, as its shadow. "Fell" is this ground's word for a death wherever it is said (chat's "Rook fell to a Tama", the compass's mark of where one fell), so the headline keeps it and does not switch to "died" |
 | D2 | text | 113 | 86 | 200 | 10 | what did it, centred, salt with shadow: "to a Tama", "from a height", "to hunger" |
 | D3 | text | 113 | 98 | 200 | 10 | what was shed, centred, salt with shadow, in words: the jar mark and "14 lees dropped"; left out when nothing was. "14 shed in Vana" said neither what was shed nor a place that can be found: Vana is a country |
-| D3b | text | 113 | 110 | 200 | 10 | where the shed lees lie, centred, in arm.lt with shadow as a place to go: "Your lees lie at x -104  z 2210"; when nothing was shed, in its place, where the body fell, salt with its shadow as all text on the world: "At x 312  z -88". In `root.4` on the washed world it was the faintest line on the screen |
+| D3b | text | 113 | 110 | 200 | 10 | where the shed lees lie, centred, salt with shadow: "Your lees lie at x -104  z 2210" (in arm.lt it read as a light-blue link on a screen with nothing to follow); when nothing was shed, in its place, where the body fell, salt with its shadow as all text on the world: "At x 312  z -88". In `root.4` on the washed world it was the faintest line on the screen |
 | D4 | button | 113 | 126 | 200 | 20 | "Rise again", 6 under the last line drawn: at y 126 with D3 and D3b, at 114 when nothing was shed |
 | D5 | button | 113 | 150 | 200 | 20 | "Save and leave"; on a server "Leave"; 4 under D4 |
 

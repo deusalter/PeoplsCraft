@@ -1,5 +1,7 @@
-// The screen at a fall (section 6): the world dimmed a quarter, then a wash of blood.dk over it that comes up in two
-// steps, so the scene stays seen through the red (blood.pit at three quarters read as a flat maroon fill); on it, with
+// The screen at a fall (section 6): the world dimmed a half, then a wash of blood.pit over it that comes up in two
+// steps to a half, so the scene stays seen through a dull red-brown (blood.dk at a half read lilac over the noon sky,
+// blood.pit at a half over a quarter dim still came out blue above red there, and blood.pit at three quarters read as a
+// flat maroon fill); on it, with
 // no window, "You fell" in raised letters at the top third, what did it and what was shed under it, and two buttons
 // that wake after 0.8 s so that a blow in flight cannot press one. With friends near, their name tags and chat stay
 // drawn over the wash.
@@ -43,7 +45,8 @@ function build(ui: Ui, id: string): Node {
   // The line names what was dropped in words; the mark alone, and a country's name for where, said neither what was
   // shed nor where to find it.
   if (f.shed) kids.push(line((y += 12), `{lees} ${count(f.shed)} lees dropped`));
-  if (f.shed && f.lie) kids.push(line((y += 12), `Your lees lie at ${f.lie}`, 'arm.lt'));
+  // Salt like every line here: in arm.lt it read as a light-blue link on a screen with nothing to follow.
+  if (f.shed && f.lie) kids.push(line((y += 12), `Your lees lie at ${f.lie}`));
   // With nothing shed there is no place to go back to, but where it happened is still worth knowing. It is salt with
   // its shadow as all text on the world: root.4 on the washed world was the faintest line on the screen.
   else kids.push(line((y += 12), `At ${f.at}`));
@@ -74,7 +77,7 @@ function build(ui: Ui, id: string): Node {
   if (t < 0.3) setTimeout(() => ui.invalidate(), 110);
   return {
     x: 0, y: 0, w: ui.w, h: ui.h,
-    paint: (s) => { s.wash(0, 0, ui.w, ui.h, 'root.0', 1); s.wash(0, 0, ui.w, ui.h, 'blood.dk', quarters); },
+    paint: (s) => { s.wash(0, 0, ui.w, ui.h, 'root.0', 2); s.wash(0, 0, ui.w, ui.h, 'blood.pit', quarters); },
     on: { key: (e) => { if (e.key === 'Enter' && awake) { fellAt = ui.t; ui.invalidate(); return true; } return e.key === 'Escape'; } },
     takes: true,
     kids: [...over, ...kids],
