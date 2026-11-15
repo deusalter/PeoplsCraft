@@ -1,8 +1,7 @@
 // Pause (section 6, Pause): no window. Over the dimmed world, "Paused" in salt at the head of the menus' column, the
-// world and whether it is saved under it in grey, and a column of stone buttons, as the tradition's game menu stands.
+// world and whether it is saved under it, bare with their shadow, and a column of stone buttons, as the tradition's game menu stands.
 // A clay slab behind stone buttons set two materials against each other and boxed a column that needed no box.
 import type { Node, Screen } from '../node';
-import { measure } from '../font/measure';
 import { cut } from '../font/wrap';
 import { button } from '../parts/button';
 import { COLUMN_W, line, washedMenu } from '../parts/menu';
@@ -35,29 +34,24 @@ const TITLE_Y = 40;
 export const pauseScreen: Screen<PauseView> = (v, ui) => {
   firstFocus(ui, 'pause', 'pause.back');
   const kids: Node[] = [line({ x: X, y: TITLE_Y, w: COLUMN_W, text: 'Paused', c: 'salt', shadow: true, centre: true })];
-  let y = TITLE_Y + 12;
-  // The lines under the title on one strip of the chat wash, 2 wider than the longest on each side: grey bare on the
-  // dimmed sky was barely there at the 960 size.
+  // The lines under the title stand bare on the dimmed world with their shadow, 4 under the title's cell and 10 apart.
+  // On a strip of the chat wash cut to their width they read as a web label chip, the one plate on the screen.
+  let y = TITLE_Y + 14;
   const said: { t: string; c: 'salt' | 'root.4' | 'blood.lt' }[] = [];
-  const say = (text: string, c: 'salt' | 'root.4' | 'blood.lt') => { said.push({ t: cut(text, COLUMN_W - 5), c }); };
+  const say = (text: string, c: 'salt' | 'root.4' | 'blood.lt') => { said.push({ t: cut(text, COLUMN_W), c }); };
   // On a server: the place and its address in salt, then who is on and that the world goes on in grey. "The world runs
-  // on" in blood.lt over three centred lines spent the warning colour on a line that warns of nothing.
+  // on" in blood.lt over three centred lines spent the warning colour on a line that warns of nothing. Alone: the
+  // world in salt and when it was saved in grey; when the save failed the world steps down to grey under the warning.
   if (v.server && v.crew) {
     say(`${v.world}  ${v.crew.address}`, 'salt');
     say(`${v.crew.here} of ${v.crew.seats} here, the world runs on`, 'root.4');
   } else {
-    say(v.world, 'root.4');
+    const failed = v.saved !== undefined && !v.saved.ok;
+    say(v.world, failed ? 'root.4' : 'salt');
     if (v.saved) say(v.saved.text, v.saved.ok ? 'root.4' : 'blood.lt');
   }
-  const sw = Math.max(...said.map((l) => measure(l.t))) + 5, sh = said.length * 10;
-  kids.push({
-    x: X + Math.floor((COLUMN_W - sw) / 2), y, w: sw, h: sh,
-    paint: (s) => {
-      s.wash(0, 0, sw, sh, 'root.0', 3);
-      said.forEach((l, i) => s.text(l.t, Math.floor((sw - measure(l.t)) / 2), i * 10, l.c, true));
-    },
-  });
-  y += sh;
+  said.forEach((l, i) => kids.push(line({ x: X, y: y + i * 10, w: COLUMN_W, text: l.t, c: l.c, shadow: true, centre: true })));
+  y += said.length * 10;
   // A failed save must not be promised again by the last door: it is offered once more above a door that says so.
   const failed = !v.server && v.saved !== undefined && !v.saved.ok;
   const doors: { id: string; label: string; onPress?: () => void; warn?: boolean }[] = [
