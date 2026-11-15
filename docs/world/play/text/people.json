@@ -1,0 +1,550 @@
+{
+ "folk.why:wayfinder": "Sits down at any room made ready for a holder.",
+ "folk.why:provisioner": "Hears when one of us carries more lees than our hearths use.",
+ "folk.why:smith": "Word of an anvil brings her. Whoever works iron will want harder ore.",
+ "folk.why:apothecary": "Wants Vanahar Remains while they are fresh, for a holder's dead hand.",
+ "folk.why:tinker": "Has never seen two pieces joined, and our Joining Bench can do it.",
+ "folk.why:runescribe": "Cuts lines in stone. Our Line Frame means crystal out of deep rock.",
+ "folk.why:beastcaller": "Lives on Tama remains, which we can supply now that Kankāl is dead.",
+ "folk.why:deserter": "Left by a beaten Sand March, too far from a fire to reach it by dark.",
+
+ "folk.meet:wayfinder": "You have a door, a light and a bed, peopl, so I hold here from tonight.",
+ "folk.meet:provisioner": "They said on the road that you carry more lees than your hearths use, peopl. I carry meat, hide and coal.",
+ "folk.meet:smith": "An anvil here means you will dig for harder ore, peopl. I can shape a bar of any metal you bring me.",
+ "folk.meet:apothecary": "Vanahar's remains brought me, peopl, while they are fresh. I sell salves and see to holders' arms.",
+ "folk.meet:tinker": "I came to see your Joining Bench, peopl. I have handled small pieces all my life and never seen two joined.",
+ "folk.meet:runescribe": "Your Line Frame means someone here brings crystal out of deep rock, peopl. I cut lines in hearthstones.",
+ "folk.meet:beastcaller": "Kankāl is dead, peopl, and Tama come in packs at every dusk. I bind their remains to bone for small ones.",
+ "folk.meet:deserter": "I came with the march that was beaten here, peopl. I could not reach a fire by dark. I sell for Mūda.",
+
+ "folk.housed:wayfinder": [
+  "They said every stone on this road was lit once.",
+  "The crates in the next old houses are empty. Put food in them if you pass that way.",
+  "Ask me which stone comes next. I know where each kind lies and how each offering is made.",
+  "Bedrolls and recall stones come out of the old houses. No one born here has a use for either.",
+  "If a nest has got into a Broken Store by the road, clear it before a walker sits down there.",
+  "Tell me whether the floor at the next stone is whole. I carry word of it to the other hearths."
+ ],
+ "folk.housed:provisioner": [
+  "I buy anything, because somebody two hearths on will want it.",
+  "Take food with you when you go Under.",
+  "Two pots this close bring them at dusk. I told the others so before I sat down here.",
+  "The hearths that hunt ordinary animals sell me their meat and hide. What they want back is lees.",
+  "Bring me hide from Tusāravan. The beds on this road wear through.",
+  "Coal sells in the cold country, if you have any to spare."
+ ],
+ "folk.housed:smith": [
+  "Iron lifts with a stone pick. Hīrak needs an iron one.",
+  "I can shape a bar of any metal. From Jalit up I cannot make the bar.",
+  "A forge of remains against my wall draws, and I am the one sitting up beside it.",
+  "I have looked all my life for a forge of the forebears and never found a ring standing.",
+  "Bring me raw ore of a metal I have only seen poured.",
+  "If you get a tool whole out of a Sealed Store, let me see it before you use it."
+ ],
+ "folk.housed:apothecary": [
+  "Put it on the table, away from the pot.",
+  "This is what a holder drinks at first light, and it does the same for your arm.",
+  "Wait until the first salve has closed the wound before you bind on another.",
+  "An old holder's hand goes dead and sets, the way metal sets. The remains might loosen it.",
+  "I have tried the remains on old holders' hands. None has loosened yet.",
+  "Bring me any old salve you find in a Sealed Store."
+ ],
+ "folk.housed:tinker": [
+  "The one who taught me had never joined two pieces either.",
+  "I sell one piece of each kind to a peopl. A second of the same does nothing when worn.",
+  "If you get into a Sealed Store, bring out the small things as well as the bars.",
+  "Hold a piece out to me and I can tell you which store it came from.",
+  "One piece of mine needs a part of Jalit. When the smith has Jalit to spare, I can sell it.",
+  "The old pieces were made by hands with a skill that nobody has now, I think."
+ ],
+ "folk.housed:runescribe": [
+  "My lines are the ones that join a holder's hand to the charge.",
+  "A bad cut leaks into the arm, and the arm tires sooner for the same work.",
+  "My teacher had me cut slab after slab before one of mine carried a night's holding.",
+  "I held one of those recall stones all night once, and it did nothing for me.",
+  "Crystal grows in the dark rock. There is nothing of any kill in it.",
+  "At a great stone, look at the place for the hand. Tell me how many lines leave it."
+ ],
+ "folk.housed:beastcaller": [
+  "Your small one stays by you for the Tama flesh on the bone.",
+  "Do not bring it inside my walls. Unsalted remains bring feeders, and I sit beside a pot.",
+  "If you find a nest in the old stonework, tell me what kind was in it before you break it.",
+  "A second one will stay for the whistle. They come to the sound.",
+  "The other holders do not like my trade, because what I carry is food to feeders.",
+  "The eight at the stones are beasts, peopl, the largest of the kinds that come up at night."
+ ],
+ "folk.housed:deserter": [
+  "I marched with them and I will not again.",
+  "A Mūda is a night inside the light at any fire of ours.",
+  "While the burrower lived nothing else came up on the sand.",
+  "Everything I sell, a march took from a store and could not burn.",
+  "The old at the fires say another burrower will come onto the sand if the stones there are left alone.",
+  "Some stores in the sand country are already broken. Ask me which before you walk out to one."
+ ],
+
+ "folk.stage:wayfinder.1": [
+  "Vanahar is dead, peopl. The telling says that takes its country back for the hearths.",
+  "Kāru will come to a Joining Bench, and Vejja is already on the road for the remains."
+ ],
+ "folk.stage:wayfinder.2": [
+  "Maruhar is dead, peopl. The fire that works Jalit needs its remains.",
+  "Kankāl comes next. Its offering is a bell, rung on its stone."
+ ],
+ "folk.stage:wayfinder.3": [
+  "They are saying on the road that Kankāl lay on a seal, and you have broken it.",
+  "Under is open to you now. None of us will go down with you."
+ ],
+ "folk.stage:wayfinder.4": [
+  "Guhamāt is dead, peopl. Its remains will work Tala.",
+  "Jīmūt's kite is flown over its floor."
+ ],
+ "folk.stage:wayfinder.5": [
+  "Jīmūt is dead, peopl. Its remains go to the anvil for the second gate.",
+  "Bring back what you find past that gate, peopl."
+ ],
+ "folk.stage:wayfinder.6": [
+  "Ratan is dead, peopl. Its furnace works Patik, and Kuranga's mask is made of that.",
+  "The mask is worn at its stone after dark. By day nothing comes to it."
+ ],
+ "folk.stage:wayfinder.7": [
+  "Kuranga is dead, peopl. Its remains will work Gahan.",
+  "The Cairn is the last stone in the telling. Its key is made of Gahan."
+ ],
+ "folk.stage:wayfinder.8": [
+  "You opened the Cairn, peopl, and what was under it is dead.",
+  "I know of no stone past the Cairn to send you to, peopl."
+ ],
+
+ "folk.stage:provisioner.1": [
+  "Vanahar's remains, boiled down, are better lees than any pot on this road has had."
+ ],
+ "folk.stage:provisioner.2": [
+  "The Maruhar Furnace still needs a fire under it, and I sell coal."
+ ],
+ "folk.stage:provisioner.3": [
+  "The road says you broke a seal under Kankāl, peopl. The nights are worse, and the hearths will want more lees."
+ ],
+ "folk.stage:provisioner.4": [
+  "Brown caps from Under make a stew. Bring me some and I will carry them on."
+ ],
+ "folk.stage:provisioner.5": [
+  "When you come back through the second gate, bring the fruit you find there. I can sell it."
+ ],
+ "folk.stage:provisioner.6": [
+  "Kuranga is a night's work, they say. Take meat and arrows enough for a night away from a hearth."
+ ],
+ "folk.stage:provisioner.7": [
+  "Kuranga is dead, they say. I have arrows and meat for the walk to the Cairn."
+ ],
+ "folk.stage:provisioner.8": [
+  "Whatever came out of the Cairn, peopl, I will buy by weight like anything else."
+ ],
+
+ "folk.stage:smith.1": [
+  "Vanahar was full of iron bars, and I will buy the ones you do not need."
+ ],
+ "folk.stage:smith.2": [
+  "I sell Jalit bars and Jalit arrows now, from what your furnace runs.",
+  "A Jalit arrowhead burns what it goes into."
+ ],
+ "folk.stage:smith.3": [
+  "The Hollow Gate is seven pieces of Black Glass round Kankāl's remains, fitted on an anvil."
+ ],
+ "folk.stage:smith.4": [
+  "Guhamāt was full of Antar bars, so I have them to sell now."
+ ],
+ "folk.stage:smith.5": [
+  "Jīmūt gave up Tala bars. Where does Tala ore lie, peopl? I have never seen it in the rock."
+ ],
+ "folk.stage:smith.6": [
+  "Once you have Patik out of the Ratan Furnace, I can shape it."
+ ],
+ "folk.stage:smith.7": [
+  "Gahan is the hardest metal I know of. Bring me a bar from the Kuranga Furnace to work."
+ ],
+ "folk.stage:smith.8": [
+  "The arms that came out of the Cairn are better made than mine. I want to see how they were worked."
+ ],
+
+ "folk.stage:apothecary.2": [
+  "On your Joining Bench, Vanahar's remains soften made things. I think a dead hand has set the same way."
+ ],
+ "folk.stage:apothecary.3": [
+  "You can go Under now. Bring me what grows there and I can make the Greater Salve and the Greater Tonic."
+ ],
+ "folk.stage:apothecary.4": [
+  "Glowing caps from Under make a broth that eases the arm, so bring me more of them."
+ ],
+ "folk.stage:apothecary.5": [
+  "The fruit from past the second gate closes a wound a little. Bring me one to try."
+ ],
+ "folk.stage:apothecary.6": [
+  "My tonic is ground crystal in fruit juice. If the Ratan Crystal grinds finer, I want a piece."
+ ],
+ "folk.stage:apothecary.7": [
+  "Kuranga's remains loosen the hardest ore. I would try a piece on a dead hand, if you can spare one."
+ ],
+ "folk.stage:apothecary.8": [
+  "Nihān's remains are the strongest the stones have given. A piece of them might loosen a dead hand."
+ ],
+
+ "folk.stage:tinker.2": [
+  "Kammār has Jalit now, so I can stock the Long Glove. There is a part of Jalit in it."
+ ],
+ "folk.stage:tinker.3": [
+  "Let me hold the Kankāl Plate, peopl. It weighs more than any piece its size I have handled."
+ ],
+ "folk.stage:tinker.4": [
+  "Posak says one more small one stays by a hand that wears the Guhamāt Cap. I have never had a piece like it."
+ ],
+ "folk.stage:tinker.5": [
+  "Cloud Bottles in the old stores hold the same pale stuff as the Jīmūt Feather."
+ ],
+ "folk.stage:tinker.6": [
+  "Worn on the driving arm, the Ratan Crystal makes it tire slower. I can tell that by holding it."
+ ],
+ "folk.stage:tinker.7": [
+  "Wear the Kuranga Tine and it loosens a little wherever you strike, so every blow goes in further."
+ ],
+ "folk.stage:tinker.8": [
+  "The Cairn Gem is a piece of Dressed Stone. A gem is set in it. I do not know the make."
+ ],
+
+ "folk.stage:runescribe.1": [
+  "Was the hollow for the hand at Vanahar's stone worn smooth, peopl? Long holding wears it."
+ ],
+ "folk.stage:runescribe.2": [
+  "Maruhar's stone sits in a bowl of sand. Was its housing cut the way Vanahar's was?"
+ ],
+ "folk.stage:runescribe.3": [
+  "Bring me a piece of the blue crystal on Kankāl's pillars, peopl. I want to cut to it."
+ ],
+ "folk.stage:runescribe.4": [
+  "Guhamāt's stone is Under, where no born person will see its lines. Look at them for me."
+ ],
+ "folk.stage:runescribe.5": [
+  "The second gate is a frame and remains. There is no cut in it anywhere. I do not understand it."
+ ],
+ "folk.stage:runescribe.6": [
+  "A line cut to the Ratan Crystal loses less than one cut to any crystal I have. Bring me a piece, peopl."
+ ],
+ "folk.stage:runescribe.7": [
+  "The telling says the Cairn was the first stone, peopl, the one that covered most ground."
+ ],
+ "folk.stage:runescribe.8": [
+  "If anyone sits at a great stone now the Cairn is open, tell me how its lines carry under the hand."
+ ],
+
+ "folk.stage:beastcaller.4": [
+  "You say small ones formed on the cap Guhamāt dropped. Bring me a piece of that cap, peopl."
+ ],
+ "folk.stage:beastcaller.5": [
+  "Jīmūt never came to ground, so no hearth turned it. Show me how the Jīmūt Feather sits on a bone."
+ ],
+ "folk.stage:beastcaller.6": [
+  "You say Sakal formed where pieces of Ratan fell to the floor. I have never bound crystal to bone."
+ ],
+ "folk.stage:beastcaller.7": [
+  "Kuranga went in front of the Chandasāvak, the kind that eats the other kinds. Do they still come up together?"
+ ],
+ "folk.stage:beastcaller.8": [
+  "What lay under the Cairn had eaten the Dressed Stone round it. I want to see a piece of its remains."
+ ],
+
+ "folk.stage:deserter.3": [
+  "Chandasāvak come up on the dark night now. At the fires they say the peopls did it."
+ ],
+ "folk.stage:deserter.4": [
+  "You boiled Guhamāt down, peopl. Its remains are in a furnace. That furnace draws."
+ ],
+ "folk.stage:deserter.5": [
+  "Your second gate is built round the flier's remains. Pull a piece from the frame while nobody is using it."
+ ],
+ "folk.stage:deserter.6": [
+  "At the fires crystal is lees, and it goes in the fire. What you took off Ratan would be burned there."
+ ],
+ "folk.stage:deserter.7": [
+  "Another of Kuranga's kind will come to its stones. At the fires they say a stone always draws one."
+ ],
+ "folk.stage:deserter.8": [
+  "At the fires they say that heap was closed over a thing that could not be killed, and that the stones bred it.",
+  "It is dead now and the heap is open. They will want its remains burned."
+ ],
+
+ "folk.night:wayfinder": [
+  "My hand is on the stone until first light, peopl. Ask me about the road when the sun is up.",
+  "Take what you need from the shelf and weigh the lees out yourself."
+ ],
+ "folk.night:provisioner": [
+  "I am holding, peopl. Set the lees down by the pot for whatever you carry off.",
+  "Bring your goods over here if you want to sell. I cannot get up from the stone."
+ ],
+ "folk.night:smith": [
+  "While I hold I cannot go to the anvil, peopl, and the fire is out.",
+  "Show me the bar by the lamp, and I will work it tomorrow."
+ ],
+ "folk.night:apothecary": [
+  "This hand stays on the stone tonight. I will see to your arm after the night is out.",
+  "My arm is only sore by morning on a quiet night like this."
+ ],
+ "folk.night:tinker": [
+  "I cannot turn pieces over with one hand on the stone.",
+  "Come in daylight and I will look at what you found."
+ ],
+ "folk.night:runescribe": [
+  "The lines in this slab carry what my hand drives. I do not lift it until the sky is grey.",
+  "Cutting can wait until my hand is off the stone."
+ ],
+ "folk.night:beastcaller": [
+  "Keep your small one out of this room tonight, peopl. Its bone is unsalted, and I am holding.",
+  "What is on the table is for sale. The raw remains stay shut in their box until day."
+ ],
+ "folk.night:deserter": [
+  "I hold badly, peopl. My arm is shaking before the night is half gone.",
+  "Nobody taught me. I watched it done through walls I was sent to break."
+ ],
+
+ "folk.dark:wayfinder": [
+  "What came down from the moon is on the ground tonight, peopl.",
+  "Shut the door and stay inside until the sun is up."
+ ],
+ "folk.dark:provisioner": [
+  "No pack will come for the stores tonight. The things from the moon are out instead."
+ ],
+ "folk.dark:smith": [
+  "My door stays shut from now until first light, peopl. The moon is dark."
+ ],
+ "folk.dark:apothecary": [
+  "Chandasāvak cut deep, peopl. Come in and let me close it before you go out again."
+ ],
+ "folk.dark:tinker": [
+  "Every telling I know has the Chandasāvak under a seal."
+ ],
+ "folk.dark:runescribe": [
+  "A lamp does nothing to the Chandasāvak once they are up, peopl. They give their own light."
+ ],
+ "folk.dark:beastcaller": [
+  "The pale beasts are up to eat the other kinds, peopl. Tell me what you see them take."
+ ],
+ "folk.dark:deserter": [
+  "Out on the sand, Chandasāvak walk as well.",
+  "At the fires tonight everyone is inside the light, and nobody sleeps."
+ ],
+
+ "folk.attack:wayfinder": [
+  "What has come is stronger than the lees in my pot.",
+  "Fight them at the walls, peopl. I hold until they are gone."
+ ],
+ "folk.attack:provisioner": [
+  "They have come for the stores. Get between them and the chests.",
+  "I do not fight, peopl. If they reach the bed I will have to go."
+ ],
+ "folk.attack:smith": [
+  "They will break my anvil and the bed first, peopl. I am holding and cannot lift the hammer.",
+  "A forge of remains draws as well as the chests. They will go for it."
+ ],
+ "folk.attack:apothecary": [
+  "Stand at the edge, peopl. I am staying by the bed.",
+  "Bring me whoever is hurt when it is over."
+ ],
+ "folk.attack:tinker": [
+  "They want what is in the chests. Do not let them have it.",
+  "My pieces are in the box by the bed. Stand over it."
+ ],
+ "folk.attack:runescribe": [
+  "No cut in any stone turns these. Fight them.",
+  "My hand stays on the slab. The edge is where you are needed."
+ ],
+ "folk.attack:beastcaller": [
+  "Kill them out in the open, peopl. A blade is no part of my trade.",
+  "There will be remains for the bone when it is done."
+ ],
+ "folk.attack:deserter": [
+  "Whatever is out there has come for what draws.",
+  "If it is a march, they will not stop for me, because I left them."
+ ],
+
+ "folk.idle:wayfinder": [
+  "Where are you going next, peopl?",
+  "Have you cleared that Broken Store yet?",
+  "I can tell you which night the moon goes dark."
+ ],
+ "folk.idle:provisioner": [
+  "Buying or selling?",
+  "I have meat and arrows if you are going out.",
+  "I have coal for your fires."
+ ],
+ "folk.idle:smith": [
+  "Bring me ore I have not seen.",
+  "That edge needs a harder metal.",
+  "I work while it is light."
+ ],
+ "folk.idle:apothecary": [
+  "Let me see that arm.",
+  "Have you any fresh remains?",
+  "Come back when the salve has done its work."
+ ],
+ "folk.idle:tinker": [
+  "Found anything small?",
+  "Show me what you are wearing.",
+  "Let me hold that, peopl."
+ ],
+ "folk.idle:runescribe": [
+  "Mind how you cut.",
+  "Have you stood at a great stone yet?",
+  "That crystal came out of deep rock."
+ ],
+ "folk.idle:beastcaller": [
+  "Your small one is too near my pot.",
+  "Any nests where you have been?",
+  "I have Shade Flesh if you need more."
+ ],
+ "folk.idle:deserter": [
+  "Mūda, if you want anything.",
+  "Do not set a chest of remains by my bed.",
+  "The fires are a long walk from here."
+ ],
+
+ "folk.buy:wayfinder": [
+  "Walkers on the road buy the same from me.",
+  "That lees goes in my pot tonight."
+ ],
+ "folk.buy:provisioner": [
+  "The weight is right, peopl.",
+  "That came three hearths to get here."
+ ],
+ "folk.buy:smith": [
+  "Every edge I sell was drawn at my own anvil.",
+  "Keep the edge off stone harder than it is."
+ ],
+ "folk.buy:apothecary": [
+  "Bind it on clean.",
+  "I made that this morning from fruit, mushroom and fibre."
+ ],
+ "folk.buy:tinker": [
+  "I had that one from another walker.",
+  "Look after it. It is old work."
+ ],
+ "folk.buy:runescribe": [
+  "The lines on it were cut on my frame.",
+  "If a line on it chips, bring it to me to cut again."
+ ],
+ "folk.buy:beastcaller": [
+  "Drive it once and a small one forms on the food.",
+  "Raw remains draw. Do not leave it lying in a store."
+ ],
+ "folk.buy:deserter": [
+  "A march took that out of a store like yours.",
+  "It would not burn, so they left it in the sand."
+ ],
+
+ "folk.sell:wayfinder": [
+  "It is worth little to a walker, who carries only what the road needs.",
+  "Arrows and planks I can sell on at any hearth."
+ ],
+ "folk.sell:provisioner": [
+  "Cheap, peopl. A hearth further on will pay more for it than I do.",
+  "I carry meat on to the next hearth."
+ ],
+ "folk.sell:smith": [
+  "Iron pieces go back in my fire and come out as bars.",
+  "Gold I take in any amount. It bends cold."
+ ],
+ "folk.sell:apothecary": [
+  "Caps from Under make the stronger salve.",
+  "Mushrooms and fibre as well, if you have them."
+ ],
+ "folk.sell:tinker": [
+  "Let me hold it a while before I weigh the lees.",
+  "Small pieces fetch more from me than bars do."
+ ],
+ "folk.sell:runescribe": [
+  "Crystal from deep rock. My lines run to it.",
+  "Fibre too, to lay round the crystal."
+ ],
+ "folk.sell:beastcaller": [
+  "Bone and raw remains are my trade. Carved bone needs both.",
+  "Bring me Shade Flesh after every dusk."
+ ],
+ "folk.sell:deserter": [
+  "I pay little lees for it, peopl.",
+  "Mūda as well. Every beaten march leaves some on the sand."
+ ],
+
+ "folk.short:wayfinder": "Bring the rest of the lees, peopl, and it is yours.",
+ "folk.short:provisioner": "You do not have the weight for that, peopl.",
+ "folk.short:smith": "That is less than the bar cost me to work.",
+ "folk.short:apothecary": "Not enough for the salve. Go and get the rest.",
+ "folk.short:tinker": "Find a piece to sell me first. You cannot pay for that one.",
+ "folk.short:runescribe": "Too little for what is cut into it.",
+ "folk.short:beastcaller": "There is not enough lees in that.",
+ "folk.short:deserter": "Beat off a march and you will have the Mūda for it.",
+
+ "folk.leave:wayfinder": "Set a new bed in the room, peopl, for the next walker on the road to sit down in.",
+ "folk.leave:provisioner": "I walk on today, peopl, and sell what I carry at the hearths down the road.",
+ "folk.leave:smith": "The anvil is yours, peopl. Bring bars to my next hearth if you want them worked.",
+ "folk.leave:apothecary": "My salves are packed. Holders at other hearths have arms that need seeing to.",
+ "folk.leave:tinker": "Your Joining Bench is the first I have seen. Other walkers will hear of it from me.",
+ "folk.leave:runescribe": "A broken bed is no seat for the night. Build the room up again and send for me.",
+ "folk.leave:beastcaller": "Nothing holds this ground tonight. My box of raw remains would draw them.",
+ "folk.leave:deserter": "No fire of ours will take me back. Tonight I hold in an empty house.",
+
+ "folk.extra:deserter.burrower": "The burrower took our people while we lived on its sand. They were in it when you boiled it down.",
+ "folk.extra:wayfinder.moon_in": "Amāvassa is in {n} nights, peopl. Be under a roof or where you mean to fight.",
+ "folk.extra:wayfinder.moon_in_one": "Amāvassa is tomorrow night. Have a roof over you by dusk.",
+ "folk.extra:wayfinder.moon_tonight": "The moon is hollow tonight, peopl. It is Amāvassa, and the Chandasāvak have come down with its slivers.",
+ "folk.extra:wayfinder.next": "{said}",
+
+ "walker.say:dusk": [
+  "I sit at this well until dark, peopl. Then I take my pot into the nearest house and hold it.",
+  "The crate in the end house has food in it. Fill it again when you pass.",
+  "I walk by day and sit down in whatever old house I reach by dusk.",
+  "Two pots this close would bring a pack, so I am the only one here.",
+  "Holders on this road would sit down under your roof, peopl, if it had a bed, a door and a light.",
+  "At dark my hand goes on the stone, and it stays there until first light."
+ ],
+ "walker.say:dark": [
+  "It is Amāvassa, peopl. I am inside with the door shut.",
+  "The moon is hollow tonight. Get under a roof."
+ ],
+ "walker.say:raid": [
+  "Packs are out for the stores tonight, and my pot is a store too.",
+  "Keep away from this house tonight, peopl. A pack that follows you here will cross my pot."
+ ],
+
+ "fire.say:before": [
+  "Nothing comes up on this sand but the burrower's own, peopl. Do not bring a store onto it.",
+  "There is nothing here for you.",
+  "Walk on."
+ ],
+ "fire.say:after": [
+  "You killed the burrower. The sand is open now.",
+  "Nothing of ours draws. Go back to your stores.",
+  "Leave this sand, peopl."
+ ],
+ "fire.say:night": [
+  "Stay inside the light, peopl, where nothing comes up.",
+  "Stand where we can see you, and keep your hands off the fire."
+ ],
+ "fire.say:struck": [
+  "Drive it out of the light. It will get up somewhere else.",
+  "That draws, peopl, and you set it inside our light. Go out past the houses."
+ ],
+ "fire.say:fuel": [
+  "Leave the wood at the edge and go.",
+  "Coal burns longer. Set it down and step back.",
+  "The fire takes it. You get no place inside the light for it."
+ ],
+
+ "march.say:march": [
+  "Find the lees. It goes to the fire.",
+  "Cut the peopl down and get to the chests.",
+  "Every store here draws. Burn it.",
+  "The bed it comes back to draws too. Break it.",
+  "Back inside the light before dusk."
+ ],
+ "march.say:beaten": [
+  "Drop what you carry and walk.",
+  "Dusk is coming. Back to the fire."
+ ]
+}
