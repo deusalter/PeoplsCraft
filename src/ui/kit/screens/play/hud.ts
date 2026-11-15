@@ -7,7 +7,7 @@ import { type Colour, GRADES } from '../../palette';
 import { CARRIED_MARKS } from '../../art/hud';
 import { crosshair, hotbar, pips, strip } from '../../parts/hud';
 import { STATUS_H, TOAST_GAP, TOAST_MOST, TOAST_W, bossBar, statusFrame, toast, toastHeight } from '../../parts/notices';
-import { CHAT_WRAP, CREW_HEADS_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crewHeads, nameTag, ping, readout } from '../../parts/plates';
+import { CHAT_WRAP, CREW_ROW, type ChatLine, type CompassMark, type Member, chat, compass, crew, nameTag, ping, readout } from '../../parts/plates';
 import { plate } from '../../parts/slab';
 import { BODY_STATES } from '../../sample/states';
 import { CREW, SERVER, seat, strides } from '../../sample/crew';
@@ -36,6 +36,11 @@ export const PLAYERS: Member[] = CREW.filter((m) => m.online).map((m) => ({
   seat: m.seat, name: m.name, life: m.life, place: m.place, level: m.level, metres: strides(m), bars: m.bars, self: m.seat === 1,
 }));
 
+/** Everyone else who holds a seat, here or away: the HUD's crew lists them all, the away last and grey. */
+const FRIENDS: Member[] = CREW.filter((m) => m.seat !== 1).map((m) => ({
+  seat: m.seat, name: m.name, life: m.life, place: m.place, level: m.level, bars: m.bars, away: !m.online,
+}));
+
 export { SERVER };
 
 export const CHAT: ChatLine[] = [
@@ -51,7 +56,7 @@ export interface HudOpts {
   /** A great feeder up: the boss bar and a world event's strip under it. */
   boss?: boolean;
   /**
-   * What the crosshair is on, when no boss bar is up: one thing, named once, by the readout and by the prompt under
+   * What the crosshair is on, under the boss bars when they are up: one thing, named once, by the readout and by the prompt under
    * it. `use` is what E does to it, and no prompt is drawn when nothing can be done; `ore` is a block's key, and the
    * readout's second line is worked out from the tool in hand.
    */
@@ -77,9 +82,9 @@ export interface HudOpts {
 
 /** The first boss bar: 4 under the compass's plate, which ends at y 13. */
 const BOSS_Y = 18;
-/** Each further bar or event strip stands 20 under the one above it. */
-const BOSS_PITCH = 20;
-/** The readout of what is looked at: 6 under the compass's plate. */
+/** Each further bar or event strip stands 22 under the one above it, so 2 clear stand over the next name's letters. */
+const BOSS_PITCH = 22;
+/** The readout of what is looked at: 6 under the compass's plate, or 4 under the last boss strip while one is up. */
 const READOUT_Y = 20;
 /** From one status frame to the next: the frame of 18 and 4 clear. */
 const STATUS_PITCH = 22;
@@ -155,24 +160,29 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   ];
   out.push(compass({ x: L(cx - 91), y: 2, heading: 20, marks, night: { n: first ? 1 : 3, of: 8 } }));
 
-  // What stands in the centre column under the compass's line, which the toast must keep 4 clear of.
+  // What stands in the centre column under the compass's line, which the toast must keep 4 clear of. A great feeder's
+  // strips keep their lines under the compass; what is looked at is still named, 4 under the last strip. Not drawn
+  // while a strip was up, the readout left a fight with no word for what the crosshair was on.
   let centre: Node | null = null;
+  let lookY = READOUT_Y;
   if (o.boss) {
-    centre = { x: L(cx - 91), y: BOSS_Y, w: 182, h: BOSS_PITCH + 22 };
+    centre = { x: L(cx - 91), y: BOSS_Y, w: 182, h: BOSS_PITCH + 18 };
     out.push(bossBar({ x: L(cx - 91), y: BOSS_Y, name: 'Kankāl', f: 0.62, was: 0.7, marks: [0.66, 0.25] }));
     out.push(bossBar({ x: L(cx - 91), y: BOSS_Y + BOSS_PITCH, name: 'Night raid', f: 0.4, event: 'blood' }));
-  } else if (o.look) {
+    lookY = centre.y + centre.h + 4;
+  }
+  if (o.look) {
     const lk = o.look;
     const said = lk.ore ? oreLine(lk.ore, first ? null : BAR[0]?.key ?? null) : { line: lk.line, refusal: false };
     // What E does is the plate's third row, so that E can only mean the one thing the readout names.
-    centre = readout({ cx: L(cx), y: READOUT_Y, icon: lk.icon, name: lk.name, life: lk.life, hostile: lk.hostile, use: o.prompt !== false ? lk.use : undefined, ...said });
-    out.push(centre);
+    const r = readout({ cx: L(cx), y: lookY, icon: lk.icon, name: lk.name, life: lk.life, hostile: lk.hostile, use: o.prompt !== false ? lk.use : undefined, ...said });
+    out.push(r);
+    centre = centre ? { x: centre.x, y: centre.y, w: centre.w, h: r.y + r.h - centre.y } : r;
   }
 
   const lowY = narrow ? 26 : 4;
   const showCrew = o.crew !== false && !first;
-  const friends = PLAYERS.slice(1);
-  if (showCrew) out.push(crewHeads({ x: L(4), y: lowY, members: friends }));
+  if (showCrew) out.push(crew({ x: L(4), y: lowY, members: FRIENDS }));
 
   if (!first) {
     const toasts = [
@@ -196,7 +206,9 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
     const n = BODY_STATES.length;
     BODY_STATES.forEach((s, i) => out.push(statusFrame({ x: R(4 + 18 + (n - 1 - i) * STATUS_PITCH), y: statusY, icon: s.icon, good: s.good, seconds: s.seconds })));
     if (o.notices !== false) out.push(tracker(R(4), stepY, 'Smelt iron', '2 of 3'));
-    const floor = (narrow ? 150 : H - 54) - 2;
+    // A toast whose column reaches the crosshair stops 4 above it: on a narrow stage, pushed under a fight's strips and
+    // readout, it came down over the crosshair. One that does not fit waits.
+    const floor = Math.min((narrow ? 150 : H - 54) - 2, tx <= L(cx + 8) ? Math.floor(H / 2) - 4 - 4 : Infinity);
     for (const t of toasts) {
       const h = toastHeight(t);
       if (ty + h > floor) break;
@@ -214,7 +226,7 @@ export function hud(ui: Ui, o: HudOpts): Node[] {
   }
 
   if (o.chat === true && !first) {
-    const top = showCrew ? lowY + friends.length * CREW_HEADS_ROW + 1 : 4;
+    const top = showCrew ? lowY + FRIENDS.length * CREW_ROW + 1 : 4;
     out.push(chat({ x: L(4), bottom: chatBottom(W, H), lines: CHAT, wrap: chatWrap(W), most: Math.floor((chatBottom(W, H) - top) / 10) }));
   }
 

@@ -39,34 +39,39 @@ function along(deg: number, heading: number): number {
   return Math.round((d * HALF) / SPAN);
 }
 
+/** The night as every other count on this ground is written: "3 of 8", never with a slash. */
+const nightText = (night: { n: number; of: number }) => `${night.n} of ${night.of}`;
+
 /**
- * How far the night's compartment reaches past the strip: its light edge and a unit clear, the moon, 3 clear, "3/8",
- * 2 clear, its outline.
+ * How far the night's compartment reaches past the strip: its outline, its light edge and a unit clear, the moon,
+ * 3 clear, "3 of 8", 2 clear before the column it shares with the strip.
  */
 export function nightW(night: { n: number; of: number }): number {
-  return 2 + NIGHT_MARK.w + 3 + measure(`${night.n}/${night.of}`) + 3;
+  return 3 + NIGHT_MARK.w + 3 + measure(nightText(night)) + 2;
 }
 
 /**
  * The compass strip (5.26): a plain dark plate 182 by 12 showing 138 degrees of the horizon. The four winds are
  * letters of salt with no shadow, the points between ticks of `root.4`, the heading two marks of salt at x 90. The
- * night stands in a compartment fastened to the strip's right end, sharing its outline column, so that the strip
- * stays centred on the crosshair and nothing stands between it and what hangs under it.
+ * night stands in a compartment fastened to the strip's left end, sharing its outline column, so that the strip
+ * stays centred on the crosshair and nothing stands between it and what hangs under it. `x` is the strip's left edge;
+ * the compartment reaches left of it. On the right, "3 of 8" reached into the status frames on a stage 427 wide, and
+ * "3/8" beside a moon read as a count of players.
  */
 export function compass(o: CompassOpts): Node {
   const nw = o.night ? nightW(o.night) : 0;
   return {
-    x: o.x, y: o.y, w: COMPASS_W + nw, h: o.place ? 21 : 12,
+    x: o.x - nw, y: o.y, w: COMPASS_W + nw, h: o.place ? 21 : 12,
     paint: (s) => {
-      s.nine(PLATE, 0, 0, COMPASS_W, 12);
       if (o.night) {
-        const x0 = COMPASS_W - 1;
-        s.nine(PLATE, x0, 0, nw + 1, 12);
-        // The shared column is outline from top to foot; the two plates' left-out corners would notch it.
-        s.fill(x0, 0, 1, 12, 'root.0');
-        s.map(NIGHT_MARK, x0 + 3, 2);
-        s.text(`${o.night.n}/${o.night.of}`, x0 + 3 + NIGHT_MARK.w + 3, 1, 'salt');
+        s.nine(PLATE, 0, 0, nw + 1, 12);
+        s.map(NIGHT_MARK, 3, 2);
+        s.text(nightText(o.night), 3 + NIGHT_MARK.w + 3, 1, 'salt');
       }
+      s.translate(nw, 0);
+      s.nine(PLATE, 0, 0, COMPASS_W, 12);
+      // The shared column is outline from top to foot; the two plates' left-out corners would notch it.
+      if (o.night) s.fill(0, 0, 1, 12, 'root.0');
       const mid = 90;
       // A friend's head with its frame is 10 tall and lies over the plate's inner edges.
       s.clip(2, 1, COMPASS_W - 3, 10);
@@ -98,6 +103,7 @@ export function compass(o: CompassOpts): Node {
       s.fill(mid, 1, 2, 2, 'salt');
       s.fill(mid, 9, 2, 2, 'salt');
       if (o.place) s.text(cut(o.place, COMPASS_W - 2), 1, 13, 'salt', true);
+      s.translate(-nw, 0);
     },
   };
 }
@@ -439,43 +445,35 @@ function paintBars(s: Surface, x: number, y: number, bars: number): void {
   }
 }
 
-/** The pitch of the crew's rows: the name's cell 10, one clear unit under its descenders, the life strip 4. */
+/** The pitch of the crew's rows: the name's cell 10, one clear unit under its descenders' shadow, the life strip 4. */
 export const CREW_ROW = 15;
 
-/** The width of the crew on the HUD folded to heads: a head 10 wide in its outline of root.0, and its life strip. */
-export const CREW_HEADS_W = 12;
+/** The name on the HUD's crew is cut here, with "…". */
+const CREW_NAME_W = 48;
 
-/** The pitch of the folded crew's rows: the outlined head 12, a clear unit, the life strip 4, a clear unit. */
-export const CREW_HEADS_ROW = 18;
+/** The life strip under a name on the HUD's crew: three segments. */
+const CREW_LIFE_W = 25;
+
+/** The width of the crew on the HUD: the outlined head 12, 2 clear, the name. */
+export const CREW_W = 14 + CREW_NAME_W + 6;
 
 /**
- * The crew at the top left of the HUD (5.24), folded: each friend's head 10 by 10 inside an outline of root.0 that
- * follows its cut corners, in a column 12 wide; their life a strip 12 by 4 one clear unit under it; rows 18 tall, no
- * plate and no names; the names are on the roster, held open with Tab. With the seat's ring straight against the
- * sky, a pale ring vanished on a pale sky and the faces looked pasted on.
+ * The crew at the top left of the HUD (5.24): one row 15 tall to each friend who holds a seat, with no plate: the head
+ * 10 by 10 inside an outline of root.0 that follows its cut corners, the name 2 right of it in salt with its shadow,
+ * cut at 48, and their life a strip 25 by 4 under the name. One who is away is listed last, the name in root.4 and no
+ * strip. Folded to heads with no names, eight friends could be told apart only by a ring of colour 2 wide.
  */
-export function crewHeads(o: { x: number; y: number; members: Member[] }): Node {
+export function crew(o: { x: number; y: number; members: Member[] }): Node {
+  const rows = [...o.members.filter((m) => !m.away), ...o.members.filter((m) => m.away)];
   return {
-    x: o.x, y: o.y, w: CREW_HEADS_W, h: o.members.length * CREW_HEADS_ROW - 1,
-    paint: (s) => o.members.forEach((m, i) => {
-      const y = i * CREW_HEADS_ROW;
+    x: o.x, y: o.y, w: CREW_W, h: rows.length * CREW_ROW - 1,
+    paint: (s) => rows.forEach((m, i) => {
+      const y = i * CREW_ROW;
       s.fill(1, y, 10, 12, 'root.0');
       s.fill(0, y + 1, 12, 10, 'root.0');
       head(s, m.seat, 1, y + 1, m.life <= 0);
-      paintLife(s, 0, y + 13, CREW_HEADS_W, m.life);
-    }),
-  };
-}
-
-/** The crew at the top left of the HUD (5.24): the roster's head, name and life strip in rows 15 tall, no plate. */
-export function crew(o: { x: number; y: number; members: Member[] }): Node {
-  return {
-    x: o.x, y: o.y, w: 92, h: o.members.length * CREW_ROW,
-    paint: (s) => o.members.forEach((m, i) => {
-      const y = i * CREW_ROW;
-      head(s, m.seat, 0, y, m.life <= 0);
-      s.text(cut(m.name, 80), 12, y, 'salt', true);
-      paintLife(s, 12, y + 11, LIFE_W, m.life);
+      s.text(cut(m.name, CREW_NAME_W), 14, y, m.away ? 'root.4' : 'salt', true);
+      if (!m.away) paintLife(s, 14, y + 11, CREW_LIFE_W, m.life);
     }),
   };
 }
