@@ -14,7 +14,7 @@ import type { Fx, Scope, Sink } from '../../src/sim/fx';
 import { toMail } from '../../src/sim/loot';
 import { mobDist } from '../../src/sim/mobhit';
 import type { Mob } from '../../src/sim/mobs';
-import type { SimPlayer } from '../../src/sim/player';
+import { hurtPlayer, type SimPlayer } from '../../src/sim/player';
 import type { Realm, RealmStore } from '../../src/sim/realm';
 import { Sim } from '../../src/sim/sim';
 import { trySpawn } from '../../src/sim/spawn';
@@ -658,6 +658,29 @@ test('7.9: no refund for a party that walks away while connected; a summoner in 
   r.sim.players.delete('c'); r.realm.players.splice(r.realm.players.indexOf(c), 1);
   r.realm.mobs.clear();
   assert.deepEqual(r.sim.shared.owed.c?.items, [{ k: 'verdant_idol', n: 1 }]);
+  assert.deepEqual(r.sim.shared.summons, []);
+});
+
+test('7.9: no refund for a party that wipes while connected, nor for one whose last standing fighter walks off', () => {
+  const r = rig(), a = play(r, 'a', 0.5, 0.5), b = play(r, 'b', 3.5, 0.5);
+  const m = boss1(r, a);
+  run(r, 10);
+  assert.deepEqual([...m.boss!.parts].sort(), ['a', 'b']);
+  for (const p of [a, b]) { hurtPlayer(r.sim, p, 1e6, m.x, m.z, m.def.name, m); assert.ok(p.stats.dead, `${p.id} is dead`); }
+  run(r, 60 * 12);
+  assert.equal(m.active, false, 'withdrew: nobody valid for 10 s and nobody to wait for');
+  assert.deepEqual(r.sim.shared.summons, []);
+  assert.equal(a.inv.count('verdant_idol') + a.mail.length + owned(r, 'a', 'verdant_idol'), 0, 'a wipe is no lost connection');
+  assert.equal(r.sim.shared.owed.a, undefined);
+  // one dead, the other walks out of the leash: the same
+  for (const p of [a, b]) { p.stats.respawn(); p.stats.hurtT = 0; put(p, p === a ? 0.5 : 3.5, 0.5); }
+  const n = boss1(r, a);
+  run(r, 10);
+  hurtPlayer(r.sim, b, 1e6, n.x, n.z, n.def.name, n); assert.ok(b.stats.dead);
+  put(a, 200.5, 0.5);
+  run(r, 60 * 12);
+  assert.equal(n.active, false);
+  assert.equal(a.inv.count('verdant_idol') + a.mail.length, 0);
   assert.deepEqual(r.sim.shared.summons, []);
 });
 

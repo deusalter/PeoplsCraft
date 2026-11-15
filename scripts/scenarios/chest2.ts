@@ -7,10 +7,15 @@ import { mulberry32 } from '../../src/core/noise';
 import type { InvOp } from '../../src/sim/invops';
 import { Bot } from '../bot/bot';
 import type { Ctx } from '../bot/runner';
+import { startLagProxy } from '../lagproxy';
 import { sleep } from './arena';
 import { calm, diff, packOf, pad, text, totals } from './site';
 
 const OPS = 200, EVERY_MS = 30;
+/** The round trip of the bots' own link when the run has no lag proxy. On loopback an op is answered within the host's
+ *  step, so the two bots, on one clock, are answered in the same `st` and an op is almost never in flight when the other's
+ *  change lands: the race would hardly happen. A plain delay, no jitter and no stalls, keeps two ops in flight. */
+const LINK_RTT = 60;
 /** What goes into the chest at the start, given to Ada: a few kinds, several stacks of some. */
 const STOCK: [string, number][] = [['cobble', 64], ['cobble', 40], ['oak_planks', 64], ['torch', 30], ['arrow', 50], ['coal', 21], ['oak_log', 17]];
 
@@ -41,8 +46,14 @@ function nextOp(q: Bot, rnd: () => number): InvOp {
 }
 
 export default async function chest2(ctx: Ctx): Promise<void> {
+  const u = new URL(ctx.direct);
+  const link = ctx.lag ? null : await startLagProxy({ host: u.hostname, port: Number(u.port), rtt: LINK_RTT, jitter: 0, stallShare: 0 });
   const a = ctx.bot(new Bot('Ada')), b = ctx.bot(new Bot('Bram'));
-  await Promise.all([a.connect(ctx.url), b.connect(ctx.url)]);
+  try { await race(ctx, a, b, link ? `127.0.0.1:${link.port}` : ctx.url); } finally { if (link) { a.close(); b.close(); await link.close(); } }
+}
+
+async function race(ctx: Ctx, a: Bot, b: Bot, url: string): Promise<void> {
+  await Promise.all([a.connect(url), b.connect(url)]);
   await Promise.all([a.loaded(), b.loaded()]);
   await calm(ctx, [a, b]);
   const { px, pz, g } = await pad(ctx, a, 6, 6);

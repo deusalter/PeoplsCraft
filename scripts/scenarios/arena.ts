@@ -71,19 +71,32 @@ export async function arena(ctx: Ctx, a: Bot, opts: { north?: number; walled?: b
 /** How far east of the altar a bot stands to be out of every 64 of 7.9 and 7.4 and inside the 80 of a valid target, when
  *  the wall keeps a walking boss within 9 blocks of the altar. */
 export const FAR = 76;
+/** Past the 80 of a valid target: the boss never chases a bot there. One it chases presses the wall on that side, where
+ *  arrows from afar hardly reach it, and after 2.5 s against it the stuck rule puts it within 6 blocks of that bot. */
+export const BEYOND = 84;
 /** The walled arena of `arena` with a corridor east of it, floored and cleared, out to FAR + 3 blocks from the altar. */
 export async function walledWithCorridor(ctx: Ctx, a: Bot): Promise<Arena> {
   const px = Math.floor(a.body.x), pz = Math.floor(a.body.z), g = Math.round(a.body.y) - 1, az = pz - 4;
   await held(ctx, px - 12, az - 4, px + FAR + 3, az + 4);
   return arena(ctx, a, {
     walled: true,
-    extra: [[px + 12, g - 2, az - 3, px + FAR + 3, g, az + 3, 'stone'], [px + 12, g + 1, az - 3, px + FAR + 3, g + 12, az + 3, 'air']],
+    extra: [[px + 12, g - 2, az - 3, px + FAR + 3, g, az + 3, 'stone'], [px + 12, g + 1, az - 3, px + FAR + 3, g + 14, az + 3, 'air']],
   });
 }
+/** The corridor carried on to `far` + 3 blocks east of the altar. The host holds chunks only within 5 of a player, so `q`
+ *  first stands at the corridor's end and is then put back where it stood. */
+export async function lengthen(ctx: Ctx, q: Bot, ar: Arena, far: number): Promise<void> {
+  const [bx, by, bz] = [q.body.x, q.body.y, q.body.z], { g, az } = ar, x0 = ar.ax + FAR + 4, x1 = ar.ax + far + 3;
+  await toFar(ctx, q, ar, 0);
+  await held(ctx, x0, az - 4, x1, az + 4);
+  await fills(ctx, q, [[x0, g - 2, az - 3, x1, g, az + 3, 'stone'], [x0, g + 1, az - 3, x1, g + 14, az + 3, 'air']]);
+  ctx.check((await q.cmd(`tp ${bx} ${by + 0.01} ${bz}`)) === 'teleported', `${q.name} comes back`);
+  await q.until(() => q.ready && Math.abs(q.body.x - bx) < 0.5 && Math.abs(q.body.z - bz) < 0.5 && q.body.onGround, 8000, 'back');
+}
 /** Sends `q` to the corridor's far end, `dz` blocks off its middle line, and waits until it stands there. */
-export async function toFar(ctx: Ctx, q: Bot, ar: Arena, dz: number): Promise<void> {
-  const x = ar.ax + FAR + 0.5, z = ar.az + dz;
-  ctx.check((await q.cmd(`tp ${x} ${ar.g + 1.01} ${z}`)) === 'teleported', `${q.name} goes ${FAR} blocks east of the altar`);
+export async function toFar(ctx: Ctx, q: Bot, ar: Arena, dz: number, far = FAR): Promise<void> {
+  const x = ar.ax + far + 0.5, z = ar.az + dz;
+  ctx.check((await q.cmd(`tp ${x} ${ar.g + 1.01} ${z}`)) === 'teleported', `${q.name} goes ${far} blocks east of the altar`);
   await q.until(() => q.ready && Math.abs(q.body.x - x) < 0.5 && Math.abs(q.body.z - z) < 0.5 && q.body.onGround, 8000, 'the far spot');
   ctx.check(Math.abs(q.body.y - (ar.g + 1)) < 0.05, `${q.name} stands on the corridor's floor (y ${q.body.y.toFixed(2)})`);
 }

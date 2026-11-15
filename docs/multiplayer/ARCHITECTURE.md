@@ -4122,6 +4122,29 @@ offering in all. `disk.test` covers the replay.
 returns null when the creature pool is full, so a summon into a full pool loses it.
 (h) Each scenario passed three runs in a row, one at a time, at 1-minute load averages between 7 and 17.
 
+D53. Stage 5, repairs after an independent check: `boss`, `chest2` and the refund rule of a wipe (7.9, 11; amends D50 (b)
+and (c) and D51 (c)).
+(a) `boss` passed 5 of 8 runs. The premise of D50 (b) is false: the wall does not keep a walking boss by the altar. An
+archer at 76 blocks is inside the 80 of a valid target, so the boss chose one 4 times in 10 at an attack's choice and
+walked at the east wall, where an arrow coming down from 76 blocks meets the wall's top before the boss (logged: no hit in
+the first 4 s of the shooting). After 2.5 s pressed against it, the walker's stuck rule (`boss.ts`, kept from solo) puts it
+within 6 blocks of its target, which for an archer is the corridor or the hill beside it, and for Ada can be outside the
+wall. The archers now stand 84 blocks east of the altar, past the leash: the boss never chases them, stays inside the
+wall with Ada, and they are at least 75 blocks from it while their hits keep them in `n`. They still are participants (by
+the summon) and are paid at the kill. The host holds chunks only within 5 of a player, so before the summon Cyd stands at
+the end of the corridor while it is carried on to 87 blocks (`lengthen` in `arena.ts`), and the corridor is cleared 14
+high, as the arena is, for the higher arc. `rejoin` keeps 76. The stuck rule itself is not changed.
+(b) `chest2` failed its own race count in 2 of 6 runs (8 and 14 against 20) and 3 of 3 here (5 to 10). On loopback an op
+is answered within the host's step, and the two bots, on one event loop and one 30 ms clock, are acknowledged in the same
+`st` that carries the other's change: an op is in flight when that change lands only by chance (Ada 0 in every run). Without
+`--lag` the bots now connect through the lag proxy at a plain 60 ms round trip (no jitter, no stalls), so about two ops of
+each are always in flight: 169 to 206 per bot in three runs, with every slot and total as before. Through `--lag` it
+counts 143.
+(c) No test covered "no refund for a party that wipes while connected" of 7.9: a change in `interrupted()` that refunds a
+connected party all dead kept every test green. `coop-fight.test` now kills both fighters with the boss's blow while
+connected and lets it withdraw with no refund, then the same with one dead and the other walked away; with that change
+it fails.
+
 ---
 
 ## 14. Review log

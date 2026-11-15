@@ -1,9 +1,9 @@
 // Scenario boss (11, stage 5): three bots summon Vanahar together: its maxHp is 924 with three near. Two of them then
-// shoot it from 70 blocks, where only their damage keeps them in the count (7.9: within 64 blocks, or a hit in the last
-// 20 s), and it stays 924. All three kill it, and each ends with its own heartroot.
+// shoot it from 70 blocks and more, past the leash, where only their damage keeps them in the count (7.9: within 64
+// blocks, or a hit in the last 20 s), and it stays 924. All three kill it, and each ends with its own heartroot.
 import { Bot } from '../bot/bot';
 import type { Ctx } from '../bot/runner';
-import { LOOT, Tracker, bossGone, flatDist, hitLog, hostBoss, maxHpFor, quiet, seenBoss, shooting, sleep, summon, toFar, walledWithCorridor, xpOf } from './arena';
+import { BEYOND, LOOT, Tracker, bossGone, flatDist, hitLog, hostBoss, lengthen, maxHpFor, quiet, seenBoss, shooting, sleep, summon, toFar, walledWithCorridor, xpOf } from './arena';
 
 const BOW = 'umbrite_bow', TIER = 5;
 /** Longer than the 10 s a fall of the count waits (7.9), so a count that fell would show. */
@@ -19,9 +19,10 @@ export default async function boss(ctx: Ctx): Promise<void> {
   await Promise.all(bots.map((q) => q.until(() => q.count(BOW) > 0 && q.count('arrow') > 0, 5000, 'the bow and arrows')));
   await a.goto(a.body.x, a.body.z);
 
-  // the arena, walled, and a corridor east of it to where the archers will stand
+  // the arena, walled, and a corridor east of it to where the archers will stand, past the leash
   const px = Math.floor(a.body.x), pz = Math.floor(a.body.z);
   const ar = await walledWithCorridor(ctx, a);
+  await lengthen(ctx, c, ar, BEYOND);
   await Promise.all([a.goto(px + 0.5, pz + 0.5), b.goto(px - 1.5, pz + 0.5), c.goto(px + 2.5, pz + 0.5)]);
   ctx.check(bots.every((q) => flatDist(q.body.x, q.body.z, a.body.x, a.body.z) < 4), 'the three stand together by the altar');
 
@@ -33,7 +34,7 @@ export default async function boss(ctx: Ctx): Promise<void> {
 
   // ---- two shoot from 70 blocks ----
   const spots: [Bot, number][] = [[b, -1.5], [c, 1.5]];
-  for (const [q, dz] of spots) await toFar(ctx, q, ar, dz);
+  for (const [q, dz] of spots) await toFar(ctx, q, ar, dz, BEYOND);
   const tr = new Tracker(b);
   const far = new Map<Bot, { hits: number; minD: number; sumD: number; n: number }>(spots.map(([q]) => [q, { hits: 0, minD: Infinity, sumD: 0, n: 0 }]));
   const seen = new Set<number>();
