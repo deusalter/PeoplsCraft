@@ -39,6 +39,10 @@ export interface MapView {
   onPing(x: number, z: number): void;
   onTravel(p: Place): void;
   onClose(): void;
+  /** On the living ground: every place listed, and not only as many as leave room for the whole crew. */
+  placesOpen?: boolean;
+  /** The "more places" row was chosen. */
+  onPlacesOpen?(): void;
 }
 
 // The chart is 168 square so that the list beside it is 120 wide and a handle of sixteen is not cut.
@@ -291,6 +295,24 @@ function paintStore(s: Surface, v: MapView): void {
   s.map(HEADS[STORE.at.seat - 1], u - 5, w - 5);
 }
 
+/** A row of the living ground's list: how many stand in its well, 11 tall each in a floor of 128. */
+const GROUND_ROW = 11, LIST_ROWS = Math.floor(128 / GROUND_ROW);
+
+/**
+ * A row of the living ground's list, in its 11: the mark the chart draws for the place, 7 by 7 at 3, 2, or the head
+ * the chart draws for a player, 10 by 10 at 1, 0, then the name's cell at 14, 0 in salt or the player's colour. The last
+ * place carries a rule of root.3 on its bottom row, which parts the places from the crew.
+ */
+function paintPlaceRow(s: Surface, p: Place, w: number, h: number, rule: boolean): void {
+  if (p.seat) s.map(HEADS[p.seat - 1], 1, 0);
+  else {
+    const m = p.kind === 'altar' ? ALTAR_MARK : p.kind === 'gate' ? GATE_MARK : p.kind === 'mouth' ? MOUTH_MARK : p.kind === 'bed' ? COMPASS_MARKS.bed : null;
+    if (m) s.map(m, 3, 2);
+  }
+  s.text(cut(p.name, w - 14 - 2), 14, 0, p.seat ? SEATS[p.seat - 1] : 'salt', true);
+  if (rule) s.fill(0, h - 1, w, 1, 'root.3');
+}
+
 /** The disabled Travel's words while the way cools: the crossing, that it cools, and the time, cut to the crossing alone when long. */
 function waitLabel(crossing: string, left: number): string {
   const full = `${crossing} cooling, ${clock(left)}`;
@@ -354,8 +376,10 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
       leave: () => { hover.on = false; hover.friend = null; hover.what = ''; ui.wake(); },
     },
   };
-  // The list in groups under grey headers: on the ground, places then players; in a store, what is in it, then the
-  // rest under "Elsewhere". `rowAt[k]` is the place a row stands for, or -1 for a header.
+  // The list. In a store, what is on its chart, then the rest under a grey "Elsewhere". On the living ground, rows 11
+  // tall with the chart's own marks and heads, places then crew with a rule between them and no headers, so that eight
+  // friends stand in the well with the places over them: at 16 with two headers five of eight were below the fold.
+  // `rowAt[k]` is the place a row stands for, -1 for a header, -2 for the row that lists the places held back.
   const rows: RowSpec[] = [], rowAt: number[] = [];
   const header = (text: string) => {
     rows.push({ id: `map.head.${rows.length}`, name: text, disabled: true, body: (s, _w, h) => s.text(text, 3, Math.floor((h - 9) / 2), 'root.4', true) });
@@ -363,22 +387,36 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
   };
   const here = v.here ?? v.places.length;
   const isCrew = (p: Place) => p.kind === 'friend' || p.kind === 'self';
-  const group = (from: number, to: number, crewHeader: string | null, placeHeader: string | null) => {
-    // Without headers the rows keep the order they are given in.
-    for (const wantCrew of crewHeader ? [false, true] : [null]) {
-      const idx = [...Array(to - from).keys()].map((k) => k + from).filter((i) => wantCrew === null || isCrew(v.places[i]) === wantCrew);
-      if (!idx.length) continue;
-      const h = wantCrew === null ? null : wantCrew ? crewHeader : placeHeader;
-      if (h) header(h);
-      for (const i of idx) {
-        const p = v.places[i];
-        rows.push({ id: p.id, icon: p.icon, name: p.name, colour: p.seat ? SEATS[p.seat - 1] : 'salt' });
-        rowAt.push(i);
-      }
+  const plain = (from: number, to: number) => {
+    for (let i = from; i < to; i++) {
+      const p = v.places[i];
+      rows.push({ id: p.id, icon: p.icon, name: p.name, colour: p.seat ? SEATS[p.seat - 1] : 'salt' });
+      rowAt.push(i);
     }
   };
-  if (here === v.places.length) group(0, here, 'Crew', 'Places');
-  else { group(0, here, null, null); header('Elsewhere'); group(here, v.places.length, null, null); }
+  if (ground) {
+    const placeIdx = v.places.map((_, i) => i).filter((i) => !isCrew(v.places[i]));
+    const crewIdx = v.places.map((_, i) => i).filter((i) => isCrew(v.places[i]));
+    const room = Math.max(1, LIST_ROWS - crewIdx.length);
+    const held = !v.placesOpen && placeIdx.length > room ? placeIdx.length - (room - 1) : 0;
+    const shown = held ? placeIdx.slice(0, room - 1) : placeIdx;
+    const lastPlace = held ? -1 : shown[shown.length - 1];
+    for (const i of shown) {
+      const p = v.places[i];
+      rows.push({ id: p.id, name: p.name, body: (s, w, h) => paintPlaceRow(s, p, w, h, i === lastPlace && crewIdx.length > 0) });
+      rowAt.push(i);
+    }
+    if (held) {
+      const t = `${held} more places`;
+      rows.push({ id: 'map.more', name: t, body: (s, w, h) => { s.text(cut(t, w - 14), 14, 0, 'root.4', true); if (crewIdx.length) s.fill(0, h - 1, w, 1, 'root.3'); } });
+      rowAt.push(-2);
+    }
+    for (const i of crewIdx) {
+      const p = v.places[i];
+      rows.push({ id: p.id, name: p.name, body: (s, w, h) => paintPlaceRow(s, p, w, h, false) });
+      rowAt.push(i);
+    }
+  } else { plain(0, here); header('Elsewhere'); plain(here, v.places.length); }
   const cooling = place?.cooling !== undefined;
   // The wait and its reason are written once, in the disabled button itself, where the eye goes; the screen is built
   // again each time the shown second changes.
@@ -399,9 +437,10 @@ export const mapScreen: Screen<MapView> = (v, ui) => {
     button({ id: 'map.out', x: ZOOM_OUT_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '-', disabled: v.zoom === zooms[0], onPress: () => v.onZoom(-1), tip: zoomTip(v.zoom === zooms[0] ? 'Farthest' : 'Farther') }),
     button({ id: 'map.in', x: ZOOM_IN_X, y: ZOOM_Y, w: ZB, h: ZB, ramp: 'stone', label: '+', disabled: v.zoom === zooms[zooms.length - 1], onPress: () => v.onZoom(1), tip: zoomTip(v.zoom === zooms[zooms.length - 1] ? 'Closest' : 'Closer') }),
     well({
-      id: 'map.places', x: LIST_X, y: 18, w: LIST_W, h: 130, rowH: 16, host: 'stone', ui, rows, chosen: rowAt.indexOf(v.chosen),
+      id: `map.places.${v.tab}`, x: LIST_X, y: 18, w: LIST_W, h: 130, rowH: ground ? GROUND_ROW : 16, host: 'stone', ui, rows, chosen: rowAt.indexOf(v.chosen),
       onChoose: (k) => {
         const i = rowAt[k];
+        if (i === -2) { v.onPlacesOpen?.(); return; }
         if (i < 0) return;
         v.onChoose(i);
         // A place on another chart is chosen for its line under Travel; the chart stays where it is.
@@ -475,7 +514,7 @@ function sample(name: string, title: string, tab: ChartTab): NamedScreen {
     ground: { places: PLACES },
     store: { places: [...STORE_PLACES, ...PLACES.filter((p) => p.seat !== STORE.at.seat)], here: STORE_PLACES.length },
   };
-  const st = { tab, zoomI: { ground: 1, store: 2 } as Record<ChartTab, number>, centre: { ground: { x: ME.x, z: ME.z }, store: { x: 92, z: 44 } } as Record<ChartTab, { x: number; z: number }>, chosen: { ground: 0, store: 0 } as Record<ChartTab, number>, pings: [...PINGS], cooledFrom: 3, cool: 12 };
+  const st = { tab, zoomI: { ground: 1, store: 2 } as Record<ChartTab, number>, centre: { ground: { x: ME.x, z: ME.z }, store: { x: 92, z: 44 } } as Record<ChartTab, { x: number; z: number }>, chosen: { ground: 0, store: 0 } as Record<ChartTab, number>, pings: [...PINGS], cooledFrom: 3, cool: 12, placesOpen: false };
   return {
     name, title, world: true,
     build: (ui: Ui) => mapScreen({
@@ -489,6 +528,8 @@ function sample(name: string, title: string, tab: ChartTab): NamedScreen {
       onPing: (x, z) => { st.pings = [...st.pings.filter((p) => p.seat !== 1), { seat: 1, x: Math.round(x), z: Math.round(z) }]; ui.invalidate(); },
       onTravel: (p) => { ME.x = p.x - 4; ME.z = p.z + 6; st.centre.ground = { x: ME.x, z: ME.z }; st.cool = 30; st.cooledFrom = ui.t; ui.invalidate(); },
       onClose: () => go('hud'),
+      placesOpen: st.placesOpen,
+      onPlacesOpen: () => { st.placesOpen = true; ui.invalidate(); },
     }, ui),
   };
 }
