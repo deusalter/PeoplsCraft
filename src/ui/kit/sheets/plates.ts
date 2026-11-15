@@ -3,7 +3,7 @@ import { HEADS } from '../art/heads';
 import { COMPASS_MARKS } from '../art/marks';
 import { POINTER } from '../art/pointer';
 import type { Node } from '../node';
-import { chat, compass, crew, type Member, nameTag, paintEntry, ping, readout, roster } from '../parts/plates';
+import { chat, compass, crew, type Member, nameTag, nightW, paintEntry, ping, readout, roster } from '../parts/plates';
 import { heldStack } from '../root';
 import { SERVER, seat, strides } from '../sample/crew';
 import { type Sheet, page, salt } from './common';
@@ -19,21 +19,23 @@ export const platesSheet: Sheet = {
   world: true,
   build(ui) {
     const kids: Node[] = [];
+    // The strip's left edge stands right of the night's compartment, which reaches left of it.
+    const night = { n: 3, of: 8 };
     kids.push(compass({
-      x: 0, y: 0, heading: 20, place: 'Yavas', night: { n: 3, of: 8 },
+      x: nightW(night), y: 0, heading: 20, place: 'Yavas', night,
       marks: [{ kind: 'bed', deg: -30 }, { kind: 'guide', deg: 52 }, { kind: 'friend', seat: 3, deg: -62 }, { kind: 'fell', deg: 170 }],
     }));
     kids.push(readout({ cx: 91, y: 23, icon: 'ore', name: 'Iron Ore', line: 'Needs a stone pick', refusal: true }));
     kids.push(readout({ cx: 91, y: 51, icon: 'log', name: 'Oak Log', line: 'Any axe will do', able: true }));
     kids.push(readout({ cx: 91, y: 79, icon: 'haunch', name: 'Tama', life: 0.6 }));
     // Name tags, pings and the marks of the compass.
-    kids.push(salt(222, 0, 'Tags, pings, marks'));
-    kids.push(nameTag({ cx: 226, y: 14, name: seat(3).name, seat: 3, life: seat(3).life }));
-    kids.push(nameTag({ cx: 300, y: 14, name: 'Kammār' }));
-    kids.push(ping({ cx: 360, y: 14, seat: 5, metres: 40 }));
-    kids.push(ping({ cx: 380, y: 14, seat: 2 }));
+    kids.push(salt(250, 0, 'Tags, pings, marks'));
+    kids.push(nameTag({ cx: 254, y: 14, name: seat(3).name, seat: 3, life: seat(3).life }));
+    kids.push(nameTag({ cx: 328, y: 14, name: 'Kammār' }));
+    kids.push(ping({ cx: 388, y: 14, seat: 5, metres: 40 }));
+    kids.push(ping({ cx: 408, y: 14, seat: 2 }));
     kids.push({
-      x: 196, y: 34, w: 120, h: 8,
+      x: 224, y: 34, w: 120, h: 8,
       paint: (s) => {
         s.map(COMPASS_MARKS.bed, 0, 1); s.map(COMPASS_MARKS.fell, 10, 1); s.map(COMPASS_MARKS.guide, 20, 1);
         HEADS.forEach((h, i) => s.map(h, 32 + i * 12, -1));
