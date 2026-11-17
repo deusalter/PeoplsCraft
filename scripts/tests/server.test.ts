@@ -361,7 +361,7 @@ test('on a server the pause menu keeps the player in the world, asks no save of 
     await new Promise((ok) => setTimeout(ok, 1000));
     await page.keyboard.press('Escape');
     const paused = Date.now();
-    await said(page, 'PAUSED');
+    await said(page, 'Paused');
     await new Promise((ok) => setTimeout(ok, 6500));
     const line = await page.locator('#menu .saved').innerText();
     if (/Saving|Could not save/.test(line)) problems.push(`the pause screen waits on a save the server never answers: "${line}"`);

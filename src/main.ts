@@ -16,6 +16,7 @@ import { MemStorage, type Storage } from './sim/storage';
 import { IdbStorage, deleteWorld, storageReady } from './storage/idb';
 import { claimWorld } from './storage/lock';
 import './style.css';
+import { loadPixelFont } from './ui/pixelfont';
 import { type JoinChoice, type ServerInfo, TitleMenu, type WorldChoice, applyUiScale, loadSettings, noSaveText, playerToken } from './ui/menus';
 import { el } from './ui/hud';
 import { WorkerPool } from './world/pool';
@@ -46,6 +47,7 @@ async function boot(): Promise<void> {
   const canSave = !noSave;
   const settings = loadSettings();
   applyUiScale(settings.uiScale);
+  await loadPixelFont();
 
   const cores = navigator.hardwareConcurrency || 4;
   const failed = (pool: WorkerPool, e: unknown): void => {

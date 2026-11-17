@@ -200,3 +200,90 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #000; color:
 #prompt kbd { font: inherit; color: var(--gold); padding: 0 5px; margin-right: 6px; border: 1px solid var(--edge); background: rgba(255, 255, 255, 0.04); }
 #menu .warn { color: #ff9a8a; font-size: 12px; letter-spacing: 0.06em; } #menu .saved { color: var(--dim); font-size: 11px; letter-spacing: 0.1em; margin-top: -8px; }
 #saved { position: absolute; right: 14px; bottom: 12px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); text-shadow: 1px 1px 0 #000; opacity: 0; }
+
+/* ---------- menus in the interface kit's pixels ----------
+   Inside #menu one CSS pixel is one unit of the kit (src/ui/kit), zoomed by the whole number --px, so every edge and
+   every stroke of the face lands on whole device pixels. Colours are the kit's palette; slabs are lit from the top left
+   as the kit draws them: a light row and column inside the outline, two dark ones on the far sides. */
+#scene { position: fixed; left: 0; top: 0; z-index: 39; image-rendering: pixelated; pointer-events: none; }
+#menu { zoom: var(--px, 2); gap: 6px; padding: 8px 0; color: #f7f2e3; letter-spacing: 0;
+  font: 10px/10px 'Peopls Text', ui-monospace, monospace; -webkit-font-smoothing: none; text-shadow: 1px 1px 0 #0c0d13;
+  background: rgba(12, 13, 19, 0.7); }
+#menu.solid { background: none; }
+#menu.solid.under { background: rgba(12, 13, 19, 0.68); }
+#menu.solid.home { justify-content: flex-start; padding-top: var(--coltop, 100px); }
+#menu .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+#menu h2 { font-size: 10px; letter-spacing: 0; color: #f7f2e3; margin: 0 0 4px; text-transform: none; }
+#menu .sub, #menu .saved, #menu .line { color: #8b92a8; font-size: 10px; letter-spacing: 0; text-transform: none; margin-top: -4px; text-align: center; }
+#menu .warn { color: #f2785c; font-size: 10px; letter-spacing: 0; text-align: center; max-width: 280px; }
+#menu .warn:empty { display: none; }
+#menu .col { gap: 4px; min-width: 200px; width: 200px; }
+#menu.home .col { width: 280px; align-items: center; }
+#menu.home .col > .btn { width: 200px; }
+
+#menu .btn { height: 20px; min-width: 0; padding: 0 8px; border: 1px solid #0c0d13; border-radius: 0; cursor: pointer;
+  background: var(--pebbles, none) 0 0 / auto repeat, #6f7a76; color: #f7f2e3; text-shadow: 1px 1px 0 #0c0d13;
+  box-shadow: inset 1px 1px 0 #c3cab9, inset -1px -1px 0 #323844, inset -2px -2px 0 #4e585d;
+  font: inherit; font-size: 10px; line-height: 17px; letter-spacing: 0; text-transform: none; text-align: center; white-space: nowrap; }
+#menu .btn:hover { background-color: #6f7a76; border-color: #ffe08a; color: #ffe08a;
+  box-shadow: inset 1px 1px 0 #e4e8dc, inset -1px -1px 0 #323844, inset -2px -2px 0 #4e585d; }
+#menu .btn:active { transform: none; padding-top: 2px; padding-left: 9px;
+  box-shadow: inset 1px 1px 0 #323844, inset 2px 2px 0 #4e585d, inset -1px -1px 0 #c3cab9; }
+#menu .btn:focus-visible { outline: none; border-color: #f7f2e3; }
+#menu .btn.bad:hover { border-color: #f2785c; color: #f2785c; }
+#menu .btn[disabled] { opacity: 1; background: #4e585d; color: #8b92a8; box-shadow: inset 1px 1px 0 #6f7a76, inset -1px -1px 0 #323844; }
+#menu .btn.sm { height: 14px; padding: 0 5px; line-height: 11px; font-size: 10px; background-image: none; }
+#menu .btn.sm:active { padding-top: 1px; padding-left: 6px; }
+/* a choice that is set is a small button pressed into its slab */
+#menu .btn.sm.gold { color: #ffe08a; background-color: #4e585d;
+  box-shadow: inset 1px 1px 0 #323844, inset 2px 2px 0 #0c0d13, inset -1px -1px 0 #9da695; padding-top: 1px; padding-left: 6px; }
+
+#menu input[type=text], #menu input[type=password] { box-sizing: border-box; width: 200px; height: 20px; padding: 0 4px;
+  border: 1px solid #0c0d13; background: #191b26; box-shadow: inset -1px -1px 0 #454a5e; color: #f7f2e3; caret-color: #f7f2e3;
+  font: inherit; font-size: 10px; line-height: 18px; text-shadow: none; outline: none; user-select: text; -webkit-user-select: text; }
+#menu input[type=text]:focus, #menu input[type=password]:focus { border-color: #f7f2e3; box-shadow: inset -1px -1px 0 #454a5e; }
+#menu input::placeholder { color: #8b92a8; }
+
+/* the worlds of this browser, in a well */
+#menu .worlds { gap: 0; width: 280px; max-height: min(132px, 32vh); padding: 1px; background: #191b26; border: 1px solid #0c0d13;
+  box-shadow: inset 1px 1px 0 #0c0d13, inset -1px -1px 0 #454a5e; }
+#menu .world { gap: 6px; height: 26px; padding: 2px 4px 2px 5px; background: none; box-shadow: none; }
+#menu .world:hover { background: #2a2d3c; }
+#menu .world .nm { font-weight: normal; color: #f7f2e3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#menu .world .mt { font-size: 10px; color: #8b92a8; white-space: nowrap; }
+#menu .world > div:first-child { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+#menu .scroll { padding-right: 0; }
+#menu .scroll::-webkit-scrollbar { width: 4px; }
+#menu .scroll::-webkit-scrollbar-thumb { background: #454a5e; }
+#menu .scroll::-webkit-scrollbar-track { background: #0c0d13; }
+
+/* plates: settings and controls */
+#menu .panel { padding: 6px 8px; border: 1px solid #0c0d13; border-radius: 0; background: #191b26;
+  box-shadow: inset 1px 1px 0 #454a5e, inset -1px -1px 0 #0c0d13; }
+#menu .settings { gap: 10px; max-width: calc(100vw / var(--px, 2) - 12px); }
+#menu .settings > .wcol { width: 204px; gap: 0; }
+#menu .ttl { font-size: 10px; letter-spacing: 0; text-transform: none; color: #c9b896; margin: 0 0 3px; padding-bottom: 2px; border-bottom: 1px solid #2a2d3c; }
+#menu .settings .ttl:not(:first-child) { margin-top: 6px; }
+#menu .opt { gap: 6px; padding: 1px 0; min-height: 16px; font-size: 10px; }
+#menu .opt .seg { gap: 2px; }
+#menu .opt input[type=range] { -webkit-appearance: none; appearance: none; width: 72px; height: 12px; margin: 0; background: transparent; }
+#menu .opt input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #0c0d13; box-shadow: inset 0 -1px 0 #454a5e; }
+#menu .opt input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 12px; margin-top: -4px; border: 1px solid #0c0d13;
+  background: #6f7a76; box-shadow: inset 1px 1px 0 #c3cab9, inset -1px -1px 0 #4e585d; }
+#menu .opt input[type=range]:hover::-webkit-slider-thumb { border-color: #ffe08a; }
+#menu .keys { gap: 2px 12px; font-size: 10px; color: #8b92a8; padding: 6px 8px; border: 1px solid #0c0d13; background: #191b26;
+  box-shadow: inset 1px 1px 0 #454a5e, inset -1px -1px 0 #0c0d13; }
+#menu .keys b { color: #f7f2e3; font-weight: normal; }
+#menu > .btn { width: 200px; }
+#menu.death { background: rgba(74, 22, 6, 0.72); animation: deathin 0.8s ease-out; }
+/* settings: four tabs over one plate of rows */
+#menu .panel.settings { display: flex; flex-direction: column; width: 252px; max-width: none; padding: 6px 8px 7px; gap: 0; }
+#menu .settings .tabs { display: flex; gap: 2px; margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid #2a2d3c; }
+#menu .settings .tabs .btn { flex: 1; }
+#menu .settings .rows { display: flex; flex-direction: column; gap: 2px; min-height: 154px; }
+#menu .settings .opt { display: flex; justify-content: space-between; align-items: center; height: 16px; min-height: 0; padding: 0; gap: 6px; }
+#menu .settings .opt > span { white-space: nowrap; }
+#menu .settings .ctl { display: flex; align-items: center; gap: 4px; }
+#menu .settings .ctl .val { width: 46px; text-align: right; color: #c3cab9; white-space: nowrap; }
+#menu .settings .opt input[type=range] { width: 58px; }
+#menu .settings .ctl > .btn.sm { min-width: 28px; }
